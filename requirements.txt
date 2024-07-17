@@ -1,3 +1,30 @@
+Vision:
+
+User specifies an LA (or a set of LAs) of interest. That selected geography and
+its sub-divisions (MSOA, LSOAS, Wards and maybe Parishes; perhaps H3 hierarchies) 
+become available for visualisation. 
+
+The user can select which sub-division to look at. For irregular sub-divisions (everything
+except H3 really) squarified cartograms are computed in the background (e.g., by using
+linear programming). Users can easily morph between the real geometries and cartogram ones
+(e.g., with a press/release of a button). 
+
+User loads multivariate and time series data. In the background, this gets filtered to
+the selected geography and binned into sub-divisions. Depending on which level of 
+discretisation the data was provided at, the "Dany" oversampling method is used to break
+down the dta for more granular discretisation (e.g., MSOA data -> 100m grid -> LSOA data).
+
+The user is shown the multivariate and timeseries data as a list.
+
+The user can select between a few glyph designs: radial design for multivariate data;
+stacked time series chart for time series data. Some default glyph design is selected
+to start with.
+
+The user can choose variables to add or remove from the visualisation. When added,
+the variables are dropped into the chosen glyph design and shown on the map. 
+
+
+
 ----------------------------------------------------------------------------------
 A way to specify geographies of interest (independently of multivariate data).
 
@@ -11,6 +38,7 @@ From standardised geographies (LAs, wards, MSOAs, LSOAs). [Question: are wards/p
 	- some arbitrary discretisation (hierarchical?)
 
 Questions:
+- How do we deal with geographies that do not nest (e.g., LSOAs nest into MSOAs which nest into LAs; but wards/parishes/work areas don't have the same containment properties)?
 - other inputs and outputs?
 - how to deal with cluster-based discretisation (it's necessarily data driven)
 - how does screen based discretisation work with this (maybe this step is not necessary for that)
