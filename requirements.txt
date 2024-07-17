@@ -1,0 +1,50 @@
+----------------------------------------------------------------------------------
+A way to specify geographies of interest (independently of multivariate data).
+
+Use case: a user would like to select a particular LA or DNO-covered area to focus their attention on.
+
+From standardised geographies (LAs, wards, MSOAs, LSOAs). [Question: are wards/parishes made up of LSOAS/MSOASs or it the delineation different?)
+- give a list of LAs (ids or names) | LSOAs (ids) ... 
+- and return 
+	- a hierarchical structure of geographies; or
+	- H3 layers
+	- some arbitrary discretisation (hierarchical?)
+
+Questions:
+- other inputs and outputs?
+- how to deal with cluster-based discretisation (it's necessarily data driven)
+- how does screen based discretisation work with this (maybe this step is not necessary for that)
+
+-----------------------------------------------------------------------------------
+Ways to add multivariate data
+
+Ability to add different formats (geojson, gsv, etc.)
+Data is automatically discretised into the geographies of interest. 
+
+-----------------------------------------------------------------------------------
+Cartogramming / Ways to turn known geographies into regular regions (e.g., LSOAs -> Squares). Ideally have the ability to
+do this hierarchically (e.g. arrange LAs, arrange Wards inside LAs, arrange LSOAs inside Wards).
+
+Best option is probably linear programming (see Jo's notebooks). 
+
+------------------------------------------------------------------------------------
+Morphers
+
+Animate turning real geographies into cartograms and back
+Animate changes between different glyph resolutions
+
+-------------------------------------------------------------------------------------
+Glyph designs and glyph designer
+
+A few concrete glyph designs (radial multivariate plot; stacked time series; mirror time series...)
+
+Ideally these are parameterised to accept plug-and-show data. This paves the way for users to select
+a type of glyph and then dropping data variables into it.
+
+-------------------------------------------------------------------------------------
+Saving a configuration 
+
+
+
+
+
