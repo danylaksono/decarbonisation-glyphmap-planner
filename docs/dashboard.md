@@ -77,14 +77,16 @@ display(regular_geodata);
 
 ```js
 async function convertGridIfExists(filename, bb) {
-  const gridPath = `./data/grids/${filename}.csv`;
+  // take from stored preprocessed grids for now
+  // future version will use the grid generation code
+  const gridPath = `https://www.danylaksono.com/datasets/cartogram/${filename}.csv`;
 
   try {
     const gridCsv = await d3.csv(gridPath);
     return convertGridCsvToGeoJson(gridCsv, bb);
   } catch (error) {
     // console.log(`Grid file ${filename}.csv not found or couldn't be loaded.`);
-    return gridPath;
+    return null;
   }
 }
 
@@ -93,7 +95,7 @@ const bb = turf.bbox(regular_geodata);
 
 const gridGeoJson = await convertGridIfExists(filename, bb);
 // display(bb);
-display(gridGeoJson);
+// display(gridGeoJson);
 ```
 
 ## Functions and Dependencies
