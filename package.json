@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@observablehq/framework": "latest",
+    "@turf/turf": "^7.1.0",
     "d3-dsv": "^3.0.1",
     "d3-time-format": "^4.1.0"
   },
