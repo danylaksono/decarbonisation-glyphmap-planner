@@ -1,0 +1,1 @@
+import{polygon as i}from"../helpers@7.1.0/index.js";import{coordEach as l}from"../meta@7.1.0/index.js";import e from"../../concaveman@1.2.1/index.js";function c(a,o={}){o.concavity=o.concavity||1/0;const t=[];if(l(a,n=>{t.push([n[0],n[1]])}),!t.length)return null;const r=e(t,o.concavity);return r.length>3?i([r]):null}var f=c;export{c as convex,f as default};

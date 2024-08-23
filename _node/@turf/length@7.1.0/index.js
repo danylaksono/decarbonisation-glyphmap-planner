@@ -1,0 +1,1 @@
+import{distance as m}from"../distance@7.1.0/index.js";import{segmentReduce as s}from"../meta@7.1.0/index.js";function t(r,o={}){return s(r,(n,a)=>{const e=a.geometry.coordinates;return n+m(e[0],e[1],o)},0)}var c=t;export{c as default,t as length};

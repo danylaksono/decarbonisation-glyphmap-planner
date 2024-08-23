@@ -1,0 +1,1 @@
+import{bearing as a}from"../bearing@7.1.0/index.js";import{destination as e}from"../destination@7.1.0/index.js";import{distance as m}from"../distance@7.1.0/index.js";function n(o,r){const t=m(o,r),i=a(o,r);return e(o,t/2,i)}var f=n;export{f as default,n as midpoint};
