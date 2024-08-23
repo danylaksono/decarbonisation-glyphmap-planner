@@ -14,9 +14,15 @@
 <link rel="modulepreload" href="./_observablehq/stdlib.js">
 <link rel="modulepreload" href="./_node/@turf/turf@7.1.0/index.js">
 <link rel="modulepreload" href="./_npm/d3@7.9.0/_esm.js">
+<link rel="modulepreload" href="./_import/components/morpher.71f80d62.js">
+<link rel="modulepreload" href="./_import/components/gridded-glyphmaps/index.min.e9355c65.js">
+<link rel="modulepreload" href="./_import/components/utils.62d37372.js">
+<link rel="modulepreload" href="./_npm/flubber@0.4.2/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-require@1.3.0/_esm.js">
+<link rel="modulepreload" href="./_npm/topojson-client@3.1.0/_esm.js">
+<link rel="modulepreload" href="./_npm/lodash@4.17.21/_esm.js">
 <link rel="modulepreload" href="./_observablehq/stdlib/duckdb.js">
 <link rel="modulepreload" href="./_observablehq/stdlib/inputs.js">
-<link rel="modulepreload" href="./_npm/topojson-client@3.1.0/_esm.js">
 <link rel="modulepreload" href="./_npm/@duckdb/duckdb-wasm@1.28.0/_esm.js">
 <link rel="modulepreload" href="./_npm/htl@0.3.1/_esm.js">
 <link rel="modulepreload" href="./_npm/isoformat@0.2.1/_esm.js">
@@ -162,6 +168,11 @@
 <link rel="modulepreload" href="./_npm/d3-timer@3.0.1/_esm.js">
 <link rel="modulepreload" href="./_npm/d3-transition@3.0.1/_esm.js">
 <link rel="modulepreload" href="./_npm/d3-zoom@3.0.0/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-polygon@1.0.6/_esm.js">
+<link rel="modulepreload" href="./_npm/svgpath@2.6.0/_esm.js">
+<link rel="modulepreload" href="./_npm/svg-path-properties@0.2.2/_esm.js">
+<link rel="modulepreload" href="./_npm/earcut@2.2.4/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-array@1.2.4/_esm.js">
 <link rel="modulepreload" href="./_npm/apache-arrow@17.0.0/_esm.js">
 <link rel="modulepreload" href="./_node/geojson-equality-ts@1.0.2/index.js">
 <link rel="modulepreload" href="./_node/point-in-polygon-hao@1.1.0/index.js">
@@ -193,19 +204,19 @@ import {define} from "./_observablehq/client.js";
 import {registerFile, FileAttachment} from "./_observablehq/stdlib.js";
 import {registerTable} from "./_observablehq/stdlib/duckdb.js";
 
-registerFile("./data/deprivation.parquet", {"name":"./data/deprivation.parquet","path":"./_file/data/deprivation.127576bc.parquet","lastModified":1724403407357});
-registerFile("./data/geo.csv", {"name":"./data/geo.csv","mimeType":"text/csv","path":"./_file/data/geo.8ba75b99.csv","lastModified":1724403407417});
-registerFile("./data/pop.parquet", {"name":"./data/pop.parquet","path":"./_file/data/pop.d268a84b.parquet","lastModified":1724403407557});
-registerFile("./data/vehicle.parquet", {"name":"./data/vehicle.parquet","path":"./_file/data/vehicle.28874fcc.parquet","lastModified":1724403407609});
+registerFile("./data/deprivation.parquet", {"name":"./data/deprivation.parquet","path":"./_file/data/deprivation.127576bc.parquet","lastModified":1724442200951});
+registerFile("./data/geo.csv", {"name":"./data/geo.csv","mimeType":"text/csv","path":"./_file/data/geo.8ba75b99.csv","lastModified":1724442201011});
+registerFile("./data/pop.parquet", {"name":"./data/pop.parquet","path":"./_file/data/pop.d268a84b.parquet","lastModified":1724442201151});
+registerFile("./data/vehicle.parquet", {"name":"./data/vehicle.parquet","path":"./_file/data/vehicle.28874fcc.parquet","lastModified":1724442201203});
 registerTable("geo", FileAttachment("./data/geo.csv"));
 registerTable("pop", FileAttachment("./data/pop.parquet"));
 registerTable("deprivation", FileAttachment("./data/deprivation.parquet"));
 registerTable("vehicle", FileAttachment("./data/vehicle.parquet"));
 
-define({id: "20120d4c", outputs: ["turf"], body: async () => {
-const turf = await import("./_node/@turf/turf@7.1.0/index.js");
+define({id: "2ef11e8f", outputs: ["turf","d3","inSituMorphMouse","prepareGeoJsonForMorphingLib","glyphMap","createDiscretiserValue","_drawCellBackground","downloadBoundaries","joinCensusDataToGeoJSON","convertGridCsvToGeoJson"], body: async () => {
+const [turf, d3, {inSituMorphMouse, prepareGeoJsonForMorphingLib}, {glyphMap, createDiscretiserValue, _drawCellBackground}, {downloadBoundaries, joinCensusDataToGeoJSON, convertGridCsvToGeoJson}] = await Promise.all([import("./_node/@turf/turf@7.1.0/index.js"), import("./_npm/d3@7.9.0/_esm.js"), import("./_import/components/morpher.71f80d62.js"), import("./_import/components/gridded-glyphmaps/index.min.e9355c65.js"), import("./_import/components/utils.62d37372.js")]);
 
-return {turf};
+return {turf,d3,inSituMorphMouse,prepareGeoJsonForMorphingLib,glyphMap,createDiscretiserValue,_drawCellBackground,downloadBoundaries,joinCensusDataToGeoJSON,convertGridCsvToGeoJson};
 }});
 
 define({id: "c4f336b2", inputs: ["view","Inputs","list_la"], outputs: ["local_authority"], body: (view,Inputs,list_la) => {
@@ -250,9 +261,10 @@ AND geo.LA = (SELECT replace(${la_code}, '"', ''''))`;
 return {list_of_codes};
 }});
 
-define({id: "9c7455c5", inputs: ["list_of_codes"], outputs: ["list_of_code"], body: (list_of_codes) => {
+define({id: "30024201", inputs: ["list_of_codes","downloadBoundaries","geogBoundary"], outputs: ["list_of_code","regular_geodata"], body: async (list_of_codes,downloadBoundaries,geogBoundary) => {
 const list_of_code = [...list_of_codes].map((row) => row.code);
-return {list_of_code};
+const regular_geodata = await downloadBoundaries(geogBoundary, list_of_code);
+return {list_of_code,regular_geodata};
 }});
 
 define({id: "7343b1d1", inputs: ["sql","geogName","la_code"], outputs: ["census_data"], body: async (sql,geogName,la_code) => {
@@ -263,14 +275,7 @@ const census_data = await sql`SELECT geo.code, geo.label, deprivation.value as d
 return {census_data};
 }});
 
-define({id: "5c1e11ba", inputs: ["downloadBoundaries","geogBoundary","list_of_code","display"], outputs: ["regular_geodata"], body: async (downloadBoundaries,geogBoundary,list_of_code,display) => {
-const regular_geodata = await downloadBoundaries(geogBoundary, list_of_code);
-
-display(regular_geodata);
-return {regular_geodata};
-}});
-
-define({id: "412932ff", inputs: ["d3","convertGridCsvToGeoJson","local_authority","geogBoundary","turf","regular_geodata"], outputs: ["convertGridIfExists","filename","bb","gridGeoJson"], body: async (d3,convertGridCsvToGeoJson,local_authority,geogBoundary,turf,regular_geodata) => {
+define({id: "a5225c8a", inputs: ["d3","convertGridCsvToGeoJson","local_authority","geogBoundary","turf","regular_geodata"], outputs: ["convertGridIfExists","filename","bb","grid_geodata"], body: async (d3,convertGridCsvToGeoJson,local_authority,geogBoundary,turf,regular_geodata) => {
 async function convertGridIfExists(filename, bb) {
   // take from stored preprocessed grids for now
   // future version will use the grid generation code
@@ -288,102 +293,75 @@ async function convertGridIfExists(filename, bb) {
 const filename = `${local_authority.toLowerCase()}_${geogBoundary}_grids`;
 const bb = turf.bbox(regular_geodata);
 
-const gridGeoJson = await convertGridIfExists(filename, bb);
+const grid_geodata = await convertGridIfExists(filename, bb);
 // display(bb);
 // display(gridGeoJson);
-return {convertGridIfExists,filename,bb,gridGeoJson};
+return {convertGridIfExists,filename,bb,grid_geodata};
 }});
 
-define({id: "afffcea2", inputs: ["d3","topojson"], outputs: ["downloadBoundaries"], body: (d3,topojson) => {
-function downloadBoundaries(geogName, permittedCodes) {
-  const topojsonUrl =
-    "https://gicentre.github.io/data/census21/englandAndWales/" +
-    geogName +
-    ".json";
-  const csvUrl =
-    "https://gicentre.github.io/data/census21/englandAndWales/" +
-    geogName +
-    ".csv";
-  const geoCsvUrl =
-    "https://gicentre.github.io/data/census21/englandAndWales/geo.csv";
+define({id: "f221b1fe", inputs: ["_","regular_geodata"], outputs: ["data"], body: (_,regular_geodata) => {
+const data = _.keyBy(
+  regular_geodata.features.map((feat) => {
+    return {
+      code: feat.properties.code,
+      population: +feat.properties.population,
+    };
+  }),
+  "code"
+);
+return {data};
+}});
 
-  return Promise.all([
-    d3.json(topojsonUrl),
-    d3.csv(csvUrl),
-    d3.csv(geoCsvUrl),
-  ]).then(([topoData, geogData, geoData]) => {
-    const tj = topojson.feature(topoData, topoData.objects[geogName]);
-
-    // Create a map of code to attribute data from geogName CSV
-    const geogMap = new Map();
-    geogData.forEach((row) => {
-      geogMap.set(row.code, row);
-    });
-
-    // Create a map of code to attribute data from geo.csv
-    const geoMap = new Map();
-    geoData.forEach((row) => {
-      geoMap.set(row.code, row);
-    });
-
-    // Merge the CSV data with the TopoJSON features
-    tj.features.forEach((feature) => {
-      const code = feature.properties.code;
-      const geogAttributes = geogMap.get(code) || {};
-      const geoAttributes = geoMap.get(code) || {};
-      feature.properties = {
-        ...feature.properties,
-        ...geogAttributes,
-        ...geoAttributes,
-      };
-    });
-
-    // Filter features if permittedCodes is defined
-    if (permittedCodes !== undefined) {
-      tj.features = tj.features.filter((feature) =>
-        permittedCodes.includes(feature.properties.code)
-      );
-    }
-
-    return tj;
+define({id: "b68a070b", inputs: ["createDiscretiserValue"], outputs: ["valueDiscretiser"], body: (createDiscretiserValue) => {
+const valueDiscretiser = (geomLookup) => {
+  return createDiscretiserValue({
+    //... and adds a discretisation function that aggregates by CODE and supplies the polygons for each cell
+    valueFn: (row) => {
+      return row.code;
+    },
+    glyphLocationFn: (key) => geomLookup[key]?.centroid,
+    boundaryFn: (key) => geomLookup[key]?.geometry.coordinates[0],
   });
-}
-return {downloadBoundaries};
+};
+return {valueDiscretiser};
 }});
 
-define({id: "c4b22033", inputs: ["d3","turf"], outputs: ["convertGridCsvToGeoJson"], body: (d3,turf) => {
-function convertGridCsvToGeoJson(gridCsv, bb) {
-  const maxCol = d3.max(gridCsv.map((row) => +row.row));
-  const maxRow = d3.max(gridCsv.map((row) => +row.col));
+define({id: "31e3be70", inputs: ["d3","data","prepareGeoJsonForMorphingLib","regular_geodata","local_authority","geogName","grid_geodata","inSituMorphMouse","display"], outputs: ["colourScalePop","layouts","morphers"], body: (d3,data,prepareGeoJsonForMorphingLib,regular_geodata,local_authority,geogName,grid_geodata,inSituMorphMouse,display) => {
+const colourScalePop = d3
+  .scaleSequential(d3.interpolateBlues)
+  .domain([0, d3.max(Object.values(data).map((row) => row.population))]);
 
-  const colW = Math.abs(bb[2] - bb[0]) / maxCol - 1;
-  const rowH = Math.abs(bb[3] - bb[1]) / maxRow - 1;
+const layouts = [
+  {
+    shapes: prepareGeoJsonForMorphingLib(
+      regular_geodata,
+      regular_geodata,
+      300,
+      300
+    ),
+    colourFn: (key) => colourScalePop(data[key].population),
+    description: local_authority + " " + geogName + " Choropleth Map.",
+  },
+  {
+    shapes: prepareGeoJsonForMorphingLib(
+      grid_geodata,
+      regular_geodata,
+      300,
+      300
+    ),
+    colourFn: (key) => colourScalePop(data[key].population),
+    description: local_authority + " " + geogName + "Gridmaps.",
+  },
+];
 
-  console.log(colW, rowH);
+const morphers = inSituMorphMouse({
+  interactive: true,
+  showDescription: true,
+  layouts,
+});
 
-  const squares = [];
-
-  for (const row of gridCsv) {
-    const c = +row.col - 1;
-    const r = +row.row - 1;
-    squares.push(
-      turf.polygon(
-        [
-          [
-            [bb[0] + c * colW, bb[1] + r * rowH],
-            [bb[0] + (c + 1) * colW, bb[1] + r * rowH],
-            [bb[0] + (c + 1) * colW, bb[1] + (r + 1) * rowH],
-            [bb[0] + c * colW, bb[1] + (r + 1) * rowH],
-            [bb[0] + c * colW, bb[1] + r * rowH],
-          ],
-        ],
-        { code: row.code }
-      )
-    );
-  }
-  return turf.featureCollection(squares);
-}
-return {convertGridCsvToGeoJson};
+display(morphers);
+return {colourScalePop,layouts,morphers};
 }});
 
 </script>
@@ -404,7 +382,7 @@ return {convertGridCsvToGeoJson};
 <main id="observablehq-main" class="observablehq">
 <h1 id="morphing-glyphmaps" tabindex="-1"><a class="observablehq-header-anchor" href="#morphing-glyphmaps">Morphing Glyphmaps</a></h1>
 <p>An observable framework translation of <a href="https://observablehq.com/@danylaksono/morphing-gridmaps" target="_blank" rel="noopener noreferrer">https://observablehq.com/@danylaksono/morphing-gridmaps</a></p>
-<div class="observablehq observablehq--block"><!--:20120d4c:--></div>
+<div class="observablehq observablehq--block"><!--:2ef11e8f:--></div>
 <h2 id="area-selection" tabindex="-1"><a class="observablehq-header-anchor" href="#area-selection">Area Selection</a></h2>
 <p>Select the Local authority from the list below</p>
 <div class="observablehq observablehq--block"><!--:c4f336b2:--></div>
@@ -412,15 +390,15 @@ return {convertGridCsvToGeoJson};
 <div class="observablehq observablehq--block"><!--:76ba71c3:--></div>
 <div class="observablehq observablehq--block"><!--:ac7e408e:--></div>
 <div class="observablehq observablehq--block"><!--:cad06486:--></div>
-<div class="observablehq observablehq--block"><!--:9c7455c5:--></div>
+<div class="observablehq observablehq--block"><!--:30024201:--></div>
 <div class="observablehq observablehq--block"><!--:7343b1d1:--></div>
-<div class="observablehq observablehq--block"><!--:5c1e11ba:--></div>
-<div class="observablehq observablehq--block"><!--:412932ff:--></div>
-<h2 id="functions-and-dependencies" tabindex="-1"><a class="observablehq-header-anchor" href="#functions-and-dependencies">Functions and Dependencies</a></h2>
-<div class="observablehq observablehq--block"><!--:afffcea2:--></div>
-<div class="observablehq observablehq--block"><!--:c4b22033:--></div>
+<div class="observablehq observablehq--block"><!--:a5225c8a:--></div>
+<h2 id="morphing-geometry" tabindex="-1"><a class="observablehq-header-anchor" href="#morphing-geometry">Morphing Geometry</a></h2>
+<div class="observablehq observablehq--block"><!--:f221b1fe:--></div>
+<div class="observablehq observablehq--block"><!--:b68a070b:--></div>
+<div class="observablehq observablehq--block"><!--:31e3be70:--></div>
 </main>
 <footer id="observablehq-footer">
-<div>Built with <a href="https://observablehq.com/" target="_blank" rel="noopener noreferrer">Observable</a> on <a title="2024-08-23T08:56:53">Aug 23, 2024</a>.</div>
+<div>Built with <a href="https://observablehq.com/" target="_blank" rel="noopener noreferrer">Observable</a> on <a title="2024-08-23T19:43:26">Aug 23, 2024</a>.</div>
 </footer>
 </div>
