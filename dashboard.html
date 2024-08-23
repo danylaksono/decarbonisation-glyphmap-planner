@@ -193,10 +193,10 @@ import {define} from "./_observablehq/client.js";
 import {registerFile, FileAttachment} from "./_observablehq/stdlib.js";
 import {registerTable} from "./_observablehq/stdlib/duckdb.js";
 
-registerFile("./data/deprivation.parquet", {"name":"./data/deprivation.parquet","path":"./_file/data/deprivation.127576bc.parquet","lastModified":1724381129988});
-registerFile("./data/geo.csv", {"name":"./data/geo.csv","mimeType":"text/csv","path":"./_file/data/geo.8ba75b99.csv","lastModified":1724381130048});
-registerFile("./data/pop.parquet", {"name":"./data/pop.parquet","path":"./_file/data/pop.d268a84b.parquet","lastModified":1724381130188});
-registerFile("./data/vehicle.parquet", {"name":"./data/vehicle.parquet","path":"./_file/data/vehicle.28874fcc.parquet","lastModified":1724381130240});
+registerFile("./data/deprivation.parquet", {"name":"./data/deprivation.parquet","path":"./_file/data/deprivation.127576bc.parquet","lastModified":1724403407357});
+registerFile("./data/geo.csv", {"name":"./data/geo.csv","mimeType":"text/csv","path":"./_file/data/geo.8ba75b99.csv","lastModified":1724403407417});
+registerFile("./data/pop.parquet", {"name":"./data/pop.parquet","path":"./_file/data/pop.d268a84b.parquet","lastModified":1724403407557});
+registerFile("./data/vehicle.parquet", {"name":"./data/vehicle.parquet","path":"./_file/data/vehicle.28874fcc.parquet","lastModified":1724403407609});
 registerTable("geo", FileAttachment("./data/geo.csv"));
 registerTable("pop", FileAttachment("./data/pop.parquet"));
 registerTable("deprivation", FileAttachment("./data/deprivation.parquet"));
@@ -270,16 +270,18 @@ display(regular_geodata);
 return {regular_geodata};
 }});
 
-define({id: "85587cbb", inputs: ["d3","convertGridCsvToGeoJson","local_authority","geogBoundary","turf","regular_geodata","display"], outputs: ["convertGridIfExists","filename","bb","gridGeoJson"], body: async (d3,convertGridCsvToGeoJson,local_authority,geogBoundary,turf,regular_geodata,display) => {
+define({id: "412932ff", inputs: ["d3","convertGridCsvToGeoJson","local_authority","geogBoundary","turf","regular_geodata"], outputs: ["convertGridIfExists","filename","bb","gridGeoJson"], body: async (d3,convertGridCsvToGeoJson,local_authority,geogBoundary,turf,regular_geodata) => {
 async function convertGridIfExists(filename, bb) {
-  const gridPath = `./data/grids/${filename}.csv`;
+  // take from stored preprocessed grids for now
+  // future version will use the grid generation code
+  const gridPath = `https://www.danylaksono.com/datasets/cartogram/${filename}.csv`;
 
   try {
     const gridCsv = await d3.csv(gridPath);
     return convertGridCsvToGeoJson(gridCsv, bb);
   } catch (error) {
     // console.log(`Grid file ${filename}.csv not found or couldn't be loaded.`);
-    return gridPath;
+    return null;
   }
 }
 
@@ -288,7 +290,7 @@ const bb = turf.bbox(regular_geodata);
 
 const gridGeoJson = await convertGridIfExists(filename, bb);
 // display(bb);
-display(gridGeoJson);
+// display(gridGeoJson);
 return {convertGridIfExists,filename,bb,gridGeoJson};
 }});
 
@@ -413,12 +415,12 @@ return {convertGridCsvToGeoJson};
 <div class="observablehq observablehq--block"><!--:9c7455c5:--></div>
 <div class="observablehq observablehq--block"><!--:7343b1d1:--></div>
 <div class="observablehq observablehq--block"><!--:5c1e11ba:--></div>
-<div class="observablehq observablehq--block"><!--:85587cbb:--></div>
+<div class="observablehq observablehq--block"><!--:412932ff:--></div>
 <h2 id="functions-and-dependencies" tabindex="-1"><a class="observablehq-header-anchor" href="#functions-and-dependencies">Functions and Dependencies</a></h2>
 <div class="observablehq observablehq--block"><!--:afffcea2:--></div>
 <div class="observablehq observablehq--block"><!--:c4b22033:--></div>
 </main>
 <footer id="observablehq-footer">
-<div>Built with <a href="https://observablehq.com/" target="_blank" rel="noopener noreferrer">Observable</a> on <a title="2024-08-23T02:45:39">Aug 23, 2024</a>.</div>
+<div>Built with <a href="https://observablehq.com/" target="_blank" rel="noopener noreferrer">Observable</a> on <a title="2024-08-23T08:56:53">Aug 23, 2024</a>.</div>
 </footer>
 </div>
