@@ -13,6 +13,10 @@ sql:
 
 An observable framework translation of https://observablehq.com/@danylaksono/morphing-gridmaps
 
+```js
+import * as turf from "@turf/turf";
+```
+
 ## Area Selection
 
 Select the Local authority from the list below
@@ -71,39 +75,25 @@ const regular_geodata = await downloadBoundaries(geogBoundary, list_of_code);
 display(regular_geodata);
 ```
 
-## Cartogram configuration
-
-Change the sliders to reflect the desired cartogram configuration.
-
 ```js
-const gridInput = view(
-  Object.assign(
-    Inputs.form([
-      Inputs.range([2, 40], {
-        value: 6,
-        step: 1,
-        label: "Rows",
-      }),
-      Inputs.range([2, 40], {
-        value: 6,
-        step: 1,
-        label: "Columns",
-      }),
-      Inputs.range([-1, 1], {
-        value: 0.8,
-        step: 0.01,
-        label: "Compactness",
-      }),
-    ]),
-    {
-      oninput: (event) => {
-        return event.isTrusted && event.stopImmediatePropagation();
-      },
-      onchange: (event) =>
-        event.currentTarget.dispatchEvent(new Event("input")),
-    }
-  )
-);
+async function convertGridIfExists(filename, bb) {
+  const gridPath = `./data/grids/${filename}.csv`;
+
+  try {
+    const gridCsv = await d3.csv(gridPath);
+    return convertGridCsvToGeoJson(gridCsv, bb);
+  } catch (error) {
+    // console.log(`Grid file ${filename}.csv not found or couldn't be loaded.`);
+    return gridPath;
+  }
+}
+
+const filename = `${local_authority.toLowerCase()}_${geogBoundary}_grids`;
+const bb = turf.bbox(regular_geodata);
+
+const gridGeoJson = await convertGridIfExists(filename, bb);
+// display(bb);
+display(gridGeoJson);
 ```
 
 ## Functions and Dependencies
@@ -161,5 +151,39 @@ function downloadBoundaries(geogName, permittedCodes) {
 
     return tj;
   });
+}
+```
+
+```js
+function convertGridCsvToGeoJson(gridCsv, bb) {
+  const maxCol = d3.max(gridCsv.map((row) => +row.row));
+  const maxRow = d3.max(gridCsv.map((row) => +row.col));
+
+  const colW = Math.abs(bb[2] - bb[0]) / maxCol - 1;
+  const rowH = Math.abs(bb[3] - bb[1]) / maxRow - 1;
+
+  console.log(colW, rowH);
+
+  const squares = [];
+
+  for (const row of gridCsv) {
+    const c = +row.col - 1;
+    const r = +row.row - 1;
+    squares.push(
+      turf.polygon(
+        [
+          [
+            [bb[0] + c * colW, bb[1] + r * rowH],
+            [bb[0] + (c + 1) * colW, bb[1] + r * rowH],
+            [bb[0] + (c + 1) * colW, bb[1] + (r + 1) * rowH],
+            [bb[0] + c * colW, bb[1] + (r + 1) * rowH],
+            [bb[0] + c * colW, bb[1] + r * rowH],
+          ],
+        ],
+        { code: row.code }
+      )
+    );
+  }
+  return turf.featureCollection(squares);
 }
 ```
