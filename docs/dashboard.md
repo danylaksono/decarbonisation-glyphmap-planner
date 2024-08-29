@@ -130,16 +130,16 @@ const data = _.keyBy(
 ```
 
 ```js
-const valueDiscretiser = (geomLookup) => {
-  return createDiscretiserValue({
-    //... and adds a discretisation function that aggregates by CODE and supplies the polygons for each cell
-    valueFn: (row) => {
-      return row.code;
-    },
-    glyphLocationFn: (key) => geomLookup[key]?.centroid,
-    boundaryFn: (key) => geomLookup[key]?.geometry.coordinates[0],
-  });
-};
+// const valueDiscretiser = (geomLookup) => {
+//   return createDiscretiserValue({
+//     //... and adds a discretisation function that aggregates by CODE and supplies the polygons for each cell
+//     valueFn: (row) => {
+//       return row.code;
+//     },
+//     glyphLocationFn: (key) => geomLookup[key]?.centroid,
+//     boundaryFn: (key) => geomLookup[key]?.geometry.coordinates[0],
+//   });
+// };
 ```
 
 ```js
@@ -681,4 +681,211 @@ function intermBbSize(layout, toLayout) {
     );
   });
 }
+```
+
+## Glyphmapping
+
+```js
+const regularGeodataLookup = _.keyBy(
+  regular_geodata.features.map((feat) => {
+    return { ...feat, centroid: turf.getCoord(turf.centroid(feat.geometry)) };
+  }),
+  (feat) => feat.properties.code
+);
+display(regularGeodataLookup);
+
+const gridGeodataLookup = _.keyBy(
+  grid_geodata.features.map((feat) => {
+    return { ...feat, centroid: turf.getCoord(turf.centroid(feat.geometry)) };
+  }),
+  (feat) => feat.properties.code
+);
+display(regularGeodataLookup);
+```
+
+```js
+// // glyph maps basic specs
+// function glyphMapSpec = () => {
+//   return {
+//     // discretiserFn: createDiscretiserValue({
+//     //   valueFn: (row) => {
+//     //     return row.code;
+//     //   },
+//     //   glyphLocationFn: (key) => oxfordLsoaLookup[key]?.centroid,
+//     //   boundaryFn: (key) => oxfordLsoaLookup[key]?.geometry.coordinates[0]
+//     // }),
+//     coordType: "notmercator",
+//     initialBB: turf.bbox(regular_geodata),
+//     data: Object.values(data),
+//     // mapType: "OSMStandard",
+//     // tileWidth: 150,
+//     getLocationFn: (row) => regularGeodataLookup[row.code]?.centroid,
+//     discretisationShape: "grid",
+//     interactiveCellSize: true,
+//     // interactiveZoomPan: false,
+//     cellSize: 30,
+
+//     width: 800,
+//     height: 600,
+
+//     customMap: {
+//       scaleParams: [],
+
+//       initFn: (cells, cellSize, global, panel) => {},
+
+//       preAggrFn: (cells, cellSize, global, panel) => {
+//         console.log(global);
+//       },
+
+//       aggrFn: (cell, row, weight, global, panel) => {
+//         if (cell.population) {
+//           cell.population += row.population;
+//         } else {
+//           cell.population = row.population;
+//         }
+//       },
+
+//       postAggrFn: (cells, cellSize, global, panel) => {},
+
+//       preDrawFn: (cells, cellSize, ctx, global, panel) => {
+//         //set up a pathgenerator
+//         global.pathGenerator = d3.geoPath().context(ctx);
+//         //set up a colourer
+//         global.colourScalePop = d3
+//           .scaleSequential(d3.interpolateBlues)
+//           .domain([0, d3.max(cells.map((row) => row.population))]);
+
+//         // console.log(cells);
+//       },
+
+//       drawFn: (cell, x, y, cellSize, ctx, global, panel) => {
+//         //get boundary (in screen coordinates) and convert to json feature
+//         const boundary = cell.getBoundary(0);
+//         if (boundary[0] != boundary[boundary.length - 1]) {
+//           boundary.push(boundary[0]);
+//         }
+//         const boundaryFeat = turf.polygon([boundary]);
+
+//         //draw a coloured polygon
+//         ctx.beginPath();
+//         global.pathGenerator(boundaryFeat);
+//         ctx.fillStyle = global.colourScalePop(cell.population);
+//         ctx.fill();
+//       },
+
+//       postDrawFn: (cells, cellSize, ctx, global, panel) => {},
+
+//       tooltipTextFn: (cell) => {}
+//     }
+//   };
+// }
+```
+
+```js
+const glyphmapType = view(
+  Inputs.radio(["Polygons", "Gridmap", "Gridded"], {
+    label: "Select type of glyphmap",
+    value: "Polygons",
+  })
+);
+
+function valueDiscretiser(geomLookup) {
+  return createDiscretiserValue({
+    //... and adds a discretisation function that aggregates by CODE and supplies the polygons for each cell
+    valueFn: (row) => {
+      return row.code;
+    },
+    glyphLocationFn: (key) => geomLookup[key]?.centroid,
+    boundaryFn: (key) => geomLookup[key]?.geometry.coordinates[0],
+  });
+}
+// display(valueDiscretiser(regularGeodataLookup));
+```
+
+```js
+// glyphmap basic specs
+function glyphMapSpec() {
+  return {
+    coordType: "notmercator",
+    initialBB: turf.bbox(regular_geodata),
+    data: Object.values(data),
+    getLocationFn: (row) => regularGeodataLookup[row.code]?.centroid,
+    discretisationShape: "grid",
+    interactiveCellSize: true,
+    cellSize: 30,
+
+    width: 800,
+    height: 600,
+
+    customMap: {
+      scaleParams: [],
+
+      initFn: (cells, cellSize, global, panel) => {},
+
+      preAggrFn: (cells, cellSize, global, panel) => {
+        console.log(global);
+      },
+
+      aggrFn: (cell, row, weight, global, panel) => {
+        if (cell.population) {
+          cell.population += row.population;
+        } else {
+          cell.population = row.population;
+        }
+      },
+
+      postAggrFn: (cells, cellSize, global, panel) => {},
+
+      preDrawFn: (cells, cellSize, ctx, global, panel) => {
+        if (!cells || cells.length === 0) {
+          console.error("No cells data available");
+          return;
+        }
+        global.pathGenerator = d3.geoPath().context(ctx);
+        global.colourScalePop = d3
+          .scaleSequential(d3.interpolateBlues)
+          .domain([0, d3.max(cells.map((row) => row.population))]);
+      },
+
+      drawFn: (cell, x, y, cellSize, ctx, global, panel) => {
+        const boundary = cell.getBoundary(0);
+        if (boundary[0] != boundary[boundary.length - 1]) {
+          boundary.push(boundary[0]);
+        }
+        const boundaryFeat = turf.polygon([boundary]);
+
+        ctx.beginPath();
+        global.pathGenerator(boundaryFeat);
+        ctx.fillStyle = global.colourScalePop(cell.population);
+        ctx.fill();
+      },
+
+      postDrawFn: (cells, cellSize, ctx, global, panel) => {},
+
+      tooltipTextFn: (cell) => {},
+    },
+  };
+}
+```
+
+```js
+function createGlyphMap(glyphmapType) {
+  if (glyphmapType == "Polygons") {
+    return glyphMap({
+      ...glyphMapSpec(), //takes the base spec...
+      discretiserFn: valueDiscretiser(regularGeodataLookup), //uses the polyon lookup for spatialunits
+    });
+  } else if (glyphmapType == "Gridmap") {
+    return glyphMap({
+      ...glyphMapSpec(), //takes the base spec...
+      discretiserFn: valueDiscretiser(gridGeodataLookup), //uses the polyon lookup for spatialunits
+    });
+  } else if (glyphmapType == "Gridded") {
+    return glyphMap(glyphMapSpec()); //uses the base spec as it (by default, it grids)
+  }
+}
+
+const glyphmap = display(glyphMapSpec());
+
+display(createGlyphMap(glyphmapType));
 ```
