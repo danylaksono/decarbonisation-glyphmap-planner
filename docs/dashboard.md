@@ -173,10 +173,12 @@ const morphers = inSituMorphMouse({
   layouts,
 });
 
-// display(morphers);
+display(morphers);
 ```
 
 ```js
+// ---------------------- Functions for morphing ----------------------
+
 function inSituMorphMouse(options) {
   //interactive: true|false Whether responds to mouse for animation
   //layouts: is an array of layouts with the following structure
@@ -574,6 +576,11 @@ function intermTranslate(layout, toLayout, type = "xy") {
 }
 
 const prepareGeoJsonForMorphingLib = function (geoJson, extentGeoJson, w, h) {
+  if (!geoJson || !geoJson.features || geoJson.features.length === 0) {
+    console.error("GeoJSON features are not ready yet");
+    return {};
+  }
+
   const polyFeats = d3.geoProject(
     geoJson,
     d3
