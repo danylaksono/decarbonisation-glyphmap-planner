@@ -15,10 +15,10 @@ An observable framework translation of https://observablehq.com/@danylaksono/mor
 
 ```js
 import * as turf from "@turf/turf";
-import flubber from "npm:flubber";
 // import * as d3 from "npm:d3";
 import { require } from "npm:d3-require";
 const d3 = require("d3", "d3-geo-projection");
+const flubber = require("flubber@0.4");
 // import {
 //   inSituMorphMouse,
 //   prepareGeoJsonForMorphingLib,
@@ -34,6 +34,7 @@ import {
   convertGridCsvToGeoJson,
   context2d,
 } from "./components/utils.js";
+// display(flubber);
 ```
 
 ## Area Selection
@@ -100,16 +101,18 @@ async function convertGridIfExists(filename, bb) {
     return convertGridCsvToGeoJson(gridCsv, bb);
   } catch (error) {
     // console.log(`Grid file ${filename}.csv not found or couldn't be loaded.`);
-    return null;
+    return error;
   }
 }
 
 const filename = `${local_authority.toLowerCase()}_${geogBoundary}_grids`;
 const bb = turf.bbox(regular_geodata);
 
+display(filename);
+
 const grid_geodata = await convertGridIfExists(filename, bb);
 // display(bb);
-// display(gridGeoJson);
+// display(grid_geodata);
 ```
 
 ## Morphing Geometry
