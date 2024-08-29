@@ -1,7 +1,8 @@
 import { require } from "npm:d3-require";
 const d3 = require("d3", "d3-geo-projection");
+const flubber = require("flubber@0.4");
 
-import flubber from "npm:flubber";
+// import flubber from "npm:flubber";
 
 // import * as d3 from "npm:d3";
 
