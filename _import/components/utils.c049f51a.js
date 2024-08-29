@@ -6,6 +6,16 @@ import * as d3 from "../../_npm/d3@7.9.0/_esm.js";
 // import * as d3Geo from "npm:d3-geo@3.1.1";
 // import * as d3GeoProjection from "npm:d3-geo-projection@4";
 
+export function context2d(width, height, dpi = devicePixelRatio) {
+  const canvas = document.createElement("canvas");
+  canvas.width = width * dpi;
+  canvas.height = height * dpi;
+  canvas.style = `width: ${width}px;`;
+  const context = canvas.getContext("2d");
+  context.scale(dpi, dpi);
+  return context;
+}
+
 export const downloadBoundaries = function (geogName, permittedCodes) {
   const topojsonUrl =
     "https://gicentre.github.io/data/census21/englandAndWales/" +
