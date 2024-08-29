@@ -203,10 +203,10 @@ import {define} from "./_observablehq/client.js";
 import {registerFile, FileAttachment} from "./_observablehq/stdlib.js";
 import {registerTable} from "./_observablehq/stdlib/duckdb.js";
 
-registerFile("./data/deprivation.parquet", {"name":"./data/deprivation.parquet","path":"./_file/data/deprivation.127576bc.parquet","lastModified":1724940141566});
-registerFile("./data/geo.csv", {"name":"./data/geo.csv","mimeType":"text/csv","path":"./_file/data/geo.8ba75b99.csv","lastModified":1724940141626});
-registerFile("./data/pop.parquet", {"name":"./data/pop.parquet","path":"./_file/data/pop.d268a84b.parquet","lastModified":1724940141766});
-registerFile("./data/vehicle.parquet", {"name":"./data/vehicle.parquet","path":"./_file/data/vehicle.28874fcc.parquet","lastModified":1724940141818});
+registerFile("./data/deprivation.parquet", {"name":"./data/deprivation.parquet","path":"./_file/data/deprivation.127576bc.parquet","lastModified":1724940414085});
+registerFile("./data/geo.csv", {"name":"./data/geo.csv","mimeType":"text/csv","path":"./_file/data/geo.8ba75b99.csv","lastModified":1724940414145});
+registerFile("./data/pop.parquet", {"name":"./data/pop.parquet","path":"./_file/data/pop.d268a84b.parquet","lastModified":1724940414281});
+registerFile("./data/vehicle.parquet", {"name":"./data/vehicle.parquet","path":"./_file/data/vehicle.28874fcc.parquet","lastModified":1724940414333});
 registerTable("geo", FileAttachment("./data/geo.csv"));
 registerTable("pop", FileAttachment("./data/pop.parquet"));
 registerTable("deprivation", FileAttachment("./data/deprivation.parquet"));
@@ -331,7 +331,7 @@ const valueDiscretiser = (geomLookup) => {
 return {valueDiscretiser};
 }});
 
-define({id: "97c8d0cd", inputs: ["d3","data","prepareGeoJsonForMorphingLib","regular_geodata","local_authority","geogName","grid_geodata","inSituMorphMouse"], outputs: ["colourScalePop","layouts","morphers"], body: (d3,data,prepareGeoJsonForMorphingLib,regular_geodata,local_authority,geogName,grid_geodata,inSituMorphMouse) => {
+define({id: "31e3be70", inputs: ["d3","data","prepareGeoJsonForMorphingLib","regular_geodata","local_authority","geogName","grid_geodata","inSituMorphMouse","display"], outputs: ["colourScalePop","layouts","morphers"], body: (d3,data,prepareGeoJsonForMorphingLib,regular_geodata,local_authority,geogName,grid_geodata,inSituMorphMouse,display) => {
 const colourScalePop = d3
   .scaleSequential(d3.interpolateBlues)
   .domain([0, d3.max(Object.values(data).map((row) => row.population))]);
@@ -365,11 +365,13 @@ const morphers = inSituMorphMouse({
   layouts,
 });
 
-// display(morphers);
+display(morphers);
 return {colourScalePop,layouts,morphers};
 }});
 
-define({id: "225fc9a8", inputs: ["d3","_","turf","context2d","width","flubber","OffscreenCanvas"], outputs: ["inSituMorphMouse","_insertIntermediateLayouts","intermTranslate","prepareGeoJsonForMorphingLib","intermTranslateV","intermCircles","intermChangeShape","intermBbSize"], body: (d3,_,turf,context2d,width,flubber,OffscreenCanvas) => {
+define({id: "84d48980", inputs: ["d3","_","turf","context2d","width","flubber","OffscreenCanvas"], outputs: ["inSituMorphMouse","_insertIntermediateLayouts","intermTranslate","prepareGeoJsonForMorphingLib","intermTranslateV","intermCircles","intermChangeShape","intermBbSize"], body: (d3,_,turf,context2d,width,flubber,OffscreenCanvas) => {
+// ---------------------- Functions for morphing ----------------------
+
 function inSituMorphMouse(options) {
   //interactive: true|false Whether responds to mouse for animation
   //layouts: is an array of layouts with the following structure
@@ -767,6 +769,11 @@ function intermTranslate(layout, toLayout, type = "xy") {
 }
 
 const prepareGeoJsonForMorphingLib = function (geoJson, extentGeoJson, w, h) {
+  if (!geoJson || !geoJson.features || geoJson.features.length === 0) {
+    console.error("GeoJSON features are not ready yet");
+    return {};
+  }
+
   const polyFeats = d3.geoProject(
     geoJson,
     d3
@@ -899,10 +906,10 @@ return {inSituMorphMouse,_insertIntermediateLayouts,intermTranslate,prepareGeoJs
 <h2 id="morphing-geometry" tabindex="-1"><a class="observablehq-header-anchor" href="#morphing-geometry">Morphing Geometry</a></h2>
 <div class="observablehq observablehq--block"><!--:f221b1fe:--></div>
 <div class="observablehq observablehq--block"><!--:b68a070b:--></div>
-<div class="observablehq observablehq--block"><!--:97c8d0cd:--></div>
-<div class="observablehq observablehq--block"><!--:225fc9a8:--></div>
+<div class="observablehq observablehq--block"><!--:31e3be70:--></div>
+<div class="observablehq observablehq--block"><!--:84d48980:--></div>
 </main>
 <footer id="observablehq-footer">
-<div>Built with <a href="https://observablehq.com/" target="_blank" rel="noopener noreferrer">Observable</a> on <a title="2024-08-29T14:02:28">Aug 29, 2024</a>.</div>
+<div>Built with <a href="https://observablehq.com/" target="_blank" rel="noopener noreferrer">Observable</a> on <a title="2024-08-29T14:07:00">Aug 29, 2024</a>.</div>
 </footer>
 </div>
