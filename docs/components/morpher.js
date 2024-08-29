@@ -1,7 +1,11 @@
-import flubber from "npm:flubber";
 import { require } from "npm:d3-require";
+const d3 = require("d3", "d3-geo-projection");
 
-const d3 = require("d3@7", "d3-geo@3.1.1", "d3-geo-projection@4");
+import flubber from "npm:flubber";
+
+// import * as d3 from "npm:d3";
+
+// import { geoProject } from "npm:d3-geo-projection";
 
 export function inSituMorphMouse(options) {
   //interactive: true|false Whether responds to mouse for animation
