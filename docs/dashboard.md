@@ -85,7 +85,7 @@ const regular_geodata = await downloadBoundaries(geogBoundary, list_of_code);
 
 ```sql id=census_data
 SELECT geo.code, geo.label, deprivation.value as deprivation, vehicle.value as vehicle
-  FROM geo,deprivation, vehicle
+  FROM geo, deprivation, vehicle
   WHERE geo.geography=(SELECT replace(${geogName}, '"', '''')) AND geo.LA= (SELECT replace(${la_code}, '"', '''')) AND geo.code=deprivation.code AND deprivation.category=5
   ORDER BY deprivation.value DESC
 ```
@@ -888,4 +888,19 @@ function createGlyphMap(glyphmapType) {
 const glyphmap = display(glyphMapSpec());
 
 display(createGlyphMap(glyphmapType));
+```
+
+## Glyphmap with Census Data
+
+```js
+const regular_geodata_withcensus = joinCensusDataToGeoJSON(
+  [...census_data],
+  regular_geodata
+);
+const grid_geodata_withcensus = joinCensusDataToGeoJSON(
+  [...census_data],
+  regular_geodata
+);
+
+display(grid_geodata_withcensus);
 ```
