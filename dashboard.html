@@ -197,10 +197,10 @@ import {define} from "./_observablehq/client.js";
 import {registerFile, FileAttachment} from "./_observablehq/stdlib.js";
 import {registerTable} from "./_observablehq/stdlib/duckdb.js";
 
-registerFile("./data/deprivation.parquet", {"name":"./data/deprivation.parquet","path":"./_file/data/deprivation.127576bc.parquet","lastModified":1724946784869});
-registerFile("./data/geo.csv", {"name":"./data/geo.csv","mimeType":"text/csv","path":"./_file/data/geo.8ba75b99.csv","lastModified":1724946784929});
-registerFile("./data/pop.parquet", {"name":"./data/pop.parquet","path":"./_file/data/pop.d268a84b.parquet","lastModified":1724946785073});
-registerFile("./data/vehicle.parquet", {"name":"./data/vehicle.parquet","path":"./_file/data/vehicle.28874fcc.parquet","lastModified":1724946785125});
+registerFile("./data/deprivation.parquet", {"name":"./data/deprivation.parquet","path":"./_file/data/deprivation.127576bc.parquet","lastModified":1724981949838});
+registerFile("./data/geo.csv", {"name":"./data/geo.csv","mimeType":"text/csv","path":"./_file/data/geo.8ba75b99.csv","lastModified":1724981949894});
+registerFile("./data/pop.parquet", {"name":"./data/pop.parquet","path":"./_file/data/pop.d268a84b.parquet","lastModified":1724981950034});
+registerFile("./data/vehicle.parquet", {"name":"./data/vehicle.parquet","path":"./_file/data/vehicle.28874fcc.parquet","lastModified":1724981950086});
 registerTable("geo", FileAttachment("./data/geo.csv"));
 registerTable("pop", FileAttachment("./data/pop.parquet"));
 registerTable("deprivation", FileAttachment("./data/deprivation.parquet"));
@@ -267,9 +267,9 @@ const regular_geodata = await downloadBoundaries(geogBoundary, list_of_code);
 return {list_of_code,regular_geodata};
 }});
 
-define({id: "7343b1d1", inputs: ["sql","geogName","la_code"], outputs: ["census_data"], body: async (sql,geogName,la_code) => {
+define({id: "ab377753", inputs: ["sql","geogName","la_code"], outputs: ["census_data"], body: async (sql,geogName,la_code) => {
 const census_data = await sql`SELECT geo.code, geo.label, deprivation.value as deprivation, vehicle.value as vehicle
-  FROM geo,deprivation, vehicle
+  FROM geo, deprivation, vehicle
   WHERE geo.geography=(SELECT replace(${geogName}, '"', '''')) AND geo.LA= (SELECT replace(${la_code}, '"', '''')) AND geo.code=deprivation.code AND deprivation.category=5
   ORDER BY deprivation.value DESC`;
 return {census_data};
@@ -1079,6 +1079,20 @@ display(createGlyphMap(glyphmapType));
 return {createGlyphMap,glyphmap};
 }});
 
+define({id: "4f0851c6", inputs: ["joinCensusDataToGeoJSON","census_data","regular_geodata","display"], outputs: ["regular_geodata_withcensus","grid_geodata_withcensus"], body: (joinCensusDataToGeoJSON,census_data,regular_geodata,display) => {
+const regular_geodata_withcensus = joinCensusDataToGeoJSON(
+  [...census_data],
+  regular_geodata
+);
+const grid_geodata_withcensus = joinCensusDataToGeoJSON(
+  [...census_data],
+  regular_geodata
+);
+
+display(grid_geodata_withcensus);
+return {regular_geodata_withcensus,grid_geodata_withcensus};
+}});
+
 </script>
 <input id="observablehq-sidebar-toggle" type="checkbox" title="Toggle sidebar">
 <label id="observablehq-sidebar-backdrop" for="observablehq-sidebar-toggle"></label>
@@ -1106,7 +1120,7 @@ return {createGlyphMap,glyphmap};
 <div class="observablehq observablehq--block"><!--:ac7e408e:--></div>
 <div class="observablehq observablehq--block"><!--:cad06486:--></div>
 <div class="observablehq observablehq--block"><!--:30024201:--></div>
-<div class="observablehq observablehq--block"><!--:7343b1d1:--></div>
+<div class="observablehq observablehq--block"><!--:ab377753:--></div>
 <div class="observablehq observablehq--block"><!--:7e60202a:--></div>
 <h2 id="morphing-geometry" tabindex="-1"><a class="observablehq-header-anchor" href="#morphing-geometry">Morphing Geometry</a></h2>
 <div class="observablehq observablehq--block"><!--:f221b1fe:--></div>
@@ -1119,8 +1133,10 @@ return {createGlyphMap,glyphmap};
 <div class="observablehq observablehq--block"><!--:72f6fcde:--></div>
 <div class="observablehq observablehq--block"><!--:09a4d34c:--></div>
 <div class="observablehq observablehq--block"><!--:2791f7b3:--></div>
+<h2 id="glyphmap-with-census-data" tabindex="-1"><a class="observablehq-header-anchor" href="#glyphmap-with-census-data">Glyphmap with Census Data</a></h2>
+<div class="observablehq observablehq--block"><!--:4f0851c6:--></div>
 </main>
 <footer id="observablehq-footer">
-<div>Built with <a href="https://observablehq.com/" target="_blank" rel="noopener noreferrer">Observable</a> on <a title="2024-08-29T15:53:14">Aug 29, 2024</a>.</div>
+<div>Built with <a href="https://observablehq.com/" target="_blank" rel="noopener noreferrer">Observable</a> on <a title="2024-08-30T01:39:19">Aug 30, 2024</a>.</div>
 </footer>
 </div>
