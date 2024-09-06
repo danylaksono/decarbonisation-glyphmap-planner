@@ -7,6 +7,9 @@ sql:
   pop: ./data/pop.parquet
   deprivation: ./data/deprivation.parquet
   vehicle: ./data/vehicle.parquet
+  heating: ./data/heating.parquet
+  health: ./data/health.parquet
+  census_data_source: ./data/census_data.csv
 ---
 
 # Morphing Glyphmaps
@@ -84,10 +87,23 @@ const regular_geodata = await downloadBoundaries(geogBoundary, list_of_code);
 ```
 
 ```sql id=census_data
-SELECT geo.code, geo.label, deprivation.value as deprivation, vehicle.value as vehicle
+SELECT geo.code, geo.label,
+    deprivation.value as deprivation,
+    vehicle.value as vehicle
+    -- heating.value as heating,
+    -- health.value as health
   FROM geo, deprivation, vehicle
   WHERE geo.geography=(SELECT replace(${geogName}, '"', '''')) AND geo.LA= (SELECT replace(${la_code}, '"', '''')) AND geo.code=deprivation.code AND deprivation.category=5
   ORDER BY deprivation.value DESC
+```
+
+```sql id=census_data_source display
+SELECT *
+FROM geo g, census_data_source c
+WHERE g.geography=(SELECT replace(${geogName}, '"', ''''))
+AND g.LA= (SELECT replace(${la_code}, '"', ''''))
+AND g.code=c.code
+ORDER BY c.value DESC
 ```
 
 ```js
@@ -108,7 +124,7 @@ async function convertGridIfExists(filename, bb) {
 const filename = `${local_authority.toLowerCase()}_${geogBoundary}_grids`;
 const bb = turf.bbox(regular_geodata);
 
-display(filename);
+// display(filename);
 
 const grid_geodata = await convertGridIfExists(filename, bb);
 // display(bb);
@@ -687,7 +703,7 @@ function intermBbSize(layout, toLayout) {
 
 ```js
 const regularGeodataLookup = _.keyBy(
-  regular_geodata.features.map((feat) => {
+  regular_geodata_withcensus.features.map((feat) => {
     return { ...feat, centroid: turf.getCoord(turf.centroid(feat.geometry)) };
   }),
   (feat) => feat.properties.code
@@ -695,90 +711,12 @@ const regularGeodataLookup = _.keyBy(
 display(regularGeodataLookup);
 
 const gridGeodataLookup = _.keyBy(
-  grid_geodata.features.map((feat) => {
+  grid_geodata_withcensus.features.map((feat) => {
     return { ...feat, centroid: turf.getCoord(turf.centroid(feat.geometry)) };
   }),
   (feat) => feat.properties.code
 );
 display(regularGeodataLookup);
-```
-
-```js
-// // glyph maps basic specs
-// function glyphMapSpec = () => {
-//   return {
-//     // discretiserFn: createDiscretiserValue({
-//     //   valueFn: (row) => {
-//     //     return row.code;
-//     //   },
-//     //   glyphLocationFn: (key) => oxfordLsoaLookup[key]?.centroid,
-//     //   boundaryFn: (key) => oxfordLsoaLookup[key]?.geometry.coordinates[0]
-//     // }),
-//     coordType: "notmercator",
-//     initialBB: turf.bbox(regular_geodata),
-//     data: Object.values(data),
-//     // mapType: "OSMStandard",
-//     // tileWidth: 150,
-//     getLocationFn: (row) => regularGeodataLookup[row.code]?.centroid,
-//     discretisationShape: "grid",
-//     interactiveCellSize: true,
-//     // interactiveZoomPan: false,
-//     cellSize: 30,
-
-//     width: 800,
-//     height: 600,
-
-//     customMap: {
-//       scaleParams: [],
-
-//       initFn: (cells, cellSize, global, panel) => {},
-
-//       preAggrFn: (cells, cellSize, global, panel) => {
-//         console.log(global);
-//       },
-
-//       aggrFn: (cell, row, weight, global, panel) => {
-//         if (cell.population) {
-//           cell.population += row.population;
-//         } else {
-//           cell.population = row.population;
-//         }
-//       },
-
-//       postAggrFn: (cells, cellSize, global, panel) => {},
-
-//       preDrawFn: (cells, cellSize, ctx, global, panel) => {
-//         //set up a pathgenerator
-//         global.pathGenerator = d3.geoPath().context(ctx);
-//         //set up a colourer
-//         global.colourScalePop = d3
-//           .scaleSequential(d3.interpolateBlues)
-//           .domain([0, d3.max(cells.map((row) => row.population))]);
-
-//         // console.log(cells);
-//       },
-
-//       drawFn: (cell, x, y, cellSize, ctx, global, panel) => {
-//         //get boundary (in screen coordinates) and convert to json feature
-//         const boundary = cell.getBoundary(0);
-//         if (boundary[0] != boundary[boundary.length - 1]) {
-//           boundary.push(boundary[0]);
-//         }
-//         const boundaryFeat = turf.polygon([boundary]);
-
-//         //draw a coloured polygon
-//         ctx.beginPath();
-//         global.pathGenerator(boundaryFeat);
-//         ctx.fillStyle = global.colourScalePop(cell.population);
-//         ctx.fill();
-//       },
-
-//       postDrawFn: (cells, cellSize, ctx, global, panel) => {},
-
-//       tooltipTextFn: (cell) => {}
-//     }
-//   };
-// }
 ```
 
 ```js
@@ -873,12 +811,12 @@ function createGlyphMap(glyphmapType) {
   if (glyphmapType == "Polygons") {
     return glyphMap({
       ...glyphMapSpec(), //takes the base spec...
-      discretiserFn: valueDiscretiser(regularGeodataLookup), //uses the polyon lookup for spatialunits
+      discretiserFn: valueDiscretiser(regularGeodataLookup),
     });
   } else if (glyphmapType == "Gridmap") {
     return glyphMap({
       ...glyphMapSpec(), //takes the base spec...
-      discretiserFn: valueDiscretiser(gridGeodataLookup), //uses the polyon lookup for spatialunits
+      discretiserFn: valueDiscretiser(gridGeodataLookup),
     });
   } else if (glyphmapType == "Gridded") {
     return glyphMap(glyphMapSpec()); //uses the base spec as it (by default, it grids)
@@ -890,9 +828,8 @@ const glyphmap = display(glyphMapSpec());
 display(createGlyphMap(glyphmapType));
 ```
 
-## Glyphmap with Census Data
-
 ```js
+// joining census data to geodata
 const regular_geodata_withcensus = joinCensusDataToGeoJSON(
   [...census_data],
   regular_geodata
@@ -902,5 +839,5 @@ const grid_geodata_withcensus = joinCensusDataToGeoJSON(
   regular_geodata
 );
 
-display(grid_geodata_withcensus);
+// display(grid_geodata_withcensus);
 ```
