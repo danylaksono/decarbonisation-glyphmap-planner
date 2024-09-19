@@ -4,17 +4,15 @@ title: dashboard
 toc: false
 sql:
   geo: ./data/geo.csv
-  pop: ./data/pop.parquet
-  deprivation: ./data/deprivation.parquet
-  vehicle: ./data/vehicle.parquet
-  heating: ./data/heating.parquet
-  health: ./data/health.parquet
+  # pop: ./data/pop.parquet
+  # deprivation: ./data/deprivation.parquet
+  # vehicle: ./data/vehicle.parquet
+  # heating: ./data/heating.parquet
+  # health: ./data/health.parquet
   census_data_source: ./data/census_data.csv
 ---
 
 # Morphing Glyphmaps
-
-An observable framework translation of https://observablehq.com/@danylaksono/morphing-gridmaps
 
 ```js
 import * as turf from "@turf/turf";
@@ -86,18 +84,19 @@ const list_of_code = [...list_of_codes].map((row) => row.code);
 const regular_geodata = await downloadBoundaries(geogBoundary, list_of_code);
 ```
 
-```sql id=census_data
-SELECT geo.code, geo.label,
-    deprivation.value as deprivation,
-    vehicle.value as vehicle
-    -- heating.value as heating,
-    -- health.value as health
-  FROM geo, deprivation, vehicle
-  WHERE geo.geography=(SELECT replace(${geogName}, '"', '''')) AND geo.LA= (SELECT replace(${la_code}, '"', '''')) AND geo.code=deprivation.code AND deprivation.category=5
-  ORDER BY deprivation.value DESC
+```sql
+-- previously available census data
+-- SELECT geo.code, geo.label,
+--     deprivation.value as deprivation,
+--     vehicle.value as vehicle
+--     -- heating.value as heating,
+--     -- health.value as health
+--   FROM geo, deprivation, vehicle
+--   WHERE geo.geography=(SELECT replace(${geogName}, '"', '''')) AND geo.LA= (SELECT replace(${la_code}, '"', '''')) AND geo.code=deprivation.code AND deprivation.category=5
+--   ORDER BY deprivation.value DESC
 ```
 
-```sql id=census_data_source display
+```sql id=census_data
 SELECT *
 FROM geo g, census_data_source c
 WHERE g.geography=(SELECT replace(${geogName}, '"', ''''))
@@ -708,7 +707,7 @@ const regularGeodataLookup = _.keyBy(
   }),
   (feat) => feat.properties.code
 );
-display(regularGeodataLookup);
+// display(regularGeodataLookup);
 
 const gridGeodataLookup = _.keyBy(
   grid_geodata_withcensus.features.map((feat) => {
@@ -716,7 +715,7 @@ const gridGeodataLookup = _.keyBy(
   }),
   (feat) => feat.properties.code
 );
-display(regularGeodataLookup);
+// display(regularGeodataLookup);
 ```
 
 ```js
@@ -836,7 +835,7 @@ const regular_geodata_withcensus = joinCensusDataToGeoJSON(
 );
 const grid_geodata_withcensus = joinCensusDataToGeoJSON(
   [...census_data],
-  regular_geodata
+  grid_geodata
 );
 
 // display(grid_geodata_withcensus);
