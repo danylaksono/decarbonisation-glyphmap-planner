@@ -9,7 +9,7 @@ sql:
   # vehicle: ./data/vehicle.parquet
   # heating: ./data/heating.parquet
   # health: ./data/health.parquet
-  census_data_source: ./data/census_data.csv
+  census_data_source: ./data/census_data.parquet
 ---
 
 # Morphing Glyphmaps
