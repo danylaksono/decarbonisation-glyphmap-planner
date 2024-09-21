@@ -1,7 +1,8 @@
 ---
 title: Testing data
 sql:
-  census_data_source: ./data/census_data.csv
+  # census_data_source: ./data/census_data.csv
+  census_data_source: ./data/census_data.parquet
   geo: ./data/geo.csv
 ---
 
@@ -9,7 +10,7 @@ sql:
 
 ```js
 const data = FileAttachment("./data/census_data.csv").csv();
-display(Inputs.table(data));
+// display(Inputs.table(data));
 ```
 
 ```js
