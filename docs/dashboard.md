@@ -1,19 +1,15 @@
 ---
 theme: dashboard
-title: dashboard
+title: Morphing Glyphmaps
 toc: false
 sidebar: false
+footer: ""
 sql:
   geo: ./data/geo.csv
-  # pop: ./data/pop.parquet
-  # deprivation: ./data/deprivation.parquet
-  # vehicle: ./data/vehicle.parquet
-  # heating: ./data/heating.parquet
-  # health: ./data/health.parquet
   census_data_source: ./data/census_data_output.parquet
 ---
 
-# Morphing Glyphmaps
+<!-- ------------------ # Imports ------------------  -->
 
 ```js
 import * as turf from "@turf/turf";
@@ -39,29 +35,123 @@ import {
 // display(flubber);
 ```
 
-## Area Selection
+<!-- ------------ The HTML Layout ------------ -->
 
-Select the Local authority from the list below
+<!-------- Stylesheets -------->
+<link
+  rel="stylesheet"
+  href="https://cdn.jsdelivr.net/npm/bulma@1.0.0/css/bulma.min.css"
+>
+
+<style>
+body, html {
+  height: 100%;
+  margin: 0 !important;
+  overflow: hidden;
+  padding: 0;
+}
+
+#observablehq-main, #observablehq-header, #observablehq-footer {
+    margin: 0 !important;
+    /* width: 100% !important; */
+    max-width: 100% !important;
+}
+
+/* Make the entire section fill the viewport */
+.section {
+  height: 90vh !important; /* Full height of the viewport */
+  padding: 0;
+}
+
+.container {
+  margin: 0 !important;
+  max-width: 100% !important;
+}
+
+/* Make the columns stretch to the full height of the viewport */
+.columns {
+  height: 100%;
+  margin: 0;
+}
+
+/* Ensure the column boxes fit inside the layout */
+.column {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Ensure the boxes inside left column take full height */
+.column.is-one-third .box {
+  flex: 1; /* Make the boxes in the left column flexible */
+  margin-bottom: 0.1em; /* Add some spacing between boxes */
+}
+
+/* For the right column, ensure the box takes up full height */
+.column.is-two-thirds .box {
+  height: calc(90vh - 2rem); /* Subtract section padding or any margin if needed */
+}
+</style>
+
+<section class="section">
+  <div class="container">
+    <div class="columns">
+      <!-- Left Column (5 boxes) -->
+      <div class="column is-one-third" style="margin: 0 !important; padding: 0 !important;">
+        <div class="columns is-multiline">
+          <!-- <div class="column is-half">
+            <div class="box">Box 1</div>
+          </div>
+          <div class="column is-half">
+            <div class="box">Box 2</div>
+          </div> -->
+          <div class="column is-full">
+            <div class="box">
+              <div style="padding:10px;"> ${localAuthorityInput} </div>
+              <div style="padding:10px;"> ${geogNameInput} </div>
+              <div style="padding:10px;"> ${glyphmapTypeInput} </div>
+            </div>
+          </div>
+          <div class="column is-full">
+            <div class="box">
+              <div style="padding:10px;"> ${morphers} </div>
+              <div style="padding:10px;"> Use `shift` button to morph. </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Right Column (Main Content) -->
+      <div class="column is-two-thirds">
+        <div class="box" >
+          <!-- <div>${createGlyphMap(glyphmapType)}</div> -->
+          <div>${resize((width, height) => createGlyphMap(glyphmapType, width, height))}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ------------------ # Data and Inputs ------------------  -->
+
+<!-- Select the Local authority from the list below -->
 
 ```js
-const local_authority = view(
-  Inputs.select(
-    [...list_la].map((item) => item.label),
-    {
-      value: "Cambridge",
-      label: "Local Authority:",
-    }
-  )
+const localAuthorityInput = Inputs.select(
+  [...list_la].map((item) => item.label),
+  {
+    value: "Cambridge",
+    label: "Local Authority:",
+  }
 );
+const local_authority = Generators.input(localAuthorityInput);
 ```
 
 ```js
-const geogName = view(
-  Inputs.radio(["LSOA", "MSOA"], {
-    value: "MSOA",
-    label: "Geography",
-  })
-);
+const geogNameInput = Inputs.radio(["LSOA", "MSOA"], {
+  value: "MSOA",
+  label: "Geography",
+});
+
+const geogName = Generators.input(geogNameInput);
 // display(geogName);
 ```
 
@@ -116,7 +206,12 @@ if (grid_geodata instanceof Error) {
 // display(grid_geodata);
 ```
 
-## Morphing Geometry
+```sql id=census_data
+--  Load the census data --
+select * from census_data_source;
+```
+
+<!-- ------------------ # Morphing Geometry Functions ------------------  -->
 
 ```js
 const data = _.keyBy(
@@ -174,12 +269,14 @@ const layouts = [
 
 const morphers = inSituMorphMouse({
   interactive: true,
-  showDescription: true,
+  showDescription: false,
   layouts,
 });
 
-display(morphers);
+// display(morphers);
 ```
+
+<!-- ------------------ # Morphing Geometry Functions ------------------  -->
 
 ```js
 // ---------------------- Functions for morphing ----------------------
@@ -685,13 +782,7 @@ function intermBbSize(layout, toLayout) {
 }
 ```
 
-## Glyphmapping
-
-<!--  The census data -->
-
-```sql id=census_data
-select * from census_data_source;
-```
+<!-- ------------------ # Gridded-Glyphmap Functions ------------------  -->
 
 ```js
 const regularGeodataLookup = _.keyBy(
@@ -714,12 +805,11 @@ const gridGeodataLookup = _.keyBy(
 ```
 
 ```js
-const glyphmapType = view(
-  Inputs.radio(["Polygons", "Gridmap", "Gridded"], {
-    label: "Select type of glyphmap",
-    value: "Polygons",
-  })
-);
+const glyphmapTypeInput = Inputs.radio(["Polygons", "Gridmap", "Gridded"], {
+  label: "Type of map",
+  value: "Polygons",
+});
+const glyphmapType = Generators.input(glyphmapTypeInput);
 
 function valueDiscretiser(geomLookup) {
   return createDiscretiserValue({
@@ -736,7 +826,7 @@ function valueDiscretiser(geomLookup) {
 
 ```js
 // glyphmap basic specs
-function glyphMapSpec() {
+function glyphMapSpec({ width, height } = {}) {
   return {
     coordType: "notmercator",
     initialBB: turf.bbox(regular_geodata),
@@ -746,8 +836,10 @@ function glyphMapSpec() {
     interactiveCellSize: true,
     cellSize: 30,
 
-    width: 800,
-    height: 600,
+    // width: 800,
+    // height: 600,
+    width: width || 800,
+    height: height || 600,
 
     customMap: {
       scaleParams: [],
@@ -801,25 +893,25 @@ function glyphMapSpec() {
 ```
 
 ```js
-function createGlyphMap(glyphmapType) {
+function createGlyphMap(glyphmapType, width, height) {
   if (glyphmapType == "Polygons") {
     return glyphMap({
-      ...glyphMapSpec(), //takes the base spec...
+      ...glyphMapSpec(width, height), //takes the base spec...
       discretiserFn: valueDiscretiser(regularGeodataLookup),
     });
   } else if (glyphmapType == "Gridmap") {
     return glyphMap({
-      ...glyphMapSpec(), //takes the base spec...
+      ...glyphMapSpec(width, height), //takes the base spec...
       discretiserFn: valueDiscretiser(gridGeodataLookup),
     });
   } else if (glyphmapType == "Gridded") {
-    return glyphMap(glyphMapSpec()); //uses the base spec as it (by default, it grids)
+    return glyphMap(glyphMapSpec(width, height)); //uses the base spec as it (by default, it grids)
   }
 }
 
 const glyphmap = glyphMapSpec();
 
-display(createGlyphMap(glyphmapType));
+// display(createGlyphMap(glyphmapType));
 ```
 
 ```js
@@ -832,6 +924,4 @@ const grid_geodata_withcensus = joinCensusDataToGeoJSON(
   [...census_data],
   grid_geodata
 );
-
-// display(grid_geodata_withcensus);
 ```
