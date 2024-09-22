@@ -2,6 +2,7 @@
 theme: dashboard
 title: dashboard
 toc: false
+sidebar: false
 sql:
   geo: ./data/geo.csv
   # pop: ./data/pop.parquet

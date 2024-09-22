@@ -1,29 +1,94 @@
 ---
 title: Testing data
-sql:
-  # census_data_source: ./data/census_data.csv
-  census_data_source: ./data/census_data.parquet
-  geo: ./data/geo.csv
+toc: false
+sidebar: false
+footer: false
 ---
 
-# A brief history of space exploration
+<!-------- Stylesheets -------->
+<link
+  rel="stylesheet"
+  href="https://cdn.jsdelivr.net/npm/bulma@1.0.0/css/bulma.min.css"
+>
 
-```js
-const data = FileAttachment("./data/census_data.csv").csv();
-// display(Inputs.table(data));
-```
+<style>
+body, html {
+  height: 100%;
+  margin: 0 !important;
+  overflow: hidden;
+  padding: 0;
+}
 
-```js
-const la_code = "E09000014";
-const geogName = "LSOA";
-const geogBoundary = geogName.toLowerCase() + "s";
-```
+#observablehq-main, #observablehq-header, #observablehq-footer {
+    margin: 0 !important;
+    /* width: 100% !important; */
+    max-width: 100% !important;
+}
 
-```sql id=census_data display
-SELECT *
-FROM geo g, census_data_source c
-WHERE g.geography=(SELECT replace(${geogName}, '"', ''''))
-AND g.LA= (SELECT replace(${la_code}, '"', ''''))
-AND g.code=c.code
-ORDER BY c.value DESC
-```
+/* Make the entire section fill the viewport */
+.section {
+  height: 90vh !important; /* Full height of the viewport */
+  padding: 0;
+}
+
+.container {
+  margin: 0 !important;
+  max-width: 100% !important;
+}
+
+/* Make the columns stretch to the full height of the viewport */
+.columns {
+  height: 100%;
+  margin: 0;
+}
+
+/* Ensure the column boxes fit inside the layout */
+.column {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Ensure the boxes inside left column take full height */
+.column.is-one-third .box {
+  flex: 1; /* Make the boxes in the left column flexible */
+  margin-bottom: 0.5rem; /* Add some spacing between boxes */
+}
+
+/* For the right column, ensure the box takes up full height */
+.column.is-two-thirds .box {
+  height: calc(90vh - 2rem); /* Subtract section padding or any margin if needed */
+}
+</style>
+
+<section class="section">
+    <div class="container">
+      <div class="columns">
+        <!-- Left Column (5 boxes) -->
+        <div class="column is-one-third" style="margin: 0 !important; padding: 0 !important;">
+          <div class="columns is-multiline">
+            <div class="column is-half">
+              <div class="box">Box 1</div>
+            </div>
+            <div class="column is-half">
+              <div class="box">Box 2</div>
+            </div>
+            <div class="column is-full">
+              <div class="box">Box 3</div>
+            </div>
+            <div class="column is-full">
+              <div class="box">Box 4</div>
+            </div>
+            <div class="column is-full">
+              <div class="box">Box 5</div>
+            </div>
+          </div>
+        </div>
+        <!-- Right Column (Main Content) -->
+        <div class="column is-two-thirds">
+          <div class="box" >
+            Main Content Area
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
