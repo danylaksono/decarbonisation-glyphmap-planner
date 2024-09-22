@@ -9,7 +9,7 @@ sql:
   # vehicle: ./data/vehicle.parquet
   # heating: ./data/heating.parquet
   # health: ./data/health.parquet
-  census_data_source: ./data/census_data.parquet
+  census_data_source: ./data/census_data_output.parquet
 ---
 
 # Morphing Glyphmaps
@@ -61,6 +61,7 @@ const geogName = view(
     label: "Geography",
   })
 );
+// display(geogName);
 ```
 
 ```js
@@ -82,27 +83,7 @@ AND geo.LA = (SELECT replace(${la_code}, '"', ''''))
 ```js
 const list_of_code = [...list_of_codes].map((row) => row.code);
 const regular_geodata = await downloadBoundaries(geogBoundary, list_of_code);
-```
-
-```sql
--- previously available census data
--- SELECT geo.code, geo.label,
---     deprivation.value as deprivation,
---     vehicle.value as vehicle
---     -- heating.value as heating,
---     -- health.value as health
---   FROM geo, deprivation, vehicle
---   WHERE geo.geography=(SELECT replace(${geogName}, '"', '''')) AND geo.LA= (SELECT replace(${la_code}, '"', '''')) AND geo.code=deprivation.code AND deprivation.category=5
---   ORDER BY deprivation.value DESC
-```
-
-```sql id=census_data
-SELECT *
-FROM geo g, census_data_source c
-WHERE g.geography=(SELECT replace(${geogName}, '"', ''''))
-AND g.LA= (SELECT replace(${la_code}, '"', ''''))
-AND g.code=c.code
-ORDER BY c.value DESC
+// display(regular_geodata);
 ```
 
 ```js
@@ -126,6 +107,10 @@ const bb = turf.bbox(regular_geodata);
 // display(filename);
 
 const grid_geodata = await convertGridIfExists(filename, bb);
+if (grid_geodata instanceof Error) {
+  display("Grid file not found or couldn't be loaded.");
+  // return;
+}
 // display(bb);
 // display(grid_geodata);
 ```
@@ -142,6 +127,7 @@ const data = _.keyBy(
   }),
   "code"
 );
+// display(data);
 ```
 
 ```js
@@ -700,6 +686,12 @@ function intermBbSize(layout, toLayout) {
 
 ## Glyphmapping
 
+<!--  The census data -->
+
+```sql id=census_data
+select * from census_data_source;
+```
+
 ```js
 const regularGeodataLookup = _.keyBy(
   regular_geodata_withcensus.features.map((feat) => {
@@ -708,14 +700,16 @@ const regularGeodataLookup = _.keyBy(
   (feat) => feat.properties.code
 );
 // display(regularGeodataLookup);
+```
 
+```js
 const gridGeodataLookup = _.keyBy(
   grid_geodata_withcensus.features.map((feat) => {
     return { ...feat, centroid: turf.getCoord(turf.centroid(feat.geometry)) };
   }),
   (feat) => feat.properties.code
 );
-// display(regularGeodataLookup);
+// display(gridGeodataLookup);
 ```
 
 ```js
@@ -822,7 +816,7 @@ function createGlyphMap(glyphmapType) {
   }
 }
 
-const glyphmap = display(glyphMapSpec());
+const glyphmap = glyphMapSpec();
 
 display(createGlyphMap(glyphmapType));
 ```
