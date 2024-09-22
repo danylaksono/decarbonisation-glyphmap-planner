@@ -197,12 +197,12 @@ import {define} from "./_observablehq/client.js";
 import {registerFile, FileAttachment} from "./_observablehq/stdlib.js";
 import {registerTable} from "./_observablehq/stdlib/duckdb.js";
 
-registerFile("./data/census_data_output.parquet", {"name":"./data/census_data_output.parquet","path":"./_file/data/census_data_output.5d3ffb49.parquet","lastModified":1727045806203});
-registerFile("./data/geo.csv", {"name":"./data/geo.csv","mimeType":"text/csv","path":"./_file/data/geo.8ba75b99.csv","lastModified":1727045806219});
+registerFile("./data/census_data_output.parquet", {"name":"./data/census_data_output.parquet","path":"./_file/data/census_data_output.1374b127.parquet","lastModified":1727047742595});
+registerFile("./data/geo.csv", {"name":"./data/geo.csv","mimeType":"text/csv","path":"./_file/data/geo.8ba75b99.csv","lastModified":1727047742615});
 registerTable("geo", FileAttachment("./data/geo.csv"));
 registerTable("census_data_source", FileAttachment("./data/census_data_output.parquet"));
 
-define({id: "aeeee6dc", outputs: ["turf","require","d3","flubber","glyphMap","createDiscretiserValue","_drawCellBackground","downloadBoundaries","joinCensusDataToGeoJSON","convertGridCsvToGeoJson","context2d"], body: async () => {
+define({id: "069d5f98", outputs: ["turf","require","d3","flubber","glyphMap","createDiscretiserValue","_drawCellBackground","downloadBoundaries","joinCensusDataToGeoJSON","convertGridCsvToGeoJson","context2d"], body: async () => {
 const [turf, {require}, {glyphMap, createDiscretiserValue, _drawCellBackground}, {downloadBoundaries, joinCensusDataToGeoJSON, convertGridCsvToGeoJson, context2d}] = await Promise.all([import("./_node/@turf/turf@7.1.0/index.js"), import("./_npm/d3-require@1.3.0/_esm.js"), import("./_import/components/gridded-glyphmaps/index.min.e9355c65.js"), import("./_import/components/utils.ec49f1d6.js")]);
 // import * as d3 from "npm:d3";
 const d3 = require("d3", "d3-geo-projection");
@@ -211,7 +211,6 @@ const flubber = require("flubber@0.4");
 //   inSituMorphMouse,
 //   prepareGeoJsonForMorphingLib,
 // } from "./components/morpher.js";
-// display(flubber);
 return {turf,require,d3,flubber,glyphMap,createDiscretiserValue,_drawCellBackground,downloadBoundaries,joinCensusDataToGeoJSON,convertGridCsvToGeoJson,context2d};
 }});
 
@@ -330,31 +329,19 @@ select * from census_data_source;`;
 return {census_data};
 }});
 
-define({id: "89aed981", inputs: ["_","regular_geodata"], outputs: ["data"], body: (_,regular_geodata) => {
+define({id: "fb7d7c7a", inputs: ["_","regular_geodata_withcensus"], outputs: ["data"], body: (_,regular_geodata_withcensus) => {
 const data = _.keyBy(
-  regular_geodata.features.map((feat) => {
+  regular_geodata_withcensus.features.map((feat) => {
     return {
       code: feat.properties.code,
       population: +feat.properties.population,
+      data: feat.properties,
     };
   }),
   "code"
 );
 // display(data);
 return {data};
-}});
-
-define({id: "5394206d", body: () => {
-// const valueDiscretiser = (geomLookup) => {
-//   return createDiscretiserValue({
-//     //... and adds a discretisation function that aggregates by CODE and supplies the polygons for each cell
-//     valueFn: (row) => {
-//       return row.code;
-//     },
-//     glyphLocationFn: (key) => geomLookup[key]?.centroid,
-//     boundaryFn: (key) => geomLookup[key]?.geometry.coordinates[0],
-//   });
-// };
 }});
 
 define({id: "243d9e50", inputs: ["d3","data","prepareGeoJsonForMorphingLib","regular_geodata","local_authority","geogName","grid_geodata","inSituMorphMouse"], outputs: ["colourScalePop","layouts","morphers"], body: (d3,data,prepareGeoJsonForMorphingLib,regular_geodata,local_authority,geogName,grid_geodata,inSituMorphMouse) => {
@@ -943,7 +930,7 @@ function valueDiscretiser(geomLookup) {
 return {glyphmapTypeInput,glyphmapType,valueDiscretiser};
 }});
 
-define({id: "5bbbbd8b", inputs: ["turf","regular_geodata","data","regularGeodataLookup","d3"], outputs: ["glyphMapSpec"], body: (turf,regular_geodata,data,regularGeodataLookup,d3) => {
+define({id: "642cbff0", inputs: ["turf","regular_geodata","data","regularGeodataLookup","d3"], outputs: ["glyphMapSpec"], body: (turf,regular_geodata,data,regularGeodataLookup,d3) => {
 // glyphmap basic specs
 function glyphMapSpec({ width, height } = {}) {
   return {
@@ -957,7 +944,7 @@ function glyphMapSpec({ width, height } = {}) {
 
     // width: 800,
     // height: 600,
-    width: width || 800,
+    width: width || 1200,
     height: height || 600,
 
     customMap: {
@@ -966,14 +953,16 @@ function glyphMapSpec({ width, height } = {}) {
       initFn: (cells, cellSize, global, panel) => {},
 
       preAggrFn: (cells, cellSize, global, panel) => {
-        console.log(global);
+        // console.log(global);
       },
 
       aggrFn: (cell, row, weight, global, panel) => {
         if (cell.population) {
           cell.population += row.population;
+          cell.otherdata += row;
         } else {
           cell.population = row.population;
+          cell.otherdata = row;
         }
       },
 
@@ -1005,7 +994,9 @@ function glyphMapSpec({ width, height } = {}) {
 
       postDrawFn: (cells, cellSize, ctx, global, panel) => {},
 
-      tooltipTextFn: (cell) => {},
+      tooltipTextFn: (cell) => {
+        console.log(cell.otherdata);
+      },
     },
   };
 }
@@ -1035,7 +1026,7 @@ const glyphmap = glyphMapSpec();
 return {createGlyphMap,glyphmap};
 }});
 
-define({id: "e5d70b32", inputs: ["joinCensusDataToGeoJSON","census_data","regular_geodata","grid_geodata"], outputs: ["regular_geodata_withcensus","grid_geodata_withcensus"], body: (joinCensusDataToGeoJSON,census_data,regular_geodata,grid_geodata) => {
+define({id: "92e60971", inputs: ["joinCensusDataToGeoJSON","census_data","regular_geodata","grid_geodata"], outputs: ["regular_geodata_withcensus","grid_geodata_withcensus"], body: (joinCensusDataToGeoJSON,census_data,regular_geodata,grid_geodata) => {
 // joining census data to geodata
 const regular_geodata_withcensus = joinCensusDataToGeoJSON(
   [...census_data],
@@ -1045,6 +1036,8 @@ const grid_geodata_withcensus = joinCensusDataToGeoJSON(
   [...census_data],
   grid_geodata
 );
+
+// display(regular_geodata_withcensus);
 return {regular_geodata_withcensus,grid_geodata_withcensus};
 }});
 
@@ -1052,7 +1045,7 @@ return {regular_geodata_withcensus,grid_geodata_withcensus};
 <div id="observablehq-center">
 <main id="observablehq-main" class="observablehq">
 <!-- ------------------ # Imports ------------------  -->
-<div class="observablehq observablehq--block"><!--:aeeee6dc:--></div>
+<div class="observablehq observablehq--block"><!--:069d5f98:--></div>
 <!-- ------------ The HTML Layout ------------ -->
 <!-------- Stylesheets -------->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.0/css/bulma.min.css">
@@ -1060,7 +1053,7 @@ return {regular_geodata_withcensus,grid_geodata_withcensus};
 body, html {
   height: 100%;
   margin: 0 !important;
-  overflow: hidden;
+  /* overflow: hidden; */
   padding: 0;
 }
 
@@ -1152,8 +1145,7 @@ body, html {
 <div class="observablehq observablehq--block"><!--:0edc8540:--></div>
 <div class="observablehq observablehq--block"><!--:47b53055:--></div>
 <!-- ------------------ # Morphing Geometry Functions ------------------  -->
-<div class="observablehq observablehq--block"><!--:89aed981:--></div>
-<div class="observablehq observablehq--block"><!--:5394206d:--></div>
+<div class="observablehq observablehq--block"><!--:fb7d7c7a:--></div>
 <div class="observablehq observablehq--block"><!--:243d9e50:--></div>
 <!-- ------------------ # Morphing Geometry Functions ------------------  -->
 <div class="observablehq observablehq--block"><!--:84d48980:--></div>
@@ -1161,8 +1153,8 @@ body, html {
 <div class="observablehq observablehq--block"><!--:34f88f4c:--></div>
 <div class="observablehq observablehq--block"><!--:3b62e633:--></div>
 <div class="observablehq observablehq--block"><!--:f62c6315:--></div>
-<div class="observablehq observablehq--block"><!--:5bbbbd8b:--></div>
+<div class="observablehq observablehq--block"><!--:642cbff0:--></div>
 <div class="observablehq observablehq--block"><!--:4be14162:--></div>
-<div class="observablehq observablehq--block"><!--:e5d70b32:--></div>
+<div class="observablehq observablehq--block"><!--:92e60971:--></div>
 </main>
 </div>
