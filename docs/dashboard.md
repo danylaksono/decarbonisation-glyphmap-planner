@@ -17,10 +17,6 @@ import * as turf from "@turf/turf";
 import { require } from "npm:d3-require";
 const d3 = require("d3", "d3-geo-projection");
 const flubber = require("flubber@0.4");
-// import {
-//   inSituMorphMouse,
-//   prepareGeoJsonForMorphingLib,
-// } from "./components/morpher.js";
 import {
   glyphMap,
   createDiscretiserValue,
@@ -32,7 +28,10 @@ import {
   convertGridCsvToGeoJson,
   context2d,
 } from "./components/utils.js";
-// display(flubber);
+// import {
+//   inSituMorphMouse,
+//   prepareGeoJsonForMorphingLib,
+// } from "./components/morpher.js";
 ```
 
 <!-- ------------ The HTML Layout ------------ -->
@@ -47,7 +46,7 @@ import {
 body, html {
   height: 100%;
   margin: 0 !important;
-  overflow: hidden;
+  /* overflow: hidden; */
   padding: 0;
 }
 
@@ -215,28 +214,16 @@ select * from census_data_source;
 
 ```js
 const data = _.keyBy(
-  regular_geodata.features.map((feat) => {
+  regular_geodata_withcensus.features.map((feat) => {
     return {
       code: feat.properties.code,
       population: +feat.properties.population,
+      data: feat.properties,
     };
   }),
   "code"
 );
 // display(data);
-```
-
-```js
-// const valueDiscretiser = (geomLookup) => {
-//   return createDiscretiserValue({
-//     //... and adds a discretisation function that aggregates by CODE and supplies the polygons for each cell
-//     valueFn: (row) => {
-//       return row.code;
-//     },
-//     glyphLocationFn: (key) => geomLookup[key]?.centroid,
-//     boundaryFn: (key) => geomLookup[key]?.geometry.coordinates[0],
-//   });
-// };
 ```
 
 ```js
@@ -838,7 +825,7 @@ function glyphMapSpec({ width, height } = {}) {
 
     // width: 800,
     // height: 600,
-    width: width || 800,
+    width: width || 1200,
     height: height || 600,
 
     customMap: {
@@ -847,14 +834,16 @@ function glyphMapSpec({ width, height } = {}) {
       initFn: (cells, cellSize, global, panel) => {},
 
       preAggrFn: (cells, cellSize, global, panel) => {
-        console.log(global);
+        // console.log(global);
       },
 
       aggrFn: (cell, row, weight, global, panel) => {
         if (cell.population) {
           cell.population += row.population;
+          cell.otherdata += row;
         } else {
           cell.population = row.population;
+          cell.otherdata = row;
         }
       },
 
@@ -886,7 +875,9 @@ function glyphMapSpec({ width, height } = {}) {
 
       postDrawFn: (cells, cellSize, ctx, global, panel) => {},
 
-      tooltipTextFn: (cell) => {},
+      tooltipTextFn: (cell) => {
+        console.log(cell.otherdata);
+      },
     },
   };
 }
@@ -924,4 +915,6 @@ const grid_geodata_withcensus = joinCensusDataToGeoJSON(
   [...census_data],
   grid_geodata
 );
+
+// display(regular_geodata_withcensus);
 ```

@@ -74,8 +74,11 @@ result = con.execute("""
     ORDER BY f_deprivation.deprivation_value DESC;
 """).fetchdf()
 
+print(result)
+
 # Convert the result to a Parquet file
-con.execute("CREATE TABLE output_table AS SELECT * FROM result")
-con.execute("COPY output_table TO 'census_data_output.parquet' (FORMAT PARQUET)")
+con.execute("CREATE TABLE output_table AS SELECT * FROM result;")
+con.execute("FROM result limit 10;")
+con.execute("COPY output_table TO 'census_data_output.parquet' (FORMAT PARQUET);")
 
 print("Data has been saved to census_data_output.parquet")
