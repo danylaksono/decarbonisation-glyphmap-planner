@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<title>dashboard | Decarbonisation Glyphmap Planner</title>
+<title>Morphing Glyphmaps | Decarbonisation Glyphmap Planner</title>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Source+Serif+Pro:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&amp;display=swap" crossorigin>
 <link rel="preload" as="style" href="./_observablehq/theme-air,near-midnight,alt,wide.css">
@@ -197,8 +197,8 @@ import {define} from "./_observablehq/client.js";
 import {registerFile, FileAttachment} from "./_observablehq/stdlib.js";
 import {registerTable} from "./_observablehq/stdlib/duckdb.js";
 
-registerFile("./data/census_data_output.parquet", {"name":"./data/census_data_output.parquet","path":"./_file/data/census_data_output.5d3ffb49.parquet","lastModified":1727041971926});
-registerFile("./data/geo.csv", {"name":"./data/geo.csv","mimeType":"text/csv","path":"./_file/data/geo.8ba75b99.csv","lastModified":1727041971942});
+registerFile("./data/census_data_output.parquet", {"name":"./data/census_data_output.parquet","path":"./_file/data/census_data_output.5d3ffb49.parquet","lastModified":1727045806203});
+registerFile("./data/geo.csv", {"name":"./data/geo.csv","mimeType":"text/csv","path":"./_file/data/geo.8ba75b99.csv","lastModified":1727045806219});
 registerTable("geo", FileAttachment("./data/geo.csv"));
 registerTable("census_data_source", FileAttachment("./data/census_data_output.parquet"));
 
@@ -215,28 +215,57 @@ const flubber = require("flubber@0.4");
 return {turf,require,d3,flubber,glyphMap,createDiscretiserValue,_drawCellBackground,downloadBoundaries,joinCensusDataToGeoJSON,convertGridCsvToGeoJson,context2d};
 }});
 
-define({id: "c4f336b2", inputs: ["view","Inputs","list_la"], outputs: ["local_authority"], body: (view,Inputs,list_la) => {
-const local_authority = view(
-  Inputs.select(
-    [...list_la].map((item) => item.label),
-    {
-      value: "Cambridge",
-      label: "Local Authority:",
-    }
-  )
-);
-return {local_authority};
+define({id: "2d300212", mode: "inline", inputs: ["localAuthorityInput","display"], body: async (localAuthorityInput,display) => {
+display(await(
+localAuthorityInput
+))
 }});
 
-define({id: "af4c2a06", inputs: ["view","Inputs"], outputs: ["geogName"], body: (view,Inputs) => {
-const geogName = view(
-  Inputs.radio(["LSOA", "MSOA"], {
-    value: "MSOA",
-    label: "Geography",
-  })
+define({id: "71bd6feb", mode: "inline", inputs: ["geogNameInput","display"], body: async (geogNameInput,display) => {
+display(await(
+geogNameInput
+))
+}});
+
+define({id: "c0e452dc", mode: "inline", inputs: ["glyphmapTypeInput","display"], body: async (glyphmapTypeInput,display) => {
+display(await(
+glyphmapTypeInput
+))
+}});
+
+define({id: "d0097d67", mode: "inline", inputs: ["morphers","display"], body: async (morphers,display) => {
+display(await(
+morphers
+))
+}});
+
+define({id: "bd8506eb", mode: "inline", inputs: ["resize","createGlyphMap","glyphmapType","display"], body: async (resize,createGlyphMap,glyphmapType,display) => {
+display(await(
+resize((width, height) => createGlyphMap(glyphmapType, width, height))
+))
+}});
+
+define({id: "c5570c22", inputs: ["Inputs","list_la","Generators"], outputs: ["localAuthorityInput","local_authority"], body: (Inputs,list_la,Generators) => {
+const localAuthorityInput = Inputs.select(
+  [...list_la].map((item) => item.label),
+  {
+    value: "Cambridge",
+    label: "Local Authority:",
+  }
 );
+const local_authority = Generators.input(localAuthorityInput);
+return {localAuthorityInput,local_authority};
+}});
+
+define({id: "0bef96a5", inputs: ["Inputs","Generators"], outputs: ["geogNameInput","geogName"], body: (Inputs,Generators) => {
+const geogNameInput = Inputs.radio(["LSOA", "MSOA"], {
+  value: "MSOA",
+  label: "Geography",
+});
+
+const geogName = Generators.input(geogNameInput);
 // display(geogName);
-return {geogName};
+return {geogNameInput,geogName};
 }});
 
 define({id: "76ba71c3", inputs: ["list_la","local_authority","geogName"], outputs: ["la_code","geogBoundary"], body: (list_la,local_authority,geogName) => {
@@ -295,6 +324,12 @@ if (grid_geodata instanceof Error) {
 return {convertGridIfExists,filename,bb,grid_geodata};
 }});
 
+define({id: "47b53055", inputs: ["sql"], outputs: ["census_data"], body: async (sql) => {
+const census_data = await sql`--  Load the census data --
+select * from census_data_source;`;
+return {census_data};
+}});
+
 define({id: "89aed981", inputs: ["_","regular_geodata"], outputs: ["data"], body: (_,regular_geodata) => {
 const data = _.keyBy(
   regular_geodata.features.map((feat) => {
@@ -322,7 +357,7 @@ define({id: "5394206d", body: () => {
 // };
 }});
 
-define({id: "31e3be70", inputs: ["d3","data","prepareGeoJsonForMorphingLib","regular_geodata","local_authority","geogName","grid_geodata","inSituMorphMouse","display"], outputs: ["colourScalePop","layouts","morphers"], body: (d3,data,prepareGeoJsonForMorphingLib,regular_geodata,local_authority,geogName,grid_geodata,inSituMorphMouse,display) => {
+define({id: "243d9e50", inputs: ["d3","data","prepareGeoJsonForMorphingLib","regular_geodata","local_authority","geogName","grid_geodata","inSituMorphMouse"], outputs: ["colourScalePop","layouts","morphers"], body: (d3,data,prepareGeoJsonForMorphingLib,regular_geodata,local_authority,geogName,grid_geodata,inSituMorphMouse) => {
 const colourScalePop = d3
   .scaleSequential(d3.interpolateBlues)
   .domain([0, d3.max(Object.values(data).map((row) => row.population))]);
@@ -352,11 +387,11 @@ const layouts = [
 
 const morphers = inSituMorphMouse({
   interactive: true,
-  showDescription: true,
+  showDescription: false,
   layouts,
 });
 
-display(morphers);
+// display(morphers);
 return {colourScalePop,layouts,morphers};
 }});
 
@@ -865,11 +900,6 @@ function intermBbSize(layout, toLayout) {
 return {inSituMorphMouse,_insertIntermediateLayouts,intermTranslate,prepareGeoJsonForMorphingLib,intermTranslateV,intermCircles,intermChangeShape,intermBbSize};
 }});
 
-define({id: "ccb070e7", inputs: ["sql"], outputs: ["census_data"], body: async (sql) => {
-const census_data = await sql`select * from census_data_source;`;
-return {census_data};
-}});
-
 define({id: "34f88f4c", inputs: ["_","regular_geodata_withcensus","turf"], outputs: ["regularGeodataLookup"], body: (_,regular_geodata_withcensus,turf) => {
 const regularGeodataLookup = _.keyBy(
   regular_geodata_withcensus.features.map((feat) => {
@@ -892,13 +922,12 @@ const gridGeodataLookup = _.keyBy(
 return {gridGeodataLookup};
 }});
 
-define({id: "72f6fcde", inputs: ["view","Inputs","createDiscretiserValue"], outputs: ["glyphmapType","valueDiscretiser"], body: (view,Inputs,createDiscretiserValue) => {
-const glyphmapType = view(
-  Inputs.radio(["Polygons", "Gridmap", "Gridded"], {
-    label: "Select type of glyphmap",
-    value: "Polygons",
-  })
-);
+define({id: "f62c6315", inputs: ["Inputs","Generators","createDiscretiserValue"], outputs: ["glyphmapTypeInput","glyphmapType","valueDiscretiser"], body: (Inputs,Generators,createDiscretiserValue) => {
+const glyphmapTypeInput = Inputs.radio(["Polygons", "Gridmap", "Gridded"], {
+  label: "Type of map",
+  value: "Polygons",
+});
+const glyphmapType = Generators.input(glyphmapTypeInput);
 
 function valueDiscretiser(geomLookup) {
   return createDiscretiserValue({
@@ -911,12 +940,12 @@ function valueDiscretiser(geomLookup) {
   });
 }
 // display(valueDiscretiser(regularGeodataLookup));
-return {glyphmapType,valueDiscretiser};
+return {glyphmapTypeInput,glyphmapType,valueDiscretiser};
 }});
 
-define({id: "09a4d34c", inputs: ["turf","regular_geodata","data","regularGeodataLookup","d3"], outputs: ["glyphMapSpec"], body: (turf,regular_geodata,data,regularGeodataLookup,d3) => {
+define({id: "5bbbbd8b", inputs: ["turf","regular_geodata","data","regularGeodataLookup","d3"], outputs: ["glyphMapSpec"], body: (turf,regular_geodata,data,regularGeodataLookup,d3) => {
 // glyphmap basic specs
-function glyphMapSpec() {
+function glyphMapSpec({ width, height } = {}) {
   return {
     coordType: "notmercator",
     initialBB: turf.bbox(regular_geodata),
@@ -926,8 +955,10 @@ function glyphMapSpec() {
     interactiveCellSize: true,
     cellSize: 30,
 
-    width: 800,
-    height: 600,
+    // width: 800,
+    // height: 600,
+    width: width || 800,
+    height: height || 600,
 
     customMap: {
       scaleParams: [],
@@ -981,30 +1012,30 @@ function glyphMapSpec() {
 return {glyphMapSpec};
 }});
 
-define({id: "5dc46f3d", inputs: ["glyphMap","glyphMapSpec","valueDiscretiser","regularGeodataLookup","gridGeodataLookup","display","glyphmapType"], outputs: ["createGlyphMap","glyphmap"], body: (glyphMap,glyphMapSpec,valueDiscretiser,regularGeodataLookup,gridGeodataLookup,display,glyphmapType) => {
-function createGlyphMap(glyphmapType) {
+define({id: "4be14162", inputs: ["glyphMap","glyphMapSpec","valueDiscretiser","regularGeodataLookup","gridGeodataLookup"], outputs: ["createGlyphMap","glyphmap"], body: (glyphMap,glyphMapSpec,valueDiscretiser,regularGeodataLookup,gridGeodataLookup) => {
+function createGlyphMap(glyphmapType, width, height) {
   if (glyphmapType == "Polygons") {
     return glyphMap({
-      ...glyphMapSpec(), //takes the base spec...
+      ...glyphMapSpec(width, height), //takes the base spec...
       discretiserFn: valueDiscretiser(regularGeodataLookup),
     });
   } else if (glyphmapType == "Gridmap") {
     return glyphMap({
-      ...glyphMapSpec(), //takes the base spec...
+      ...glyphMapSpec(width, height), //takes the base spec...
       discretiserFn: valueDiscretiser(gridGeodataLookup),
     });
   } else if (glyphmapType == "Gridded") {
-    return glyphMap(glyphMapSpec()); //uses the base spec as it (by default, it grids)
+    return glyphMap(glyphMapSpec(width, height)); //uses the base spec as it (by default, it grids)
   }
 }
 
 const glyphmap = glyphMapSpec();
 
-display(createGlyphMap(glyphmapType));
+// display(createGlyphMap(glyphmapType));
 return {createGlyphMap,glyphmap};
 }});
 
-define({id: "a014a038", inputs: ["joinCensusDataToGeoJSON","census_data","regular_geodata","grid_geodata"], outputs: ["regular_geodata_withcensus","grid_geodata_withcensus"], body: (joinCensusDataToGeoJSON,census_data,regular_geodata,grid_geodata) => {
+define({id: "e5d70b32", inputs: ["joinCensusDataToGeoJSON","census_data","regular_geodata","grid_geodata"], outputs: ["regular_geodata_withcensus","grid_geodata_withcensus"], body: (joinCensusDataToGeoJSON,census_data,regular_geodata,grid_geodata) => {
 // joining census data to geodata
 const regular_geodata_withcensus = joinCensusDataToGeoJSON(
   [...census_data],
@@ -1014,41 +1045,124 @@ const grid_geodata_withcensus = joinCensusDataToGeoJSON(
   [...census_data],
   grid_geodata
 );
-
-// display(grid_geodata_withcensus);
 return {regular_geodata_withcensus,grid_geodata_withcensus};
 }});
 
 </script>
 <div id="observablehq-center">
 <main id="observablehq-main" class="observablehq">
-<h1 id="morphing-glyphmaps" tabindex="-1"><a class="observablehq-header-anchor" href="#morphing-glyphmaps">Morphing Glyphmaps</a></h1>
+<!-- ------------------ # Imports ------------------  -->
 <div class="observablehq observablehq--block"><!--:aeeee6dc:--></div>
-<h2 id="area-selection" tabindex="-1"><a class="observablehq-header-anchor" href="#area-selection">Area Selection</a></h2>
-<p>Select the Local authority from the list below</p>
-<div class="observablehq observablehq--block"><!--:c4f336b2:--></div>
-<div class="observablehq observablehq--block"><!--:af4c2a06:--></div>
+<!-- ------------ The HTML Layout ------------ -->
+<!-------- Stylesheets -------->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.0/css/bulma.min.css">
+<style>
+body, html {
+  height: 100%;
+  margin: 0 !important;
+  overflow: hidden;
+  padding: 0;
+}
+
+#observablehq-main, #observablehq-header, #observablehq-footer {
+    margin: 0 !important;
+    /* width: 100% !important; */
+    max-width: 100% !important;
+}
+
+/* Make the entire section fill the viewport */
+.section {
+  height: 90vh !important; /* Full height of the viewport */
+  padding: 0;
+}
+
+.container {
+  margin: 0 !important;
+  max-width: 100% !important;
+}
+
+/* Make the columns stretch to the full height of the viewport */
+.columns {
+  height: 100%;
+  margin: 0;
+}
+
+/* Ensure the column boxes fit inside the layout */
+.column {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Ensure the boxes inside left column take full height */
+.column.is-one-third .box {
+  flex: 1; /* Make the boxes in the left column flexible */
+  margin-bottom: 0.1em; /* Add some spacing between boxes */
+}
+
+/* For the right column, ensure the box takes up full height */
+.column.is-two-thirds .box {
+  height: calc(90vh - 2rem); /* Subtract section padding or any margin if needed */
+}
+</style>
+<section class="section">
+  <div class="container">
+    <div class="columns">
+      <!-- Left Column (5 boxes) -->
+      <div class="column is-one-third" style="margin: 0 !important; padding: 0 !important;">
+        <div class="columns is-multiline">
+          <!-- <div class="column is-half">
+            <div class="box">Box 1</div>
+          </div>
+          <div class="column is-half">
+            <div class="box">Box 2</div>
+          </div> -->
+          <div class="column is-full">
+            <div class="box">
+              <div style="padding:10px;"> <observablehq-loading></observablehq-loading><!--:2d300212:--> </div>
+              <div style="padding:10px;"> <observablehq-loading></observablehq-loading><!--:71bd6feb:--> </div>
+              <div style="padding:10px;"> <observablehq-loading></observablehq-loading><!--:c0e452dc:--> </div>
+            </div>
+          </div>
+          <div class="column is-full">
+            <div class="box">
+              <div style="padding:10px;"> <observablehq-loading></observablehq-loading><!--:d0097d67:--> </div>
+              <div style="padding:10px;"> Use `shift` button to morph. </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Right Column (Main Content) -->
+      <div class="column is-two-thirds">
+        <div class="box">
+          <!-- <div>${createGlyphMap(glyphmapType)}</div> -->
+          <div><observablehq-loading></observablehq-loading><!--:bd8506eb:--></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- ------------------ # Data and Inputs ------------------  -->
+<!-- Select the Local authority from the list below -->
+<div class="observablehq observablehq--block"><!--:c5570c22:--></div>
+<div class="observablehq observablehq--block"><!--:0bef96a5:--></div>
 <div class="observablehq observablehq--block"><!--:76ba71c3:--></div>
 <div class="observablehq observablehq--block"><!--:ac7e408e:--></div>
 <div class="observablehq observablehq--block"><!--:cad06486:--></div>
 <div class="observablehq observablehq--block"><!--:6542bf3e:--></div>
 <div class="observablehq observablehq--block"><!--:0edc8540:--></div>
-<h2 id="morphing-geometry" tabindex="-1"><a class="observablehq-header-anchor" href="#morphing-geometry">Morphing Geometry</a></h2>
+<div class="observablehq observablehq--block"><!--:47b53055:--></div>
+<!-- ------------------ # Morphing Geometry Functions ------------------  -->
 <div class="observablehq observablehq--block"><!--:89aed981:--></div>
 <div class="observablehq observablehq--block"><!--:5394206d:--></div>
-<div class="observablehq observablehq--block"><!--:31e3be70:--></div>
+<div class="observablehq observablehq--block"><!--:243d9e50:--></div>
+<!-- ------------------ # Morphing Geometry Functions ------------------  -->
 <div class="observablehq observablehq--block"><!--:84d48980:--></div>
-<h2 id="glyphmapping" tabindex="-1"><a class="observablehq-header-anchor" href="#glyphmapping">Glyphmapping</a></h2>
-<!--  The census data -->
-<div class="observablehq observablehq--block"><!--:ccb070e7:--></div>
+<!-- ------------------ # Gridded-Glyphmap Functions ------------------  -->
 <div class="observablehq observablehq--block"><!--:34f88f4c:--></div>
 <div class="observablehq observablehq--block"><!--:3b62e633:--></div>
-<div class="observablehq observablehq--block"><!--:72f6fcde:--></div>
-<div class="observablehq observablehq--block"><!--:09a4d34c:--></div>
-<div class="observablehq observablehq--block"><!--:5dc46f3d:--></div>
-<div class="observablehq observablehq--block"><!--:a014a038:--></div>
+<div class="observablehq observablehq--block"><!--:f62c6315:--></div>
+<div class="observablehq observablehq--block"><!--:5bbbbd8b:--></div>
+<div class="observablehq observablehq--block"><!--:4be14162:--></div>
+<div class="observablehq observablehq--block"><!--:e5d70b32:--></div>
 </main>
-<footer id="observablehq-footer">
-<div>Built with <a href="https://observablehq.com/" target="_blank" rel="noopener noreferrer">Observable</a> on <a title="2024-09-22T21:53:03">Sep 22, 2024</a>.</div>
-</footer>
 </div>
