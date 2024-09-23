@@ -60,16 +60,42 @@ export function inSituMorphMouse(options) {
     chartWH
   );
 
-  if (interactive)
-    context.canvas.addEventListener("mousemove", (e) => {
-      if (e.shiftKey) {
+  // let isSpacebarPressed = false;
+
+  // document.addEventListener("keydown", (e) => {
+  //   if (e.code === "Space") {
+  //     isSpacebarPressed = true;
+  //   }
+  // });
+
+  // document.addEventListener("keyup", (e) => {
+  //   if (e.code === "Space") {
+  //     isSpacebarPressed = false;
+  //   }
+  // });
+
+  if (interactive) {
+    document.addEventListener("keydown", (e) => {
+      if (e.code === "Space") {
+        console.log("space pressed");
         if (frame) cancelAnimationFrame(frame);
         isAnimating = false;
-        const mouseX = d3.pointer(e)[0];
-        const amtValue = _.clamp(Math.min(mouseX, chartWH) / chartWH, 0, 1);
+        const amtValue = (amtValue + 0.1) % 1; // increment by 0.1 on press, loop back to 0 when reaching 1
         throttled(amtValue);
       }
     });
+  }
+
+  // if (interactive)
+  //   context.canvas.addEventListener("mousemove", (e) => {
+  //     if (e.shiftKey) {
+  //       if (frame) cancelAnimationFrame(frame);
+  //       isAnimating = false;
+  //       const mouseX = d3.pointer(e)[0];
+  //       const amtValue = _.clamp(Math.min(mouseX, chartWH) / chartWH, 0, 1);
+  //       throttled(amtValue);
+  //     }
+  //   });
 
   //Calculate all the necessary flubber interpolators for everything
   const flubbers = [];
