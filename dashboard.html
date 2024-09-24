@@ -199,8 +199,8 @@ import {define} from "./_observablehq/client.js";
 import {registerFile, FileAttachment} from "./_observablehq/stdlib.js";
 import {registerTable} from "./_observablehq/stdlib/duckdb.js";
 
-registerFile("./data/census_data_output.parquet", {"name":"./data/census_data_output.parquet","path":"./_file/data/census_data_output.1374b127.parquet","lastModified":1727210247593});
-registerFile("./data/geo.csv", {"name":"./data/geo.csv","mimeType":"text/csv","path":"./_file/data/geo.8ba75b99.csv","lastModified":1727210247609});
+registerFile("./data/census_data_output.parquet", {"name":"./data/census_data_output.parquet","path":"./_file/data/census_data_output.1374b127.parquet","lastModified":1727217775308});
+registerFile("./data/geo.csv", {"name":"./data/geo.csv","mimeType":"text/csv","path":"./_file/data/geo.8ba75b99.csv","lastModified":1727217775324});
 registerTable("geo", FileAttachment("./data/geo.csv"));
 registerTable("census_data_source", FileAttachment("./data/census_data_output.parquet"));
 
@@ -251,11 +251,11 @@ resize((width, height) => createGlyphMap(glyphmapType, {width, height}))
 ))
 }});
 
-define({id: "c5570c22", inputs: ["Inputs","list_la","Generators"], outputs: ["localAuthorityInput","local_authority"], body: (Inputs,list_la,Generators) => {
+define({id: "17a1fc11", inputs: ["Inputs","list_la","Generators"], outputs: ["localAuthorityInput","local_authority"], body: (Inputs,list_la,Generators) => {
 const localAuthorityInput = Inputs.select(
   [...list_la].map((item) => item.label),
   {
-    value: "Cambridge",
+    value: "Bradford",
     label: "Local Authority:",
   }
 );
@@ -336,19 +336,37 @@ select * from census_data_source;`;
 return {census_data};
 }});
 
-define({id: "fb7d7c7a", inputs: ["_","regular_geodata_withcensus"], outputs: ["data"], body: (_,regular_geodata_withcensus) => {
+define({id: "352d8c82", inputs: ["regular_geodata_withcensus","d3","_"], outputs: ["normalizeValue","data"], body: (regular_geodata_withcensus,d3,_) => {
+// normalise the data
+function normalizeValue(paramName, value) {
+  const values = regular_geodata_withcensus.features.map(
+    (feature) => feature.properties[paramName]
+  );
+  const min = d3.min(values);
+  const max = d3.max(values);
+
+  return (value - min) / (max - min);
+}
+
 const data = _.keyBy(
   regular_geodata_withcensus.features.map((feat) => {
     return {
       code: feat.properties.code,
       population: +feat.properties.population,
       data: feat.properties,
+      deprivation: normalizeValue(
+        "deprivation_value",
+        feat.properties.deprivation_value
+      ),
+      vehicle: normalizeValue("vehicle_value", feat.properties.vehicle_value),
+      heating: normalizeValue("heating_value", feat.properties.heating_value),
+      health: normalizeValue("health_value", feat.properties.health_value),
     };
   }),
   "code"
 );
 // display(data);
-return {data};
+return {normalizeValue,data};
 }});
 
 define({id: "4094fbaa", inputs: ["d3","data","prepareGeoJsonForMorphingLib","regular_geodata","local_authority","geogName","grid_geodata","resize","inSituMorphMouse"], outputs: ["colourScalePop","layouts","morphers"], body: (d3,data,prepareGeoJsonForMorphingLib,regular_geodata,local_authority,geogName,grid_geodata,resize,inSituMorphMouse) => {
@@ -1055,7 +1073,7 @@ function valueDiscretiser(geomLookup) {
 return {glyphmapTypeInput,glyphmapType,valueDiscretiser};
 }});
 
-define({id: "7e12b612", inputs: ["turf","regular_geodata","proj","data","regularGeodataLookup","d3","insideCell","drawRadialMultivariateGlyph"], outputs: ["glyphMapSpec"], body: (turf,regular_geodata,proj,data,regularGeodataLookup,d3,insideCell,drawRadialMultivariateGlyph) => {
+define({id: "f90921ff", inputs: ["turf","regular_geodata","proj","data","regularGeodataLookup","d3","insideCell","drawRadialMultivariateGlyph"], outputs: ["glyphMapSpec"], body: (turf,regular_geodata,proj,data,regularGeodataLookup,d3,insideCell,drawRadialMultivariateGlyph) => {
 // glyphmap basic specs
 
 function glyphMapSpec(width, height) {
@@ -1091,10 +1109,16 @@ function glyphMapSpec(width, height) {
       aggrFn: (cell, row, weight, global, panel) => {
         if (cell.population) {
           cell.population += row.population;
-          cell.otherdata += row;
+          cell.deprivation += row.deprivation;
+          cell.vehicle += row.vehicle;
+          cell.heating += row.heating;
+          cell.health += row.health;
         } else {
           cell.population = row.population;
-          cell.otherdata = row;
+          cell.deprivation = row.deprivation;
+          cell.vehicle = row.vehicle;
+          cell.heating = row.heating;
+          cell.health = row.health;
         }
       },
 
@@ -1147,13 +1171,20 @@ function glyphMapSpec(width, height) {
         }
 
         //draw a radial glyph -> change the array to real data (between 0 and 1)
-        drawRadialMultivariateGlyph([0.5, 0.1, 0.9, 0.3], x, y, cellSize, ctx);
+        // drawRadialMultivariateGlyph([0.5, 0.1, 0.9, 0.3], x, y, cellSize, ctx);
+        drawRadialMultivariateGlyph(
+          [cell.deprivation, cell.vehicle, cell.heating, cell.health],
+          x,
+          y,
+          cellSize,
+          ctx
+        );
       },
 
       postDrawFn: (cells, cellSize, ctx, global, panel) => {},
 
       tooltipTextFn: (cell) => {
-        // console.log(cell.otherdata);
+        console.log(cell.deprivation);
       },
     },
   };
@@ -1186,7 +1217,7 @@ const glyphmap = glyphMapSpec();
 return {createGlyphMap,glyphmap};
 }});
 
-define({id: "92e60971", inputs: ["joinCensusDataToGeoJSON","census_data","regular_geodata","grid_geodata"], outputs: ["regular_geodata_withcensus","grid_geodata_withcensus"], body: (joinCensusDataToGeoJSON,census_data,regular_geodata,grid_geodata) => {
+define({id: "4928fc4a", inputs: ["joinCensusDataToGeoJSON","census_data","regular_geodata","grid_geodata","display"], outputs: ["regular_geodata_withcensus","grid_geodata_withcensus"], body: (joinCensusDataToGeoJSON,census_data,regular_geodata,grid_geodata,display) => {
 // joining census data to geodata
 const regular_geodata_withcensus = joinCensusDataToGeoJSON(
   [...census_data],
@@ -1197,7 +1228,7 @@ const grid_geodata_withcensus = joinCensusDataToGeoJSON(
   grid_geodata
 );
 
-// display(regular_geodata_withcensus);
+display(regular_geodata_withcensus);
 return {regular_geodata_withcensus,grid_geodata_withcensus};
 }});
 
@@ -1304,7 +1335,7 @@ body, html {
 </div>
 <!-- ------------------ # Data and Inputs ------------------  -->
 <!-- Select the Local authority from the list below -->
-<div class="observablehq observablehq--block"><!--:c5570c22:--></div>
+<div class="observablehq observablehq--block"><!--:17a1fc11:--></div>
 <div class="observablehq observablehq--block"><!--:0bef96a5:--></div>
 <div class="observablehq observablehq--block"><!--:76ba71c3:--></div>
 <div class="observablehq observablehq--block"><!--:ac7e408e:--></div>
@@ -1313,7 +1344,7 @@ body, html {
 <div class="observablehq observablehq--block"><!--:0edc8540:--></div>
 <div class="observablehq observablehq--block"><!--:47b53055:--></div>
 <!-- ------------------ # Morphing Geometry Functions ------------------  -->
-<div class="observablehq observablehq--block"><!--:fb7d7c7a:--></div>
+<div class="observablehq observablehq--block"><!--:352d8c82:--></div>
 <div class="observablehq observablehq--block"><!--:4094fbaa:--></div>
 <!-- ------------------ # Morphing Geometry Functions ------------------  -->
 <div class="observablehq observablehq--block"><!--:147250e0:--></div>
@@ -1321,9 +1352,9 @@ body, html {
 <div class="observablehq observablehq--block"><!--:3ca232e1:--></div>
 <div class="observablehq observablehq--block"><!--:4913bd0b:--></div>
 <div class="observablehq observablehq--block"><!--:f57e0ba4:--></div>
-<div class="observablehq observablehq--block"><!--:7e12b612:--></div>
+<div class="observablehq observablehq--block"><!--:f90921ff:--></div>
 <div class="observablehq observablehq--block"><!--:51a431c3:--></div>
-<div class="observablehq observablehq--block"><!--:92e60971:--></div>
+<div class="observablehq observablehq--block"><!--:4928fc4a:--></div>
 <div class="observablehq observablehq--block"><!--:246c80d3:--></div>
 <div class="observablehq observablehq--block"><!--:9d040433:--></div>
 <div class="observablehq observablehq--block"><!--:520e6d60:--></div>
