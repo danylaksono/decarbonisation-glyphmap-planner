@@ -199,8 +199,8 @@ import {define} from "./_observablehq/client.js";
 import {registerFile, FileAttachment} from "./_observablehq/stdlib.js";
 import {registerTable} from "./_observablehq/stdlib/duckdb.js";
 
-registerFile("./data/census_data_output.parquet", {"name":"./data/census_data_output.parquet","path":"./_file/data/census_data_output.1374b127.parquet","lastModified":1727217775308});
-registerFile("./data/geo.csv", {"name":"./data/geo.csv","mimeType":"text/csv","path":"./_file/data/geo.8ba75b99.csv","lastModified":1727217775324});
+registerFile("./data/census_data_output.parquet", {"name":"./data/census_data_output.parquet","path":"./_file/data/census_data_output.1374b127.parquet","lastModified":1727217971881});
+registerFile("./data/geo.csv", {"name":"./data/geo.csv","mimeType":"text/csv","path":"./_file/data/geo.8ba75b99.csv","lastModified":1727217971897});
 registerTable("geo", FileAttachment("./data/geo.csv"));
 registerTable("census_data_source", FileAttachment("./data/census_data_output.parquet"));
 
@@ -1217,7 +1217,7 @@ const glyphmap = glyphMapSpec();
 return {createGlyphMap,glyphmap};
 }});
 
-define({id: "4928fc4a", inputs: ["joinCensusDataToGeoJSON","census_data","regular_geodata","grid_geodata","display"], outputs: ["regular_geodata_withcensus","grid_geodata_withcensus"], body: (joinCensusDataToGeoJSON,census_data,regular_geodata,grid_geodata,display) => {
+define({id: "92e60971", inputs: ["joinCensusDataToGeoJSON","census_data","regular_geodata","grid_geodata"], outputs: ["regular_geodata_withcensus","grid_geodata_withcensus"], body: (joinCensusDataToGeoJSON,census_data,regular_geodata,grid_geodata) => {
 // joining census data to geodata
 const regular_geodata_withcensus = joinCensusDataToGeoJSON(
   [...census_data],
@@ -1228,7 +1228,7 @@ const grid_geodata_withcensus = joinCensusDataToGeoJSON(
   grid_geodata
 );
 
-display(regular_geodata_withcensus);
+// display(regular_geodata_withcensus);
 return {regular_geodata_withcensus,grid_geodata_withcensus};
 }});
 
@@ -1309,7 +1309,7 @@ return {insideCell};
 body, html {
   height: 100%;
   margin: 0 !important;
-  /* overflow: hidden; */
+  overflow: hidden;
   padding: 0;
 }
 
@@ -1354,7 +1354,7 @@ body, html {
 <div class="observablehq observablehq--block"><!--:f57e0ba4:--></div>
 <div class="observablehq observablehq--block"><!--:f90921ff:--></div>
 <div class="observablehq observablehq--block"><!--:51a431c3:--></div>
-<div class="observablehq observablehq--block"><!--:4928fc4a:--></div>
+<div class="observablehq observablehq--block"><!--:92e60971:--></div>
 <div class="observablehq observablehq--block"><!--:246c80d3:--></div>
 <div class="observablehq observablehq--block"><!--:9d040433:--></div>
 <div class="observablehq observablehq--block"><!--:520e6d60:--></div>
