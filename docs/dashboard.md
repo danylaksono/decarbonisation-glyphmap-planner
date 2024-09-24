@@ -22,6 +22,7 @@ import {
   createDiscretiserValue,
   _drawCellBackground,
 } from "./components/gridded-glyphmaps/index.min.js";
+import { OSGB } from "./components/osgb/index.js";
 import {
   downloadBoundaries,
   joinCensusDataToGeoJSON,
@@ -32,6 +33,10 @@ import {
 //   inSituMorphMouse,
 //   prepareGeoJsonForMorphingLib,
 // } from "./components/morpher.js";
+```
+
+```js
+const proj = new OSGB();
 ```
 
 <!-- ------------ The HTML Layout ------------ -->
@@ -203,6 +208,7 @@ const layouts = [
 //   layouts,
 // });
 
+// using observable framework resize callback function
 const morphers = resize((width, height) =>
   inSituMorphMouse(
     {
@@ -285,7 +291,7 @@ function inSituMorphMouse(options, width) {
     let increasing = true; // direction flag to track the direction of change
     document.addEventListener("keydown", (e) => {
       if (e.code === "Space") {
-        console.log("Spacebar pressed");
+        // console.log("Spacebar pressed");
         if (frame) cancelAnimationFrame(frame);
         isAnimating = false;
 
@@ -759,23 +765,94 @@ function intermBbSize(layout, toLayout) {
 <!-- ------------------ # Gridded-Glyphmap Functions ------------------  -->
 
 ```js
-const regularGeodataLookup = _.keyBy(
-  regular_geodata_withcensus.features.map((feat) => {
-    return { ...feat, centroid: turf.getCoord(turf.centroid(feat.geometry)) };
-  }),
-  (feat) => feat.properties.code
-);
-// display(regularGeodataLookup);
+// coordinate transformation utilities
+function transformCoordinates(coords) {
+  if (coords.length === 4 && !Array.isArray(coords[0])) {
+    // bounding box
+    return [
+      ...proj.toGeo([coords[0], coords[1]]),
+      ...proj.toGeo([coords[2], coords[3]]),
+    ];
+  } else if (Array.isArray(coords[0])) {
+    //  arrays of coordinates
+    return coords.map(transformCoordinates);
+  } else {
+    //  individual coordinate pairs
+    return proj.toGeo(coords);
+  }
+}
+
+function transformGeometry(geometry) {
+  if (geometry.type === "GeometryCollection") {
+    return {
+      ...geometry,
+      geometries: geometry.geometries.map(transformGeometry),
+    };
+  }
+
+  return {
+    ...geometry,
+    coordinates: transformCoordinates(geometry.coordinates),
+  };
+}
+
+// check to see if it works
+// display(transformCoordinates([547764, 180871]));
+
+// const transformedGeoJSON = {
+//   ...originalGeoJSON,
+//   features: originalGeoJSON.features.map(feature => ({
+//     ...feature,
+//     geometry: {
+//       ...feature.geometry,
+//       coordinates: transformCoordinates(feature.geometry.coordinates)
+//     }
+//   }))
+// };
 ```
 
 ```js
-const gridGeodataLookup = _.keyBy(
-  grid_geodata_withcensus.features.map((feat) => {
-    return { ...feat, centroid: turf.getCoord(turf.centroid(feat.geometry)) };
+// const regularGeodataLookup = _.keyBy(
+//   regular_geodata_withcensus.features.map((feat) => {
+//     return { ...feat, centroid: turf.getCoord(turf.centroid(feat.geometry)) };
+//   }),
+//   (feat) => feat.properties.code
+// );
+
+// const gridGeodataLookup = _.keyBy(
+//   grid_geodata_withcensus.features.map((feat) => {
+//     return { ...feat, centroid: turf.getCoord(turf.centroid(feat.geometry)) };
+//   }),
+//   (feat) => feat.properties.code
+// );
+
+const regularGeodataLookup = _.keyBy(
+  regular_geodata_withcensus.features.map((feat) => {
+    const transformedGeometry = transformGeometry(feat.geometry);
+    const centroid = turf.getCoord(turf.centroid(transformedGeometry));
+    return {
+      ...feat,
+      geometry: transformedGeometry,
+      centroid: centroid,
+    };
   }),
   (feat) => feat.properties.code
 );
-// display(gridGeodataLookup);
+
+const gridGeodataLookup = _.keyBy(
+  grid_geodata_withcensus.features.map((feat) => {
+    const transformedGeometry = transformGeometry(feat.geometry);
+    const centroid = turf.getCoord(turf.centroid(transformedGeometry));
+    return {
+      ...feat,
+      geometry: transformedGeometry,
+      centroid: centroid,
+    };
+  }),
+  (feat) => feat.properties.code
+);
+
+// display(regularGeodataLookup);
 ```
 
 ```js
@@ -795,21 +872,29 @@ function valueDiscretiser(geomLookup) {
     boundaryFn: (key) => geomLookup[key]?.geometry.coordinates[0],
   });
 }
+
 // display(valueDiscretiser(regularGeodataLookup));
+// display(transformCoordinates(turf.bbox(regular_geodata)));
 ```
 
 ```js
 // glyphmap basic specs
+
 function glyphMapSpec(width, height) {
-  console.log("in glyphmapspec", width, height);
+  // console.log("in glyphmapspec", width, height);
+  const bbox = turf.bbox(regular_geodata);
   return {
-    coordType: "notmercator",
-    initialBB: turf.bbox(regular_geodata),
+    // coordType: "notmercator",
+    initialBB: [
+      ...proj.toGeo([bbox[0], bbox[1]]),
+      ...proj.toGeo([bbox[2], bbox[3]]),
+    ],
     data: Object.values(data),
     getLocationFn: (row) => regularGeodataLookup[row.code]?.centroid,
     discretisationShape: "grid",
+    mapType: "CartoPositron",
     interactiveCellSize: true,
-    cellSize: 30,
+    cellSize: 60,
 
     // width: 800,
     // height: 600,
@@ -890,7 +975,7 @@ function glyphMapSpec(width, height) {
       postDrawFn: (cells, cellSize, ctx, global, panel) => {},
 
       tooltipTextFn: (cell) => {
-        console.log(cell.otherdata);
+        // console.log(cell.otherdata);
       },
     },
   };
@@ -901,7 +986,6 @@ function glyphMapSpec(width, height) {
 function createGlyphMap(glyphmapType, { width, height }) {
   // console.log(width, height);
   if (glyphmapType == "Polygons") {
-    console.log(width, height);
     return glyphMap({
       ...glyphMapSpec(width, height), //takes the base spec...
       discretiserFn: valueDiscretiser(regularGeodataLookup),
@@ -919,6 +1003,7 @@ function createGlyphMap(glyphmapType, { width, height }) {
 const glyphmap = glyphMapSpec();
 
 // display(createGlyphMap(glyphmapType));
+// display(valueDiscretiser(regularGeodataLookup));
 ```
 
 ```js
@@ -940,7 +1025,7 @@ function drawRadialMultivariateGlyph(normalisedData, x, y, size, ctx) {
   let angle = (2 * Math.PI) / normalisedData.length;
   let centerX = x;
   let centerY = y;
-  let radius = size;
+  let radius = size / 2;
   // console.log(radius);
 
   //get a colour palette
