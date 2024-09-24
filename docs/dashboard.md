@@ -831,7 +831,7 @@ function glyphMapSpec({ width, height } = {}) {
     customMap: {
       scaleParams: [],
 
-      initFn: (cells, cellSize, global, panel) => {},
+      initFn: (cells, cellSize, global, panel) => { },
 
       preAggrFn: (cells, cellSize, global, panel) => {
         // console.log(global);
@@ -847,7 +847,22 @@ function glyphMapSpec({ width, height } = {}) {
         }
       },
 
-      postAggrFn: (cells, cellSize, global, panel) => {},
+      postAggrFn: (cells, cellSize, global, panel) => {
+          
+          //add cell interaction        
+        let canvas = d3.select(panel).select('canvas').node();
+
+        canvas.addEventListener('click', function(evt) {
+          //check which cell the click was in
+          const rect = canvas.getBoundingClientRect();
+          let x = evt.clientX - rect.left;
+          let y = evt.clientY - rect.top;
+          global.clickedCell = null;
+          for (let i=0; i<cells.length; i++)
+              if (insideCell(cells[i],x,y))
+                  global.clickedCell = cells[i];
+        });
+      },
 
       preDrawFn: (cells, cellSize, ctx, global, panel) => {
         if (!cells || cells.length === 0) {
@@ -861,7 +876,8 @@ function glyphMapSpec({ width, height } = {}) {
       },
 
       drawFn: (cell, x, y, cellSize, ctx, global, panel) => {
-        const boundary = cell.getBoundary(0);
+          
+       const boundary = cell.getBoundary(0);
         if (boundary[0] != boundary[boundary.length - 1]) {
           boundary.push(boundary[0]);
         }
@@ -871,6 +887,17 @@ function glyphMapSpec({ width, height } = {}) {
         global.pathGenerator(boundaryFeat);
         ctx.fillStyle = global.colourScalePop(cell.population);
         ctx.fill();
+        
+        //add contour to clicked cells
+        if (global.clickedCell == cell){
+            ctx.lineWidth = 4; ctx.strokeStyle = "rgb(250,250,250)";            
+            ctx.stroke();
+            ctx.lineWidth = 2; ctx.strokeStyle = "rgb(50,50,50)";
+            ctx.stroke();            
+        }
+
+        //draw a radial glyph -> change the array to real data (between 0 and 1)
+        drawRadialMultivariateGlyph([0.5,0.1,0.9,0.3], x, y, cellSize, ctx);
       },
 
       postDrawFn: (cells, cellSize, ctx, global, panel) => {},
@@ -891,7 +918,8 @@ function createGlyphMap(glyphmapType, width, height) {
       discretiserFn: valueDiscretiser(regularGeodataLookup),
     });
   } else if (glyphmapType == "Gridmap") {
-    return glyphMap({
+      
+     return glyphMap({
       ...glyphMapSpec(width, height), //takes the base spec...
       discretiserFn: valueDiscretiser(gridGeodataLookup),
     });
@@ -917,4 +945,44 @@ const grid_geodata_withcensus = joinCensusDataToGeoJSON(
 );
 
 // display(regular_geodata_withcensus);
+```
+
+```js
+ function drawRadialMultivariateGlyph(normalisedData, x, y, size, ctx){
+    
+  let angle = 2 * Math.PI / normalisedData.length;
+  let centerX = x; let centerY = y;
+  let radius = size;
+
+  //get a colour palette
+  let colors = d3.scaleOrdinal(d3.schemeTableau10).domain(d3.range(normalisedData.length));
+  
+  normalisedData.map( (d,i) => {
+    drawPieSlice(ctx, centerX, centerY, radius*0.9, angle*(i+0.1), angle*(i+0.9),'rgba(0,0,0,0.05)');
+    drawPieSlice(ctx, centerX, centerY, radius*Math.sqrt(d)*0.95, angle*(i+0.1), angle*(i+0.9),colors(i))
+  });
+}
+```
+
+```js
+function drawPieSlice(ctx, cx, cy, r, angleStart, angleEnd, color){
+ctx.beginPath();
+ctx.moveTo(cx, cy);
+ctx.arc(cx, cy, r, angleStart, angleEnd);
+ctx.lineTo(cx, cy);
+ctx.fillStyle = color; 
+ctx.fill();
+}
+```
+
+```js
+function insideCell(c, x, y){
+   // console.log(x + " " + y  + " " + c.getXCentre() + " " + c.getYCentre() + " " + c.getCellSize());
+    if (x  >= c.getXCentre() - c.getCellSize() && 
+            x <= c.getXCentre() + c.getCellSize() &&
+            y  >= c.getYCentre() - c.getCellSize() &&
+            y <= c.getYCentre() + c.getCellSize())
+        return true;
+    return false;
+}
 ```
