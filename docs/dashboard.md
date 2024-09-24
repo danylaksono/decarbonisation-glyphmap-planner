@@ -51,7 +51,7 @@ const proj = new OSGB();
 body, html {
   height: 100%;
   margin: 0 !important;
-  /* overflow: hidden; */
+  overflow: hidden;
   padding: 0;
 }
 
@@ -1048,7 +1048,7 @@ const grid_geodata_withcensus = joinCensusDataToGeoJSON(
   grid_geodata
 );
 
-display(regular_geodata_withcensus);
+// display(regular_geodata_withcensus);
 ```
 
 ```js
