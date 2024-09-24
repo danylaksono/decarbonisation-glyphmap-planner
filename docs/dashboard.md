@@ -113,7 +113,7 @@ body, html {
           <div class="column is-full">
             <div class="box">
               <div style="padding:10px;"> ${morphers} </div>
-              <div style="padding:10px;"> Use `shift` button to morph. </div>
+              <div style="padding:10px;"> Press the 'spacebar' button to gradually morph the shape.  </div>
             </div>
           </div>
         </div>
@@ -321,16 +321,44 @@ function inSituMorphMouse(options) {
   //   chartWH
   // );
 
-  if (interactive)
-    context.canvas.addEventListener("mousemove", (e) => {
-      if (e.shiftKey) {
+  if (interactive) {
+    let amtValue = 0; // initialize amtValue
+    let increasing = true; // direction flag to track the direction of change
+    document.addEventListener("keydown", (e) => {
+      if (e.code === "Space") {
+        console.log("Spacebar pressed");
         if (frame) cancelAnimationFrame(frame);
         isAnimating = false;
-        const mouseX = d3.pointer(e)[0];
-        const amtValue = _.clamp(Math.min(mouseX, chartWH) / chartWH, 0, 1);
+
+        if (increasing) {
+          amtValue += 0.1;
+          if (amtValue >= 1) {
+            amtValue = 1;
+            increasing = false;
+          }
+        } else {
+          amtValue -= 0.1;
+          if (amtValue <= 0) {
+            amtValue = 0;
+            increasing = true;
+          }
+        }
+
         throttled(amtValue);
       }
     });
+  }
+
+  // if (interactive)
+  //   context.canvas.addEventListener("mousemove", (e) => {
+  //     if (e.shiftKey) {
+  //       if (frame) cancelAnimationFrame(frame);
+  //       isAnimating = false;
+  //       const mouseX = d3.pointer(e)[0];
+  //       const amtValue = _.clamp(Math.min(mouseX, chartWH) / chartWH, 0, 1);
+  //       throttled(amtValue);
+  //     }
+  //   });
 
   //Calculate all the necessary flubber interpolators for everything
   const flubbers = [];
