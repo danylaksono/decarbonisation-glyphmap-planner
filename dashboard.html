@@ -197,8 +197,8 @@ import {define} from "./_observablehq/client.js";
 import {registerFile, FileAttachment} from "./_observablehq/stdlib.js";
 import {registerTable} from "./_observablehq/stdlib/duckdb.js";
 
-registerFile("./data/census_data_output.parquet", {"name":"./data/census_data_output.parquet","path":"./_file/data/census_data_output.1374b127.parquet","lastModified":1727173009856});
-registerFile("./data/geo.csv", {"name":"./data/geo.csv","mimeType":"text/csv","path":"./_file/data/geo.8ba75b99.csv","lastModified":1727173009872});
+registerFile("./data/census_data_output.parquet", {"name":"./data/census_data_output.parquet","path":"./_file/data/census_data_output.1374b127.parquet","lastModified":1727196827305});
+registerFile("./data/geo.csv", {"name":"./data/geo.csv","mimeType":"text/csv","path":"./_file/data/geo.8ba75b99.csv","lastModified":1727196827323});
 registerTable("geo", FileAttachment("./data/geo.csv"));
 registerTable("census_data_source", FileAttachment("./data/census_data_output.parquet"));
 
@@ -238,9 +238,9 @@ morphers
 ))
 }});
 
-define({id: "bd8506eb", mode: "inline", inputs: ["resize","createGlyphMap","glyphmapType","display"], body: async (resize,createGlyphMap,glyphmapType,display) => {
+define({id: "271c02bf", mode: "inline", inputs: ["resize","createGlyphMap","glyphmapType","display"], body: async (resize,createGlyphMap,glyphmapType,display) => {
 display(await(
-resize((width, height) => createGlyphMap(glyphmapType, width, height))
+resize((width, height) => createGlyphMap(glyphmapType, {width, height}))
 ))
 }});
 
@@ -344,7 +344,7 @@ const data = _.keyBy(
 return {data};
 }});
 
-define({id: "243d9e50", inputs: ["d3","data","prepareGeoJsonForMorphingLib","regular_geodata","local_authority","geogName","grid_geodata","inSituMorphMouse"], outputs: ["colourScalePop","layouts","morphers"], body: (d3,data,prepareGeoJsonForMorphingLib,regular_geodata,local_authority,geogName,grid_geodata,inSituMorphMouse) => {
+define({id: "a92453f1", inputs: ["d3","data","prepareGeoJsonForMorphingLib","regular_geodata","local_authority","geogName","grid_geodata","resize","inSituMorphMouse"], outputs: ["colourScalePop","layouts","morphers"], body: (d3,data,prepareGeoJsonForMorphingLib,regular_geodata,local_authority,geogName,grid_geodata,resize,inSituMorphMouse) => {
 const colourScalePop = d3
   .scaleSequential(d3.interpolateBlues)
   .domain([0, d3.max(Object.values(data).map((row) => row.population))]);
@@ -372,20 +372,32 @@ const layouts = [
   },
 ];
 
-const morphers = inSituMorphMouse({
-  interactive: true,
-  showDescription: false,
-  layouts,
-});
+// const morphers = inSituMorphMouse({
+//   interactive: true,
+//   showDescription: false,
+//   layouts,
+// });
+
+const morphers = resize((width, height) =>
+  inSituMorphMouse(
+    {
+      interactive: true,
+      showDescription: false,
+      layouts,
+      width,
+    },
+    width
+  )
+);
 
 // display(morphers);
 return {colourScalePop,layouts,morphers};
 }});
 
-define({id: "346be4c0", inputs: ["d3","_","turf","context2d","width","flubber","OffscreenCanvas"], outputs: ["inSituMorphMouse","_insertIntermediateLayouts","intermTranslate","prepareGeoJsonForMorphingLib","intermTranslateV","intermCircles","intermChangeShape","intermBbSize"], body: (d3,_,turf,context2d,width,flubber,OffscreenCanvas) => {
+define({id: "831440ac", inputs: ["d3","_","turf","context2d","flubber","OffscreenCanvas"], outputs: ["inSituMorphMouse","_insertIntermediateLayouts","intermTranslate","prepareGeoJsonForMorphingLib","intermTranslateV","intermCircles","intermChangeShape","intermBbSize"], body: (d3,_,turf,context2d,flubber,OffscreenCanvas) => {
 // ---------------------- Functions for morphing ----------------------
 
-function inSituMorphMouse(options) {
+function inSituMorphMouse(options, width) {
   //interactive: true|false Whether responds to mouse for animation
   //layouts: is an array of layouts with the following structure
   //   shape: {key,feature}
@@ -432,7 +444,11 @@ function inSituMorphMouse(options) {
   const chartWH = bb[3];
 
   const throttled = _.throttle((stepAndAmt) => draw(stepAndAmt), 100);
-  const context = context2d(restrictWidthToChart ? chartWH : width, chartWH);
+  // const context = context2d(restrictWidthToChart ? chartWH : width, chartWH);
+  const context = context2d(
+    width || (restrictWidthToChart ? chartWH : options.width),
+    chartWH
+  );
   // const context = DOM.context2d(
   //   restrictWidthToChart ? chartWH : width,
   //   chartWH
@@ -958,9 +974,10 @@ function valueDiscretiser(geomLookup) {
 return {glyphmapTypeInput,glyphmapType,valueDiscretiser};
 }});
 
-define({id: "05928109", inputs: ["turf","regular_geodata","data","regularGeodataLookup","d3","insideCell","drawRadialMultivariateGlyph"], outputs: ["glyphMapSpec"], body: (turf,regular_geodata,data,regularGeodataLookup,d3,insideCell,drawRadialMultivariateGlyph) => {
+define({id: "6b2381a9", inputs: ["turf","regular_geodata","data","regularGeodataLookup","d3","insideCell","drawRadialMultivariateGlyph"], outputs: ["glyphMapSpec"], body: (turf,regular_geodata,data,regularGeodataLookup,d3,insideCell,drawRadialMultivariateGlyph) => {
 // glyphmap basic specs
-function glyphMapSpec({ width, height } = {}) {
+function glyphMapSpec(width, height) {
+  console.log("in glyphmapspec", width, height);
   return {
     coordType: "notmercator",
     initialBB: turf.bbox(regular_geodata),
@@ -972,13 +989,13 @@ function glyphMapSpec({ width, height } = {}) {
 
     // width: 800,
     // height: 600,
-    width: width || 1200,
-    height: height || 600,
+    width: width,
+    height: height,
 
     customMap: {
       scaleParams: [],
 
-      initFn: (cells, cellSize, global, panel) => { },
+      initFn: (cells, cellSize, global, panel) => {},
 
       preAggrFn: (cells, cellSize, global, panel) => {
         // console.log(global);
@@ -995,19 +1012,17 @@ function glyphMapSpec({ width, height } = {}) {
       },
 
       postAggrFn: (cells, cellSize, global, panel) => {
-          
-          //add cell interaction        
-        let canvas = d3.select(panel).select('canvas').node();
+        //add cell interaction
+        let canvas = d3.select(panel).select("canvas").node();
 
-        canvas.addEventListener('click', function(evt) {
+        canvas.addEventListener("click", function (evt) {
           //check which cell the click was in
           const rect = canvas.getBoundingClientRect();
           let x = evt.clientX - rect.left;
           let y = evt.clientY - rect.top;
           global.clickedCell = null;
-          for (let i=0; i<cells.length; i++)
-              if (insideCell(cells[i],x,y))
-                  global.clickedCell = cells[i];
+          for (let i = 0; i < cells.length; i++)
+            if (insideCell(cells[i], x, y)) global.clickedCell = cells[i];
         });
       },
 
@@ -1023,8 +1038,7 @@ function glyphMapSpec({ width, height } = {}) {
       },
 
       drawFn: (cell, x, y, cellSize, ctx, global, panel) => {
-          
-       const boundary = cell.getBoundary(0);
+        const boundary = cell.getBoundary(0);
         if (boundary[0] != boundary[boundary.length - 1]) {
           boundary.push(boundary[0]);
         }
@@ -1034,17 +1048,19 @@ function glyphMapSpec({ width, height } = {}) {
         global.pathGenerator(boundaryFeat);
         ctx.fillStyle = global.colourScalePop(cell.population);
         ctx.fill();
-        
+
         //add contour to clicked cells
-        if (global.clickedCell == cell){
-            ctx.lineWidth = 4; ctx.strokeStyle = "rgb(250,250,250)";            
-            ctx.stroke();
-            ctx.lineWidth = 2; ctx.strokeStyle = "rgb(50,50,50)";
-            ctx.stroke();            
+        if (global.clickedCell == cell) {
+          ctx.lineWidth = 4;
+          ctx.strokeStyle = "rgb(250,250,250)";
+          ctx.stroke();
+          ctx.lineWidth = 2;
+          ctx.strokeStyle = "rgb(50,50,50)";
+          ctx.stroke();
         }
 
         //draw a radial glyph -> change the array to real data (between 0 and 1)
-        drawRadialMultivariateGlyph([0.5,0.1,0.9,0.3], x, y, cellSize, ctx);
+        drawRadialMultivariateGlyph([0.5, 0.1, 0.9, 0.3], x, y, cellSize, ctx);
       },
 
       postDrawFn: (cells, cellSize, ctx, global, panel) => {},
@@ -1058,16 +1074,17 @@ function glyphMapSpec({ width, height } = {}) {
 return {glyphMapSpec};
 }});
 
-define({id: "dd68bb40", inputs: ["glyphMap","glyphMapSpec","valueDiscretiser","regularGeodataLookup","gridGeodataLookup"], outputs: ["createGlyphMap","glyphmap"], body: (glyphMap,glyphMapSpec,valueDiscretiser,regularGeodataLookup,gridGeodataLookup) => {
-function createGlyphMap(glyphmapType, width, height) {
+define({id: "0a4df39c", inputs: ["glyphMap","glyphMapSpec","valueDiscretiser","regularGeodataLookup","gridGeodataLookup"], outputs: ["createGlyphMap","glyphmap"], body: (glyphMap,glyphMapSpec,valueDiscretiser,regularGeodataLookup,gridGeodataLookup) => {
+function createGlyphMap(glyphmapType, { width, height }) {
+  // console.log(width, height);
   if (glyphmapType == "Polygons") {
+    console.log(width, height);
     return glyphMap({
       ...glyphMapSpec(width, height), //takes the base spec...
       discretiserFn: valueDiscretiser(regularGeodataLookup),
     });
   } else if (glyphmapType == "Gridmap") {
-      
-     return glyphMap({
+    return glyphMap({
       ...glyphMapSpec(width, height), //takes the base spec...
       discretiserFn: valueDiscretiser(gridGeodataLookup),
     });
@@ -1097,45 +1114,66 @@ const grid_geodata_withcensus = joinCensusDataToGeoJSON(
 return {regular_geodata_withcensus,grid_geodata_withcensus};
 }});
 
-define({id: "7bcd36c2", inputs: ["d3","drawPieSlice"], outputs: ["drawRadialMultivariateGlyph"], body: (d3,drawPieSlice) => {
- function drawRadialMultivariateGlyph(normalisedData, x, y, size, ctx){
-    
-  let angle = 2 * Math.PI / normalisedData.length;
-  let centerX = x; let centerY = y;
+define({id: "fe98b794", inputs: ["d3","drawPieSlice"], outputs: ["drawRadialMultivariateGlyph"], body: (d3,drawPieSlice) => {
+function drawRadialMultivariateGlyph(normalisedData, x, y, size, ctx) {
+  let angle = (2 * Math.PI) / normalisedData.length;
+  let centerX = x;
+  let centerY = y;
   let radius = size;
+  // console.log(radius);
 
   //get a colour palette
-  let colors = d3.scaleOrdinal(d3.schemeTableau10).domain(d3.range(normalisedData.length));
-  
-  normalisedData.map( (d,i) => {
-    drawPieSlice(ctx, centerX, centerY, radius*0.9, angle*(i+0.1), angle*(i+0.9),'rgba(0,0,0,0.05)');
-    drawPieSlice(ctx, centerX, centerY, radius*Math.sqrt(d)*0.95, angle*(i+0.1), angle*(i+0.9),colors(i))
+  let colors = d3
+    .scaleOrdinal(d3.schemeTableau10)
+    .domain(d3.range(normalisedData.length));
+
+  normalisedData.map((d, i) => {
+    drawPieSlice(
+      ctx,
+      centerX,
+      centerY,
+      radius * 0.9,
+      angle * (i + 0.1),
+      angle * (i + 0.9),
+      "rgba(0,0,0,0.05)"
+    );
+    drawPieSlice(
+      ctx,
+      centerX,
+      centerY,
+      radius * Math.sqrt(d) * 0.95,
+      angle * (i + 0.1),
+      angle * (i + 0.9),
+      colors(i)
+    );
   });
 }
 return {drawRadialMultivariateGlyph};
 }});
 
-define({id: "731f4f1c", outputs: ["drawPieSlice"], body: () => {
-function drawPieSlice(ctx, cx, cy, r, angleStart, angleEnd, color){
-ctx.beginPath();
-ctx.moveTo(cx, cy);
-ctx.arc(cx, cy, r, angleStart, angleEnd);
-ctx.lineTo(cx, cy);
-ctx.fillStyle = color; 
-ctx.fill();
+define({id: "9d040433", outputs: ["drawPieSlice"], body: () => {
+function drawPieSlice(ctx, cx, cy, r, angleStart, angleEnd, color) {
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.arc(cx, cy, r, angleStart, angleEnd);
+  ctx.lineTo(cx, cy);
+  ctx.fillStyle = color;
+  ctx.fill();
 }
 return {drawPieSlice};
 }});
 
-define({id: "6ee4befe", outputs: ["insideCell"], body: () => {
-function insideCell(c, x, y){
-   // console.log(x + " " + y  + " " + c.getXCentre() + " " + c.getYCentre() + " " + c.getCellSize());
-    if (x  >= c.getXCentre() - c.getCellSize() && 
-            x <= c.getXCentre() + c.getCellSize() &&
-            y  >= c.getYCentre() - c.getCellSize() &&
-            y <= c.getYCentre() + c.getCellSize())
-        return true;
-    return false;
+define({id: "520e6d60", outputs: ["insideCell"], body: () => {
+function insideCell(c, x, y) {
+  // console.log(x + " " + y  + " " + c.getXCentre() + " " + c.getYCentre() + " " + c.getCellSize());
+  if (
+    x >= c.getXCentre() - c.getCellSize() &&
+    x <= c.getXCentre() + c.getCellSize() &&
+    y >= c.getYCentre() - c.getCellSize() &&
+    y <= c.getYCentre() + c.getCellSize()
+  )
+    return true;
+  return false;
 }
 return {insideCell};
 }});
@@ -1162,77 +1200,20 @@ body, html {
     max-width: 100% !important;
 }
 
-/* Make the entire section fill the viewport */
-.section {
-  height: 90vh !important; /* Full height of the viewport */
-  padding: 0;
-}
-
-.container {
-  margin: 0 !important;
-  max-width: 100% !important;
-}
-
-/* Make the columns stretch to the full height of the viewport */
-.columns {
-  height: 100%;
-  margin: 0;
-}
-
-/* Ensure the column boxes fit inside the layout */
-.column {
-  display: flex;
-  flex-direction: column;
-}
-
-/* Ensure the boxes inside left column take full height */
-.column.is-one-third .box {
-  flex: 1; /* Make the boxes in the left column flexible */
-  margin-bottom: 0.1em; /* Add some spacing between boxes */
-}
-
-/* For the right column, ensure the box takes up full height */
-.column.is-two-thirds .box {
-  height: calc(90vh - 2rem); /* Subtract section padding or any margin if needed */
-}
 </style>
-<section class="section">
-  <div class="container">
-    <div class="columns">
-      <!-- Left Column (5 boxes) -->
-      <div class="column is-one-third" style="margin: 0 !important; padding: 0 !important;">
-        <div class="columns is-multiline">
-          <!-- <div class="column is-half">
-            <div class="box">Box 1</div>
-          </div>
-          <div class="column is-half">
-            <div class="box">Box 2</div>
-          </div> -->
-          <div class="column is-full">
-            <div class="box">
-              <div style="padding:10px;"> <observablehq-loading></observablehq-loading><!--:2d300212:--> </div>
-              <div style="padding:10px;"> <observablehq-loading></observablehq-loading><!--:71bd6feb:--> </div>
-              <div style="padding:10px;"> <observablehq-loading></observablehq-loading><!--:c0e452dc:--> </div>
-            </div>
-          </div>
-          <div class="column is-full">
-            <div class="box">
-              <div style="padding:10px;"> <observablehq-loading></observablehq-loading><!--:d0097d67:--> </div>
-              <div style="padding:10px;"> Press the 'spacebar' button to gradually morph the shape.  </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <!-- Right Column (Main Content) -->
-      <div class="column is-two-thirds">
-        <div class="box">
-          <!-- <div>${createGlyphMap(glyphmapType)}</div> -->
-          <div><observablehq-loading></observablehq-loading><!--:bd8506eb:--></div>
-        </div>
-      </div>
+<div class="grid grid-cols-4" style="padding:8px; height:92vh;">
+    <div class="card grid-colspan-1">
+         <div style="padding:10px;"> <observablehq-loading></observablehq-loading><!--:2d300212:--> </div>
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<div style="padding:10px;"> <observablehq-loading></observablehq-loading><!--:71bd6feb:--> </div>
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<div style="padding:10px;"> <observablehq-loading></observablehq-loading><!--:c0e452dc:--> </div>
+        <hr>
+        <div style="padding:10px;"> Press the 'spacebar' button to gradually morph the shape. &nbsp;</div>
+        <div style="padding:10px;"><observablehq-loading></observablehq-loading><!--:d0097d67:--></div>
     </div>
-  </div>
-</section>
+    <div class="card glyphmaps grid-colspan-3" style="padding:8px; height:92vh;">
+     <observablehq-loading></observablehq-loading><!--:271c02bf:-->
+    </div>
+</div>
 <!-- ------------------ # Data and Inputs ------------------  -->
 <!-- Select the Local authority from the list below -->
 <div class="observablehq observablehq--block"><!--:c5570c22:--></div>
@@ -1245,18 +1226,18 @@ body, html {
 <div class="observablehq observablehq--block"><!--:47b53055:--></div>
 <!-- ------------------ # Morphing Geometry Functions ------------------  -->
 <div class="observablehq observablehq--block"><!--:fb7d7c7a:--></div>
-<div class="observablehq observablehq--block"><!--:243d9e50:--></div>
+<div class="observablehq observablehq--block"><!--:a92453f1:--></div>
 <!-- ------------------ # Morphing Geometry Functions ------------------  -->
-<div class="observablehq observablehq--block"><!--:346be4c0:--></div>
+<div class="observablehq observablehq--block"><!--:831440ac:--></div>
 <!-- ------------------ # Gridded-Glyphmap Functions ------------------  -->
 <div class="observablehq observablehq--block"><!--:34f88f4c:--></div>
 <div class="observablehq observablehq--block"><!--:3b62e633:--></div>
 <div class="observablehq observablehq--block"><!--:f62c6315:--></div>
-<div class="observablehq observablehq--block"><!--:05928109:--></div>
-<div class="observablehq observablehq--block"><!--:dd68bb40:--></div>
+<div class="observablehq observablehq--block"><!--:6b2381a9:--></div>
+<div class="observablehq observablehq--block"><!--:0a4df39c:--></div>
 <div class="observablehq observablehq--block"><!--:92e60971:--></div>
-<div class="observablehq observablehq--block"><!--:7bcd36c2:--></div>
-<div class="observablehq observablehq--block"><!--:731f4f1c:--></div>
-<div class="observablehq observablehq--block"><!--:6ee4befe:--></div>
+<div class="observablehq observablehq--block"><!--:fe98b794:--></div>
+<div class="observablehq observablehq--block"><!--:9d040433:--></div>
+<div class="observablehq observablehq--block"><!--:520e6d60:--></div>
 </main>
 </div>
