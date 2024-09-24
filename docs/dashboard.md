@@ -85,7 +85,7 @@ body, html {
 const localAuthorityInput = Inputs.select(
   [...list_la].map((item) => item.label),
   {
-    value: "Cambridge",
+    value: "Bradford",
     label: "Local Authority:",
   }
 );
@@ -161,12 +161,30 @@ select * from census_data_source;
 <!-- ------------------ # Morphing Geometry Functions ------------------  -->
 
 ```js
+// normalise the data
+function normalizeValue(paramName, value) {
+  const values = regular_geodata_withcensus.features.map(
+    (feature) => feature.properties[paramName]
+  );
+  const min = d3.min(values);
+  const max = d3.max(values);
+
+  return (value - min) / (max - min);
+}
+
 const data = _.keyBy(
   regular_geodata_withcensus.features.map((feat) => {
     return {
       code: feat.properties.code,
       population: +feat.properties.population,
       data: feat.properties,
+      deprivation: normalizeValue(
+        "deprivation_value",
+        feat.properties.deprivation_value
+      ),
+      vehicle: normalizeValue("vehicle_value", feat.properties.vehicle_value),
+      heating: normalizeValue("heating_value", feat.properties.heating_value),
+      health: normalizeValue("health_value", feat.properties.health_value),
     };
   }),
   "code"
@@ -913,10 +931,16 @@ function glyphMapSpec(width, height) {
       aggrFn: (cell, row, weight, global, panel) => {
         if (cell.population) {
           cell.population += row.population;
-          cell.otherdata += row;
+          cell.deprivation += row.deprivation;
+          cell.vehicle += row.vehicle;
+          cell.heating += row.heating;
+          cell.health += row.health;
         } else {
           cell.population = row.population;
-          cell.otherdata = row;
+          cell.deprivation = row.deprivation;
+          cell.vehicle = row.vehicle;
+          cell.heating = row.heating;
+          cell.health = row.health;
         }
       },
 
@@ -969,13 +993,20 @@ function glyphMapSpec(width, height) {
         }
 
         //draw a radial glyph -> change the array to real data (between 0 and 1)
-        drawRadialMultivariateGlyph([0.5, 0.1, 0.9, 0.3], x, y, cellSize, ctx);
+        // drawRadialMultivariateGlyph([0.5, 0.1, 0.9, 0.3], x, y, cellSize, ctx);
+        drawRadialMultivariateGlyph(
+          [cell.deprivation, cell.vehicle, cell.heating, cell.health],
+          x,
+          y,
+          cellSize,
+          ctx
+        );
       },
 
       postDrawFn: (cells, cellSize, ctx, global, panel) => {},
 
       tooltipTextFn: (cell) => {
-        // console.log(cell.otherdata);
+        console.log(cell.deprivation);
       },
     },
   };
@@ -1017,7 +1048,7 @@ const grid_geodata_withcensus = joinCensusDataToGeoJSON(
   grid_geodata
 );
 
-// display(regular_geodata_withcensus);
+display(regular_geodata_withcensus);
 ```
 
 ```js
