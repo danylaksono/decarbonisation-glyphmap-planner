@@ -841,7 +841,8 @@ function valueDiscretiser(geomLookup) {
 
 ```js
 // glyphmap basic specs
-function glyphMapSpec({ width, height } = {}) {
+function glyphMapSpec(width, height) {
+    console.log("gms: " + width + " " + height);
   return {
     coordType: "notmercator",
     initialBB: turf.bbox(regular_geodata),
@@ -853,8 +854,8 @@ function glyphMapSpec({ width, height } = {}) {
 
     // width: 800,
     // height: 600,
-    width: width || 1200,
-    height: height || 600,
+    width: width,
+    height: height,
 
     customMap: {
       scaleParams: [],
@@ -940,6 +941,7 @@ function glyphMapSpec({ width, height } = {}) {
 
 ```js
 function createGlyphMap(glyphmapType, width, height) {
+    console.log("here: " + width + " " + height);
   if (glyphmapType == "Polygons") {
     return glyphMap({
       ...glyphMapSpec(width, height), //takes the base spec...
