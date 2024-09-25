@@ -1,6 +1,7 @@
 var ParticleNetwork = (function () {
   var c = function (a) {
     this.canvas = a.canvas;
+    this.canvas = a.canvas;
     this.g = a.g;
     this.particleColor = a.options.particleColor;
     this.x = Math.random() * this.canvas.width;

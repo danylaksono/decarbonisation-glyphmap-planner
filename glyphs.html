@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Testing data | Decarbonisation Glyphmap Planner</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Source+Serif+Pro:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&amp;display=swap" crossorigin>
+<link rel="preload" as="style" href="./_observablehq/theme-air,near-midnight.css">
+<link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css2?family=Source+Serif+Pro:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&amp;display=swap" crossorigin>
+<link rel="stylesheet" type="text/css" href="./_observablehq/theme-air,near-midnight.css">
+<link rel="modulepreload" href="./_observablehq/client.js">
+<link rel="modulepreload" href="./_observablehq/runtime.js">
+<link rel="modulepreload" href="./_observablehq/stdlib.js">
+<link rel="modulepreload" href="./_import/components/radialglyph.e10c9304.js">
+<link rel="modulepreload" href="./_npm/d3@7.9.0/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-array@3.2.4/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-axis@3.0.0/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-brush@3.0.0/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-chord@3.0.1/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-color@3.1.0/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-contour@4.0.2/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-delaunay@6.0.4/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-dispatch@3.0.1/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-drag@3.0.0/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-dsv@3.0.1/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-ease@3.0.1/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-fetch@3.0.1/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-force@3.0.0/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-format@3.1.0/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-geo@3.1.1/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-hierarchy@3.1.2/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-interpolate@3.0.1/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-path@3.1.0/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-polygon@3.0.1/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-quadtree@3.0.1/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-random@3.0.1/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-scale@4.0.2/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-scale-chromatic@3.1.0/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-selection@3.0.0/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-shape@3.2.0/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-time@3.1.0/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-time-format@4.1.0/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-timer@3.0.1/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-transition@3.0.1/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-zoom@3.0.0/_esm.js">
+<link rel="modulepreload" href="./_npm/internmap@2.0.3/_esm.js">
+<link rel="modulepreload" href="./_npm/delaunator@5.0.1/_esm.js">
+<link rel="modulepreload" href="./_npm/robust-predicates@3.0.2/_esm.js">
+<script type="module">
+
+import {define} from "./_observablehq/client.js";
+
+define({id: "18672a50", outputs: ["RadialGlyph"], body: async () => {
+const {RadialGlyph} = await import("./_import/components/radialglyph.e10c9304.js");
+
+return {RadialGlyph};
+}});
+
+define({id: "a9a4e27a", mode: "inline", inputs: ["resize","createCanvas","display"], body: async (resize,createCanvas,display) => {
+display(await(
+resize((width, height) => createCanvas(width, height))
+))
+}});
+
+define({id: "b0c92749", inputs: ["RadialGlyph"], outputs: ["createCanvas"], body: (RadialGlyph) => {
+function createCanvas(width, height) {
+    let canvas = document.createElement("canvas");
+    let ctx = canvas.getContext("2d");
+    canvas.width = width;
+    canvas.height = width;
+    
+    let rg = new RadialGlyph([0.4, 0.1, 0.9, 0.3]);
+    rg.draw(ctx, width/2,height/2, Math.min(width/2, height/2));
+    
+    return canvas;
+}
+return {createCanvas};
+}});
+
+</script>
+<div id="observablehq-center">
+<main id="observablehq-main" class="observablehq">
+<div class="observablehq observablehq--block"><!--:18672a50:--></div>
+<!-------- Stylesheets -------->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.0/css/bulma.min.css">
+<style>
+body, html {
+  height: 100%;
+  margin: 0 !important;
+  overflow: hidden;
+  padding: 0;
+}
+
+#observablehq-main, #observablehq-header, #observablehq-footer {
+    margin: 0 !important;
+    /* width: 100% !important; */
+    max-width: 100% !important;
+}
+
+/* Make the entire section fill the viewport */
+.section {
+  height: 90vh !important; /* Full height of the viewport */
+  padding: 0;
+}
+
+.container {
+  margin: 0 !important;
+  max-width: 100% !important;
+}
+
+/* Make the columns stretch to the full height of the viewport */
+.columns {
+  height: 100%;
+  margin: 0;
+}
+
+/* Ensure the column boxes fit inside the layout */
+.column {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Ensure the boxes inside left column take full height */
+.column.is-one-third .box {
+  flex: 1; /* Make the boxes in the left column flexible */
+  margin-bottom: 0.5rem; /* Add some spacing between boxes */
+}
+
+/* For the right column, ensure the box takes up full height */
+.column.is-two-thirds .box {
+  height: calc(90vh - 2rem); /* Subtract section padding or any margin if needed */
+}
+</style>
+<section class="section">
+    <div class="container">
+      <div class="columns">
+        <!-- Left Column (5 boxes) -->
+        <div class="column is-one-third" style="margin: 0 !important; padding: 0 !important;">
+          <div class="columns is-multiline">
+            <div class="column is-half">
+              <div class="box">Box 1</div>
+            </div>
+            <div class="column is-half">
+              <div class="box">Box 2</div>
+            </div>
+            <div class="column is-full">
+              <div class="box">Box 3</div>
+            </div>
+            <div class="column is-full">
+              <div class="box">Box 4</div>
+            </div>
+            <div class="column is-full">
+              <div class="box">Box 5</div>
+            </div>
+          </div>
+        </div>
+        <!-- Right Column (Main Content) -->
+        <div class="column is-two-thirds">
+          <div id="main-area" class="box">
+            <observablehq-loading></observablehq-loading><!--:a9a4e27a:-->
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+<div class="observablehq observablehq--block"><!--:b0c92749:--></div>
+</main>
+</div>
