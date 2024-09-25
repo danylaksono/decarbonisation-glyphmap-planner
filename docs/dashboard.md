@@ -22,6 +22,7 @@ import {
   createDiscretiserValue,
   _drawCellBackground,
 } from "./components/gridded-glyphmaps/index.min.js";
+import { OSGB } from "./components/osgb/index.js";
 import {
   downloadBoundaries,
   joinCensusDataToGeoJSON,
@@ -32,6 +33,10 @@ import {
 //   inSituMorphMouse,
 //   prepareGeoJsonForMorphingLib,
 // } from "./components/morpher.js";
+```
+
+```js
+const proj = new OSGB();
 ```
 
 <!-- ------------ The HTML Layout ------------ -->
@@ -46,7 +51,7 @@ import {
 body, html {
   height: 100%;
   margin: 0 !important;
-  /* overflow: hidden; */
+  overflow: hidden;
   padding: 0;
 }
 
@@ -56,78 +61,21 @@ body, html {
     max-width: 100% !important;
 }
 
-/* Make the entire section fill the viewport */
-.section {
-  height: 90vh !important; /* Full height of the viewport */
-  padding: 0;
-}
-
-.container {
-  margin: 0 !important;
-  max-width: 100% !important;
-}
-
-/* Make the columns stretch to the full height of the viewport */
-.columns {
-  height: 100%;
-  margin: 0;
-}
-
-/* Ensure the column boxes fit inside the layout */
-.column {
-  display: flex;
-  flex-direction: column;
-}
-
-/* Ensure the boxes inside left column take full height */
-.column.is-one-third .box {
-  flex: 1; /* Make the boxes in the left column flexible */
-  margin-bottom: 0.1em; /* Add some spacing between boxes */
-}
-
-/* For the right column, ensure the box takes up full height */
-.column.is-two-thirds .box {
-  height: calc(90vh - 2rem); /* Subtract section padding or any margin if needed */
-}
 </style>
 
-<section class="section">
-  <div class="container">
-    <div class="columns">
-      <!-- Left Column (5 boxes) -->
-      <div class="column is-one-third" style="margin: 0 !important; padding: 0 !important;">
-        <div class="columns is-multiline">
-          <!-- <div class="column is-half">
-            <div class="box">Box 1</div>
-          </div>
-          <div class="column is-half">
-            <div class="box">Box 2</div>
-          </div> -->
-          <div class="column is-full">
-            <div class="box">
-              <div style="padding:10px;"> ${localAuthorityInput} </div>
-              <div style="padding:10px;"> ${geogNameInput} </div>
-              <div style="padding:10px;"> ${glyphmapTypeInput} </div>
-            </div>
-          </div>
-          <div class="column is-full">
-            <div class="box">
-              <div style="padding:10px;"> ${morphers} </div>
-              <div style="padding:10px;"> Press the 'spacebar' button to gradually morph the shape.  </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <!-- Right Column (Main Content) -->
-      <div class="column is-two-thirds">
-        <div class="box" >
-          <!-- <div>${createGlyphMap(glyphmapType)}</div> -->
-          <div>${resize((width, height) => createGlyphMap(glyphmapType, width, height))}</div>
-        </div>
-      </div>
+<div class="grid grid-cols-4" style="padding:8px; height:92vh;">
+    <div class="card grid-colspan-1">
+         <div style="padding:10px;"> ${localAuthorityInput} </div>
+         <div style="padding:10px;"> ${geogNameInput} </div>
+         <div style="padding:10px;"> ${glyphmapTypeInput} </div>
+        <hr>
+        <div style="padding:10px;"> Press the 'spacebar' button to gradually morph the shape.  </div>
+        <div style="padding:10px;">${morphers}</div>
     </div>
-  </div>
-</section>
+    <div class="card glyphmaps grid-colspan-3" style="padding:8px; height:92vh;">
+     ${resize((width, height) => createGlyphMap(glyphmapType, {width, height}))}
+    </div>
+</div>
 
 <!-- ------------------ # Data and Inputs ------------------  -->
 
@@ -137,7 +85,7 @@ body, html {
 const localAuthorityInput = Inputs.select(
   [...list_la].map((item) => item.label),
   {
-    value: "Cambridge",
+    value: "Bradford",
     label: "Local Authority:",
   }
 );
@@ -213,12 +161,30 @@ select * from census_data_source;
 <!-- ------------------ # Morphing Geometry Functions ------------------  -->
 
 ```js
+// normalise the data
+function normalizeValue(paramName, value) {
+  const values = regular_geodata_withcensus.features.map(
+    (feature) => feature.properties[paramName]
+  );
+  const min = d3.min(values);
+  const max = d3.max(values);
+
+  return (value - min) / (max - min);
+}
+
 const data = _.keyBy(
   regular_geodata_withcensus.features.map((feat) => {
     return {
       code: feat.properties.code,
       population: +feat.properties.population,
       data: feat.properties,
+      deprivation: normalizeValue(
+        "deprivation_value",
+        feat.properties.deprivation_value
+      ),
+      vehicle: normalizeValue("vehicle_value", feat.properties.vehicle_value),
+      heating: normalizeValue("heating_value", feat.properties.heating_value),
+      health: normalizeValue("health_value", feat.properties.health_value),
     };
   }),
   "code"
@@ -254,11 +220,24 @@ const layouts = [
   },
 ];
 
-const morphers = inSituMorphMouse({
-  interactive: true,
-  showDescription: false,
-  layouts,
-});
+// const morphers = inSituMorphMouse({
+//   interactive: true,
+//   showDescription: false,
+//   layouts,
+// });
+
+// using observable framework resize callback function
+const morphers = resize((width, height) =>
+  inSituMorphMouse(
+    {
+      interactive: true,
+      showDescription: false,
+      layouts,
+      width,
+    },
+    width
+  )
+);
 
 // display(morphers);
 ```
@@ -268,7 +247,7 @@ const morphers = inSituMorphMouse({
 ```js
 // ---------------------- Functions for morphing ----------------------
 
-function inSituMorphMouse(options) {
+function inSituMorphMouse(options, width) {
   //interactive: true|false Whether responds to mouse for animation
   //layouts: is an array of layouts with the following structure
   //   shape: {key,feature}
@@ -315,7 +294,11 @@ function inSituMorphMouse(options) {
   const chartWH = bb[3];
 
   const throttled = _.throttle((stepAndAmt) => draw(stepAndAmt), 100);
-  const context = context2d(restrictWidthToChart ? chartWH : width, chartWH);
+  // const context = context2d(restrictWidthToChart ? chartWH : width, chartWH);
+  const context = context2d(
+    width || (restrictWidthToChart ? chartWH : options.width),
+    chartWH
+  );
   // const context = DOM.context2d(
   //   restrictWidthToChart ? chartWH : width,
   //   chartWH
@@ -326,7 +309,7 @@ function inSituMorphMouse(options) {
     let increasing = true; // direction flag to track the direction of change
     document.addEventListener("keydown", (e) => {
       if (e.code === "Space") {
-        console.log("Spacebar pressed");
+        // console.log("Spacebar pressed");
         if (frame) cancelAnimationFrame(frame);
         isAnimating = false;
 
@@ -800,23 +783,94 @@ function intermBbSize(layout, toLayout) {
 <!-- ------------------ # Gridded-Glyphmap Functions ------------------  -->
 
 ```js
-const regularGeodataLookup = _.keyBy(
-  regular_geodata_withcensus.features.map((feat) => {
-    return { ...feat, centroid: turf.getCoord(turf.centroid(feat.geometry)) };
-  }),
-  (feat) => feat.properties.code
-);
-// display(regularGeodataLookup);
+// coordinate transformation utilities
+function transformCoordinates(coords) {
+  if (coords.length === 4 && !Array.isArray(coords[0])) {
+    // bounding box
+    return [
+      ...proj.toGeo([coords[0], coords[1]]),
+      ...proj.toGeo([coords[2], coords[3]]),
+    ];
+  } else if (Array.isArray(coords[0])) {
+    //  arrays of coordinates
+    return coords.map(transformCoordinates);
+  } else {
+    //  individual coordinate pairs
+    return proj.toGeo(coords);
+  }
+}
+
+function transformGeometry(geometry) {
+  if (geometry.type === "GeometryCollection") {
+    return {
+      ...geometry,
+      geometries: geometry.geometries.map(transformGeometry),
+    };
+  }
+
+  return {
+    ...geometry,
+    coordinates: transformCoordinates(geometry.coordinates),
+  };
+}
+
+// check to see if it works
+// display(transformCoordinates([547764, 180871]));
+
+// const transformedGeoJSON = {
+//   ...originalGeoJSON,
+//   features: originalGeoJSON.features.map(feature => ({
+//     ...feature,
+//     geometry: {
+//       ...feature.geometry,
+//       coordinates: transformCoordinates(feature.geometry.coordinates)
+//     }
+//   }))
+// };
 ```
 
 ```js
-const gridGeodataLookup = _.keyBy(
-  grid_geodata_withcensus.features.map((feat) => {
-    return { ...feat, centroid: turf.getCoord(turf.centroid(feat.geometry)) };
+// const regularGeodataLookup = _.keyBy(
+//   regular_geodata_withcensus.features.map((feat) => {
+//     return { ...feat, centroid: turf.getCoord(turf.centroid(feat.geometry)) };
+//   }),
+//   (feat) => feat.properties.code
+// );
+
+// const gridGeodataLookup = _.keyBy(
+//   grid_geodata_withcensus.features.map((feat) => {
+//     return { ...feat, centroid: turf.getCoord(turf.centroid(feat.geometry)) };
+//   }),
+//   (feat) => feat.properties.code
+// );
+
+const regularGeodataLookup = _.keyBy(
+  regular_geodata_withcensus.features.map((feat) => {
+    const transformedGeometry = transformGeometry(feat.geometry);
+    const centroid = turf.getCoord(turf.centroid(transformedGeometry));
+    return {
+      ...feat,
+      geometry: transformedGeometry,
+      centroid: centroid,
+    };
   }),
   (feat) => feat.properties.code
 );
-// display(gridGeodataLookup);
+
+const gridGeodataLookup = _.keyBy(
+  grid_geodata_withcensus.features.map((feat) => {
+    const transformedGeometry = transformGeometry(feat.geometry);
+    const centroid = turf.getCoord(turf.centroid(transformedGeometry));
+    return {
+      ...feat,
+      geometry: transformedGeometry,
+      centroid: centroid,
+    };
+  }),
+  (feat) => feat.properties.code
+);
+
+// display(regularGeodataLookup);
 ```
 
 ```js
@@ -836,21 +890,28 @@ function valueDiscretiser(geomLookup) {
     boundaryFn: (key) => geomLookup[key]?.geometry.coordinates[0],
   });
 }
+
 // display(valueDiscretiser(regularGeodataLookup));
+// display(transformCoordinates(turf.bbox(regular_geodata)));
 ```
 
 ```js
 // glyphmap basic specs
 function glyphMapSpec(width, height) {
-    console.log("gms: " + width + " " + height);
+  // console.log("in glyphmapspec", width, height);
+  const bbox = turf.bbox(regular_geodata);
   return {
-    coordType: "notmercator",
-    initialBB: turf.bbox(regular_geodata),
+    // coordType: "notmercator",
+    initialBB: [
+      ...proj.toGeo([bbox[0], bbox[1]]),
+      ...proj.toGeo([bbox[2], bbox[3]]),
+    ],
     data: Object.values(data),
     getLocationFn: (row) => regularGeodataLookup[row.code]?.centroid,
     discretisationShape: "grid",
+    mapType: "CartoPositron",
     interactiveCellSize: true,
-    cellSize: 30,
+    cellSize: 60,
 
     // width: 800,
     // height: 600,
@@ -860,7 +921,7 @@ function glyphMapSpec(width, height) {
     customMap: {
       scaleParams: [],
 
-      initFn: (cells, cellSize, global, panel) => { },
+      initFn: (cells, cellSize, global, panel) => {},
 
       preAggrFn: (cells, cellSize, global, panel) => {
         // console.log(global);
@@ -869,27 +930,31 @@ function glyphMapSpec(width, height) {
       aggrFn: (cell, row, weight, global, panel) => {
         if (cell.population) {
           cell.population += row.population;
-          cell.otherdata += row;
+          cell.deprivation += row.deprivation;
+          cell.vehicle += row.vehicle;
+          cell.heating += row.heating;
+          cell.health += row.health;
         } else {
           cell.population = row.population;
-          cell.otherdata = row;
+          cell.deprivation = row.deprivation;
+          cell.vehicle = row.vehicle;
+          cell.heating = row.heating;
+          cell.health = row.health;
         }
       },
 
       postAggrFn: (cells, cellSize, global, panel) => {
-          
-          //add cell interaction        
-        let canvas = d3.select(panel).select('canvas').node();
+        //add cell interaction
+        let canvas = d3.select(panel).select("canvas").node();
 
-        canvas.addEventListener('click', function(evt) {
+        canvas.addEventListener("click", function (evt) {
           //check which cell the click was in
           const rect = canvas.getBoundingClientRect();
           let x = evt.clientX - rect.left;
           let y = evt.clientY - rect.top;
           global.clickedCell = null;
-          for (let i=0; i<cells.length; i++)
-              if (insideCell(cells[i],x,y))
-                  global.clickedCell = cells[i];
+          for (let i = 0; i < cells.length; i++)
+            if (insideCell(cells[i], x, y)) global.clickedCell = cells[i];
         });
       },
 
@@ -905,8 +970,7 @@ function glyphMapSpec(width, height) {
       },
 
       drawFn: (cell, x, y, cellSize, ctx, global, panel) => {
-          
-       const boundary = cell.getBoundary(0);
+        const boundary = cell.getBoundary(0);
         if (boundary[0] != boundary[boundary.length - 1]) {
           boundary.push(boundary[0]);
         }
@@ -916,23 +980,32 @@ function glyphMapSpec(width, height) {
         global.pathGenerator(boundaryFeat);
         ctx.fillStyle = global.colourScalePop(cell.population);
         ctx.fill();
-        
+
         //add contour to clicked cells
-        if (global.clickedCell == cell){
-            ctx.lineWidth = 4; ctx.strokeStyle = "rgb(250,250,250)";            
-            ctx.stroke();
-            ctx.lineWidth = 2; ctx.strokeStyle = "rgb(50,50,50)";
-            ctx.stroke();            
+        if (global.clickedCell == cell) {
+          ctx.lineWidth = 4;
+          ctx.strokeStyle = "rgb(250,250,250)";
+          ctx.stroke();
+          ctx.lineWidth = 2;
+          ctx.strokeStyle = "rgb(50,50,50)";
+          ctx.stroke();
         }
 
         //draw a radial glyph -> change the array to real data (between 0 and 1)
-        drawRadialMultivariateGlyph([0.5,0.1,0.9,0.3], x, y, cellSize, ctx);
+        // drawRadialMultivariateGlyph([0.5, 0.1, 0.9, 0.3], x, y, cellSize, ctx);
+        drawRadialMultivariateGlyph(
+          [cell.deprivation, cell.vehicle, cell.heating, cell.health],
+          x,
+          y,
+          cellSize,
+          ctx
+        );
       },
 
       postDrawFn: (cells, cellSize, ctx, global, panel) => {},
 
       tooltipTextFn: (cell) => {
-        console.log(cell.otherdata);
+        console.log(cell.deprivation);
       },
     },
   };
@@ -940,16 +1013,15 @@ function glyphMapSpec(width, height) {
 ```
 
 ```js
-function createGlyphMap(glyphmapType, width, height) {
-    console.log("here: " + width + " " + height);
+function createGlyphMap(glyphmapType, { width, height }) {
+  // console.log(width, height);
   if (glyphmapType == "Polygons") {
     return glyphMap({
       ...glyphMapSpec(width, height), //takes the base spec...
       discretiserFn: valueDiscretiser(regularGeodataLookup),
     });
   } else if (glyphmapType == "Gridmap") {
-      
-     return glyphMap({
+    return glyphMap({
       ...glyphMapSpec(width, height), //takes the base spec...
       discretiserFn: valueDiscretiser(gridGeodataLookup),
     });
@@ -961,6 +1033,7 @@ function createGlyphMap(glyphmapType, width, height) {
 const glyphmap = glyphMapSpec();
 
 // display(createGlyphMap(glyphmapType));
+// display(valueDiscretiser(regularGeodataLookup));
 ```
 
 ```js
@@ -978,41 +1051,62 @@ const grid_geodata_withcensus = joinCensusDataToGeoJSON(
 ```
 
 ```js
- function drawRadialMultivariateGlyph(normalisedData, x, y, size, ctx){
-    
-  let angle = 2 * Math.PI / normalisedData.length;
-  let centerX = x; let centerY = y;
-  let radius = size;
+function drawRadialMultivariateGlyph(normalisedData, x, y, size, ctx) {
+  let angle = (2 * Math.PI) / normalisedData.length;
+  let centerX = x;
+  let centerY = y;
+  let radius = size / 2;
+  // console.log(radius);
 
   //get a colour palette
-  let colors = d3.scaleOrdinal(d3.schemeTableau10).domain(d3.range(normalisedData.length));
-  
-  normalisedData.map( (d,i) => {
-    drawPieSlice(ctx, centerX, centerY, radius*0.9, angle*(i+0.1), angle*(i+0.9),'rgba(0,0,0,0.05)');
-    drawPieSlice(ctx, centerX, centerY, radius*Math.sqrt(d)*0.95, angle*(i+0.1), angle*(i+0.9),colors(i))
+  let colors = d3
+    .scaleOrdinal(d3.schemeTableau10)
+    .domain(d3.range(normalisedData.length));
+
+  normalisedData.map((d, i) => {
+    drawPieSlice(
+      ctx,
+      centerX,
+      centerY,
+      radius * 0.9,
+      angle * (i + 0.1),
+      angle * (i + 0.9),
+      "rgba(0,0,0,0.05)"
+    );
+    drawPieSlice(
+      ctx,
+      centerX,
+      centerY,
+      radius * Math.sqrt(d) * 0.95,
+      angle * (i + 0.1),
+      angle * (i + 0.9),
+      colors(i)
+    );
   });
 }
 ```
 
 ```js
-function drawPieSlice(ctx, cx, cy, r, angleStart, angleEnd, color){
-ctx.beginPath();
-ctx.moveTo(cx, cy);
-ctx.arc(cx, cy, r, angleStart, angleEnd);
-ctx.lineTo(cx, cy);
-ctx.fillStyle = color; 
-ctx.fill();
+function drawPieSlice(ctx, cx, cy, r, angleStart, angleEnd, color) {
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.arc(cx, cy, r, angleStart, angleEnd);
+  ctx.lineTo(cx, cy);
+  ctx.fillStyle = color;
+  ctx.fill();
 }
 ```
 
 ```js
-function insideCell(c, x, y){
-   // console.log(x + " " + y  + " " + c.getXCentre() + " " + c.getYCentre() + " " + c.getCellSize());
-    if (x  >= c.getXCentre() - c.getCellSize() && 
-            x <= c.getXCentre() + c.getCellSize() &&
-            y  >= c.getYCentre() - c.getCellSize() &&
-            y <= c.getYCentre() + c.getCellSize())
-        return true;
-    return false;
+function insideCell(c, x, y) {
+  // console.log(x + " " + y  + " " + c.getXCentre() + " " + c.getYCentre() + " " + c.getCellSize());
+  if (
+    x >= c.getXCentre() - c.getCellSize() &&
+    x <= c.getXCentre() + c.getCellSize() &&
+    y >= c.getYCentre() - c.getCellSize() &&
+    y <= c.getYCentre() + c.getCellSize()
+  )
+    return true;
+  return false;
 }
 ```
