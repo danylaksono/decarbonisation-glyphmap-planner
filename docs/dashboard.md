@@ -1,6 +1,6 @@
 ---
-theme: dashboard
 title: Morphing Glyphmaps
+theme: dashboard
 toc: false
 sidebar: false
 footer: ""
