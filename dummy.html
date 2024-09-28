@@ -23,10 +23,10 @@
 <link rel="modulepreload" href="./_npm/topojson-client@3.1.0/_esm.js">
 <link rel="modulepreload" href="./_npm/lodash@4.17.21/_esm.js">
 <link rel="modulepreload" href="./_observablehq/stdlib/duckdb.js">
+<link rel="modulepreload" href="./_npm/htl@0.3.1/_esm.js">
 <link rel="modulepreload" href="./_observablehq/stdlib/inputs.js">
 <link rel="modulepreload" href="./_npm/@observablehq/plot@0.6.16/_esm.js">
 <link rel="modulepreload" href="./_npm/@duckdb/duckdb-wasm@1.28.0/_esm.js">
-<link rel="modulepreload" href="./_npm/htl@0.3.1/_esm.js">
 <link rel="modulepreload" href="./_npm/isoformat@0.2.1/_esm.js">
 <link rel="modulepreload" href="./_node/@turf/along@7.1.0/index.js">
 <link rel="modulepreload" href="./_node/@turf/angle@7.1.0/index.js">
@@ -203,8 +203,8 @@ import {define} from "./_observablehq/client.js";
 import {registerFile, FileAttachment} from "./_observablehq/stdlib.js";
 import {registerTable} from "./_observablehq/stdlib/duckdb.js";
 
-registerFile("./data/census_data_output.parquet", {"name":"./data/census_data_output.parquet","path":"./_file/data/census_data_output.1374b127.parquet","lastModified":1727490295331});
-registerFile("./data/geo.csv", {"name":"./data/geo.csv","mimeType":"text/csv","path":"./_file/data/geo.8ba75b99.csv","lastModified":1727490295347});
+registerFile("./data/census_data_output.parquet", {"name":"./data/census_data_output.parquet","path":"./_file/data/census_data_output.1374b127.parquet","lastModified":1727491379126});
+registerFile("./data/geo.csv", {"name":"./data/geo.csv","mimeType":"text/csv","path":"./_file/data/geo.8ba75b99.csv","lastModified":1727491379142});
 registerTable("geo", FileAttachment("./data/geo.csv"));
 registerTable("census_data_source", FileAttachment("./data/census_data_output.parquet"));
 
@@ -255,6 +255,12 @@ resize((width, height) => createGlyphMap(glyphmapType, {width, height}))
 ))
 }});
 
+define({id: "2ad25b31", mode: "inline", inputs: ["Plot","dataInMorph","display"], body: async (Plot,dataInMorph,display) => {
+display(await(
+Plot.geo(dataInMorph).plot({projection: { type: "identity", domain: dataInMorph }})
+))
+}});
+
 define({id: "17a1fc11", inputs: ["Inputs","list_la","Generators"], outputs: ["localAuthorityInput","local_authority"], body: (Inputs,list_la,Generators) => {
 const localAuthorityInput = Inputs.select(
   [...list_la].map((item) => item.label),
@@ -276,6 +282,19 @@ const geogNameInput = Inputs.radio(["LSOA", "MSOA"], {
 const geogName = Generators.input(geogNameInput);
 // display(geogName);
 return {geogNameInput,geogName};
+}});
+
+define({id: "a7b68b8f", inputs: ["html","Generators"], outputs: ["tInput","t"], body: (html,Generators) => {
+const tInput = html`<input
+  style="width: 100%; max-width:200px;"
+  type="range"
+  step="0.05"
+  min="0"
+  max="1"
+/>`;
+
+const t = Generators.input(tInput);
+return {tInput,t};
 }});
 
 define({id: "76ba71c3", inputs: ["list_la","local_authority","geogName"], outputs: ["la_code","geogBoundary"], body: (list_la,local_authority,geogName) => {
@@ -506,7 +525,7 @@ function convertToGeoJSON(interpolatedShapes) {
 return {extractCoordinatesForFlubber,interpolateGeoShapes,convertToGeoJSON};
 }});
 
-define({id: "e563634b", inputs: ["interpolateGeoShapes","regular_geodata_withcensus","grid_geodata_withcensus","convertToGeoJSON","t","display"], outputs: ["intGeoShapesv2","dataInMorph"], body: (interpolateGeoShapes,regular_geodata_withcensus,grid_geodata_withcensus,convertToGeoJSON,t,display) => {
+define({id: "d685c337", inputs: ["interpolateGeoShapes","regular_geodata_withcensus","grid_geodata_withcensus","convertToGeoJSON","t"], outputs: ["intGeoShapesv2","dataInMorph"], body: (interpolateGeoShapes,regular_geodata_withcensus,grid_geodata_withcensus,convertToGeoJSON,t) => {
 const intGeoShapesv2 = interpolateGeoShapes(
   regular_geodata_withcensus,
   grid_geodata_withcensus,
@@ -515,29 +534,27 @@ const intGeoShapesv2 = interpolateGeoShapes(
 );
 const dataInMorph = convertToGeoJSON(intGeoShapesv2(t));
 // display(Object.values(intGeoShapesv2(t)));
-display(dataInMorph);
+// display(dataInMorph);
 return {intGeoShapesv2,dataInMorph};
 }});
 
-define({id: "2614e488", inputs: ["Inputs","Generators"], outputs: ["tInput","t"], body: (Inputs,Generators) => {
-const tInput = Inputs.range([0, 1], {
-  label: "Morph position",
-  value: 0,
-  step: 0.1,
-});
+define({id: "beca536c", body: () => {
+// const tInput = Inputs.range([0, 1], {
+//   label: "Morph position",
+//   value: 0,
+//   step: 0.1,
+// });
 
-const t = Generators.input(tInput);
+// const t = Generators.input(tInput);
 
 // display(t);
-return {tInput,t};
 }});
 
-define({id: "52a96378", inputs: ["Plot","dataInMorph","display"], outputs: ["plots"], body: (Plot,dataInMorph,display) => {
-const plots = Plot.geo(dataInMorph).plot({
-  projection: { type: "identity", domain: dataInMorph },
-});
-display(plots);
-return {plots};
+define({id: "7c4219f4", body: () => {
+// const plots = Plot.geo(dataInMorph).plot({
+//   projection: { type: "identity", domain: dataInMorph },
+// });
+// display(plots);
 }});
 
 define({id: "147250e0", inputs: ["d3","_","turf","context2d","flubber","OffscreenCanvas"], outputs: ["inSituMorphMouse","_insertIntermediateLayouts","intermTranslate","prepareGeoJsonForMorphingLib","intermTranslateV","intermCircles","intermChangeShape","intermBbSize"], body: (d3,_,turf,context2d,flubber,OffscreenCanvas) => {
@@ -1190,7 +1207,7 @@ function valueDiscretiser(geomLookup) {
 return {glyphmapTypeInput,glyphmapType,valueDiscretiser};
 }});
 
-define({id: "d1f66c71", inputs: ["turf","createDiscretiserValue","display","dataInMorph"], outputs: ["valueDiscretiserInMorph"], body: (turf,createDiscretiserValue,display,dataInMorph) => {
+define({id: "12377cbc", inputs: ["turf","createDiscretiserValue"], outputs: ["valueDiscretiserInMorph"], body: (turf,createDiscretiserValue) => {
 function valueDiscretiserInMorph(inp) {
   // create lookup on the fly
   let geomLookup = Object.fromEntries(
@@ -1215,8 +1232,8 @@ function valueDiscretiserInMorph(inp) {
   });
 }
 
-display(valueDiscretiserInMorph(dataInMorph));
-display(turf.bbox(dataInMorph));
+// display(valueDiscretiserInMorph(dataInMorph));
+// display(turf.bbox(dataInMorph));
 // display(transformCoordinates(turf.bbox(regular_geodata)));
 return {valueDiscretiserInMorph};
 }});
@@ -1481,21 +1498,27 @@ body, html {
          <div style="padding:10px;"> <observablehq-loading></observablehq-loading><!--:2d300212:--> </div>
 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<div style="padding:10px;"> <observablehq-loading></observablehq-loading><!--:71bd6feb:--> </div>
 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<div style="padding:10px;"> <observablehq-loading></observablehq-loading><!--:c0e452dc:--> </div>
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<div style="padding:10px;"> <small>Drag to morph </small> <observablehq-loading></observablehq-loading><!--:d5a91e5c:--> </div>  
         <hr>
-        <div style="padding:10px;"> Press the 'spacebar' button to gradually morph the shape. &nbsp;</div>
-        <div style="padding:10px;">morphers2 here</div>
-        <div style="padding:10px;"><observablehq-loading></observablehq-loading><!--:d5a91e5c:--></div>
+        <div style="padding:10px;"> List of layers</div>
+        <!-- <div style="padding:10px;"></div> -->
+        <!-- <div style="padding:10px;">${tInput}</div> -->
     </div>
     <div class="card glyphmaps grid-colspan-3" style="padding:8px; height:92vh;">
      <observablehq-loading></observablehq-loading><!--:271c02bf:-->
     </div>
-    <div class="card grid-colspan-1" style="padding:8px; height:92vh;">
+    <div class="card grid-colspan-1" style="padding:8px; height:92vh;"> 
+      <div style="padding:15px;">Animated morphing glyphmaps</div>
+      <div>
+        <observablehq-loading></observablehq-loading><!--:2ad25b31:-->
+      </div>
     </div>
 </div>
 <!-- ------------------ # Data and Inputs ------------------  -->
 <!-- Select the Local authority from the list below -->
 <div class="observablehq observablehq--block"><!--:17a1fc11:--></div>
 <div class="observablehq observablehq--block"><!--:0bef96a5:--></div>
+<div class="observablehq observablehq--block"><!--:a7b68b8f:--></div>
 <div class="observablehq observablehq--block"><!--:76ba71c3:--></div>
 <div class="observablehq observablehq--block"><!--:ac7e408e:--></div>
 <div class="observablehq observablehq--block"><!--:cad06486:--></div>
@@ -1509,15 +1532,15 @@ body, html {
 <div class="observablehq observablehq--block"><!--:30d51695:--></div>
 <!-- ------------------ # Morphing Geometry Functions ------------------  -->
 <div class="observablehq observablehq--block"><!--:effbf1a5:--></div>
-<div class="observablehq observablehq--block"><!--:e563634b:--></div>
-<div class="observablehq observablehq--block"><!--:2614e488:--></div>
-<div class="observablehq observablehq--block"><!--:52a96378:--></div>
+<div class="observablehq observablehq--block"><!--:d685c337:--></div>
+<div class="observablehq observablehq--block"><!--:beca536c:--></div>
+<div class="observablehq observablehq--block"><!--:7c4219f4:--></div>
 <div class="observablehq observablehq--block"><!--:147250e0:--></div>
 <!-- ------------------ # Gridded-Glyphmap Functions ------------------  -->
 <div class="observablehq observablehq--block"><!--:3ca232e1:--></div>
 <div class="observablehq observablehq--block"><!--:4913bd0b:--></div>
 <div class="observablehq observablehq--block"><!--:21da4792:--></div>
-<div class="observablehq observablehq--block"><!--:d1f66c71:--></div>
+<div class="observablehq observablehq--block"><!--:12377cbc:--></div>
 <div class="observablehq observablehq--block"><!--:4dc7a71e:--></div>
 <div class="observablehq observablehq--block"><!--:662d9f13:--></div>
 <div class="observablehq observablehq--block"><!--:92e60971:--></div>
