@@ -49,7 +49,7 @@
 
 import {define} from "./_observablehq/client.js";
 
-define({id: "18672a50", outputs: ["RadialGlyph"], body: async () => {
+define({id: "5d7c7557", outputs: ["RadialGlyph"], body: async () => {
 const {RadialGlyph} = await import("./_import/components/radialglyph.e10c9304.js");
 
 return {RadialGlyph};
@@ -61,17 +61,17 @@ resize((width, height) => createCanvas(width, height))
 ))
 }});
 
-define({id: "b0c92749", inputs: ["RadialGlyph"], outputs: ["createCanvas"], body: (RadialGlyph) => {
+define({id: "b1c3b6c8", inputs: ["RadialGlyph"], outputs: ["createCanvas"], body: (RadialGlyph) => {
 function createCanvas(width, height) {
-    let canvas = document.createElement("canvas");
-    let ctx = canvas.getContext("2d");
-    canvas.width = width;
-    canvas.height = width;
-    
-    let rg = new RadialGlyph([0.4, 0.1, 0.9, 0.3]);
-    rg.draw(ctx, width/2,height/2, Math.min(width/2, height/2));
-    
-    return canvas;
+  let canvas = document.createElement("canvas");
+  let ctx = canvas.getContext("2d");
+  canvas.width = width;
+  canvas.height = width;
+
+  let rg = new RadialGlyph([0.4, 0.1, 0.9, 0.3, 0.3, 0.9]);
+  rg.draw(ctx, width / 2, height / 2, Math.min(width / 2, height / 2));
+
+  return canvas;
 }
 return {createCanvas};
 }});
@@ -79,7 +79,7 @@ return {createCanvas};
 </script>
 <div id="observablehq-center">
 <main id="observablehq-main" class="observablehq">
-<div class="observablehq observablehq--block"><!--:18672a50:--></div>
+<div class="observablehq observablehq--block"><!--:5d7c7557:--></div>
 <!-------- Stylesheets -------->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.0/css/bulma.min.css">
 <style>
@@ -162,6 +162,6 @@ body, html {
       </div>
     </div>
   </section>
-<div class="observablehq observablehq--block"><!--:b0c92749:--></div>
+<div class="observablehq observablehq--block"><!--:b1c3b6c8:--></div>
 </main>
 </div>
