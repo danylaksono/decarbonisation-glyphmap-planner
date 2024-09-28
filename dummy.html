@@ -203,8 +203,8 @@ import {define} from "./_observablehq/client.js";
 import {registerFile, FileAttachment} from "./_observablehq/stdlib.js";
 import {registerTable} from "./_observablehq/stdlib/duckdb.js";
 
-registerFile("./data/census_data_output.parquet", {"name":"./data/census_data_output.parquet","path":"./_file/data/census_data_output.1374b127.parquet","lastModified":1727491379126});
-registerFile("./data/geo.csv", {"name":"./data/geo.csv","mimeType":"text/csv","path":"./_file/data/geo.8ba75b99.csv","lastModified":1727491379142});
+registerFile("./data/census_data_output.parquet", {"name":"./data/census_data_output.parquet","path":"./_file/data/census_data_output.1374b127.parquet","lastModified":1727511531747});
+registerFile("./data/geo.csv", {"name":"./data/geo.csv","mimeType":"text/csv","path":"./_file/data/geo.8ba75b99.csv","lastModified":1727511531763});
 registerTable("geo", FileAttachment("./data/geo.csv"));
 registerTable("census_data_source", FileAttachment("./data/census_data_output.parquet"));
 
@@ -525,6 +525,72 @@ function convertToGeoJSON(interpolatedShapes) {
 return {extractCoordinatesForFlubber,interpolateGeoShapes,convertToGeoJSON};
 }});
 
+define({id: "4461947e", inputs: ["d3"], outputs: ["createGeometryInverter"], body: (d3) => {
+function createGeometryInverter(originalGeography, width, height) {
+  // Create the same projection used in the original transformation
+  const projection = d3
+    .geoIdentity()
+    .reflectY(true)
+    .fitExtent(
+      [
+        [0, 0],
+        [width, height],
+      ],
+      originalGeography
+    );
+
+  // Create the inverse function
+  const inverseProjection = projection.invert;
+
+  // Function to invert a single coordinate pair
+  const invertCoordinate = (coord) => inverseProjection(coord);
+
+  // Function to invert an array of coordinates (for Polygons)
+  const invertPolygon = (coords) =>
+    coords.map((ring) => ring.map(invertCoordinate));
+
+  // Function to invert MultiPolygon coordinates
+  const invertMultiPolygon = (coords) => coords.map(invertPolygon);
+
+  // Main inversion function
+  return function invertGeometry(projectedGeometry) {
+    const { type, coordinates } = projectedGeometry;
+
+    switch (type) {
+      case "Polygon":
+        return {
+          type: "Polygon",
+          coordinates: invertPolygon(coordinates),
+        };
+      case "MultiPolygon":
+        return {
+          type: "MultiPolygon",
+          coordinates: invertMultiPolygon(coordinates),
+        };
+      default:
+        throw new Error(`Unsupported geometry type: ${type}`);
+    }
+  };
+}
+return {createGeometryInverter};
+}});
+
+define({id: "0a0330f3", inputs: ["invertGeometry"], outputs: ["invertIntGeoShapes"], body: (invertGeometry) => {
+function invertIntGeoShapes(intGeoShapes, t) {
+  const projectedShapes = intGeoShapes(t);
+  return Object.fromEntries(
+    Object.entries(projectedShapes).map(([code, feature]) => [
+      code,
+      {
+        ...feature,
+        geometry: invertGeometry(feature.geometry),
+      },
+    ])
+  );
+}
+return {invertIntGeoShapes};
+}});
+
 define({id: "d685c337", inputs: ["interpolateGeoShapes","regular_geodata_withcensus","grid_geodata_withcensus","convertToGeoJSON","t"], outputs: ["intGeoShapesv2","dataInMorph"], body: (interpolateGeoShapes,regular_geodata_withcensus,grid_geodata_withcensus,convertToGeoJSON,t) => {
 const intGeoShapesv2 = interpolateGeoShapes(
   regular_geodata_withcensus,
@@ -538,23 +604,38 @@ const dataInMorph = convertToGeoJSON(intGeoShapesv2(t));
 return {intGeoShapesv2,dataInMorph};
 }});
 
-define({id: "beca536c", body: () => {
-// const tInput = Inputs.range([0, 1], {
-//   label: "Morph position",
-//   value: 0,
-//   step: 0.1,
-// });
-
-// const t = Generators.input(tInput);
-
-// display(t);
+define({id: "2e428462", inputs: ["createGeometryInverter","regular_geodata_withcensus"], outputs: ["invertGeometry"], body: (createGeometryInverter,regular_geodata_withcensus) => {
+const invertGeometry = createGeometryInverter(
+  regular_geodata_withcensus,
+  3000,
+  3000
+);
+return {invertGeometry};
 }});
 
-define({id: "7c4219f4", body: () => {
-// const plots = Plot.geo(dataInMorph).plot({
-//   projection: { type: "identity", domain: dataInMorph },
-// });
-// display(plots);
+define({id: "4bfa126b", inputs: ["invertIntGeoShapes","intGeoShapesv2","t"], outputs: ["geographicShapes"], body: (invertIntGeoShapes,intGeoShapesv2,t) => {
+const geographicShapes = invertIntGeoShapes(intGeoShapesv2, t);
+// display(Object.values(geographicShapes));
+return {geographicShapes};
+}});
+
+define({id: "ee9fe065", body: () => {
+// const transformedGeographicShapes = {
+//   ...Object.values(geographicShapes),
+//   features: Object.values(geographicShapes).map((feature) => ({
+//     ...feature,
+//     geometry: {
+//       ...feature.geometry,
+//       coordinates: transformCoordinates(feature.geometry.coordinates),
+//     },
+//   })),
+// };
+// display(transformedGeographicShapes);
+}});
+
+define({id: "53ad4c83", body: () => {
+// const geographicDataInMorph = convertToGeoJSON(transformedGeographicShapes);
+// display(geographicDataInMorph);
 }});
 
 define({id: "147250e0", inputs: ["d3","_","turf","context2d","flubber","OffscreenCanvas"], outputs: ["inSituMorphMouse","_insertIntermediateLayouts","intermTranslate","prepareGeoJsonForMorphingLib","intermTranslateV","intermCircles","intermChangeShape","intermBbSize"], body: (d3,_,turf,context2d,flubber,OffscreenCanvas) => {
@@ -1094,8 +1175,8 @@ function intermBbSize(layout, toLayout) {
 return {inSituMorphMouse,_insertIntermediateLayouts,intermTranslate,prepareGeoJsonForMorphingLib,intermTranslateV,intermCircles,intermChangeShape,intermBbSize};
 }});
 
-define({id: "3ca232e1", inputs: ["proj"], outputs: ["transformCoordinates","transformGeometry"], body: (proj) => {
-// coordinate transformation utilities
+define({id: "814cf92c", inputs: ["proj","display"], outputs: ["transformCoordinates","transformGeometry","applyTransformationToShapes"], body: (proj,display) => {
+// Coordinate transformation utilities
 function transformCoordinates(coords) {
   if (coords.length === 4 && !Array.isArray(coords[0])) {
     // bounding box
@@ -1104,10 +1185,10 @@ function transformCoordinates(coords) {
       ...proj.toGeo([coords[2], coords[3]]),
     ];
   } else if (Array.isArray(coords[0])) {
-    //  arrays of coordinates
+    // arrays of coordinates
     return coords.map(transformCoordinates);
   } else {
-    //  individual coordinate pairs
+    // individual coordinate pairs
     return proj.toGeo(coords);
   }
 }
@@ -1126,20 +1207,30 @@ function transformGeometry(geometry) {
   };
 }
 
-// check to see if it works
-// display(transformCoordinates([547764, 180871]));
+// Function to apply transformation to geographicShapes
+function applyTransformationToShapes(geographicShapes) {
+  return Object.fromEntries(
+    Object.entries(geographicShapes).map(([code, feature]) => [
+      code,
+      {
+        ...feature,
+        geometry: transformGeometry(feature.geometry),
+      },
+    ])
+  );
+}
 
-// const transformedGeoJSON = {
-//   ...originalGeoJSON,
-//   features: originalGeoJSON.features.map(feature => ({
-//     ...feature,
-//     geometry: {
-//       ...feature.geometry,
-//       coordinates: transformCoordinates(feature.geometry.coordinates)
-//     }
-//   }))
-// };
-return {transformCoordinates,transformGeometry};
+// check to see if it works
+display(transformCoordinates([547764, 180871]));
+return {transformCoordinates,transformGeometry,applyTransformationToShapes};
+}});
+
+define({id: "616a9bce", inputs: ["convertToGeoJSON","applyTransformationToShapes","geographicShapes","display"], outputs: ["transformedShapes"], body: (convertToGeoJSON,applyTransformationToShapes,geographicShapes,display) => {
+const transformedShapes = convertToGeoJSON(
+  applyTransformationToShapes(geographicShapes)
+);
+display(transformedShapes);
+return {transformedShapes};
 }});
 
 define({id: "4913bd0b", inputs: ["_","regular_geodata_withcensus","transformGeometry","turf","grid_geodata_withcensus"], outputs: ["regularGeodataLookup","gridGeodataLookup"], body: (_,regular_geodata_withcensus,transformGeometry,turf,grid_geodata_withcensus) => {
@@ -1207,7 +1298,7 @@ function valueDiscretiser(geomLookup) {
 return {glyphmapTypeInput,glyphmapType,valueDiscretiser};
 }});
 
-define({id: "12377cbc", inputs: ["turf","createDiscretiserValue"], outputs: ["valueDiscretiserInMorph"], body: (turf,createDiscretiserValue) => {
+define({id: "47e2dd09", inputs: ["turf","createDiscretiserValue"], outputs: ["valueDiscretiserInMorph"], body: (turf,createDiscretiserValue) => {
 function valueDiscretiserInMorph(inp) {
   // create lookup on the fly
   let geomLookup = Object.fromEntries(
@@ -1233,19 +1324,20 @@ function valueDiscretiserInMorph(inp) {
 }
 
 // display(valueDiscretiserInMorph(dataInMorph));
-// display(turf.bbox(dataInMorph));
+// display("datain morph");
+// display(dataInMorph);
 // display(transformCoordinates(turf.bbox(regular_geodata)));
 return {valueDiscretiserInMorph};
 }});
 
-define({id: "4dc7a71e", inputs: ["turf","regular_geodata","dataInMorph","data","regularGeodataLookup","d3","insideCell","drawRadialMultivariateGlyph"], outputs: ["glyphMapSpec"], body: (turf,regular_geodata,dataInMorph,data,regularGeodataLookup,d3,insideCell,drawRadialMultivariateGlyph) => {
+define({id: "b2814c32", inputs: ["turf","regular_geodata","transformedShapes","data","regularGeodataLookup","d3","insideCell","drawRadialMultivariateGlyph"], outputs: ["glyphMapSpec"], body: (turf,regular_geodata,transformedShapes,data,regularGeodataLookup,d3,insideCell,drawRadialMultivariateGlyph) => {
 // glyphmap basic specs
 function glyphMapSpec(width, height) {
   // console.log("in glyphmapspec", width, height);
   const bbox = turf.bbox(regular_geodata);
   return {
-    coordType: "notmercator",
-    initialBB: turf.bbox(dataInMorph),
+    // coordType: "notmercator",
+    initialBB: turf.bbox(transformedShapes),
     // initialBB: [
     //   ...proj.toGeo([bbox[0], bbox[1]]),
     //   ...proj.toGeo([bbox[2], bbox[3]]),
@@ -1253,7 +1345,7 @@ function glyphMapSpec(width, height) {
     data: Object.values(data),
     getLocationFn: (row) => regularGeodataLookup[row.code]?.centroid,
     discretisationShape: "grid",
-    // mapType: "CartoPositron",
+    mapType: "CartoPositron",
     interactiveCellSize: true,
     cellSize: 60,
 
@@ -1365,7 +1457,7 @@ function glyphMapSpec(width, height) {
 return {glyphMapSpec};
 }});
 
-define({id: "662d9f13", inputs: ["glyphMap","glyphMapSpec","valueDiscretiser","regularGeodataLookup","valueDiscretiserInMorph","dataInMorph"], outputs: ["createGlyphMap","glyphmap"], body: (glyphMap,glyphMapSpec,valueDiscretiser,regularGeodataLookup,valueDiscretiserInMorph,dataInMorph) => {
+define({id: "a8ee3415", inputs: ["glyphMap","glyphMapSpec","valueDiscretiser","regularGeodataLookup","valueDiscretiserInMorph","transformedShapes"], outputs: ["createGlyphMap","glyphmap"], body: (glyphMap,glyphMapSpec,valueDiscretiser,regularGeodataLookup,valueDiscretiserInMorph,transformedShapes) => {
 function createGlyphMap(glyphmapType, { width, height }) {
   // console.log(width, height);
   if (glyphmapType == "Polygons") {
@@ -1376,7 +1468,7 @@ function createGlyphMap(glyphmapType, { width, height }) {
   } else if (glyphmapType == "Gridmap") {
     return glyphMap({
       ...glyphMapSpec(width, height), //takes the base spec...
-      discretiserFn: valueDiscretiserInMorph(dataInMorph),
+      discretiserFn: valueDiscretiserInMorph(transformedShapes),
     });
   } else if (glyphmapType == "Gridded") {
     return glyphMap(glyphMapSpec(width, height)); //uses the base spec as it (by default, it grids)
@@ -1532,17 +1624,22 @@ body, html {
 <div class="observablehq observablehq--block"><!--:30d51695:--></div>
 <!-- ------------------ # Morphing Geometry Functions ------------------  -->
 <div class="observablehq observablehq--block"><!--:effbf1a5:--></div>
+<div class="observablehq observablehq--block"><!--:4461947e:--></div>
+<div class="observablehq observablehq--block"><!--:0a0330f3:--></div>
 <div class="observablehq observablehq--block"><!--:d685c337:--></div>
-<div class="observablehq observablehq--block"><!--:beca536c:--></div>
-<div class="observablehq observablehq--block"><!--:7c4219f4:--></div>
+<div class="observablehq observablehq--block"><!--:2e428462:--></div>
+<div class="observablehq observablehq--block"><!--:4bfa126b:--></div>
+<div class="observablehq observablehq--block"><!--:ee9fe065:--></div>
+<div class="observablehq observablehq--block"><!--:53ad4c83:--></div>
 <div class="observablehq observablehq--block"><!--:147250e0:--></div>
 <!-- ------------------ # Gridded-Glyphmap Functions ------------------  -->
-<div class="observablehq observablehq--block"><!--:3ca232e1:--></div>
+<div class="observablehq observablehq--block"><!--:814cf92c:--></div>
+<div class="observablehq observablehq--block"><!--:616a9bce:--></div>
 <div class="observablehq observablehq--block"><!--:4913bd0b:--></div>
 <div class="observablehq observablehq--block"><!--:21da4792:--></div>
-<div class="observablehq observablehq--block"><!--:12377cbc:--></div>
-<div class="observablehq observablehq--block"><!--:4dc7a71e:--></div>
-<div class="observablehq observablehq--block"><!--:662d9f13:--></div>
+<div class="observablehq observablehq--block"><!--:47e2dd09:--></div>
+<div class="observablehq observablehq--block"><!--:b2814c32:--></div>
+<div class="observablehq observablehq--block"><!--:a8ee3415:--></div>
 <div class="observablehq observablehq--block"><!--:92e60971:--></div>
 <div class="observablehq observablehq--block"><!--:246c80d3:--></div>
 <div class="observablehq observablehq--block"><!--:9d040433:--></div>
