@@ -52,7 +52,7 @@ const proj = new OSGB();
 body, html {
   height: 100%;
   margin: 0 !important;
-  /* overflow: hidden; */
+  overflow: hidden;
   padding: 0;
 }
 
@@ -64,25 +64,28 @@ body, html {
 
 </style>
 
-<div class="grid grid-cols-4" style="padding:8px; height:92vh;">
+<div id="left-panel" class="grid grid-cols-4" style="padding:8px; height:92vh;">
     <div class="card grid-colspan-1">
          <div style="padding:10px;"> ${localAuthorityInput} </div>
          <div style="padding:10px;"> ${geogNameInput} </div>
          <div style="padding:10px;"> ${glyphmapTypeInput} </div>
-         <div style="padding:10px;"> <small>Drag to morph </small> ${tInput} </div>  
+         <div style="padding:10px;"> <small>Drag to morph (choose 'Gridmap')</small> ${tInput} </div>  
         <hr>
         <div style="padding:10px;"> List of layers</div>
-        <!-- <div style="padding:10px;"></div> -->
-        <!-- <div style="padding:10px;">${tInput}</div> -->
     </div>
-    <div class="card glyphmaps grid-colspan-3" style="padding:8px; height:92vh;">
+    <div id="main-panel" class="card glyphmaps grid-colspan-3" style="padding:8px; height:92vh;">
      ${resize((width, height) => createGlyphMap(glyphmapType, {width, height}))}
     </div>
-    <div class="card grid-colspan-1" style="padding:8px; height:92vh;"> 
-      <div style="padding:15px;">Animated morphing glyphmaps</div>
-      <div>
-        ${Plot.geo(dataInMorph).plot({projection: { type: "identity", domain: dataInMorph }})}
-      </div>
+    <div id="right-panel" class="grid-colspan-1" style="display: flex; flex-direction: column; padding:8px; height:92vh;">
+        <div class="card" style="flex-grow: 1;">
+          Glyph view here
+        </div>
+        <div class="card" style="flex-grow: 1;">
+            <div style="padding:15px;">Animated morphing glyphmaps</div>
+            <div>
+                ${Plot.geo(dataInMorph).plot({projection: { type: "identity", domain: dataInMorph }})}
+            </div>
+        </div>
     </div>
 </div>
 
@@ -1038,14 +1041,14 @@ function applyTransformationToShapes(geographicShapes) {
 }
 
 // check to see if it works
-display(transformCoordinates([547764, 180871]));
+// display(transformCoordinates([547764, 180871]));
 ```
 
 ```js
 const transformedShapes = convertToGeoJSON(
   applyTransformationToShapes(geographicShapes)
 );
-display(transformedShapes);
+// display(transformedShapes);
 ```
 
 ```js
