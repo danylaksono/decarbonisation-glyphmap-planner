@@ -6,7 +6,7 @@ footer: false
 ---
 
 ```js
-import {RadialGlyph} from "./components/radialglyph.js";
+import { RadialGlyph } from "./components/radialglyph.js";
 ```
 
 <!-------- Stylesheets -------->
@@ -99,14 +99,14 @@ body, html {
 
 ```js
 function createCanvas(width, height) {
-    let canvas = document.createElement("canvas");
-    let ctx = canvas.getContext("2d");
-    canvas.width = width;
-    canvas.height = width;
-    
-    let rg = new RadialGlyph([0.4, 0.1, 0.9, 0.3]);
-    rg.draw(ctx, width/2,height/2, Math.min(width/2, height/2));
-    
-    return canvas;
+  let canvas = document.createElement("canvas");
+  let ctx = canvas.getContext("2d");
+  canvas.width = width;
+  canvas.height = width;
+
+  let rg = new RadialGlyph([0.4, 0.1, 0.9, 0.3, 0.3, 0.9]);
+  rg.draw(ctx, width / 2, height / 2, Math.min(width / 2, height / 2));
+
+  return canvas;
 }
 ```

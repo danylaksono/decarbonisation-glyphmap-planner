@@ -6,89 +6,71 @@ footer: false
 ---
 
 <!-------- Stylesheets -------->
-<link
+
+<!-- <link
   rel="stylesheet"
   href="https://cdn.jsdelivr.net/npm/bulma@1.0.0/css/bulma.min.css"
->
+> -->
 
-<style>
-body, html {
-  height: 100%;
-  margin: 0 !important;
-  overflow: hidden;
-  padding: 0;
-}
+# Test UI
 
-#observablehq-main, #observablehq-header, #observablehq-footer {
-    margin: 0 !important;
-    /* width: 100% !important; */
-    max-width: 100% !important;
-}
+<label for="decarbonisation-slider">Decarbonisation Progress:</label>
 
-/* Make the entire section fill the viewport */
-.section {
-  height: 90vh !important; /* Full height of the viewport */
-  padding: 0;
-}
+```js
+const n = html`<input
+  style="width: 800px;"
+  type="range"
+  step="0.1"
+  min="0"
+  max="1"
+/>`;
 
-.container {
-  margin: 0 !important;
-  max-width: 100% !important;
-}
+const nn = Generators.input(n);
 
-/* Make the columns stretch to the full height of the viewport */
-.columns {
-  height: 100%;
-  margin: 0;
-}
+display(n);
+```
 
-/* Ensure the column boxes fit inside the layout */
-.column {
-  display: flex;
-  flex-direction: column;
-}
+```js
+display(nn);
+```
 
-/* Ensure the boxes inside left column take full height */
-.column.is-one-third .box {
-  flex: 1; /* Make the boxes in the left column flexible */
-  margin-bottom: 0.5rem; /* Add some spacing between boxes */
-}
+```js
+// Copy country data
+var countries = data.slice(0);
+// Make an alphabetical version
+countries.sort(function (a, b) {
+  var textA = a.Country.toUpperCase();
+  var textB = b.Country.toUpperCase();
+  return textA < textB ? -1 : textA > textB ? 1 : 0;
+});
+const div = html`
+  <select>
+    ${countries.map(
+      (country, index) => `
+      <option value="${country.Rank}">${country.Country}</option>`
+    )}</select
+  ><br />
+  <input
+    type="range"
+    min="1"
+    max=${data.length}
+    style="width:100%; max-width:640px;"
+  />
+`;
+const range = div.querySelector("[type=range]");
+const select = div.querySelector("select");
+div.value = range.value = select.value = defaultCountryIndex;
+range.addEventListener(
+  "input",
+  () => (select.value = div.value = range.valueAsNumber)
+);
+select.addEventListener(
+  "change",
+  () => (range.value = div.value = parseInt(select.value))
+);
 
-/* For the right column, ensure the box takes up full height */
-.column.is-two-thirds .box {
-  height: calc(90vh - 2rem); /* Subtract section padding or any margin if needed */
-}
-</style>
-
-<section class="section">
-    <div class="container">
-      <div class="columns">
-        <!-- Left Column (5 boxes) -->
-        <div class="column is-one-third" style="margin: 0 !important; padding: 0 !important;">
-          <div class="columns is-multiline">
-            <div class="column is-half">
-              <div class="box">Box 1</div>
-            </div>
-            <div class="column is-half">
-              <div class="box">Box 2</div>
-            </div>
-            <div class="column is-full">
-              <div class="box">Box 3</div>
-            </div>
-            <div class="column is-full">
-              <div class="box">Box 4</div>
-            </div>
-            <div class="column is-full">
-              <div class="box">Box 5</div>
-            </div>
-          </div>
-        </div>
-        <!-- Right Column (Main Content) -->
-        <div class="column is-two-thirds">
-          <div class="box" >
-            Main Content Area
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
+select.addEventListener(
+  "input",
+  () => (range.value = div.value = parseInt(select.value))
+);
+```
