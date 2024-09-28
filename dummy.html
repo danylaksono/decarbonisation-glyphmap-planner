@@ -203,8 +203,8 @@ import {define} from "./_observablehq/client.js";
 import {registerFile, FileAttachment} from "./_observablehq/stdlib.js";
 import {registerTable} from "./_observablehq/stdlib/duckdb.js";
 
-registerFile("./data/census_data_output.parquet", {"name":"./data/census_data_output.parquet","path":"./_file/data/census_data_output.1374b127.parquet","lastModified":1727511531747});
-registerFile("./data/geo.csv", {"name":"./data/geo.csv","mimeType":"text/csv","path":"./_file/data/geo.8ba75b99.csv","lastModified":1727511531763});
+registerFile("./data/census_data_output.parquet", {"name":"./data/census_data_output.parquet","path":"./_file/data/census_data_output.1374b127.parquet","lastModified":1727511921809});
+registerFile("./data/geo.csv", {"name":"./data/geo.csv","mimeType":"text/csv","path":"./_file/data/geo.8ba75b99.csv","lastModified":1727511921825});
 registerTable("geo", FileAttachment("./data/geo.csv"));
 registerTable("census_data_source", FileAttachment("./data/census_data_output.parquet"));
 
@@ -1175,7 +1175,7 @@ function intermBbSize(layout, toLayout) {
 return {inSituMorphMouse,_insertIntermediateLayouts,intermTranslate,prepareGeoJsonForMorphingLib,intermTranslateV,intermCircles,intermChangeShape,intermBbSize};
 }});
 
-define({id: "814cf92c", inputs: ["proj","display"], outputs: ["transformCoordinates","transformGeometry","applyTransformationToShapes"], body: (proj,display) => {
+define({id: "e38f4f2a", inputs: ["proj"], outputs: ["transformCoordinates","transformGeometry","applyTransformationToShapes"], body: (proj) => {
 // Coordinate transformation utilities
 function transformCoordinates(coords) {
   if (coords.length === 4 && !Array.isArray(coords[0])) {
@@ -1221,15 +1221,15 @@ function applyTransformationToShapes(geographicShapes) {
 }
 
 // check to see if it works
-display(transformCoordinates([547764, 180871]));
+// display(transformCoordinates([547764, 180871]));
 return {transformCoordinates,transformGeometry,applyTransformationToShapes};
 }});
 
-define({id: "616a9bce", inputs: ["convertToGeoJSON","applyTransformationToShapes","geographicShapes","display"], outputs: ["transformedShapes"], body: (convertToGeoJSON,applyTransformationToShapes,geographicShapes,display) => {
+define({id: "f292d1a7", inputs: ["convertToGeoJSON","applyTransformationToShapes","geographicShapes"], outputs: ["transformedShapes"], body: (convertToGeoJSON,applyTransformationToShapes,geographicShapes) => {
 const transformedShapes = convertToGeoJSON(
   applyTransformationToShapes(geographicShapes)
 );
-display(transformedShapes);
+// display(transformedShapes);
 return {transformedShapes};
 }});
 
@@ -1574,7 +1574,7 @@ return {insideCell};
 body, html {
   height: 100%;
   margin: 0 !important;
-  /* overflow: hidden; */
+  overflow: hidden;
   padding: 0;
 }
 
@@ -1585,25 +1585,28 @@ body, html {
 }
 
 </style>
-<div class="grid grid-cols-4" style="padding:8px; height:92vh;">
+<div id="left-panel" class="grid grid-cols-4" style="padding:8px; height:92vh;">
     <div class="card grid-colspan-1">
          <div style="padding:10px;"> <observablehq-loading></observablehq-loading><!--:2d300212:--> </div>
 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<div style="padding:10px;"> <observablehq-loading></observablehq-loading><!--:71bd6feb:--> </div>
 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<div style="padding:10px;"> <observablehq-loading></observablehq-loading><!--:c0e452dc:--> </div>
-&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<div style="padding:10px;"> <small>Drag to morph </small> <observablehq-loading></observablehq-loading><!--:d5a91e5c:--> </div>  
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<div style="padding:10px;"> <small>Drag to morph (choose 'Gridmap')</small> <observablehq-loading></observablehq-loading><!--:d5a91e5c:--> </div>  
         <hr>
         <div style="padding:10px;"> List of layers</div>
-        <!-- <div style="padding:10px;"></div> -->
-        <!-- <div style="padding:10px;">${tInput}</div> -->
     </div>
-    <div class="card glyphmaps grid-colspan-3" style="padding:8px; height:92vh;">
+    <div id="main-panel" class="card glyphmaps grid-colspan-3" style="padding:8px; height:92vh;">
      <observablehq-loading></observablehq-loading><!--:271c02bf:-->
     </div>
-    <div class="card grid-colspan-1" style="padding:8px; height:92vh;"> 
-      <div style="padding:15px;">Animated morphing glyphmaps</div>
-      <div>
-        <observablehq-loading></observablehq-loading><!--:2ad25b31:-->
-      </div>
+    <div id="right-panel" class="grid-colspan-1" style="display: flex; flex-direction: column; padding:8px; height:92vh;">
+        <div class="card" style="flex-grow: 1;">
+          Glyph view here
+        </div>
+        <div class="card" style="flex-grow: 1;">
+            <div style="padding:15px;">Animated morphing glyphmaps</div>
+            <div>
+                <observablehq-loading></observablehq-loading><!--:2ad25b31:-->
+            </div>
+        </div>
     </div>
 </div>
 <!-- ------------------ # Data and Inputs ------------------  -->
@@ -1633,8 +1636,8 @@ body, html {
 <div class="observablehq observablehq--block"><!--:53ad4c83:--></div>
 <div class="observablehq observablehq--block"><!--:147250e0:--></div>
 <!-- ------------------ # Gridded-Glyphmap Functions ------------------  -->
-<div class="observablehq observablehq--block"><!--:814cf92c:--></div>
-<div class="observablehq observablehq--block"><!--:616a9bce:--></div>
+<div class="observablehq observablehq--block"><!--:e38f4f2a:--></div>
+<div class="observablehq observablehq--block"><!--:f292d1a7:--></div>
 <div class="observablehq observablehq--block"><!--:4913bd0b:--></div>
 <div class="observablehq observablehq--block"><!--:21da4792:--></div>
 <div class="observablehq observablehq--block"><!--:47e2dd09:--></div>
