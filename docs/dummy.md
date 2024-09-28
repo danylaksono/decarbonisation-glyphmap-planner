@@ -71,12 +71,13 @@ body, html {
          <div style="padding:10px;"> ${glyphmapTypeInput} </div>
         <hr>
         <div style="padding:10px;"> Press the 'spacebar' button to gradually morph the shape.  </div>
-        <div style="padding:10px;">${morphers2}</div>
+        <div style="padding:10px;">morphers2 here</div>
+        <div style="padding:10px;">${tInput}</div>
     </div>
     <div class="card glyphmaps grid-colspan-3" style="padding:8px; height:92vh;">
      ${resize((width, height) => createGlyphMap(glyphmapType, {width, height}))}
     </div>
-    <div class="card grid-colspan-1" style="padding:8px; height:92vh;"-->
+    <div class="card grid-colspan-1" style="padding:8px; height:92vh;">
     </div>
 </div>
 
@@ -192,13 +193,13 @@ const data = _.keyBy(
   }),
   "code"
 );
-display(data);
+// display(data);
 ```
 
 ```js
-display(
-  prepareGeoJsonForMorphingLib(regular_geodata, regular_geodata, 300, 300)
-);
+// display(
+//   prepareGeoJsonForMorphingLib(regular_geodata, regular_geodata, 300, 300)
+// );
 ```
 
 ```js
@@ -237,45 +238,6 @@ const layouts = [
 ```
 
 ```js
-const layouts2 = [
-  {
-    shapes: prepareGeoJsonForMorphingLib(
-      regular_geodata,
-      regular_geodata,
-      200,
-      200
-    ),
-    // colourFn: (key) => colourScalePop(data[key].population),
-    description: local_authority + " " + geogName + " Choropleth Map.",
-  },
-  {
-    shapes: prepareGeoJsonForMorphingLib(
-      grid_geodata,
-      regular_geodata,
-      200,
-      200
-    ),
-    // colourFn: (key) => colourScalePop(data[key].population),
-    description: local_authority + " " + geogName + "Gridmaps.",
-  },
-];
-```
-
-```js
-const morphers2 = resize((width, height) =>
-  inSituMorphMouse(
-    {
-      interactive: true,
-      showDescription: false,
-      layouts2,
-      width,
-    },
-    width
-  )
-);
-```
-
-```js
 // using observable framework resize callback function
 // const morphers = resize((width, height) =>
 //   inSituMorphMouse(
@@ -293,6 +255,110 @@ const morphers2 = resize((width, height) =>
 ```
 
 <!-- ------------------ # Morphing Geometry Functions ------------------  -->
+
+```js
+const extractCoordinatesForFlubber = (features) => {
+  return features.map((feature) => {
+    const { type, coordinates } = feature.geometry;
+
+    if (type === "Polygon") {
+      return coordinates[0]; // Use the first ring in the polygon
+    } else if (type === "MultiPolygon") {
+      return coordinates.flat(2); // Flatten MultiPolygon into a single array of points
+    } else {
+      throw new Error(`Unsupported geometry type: ${type}`);
+    }
+  });
+};
+
+const interpolateGeoShapes = (geography, cartogram, w, h) => {
+  const geogProjected = prepareGeoJsonForMorphingLib(
+    geography,
+    geography,
+    w,
+    h
+  );
+  const cartProjected = prepareGeoJsonForMorphingLib(
+    cartogram,
+    geography,
+    w,
+    h
+  );
+
+  const geogCoords = extractCoordinatesForFlubber(Object.values(geogProjected));
+  const cartCoords = extractCoordinatesForFlubber(Object.values(cartProjected));
+
+  // console.log("geogCoords", geogCoords);
+
+  const interpolator = flubber.interpolateAll(geogCoords, cartCoords, {
+    string: false,
+    single: true,
+  });
+
+  return (t) => {
+    const interpolatedCoords = interpolator(t);
+    return Object.keys(geogProjected).reduce((acc, code, index) => {
+      acc[code] = {
+        ...geogProjected[code],
+        geometry: {
+          ...geogProjected[code].geometry,
+          coordinates: [interpolatedCoords[index]],
+        },
+      };
+      return acc;
+    }, {});
+  };
+};
+
+function convertToGeoJSON(interpolatedShapes) {
+  // console.log("interpolatedShapes", interpolatedShapes);
+  return {
+    type: "FeatureCollection",
+    features: Object.entries(interpolatedShapes).map(([code, feature]) => ({
+      type: "Feature",
+      properties: {
+        ...feature.properties,
+        code: code,
+      },
+      geometry: {
+        type: feature.geometry.type,
+        coordinates: feature.geometry.coordinates,
+      },
+    })),
+  };
+}
+```
+
+```js
+const intGeoShapesv2 = interpolateGeoShapes(
+  regular_geodata_withcensus,
+  grid_geodata_withcensus,
+  3000,
+  3000
+);
+const dataInMorph = convertToGeoJSON(intGeoShapesv2(t));
+// display(Object.values(intGeoShapesv2(t)));
+display(dataInMorph);
+```
+
+```js
+const tInput = Inputs.range([0, 1], {
+  label: "Morph position",
+  value: 0,
+  step: 0.1,
+});
+
+const t = Generators.input(tInput);
+
+// display(t);
+```
+
+```js
+const plots = Plot.geo(dataInMorph).plot({
+  projection: { type: "identity", domain: dataInMorph },
+});
+display(plots);
+```
 
 ```js
 // ---------------------- Functions for morphing ----------------------
@@ -940,24 +1006,35 @@ function valueDiscretiser(geomLookup) {
     boundaryFn: (key) => geomLookup[key]?.geometry.coordinates[0],
   });
 }
+```
 
-// function valueDiscretiser2(geomLookup1, geomLookup2) {
-//   const val = 0.5;
-//   // extract centroids for both geomLookups
-//   const centroid1 = geomLookup1[key]?.centroid;
-//   const centroid2 = geomLookup2[key]?.centroid;
+```js
+function valueDiscretiserInMorph(inp) {
+  // create lookup on the fly
+  let geomLookup = Object.fromEntries(
+    inp.features.map((feature) => {
+      const centroid = turf.centroid(feature).geometry.coordinates; // calculate centroid
+      return [
+        feature.properties.code,
+        {
+          ...feature,
+          centroid, // store centroid
+        },
+      ];
+    })
+  );
 
-//   return createDiscretiserValue({
-//     //... and adds a discretisation function that aggregates by CODE and supplies the polygons for each cell
-//     valueFn: (row) => {
-//       return row.code;
-//     },
-//     glyphLocationFn: (key) => geomLookup[key]?.centroid,
-//     boundaryFn: (key) => geomLookup[key]?.geometry.coordinates[0],
-//   });
-// }
+  // console.log(geomLookup);
 
-// display(valueDiscretiser(regularGeodataLookup));
+  return createDiscretiserValue({
+    valueFn: (row) => row.code,
+    glyphLocationFn: (key) => geomLookup[key]?.centroid, // Use the calculated centroid
+    boundaryFn: (key) => geomLookup[key]?.geometry.coordinates[0], // Access the boundary (first set of coordinates)
+  });
+}
+
+display(valueDiscretiserInMorph(dataInMorph));
+display(turf.bbox(dataInMorph));
 // display(transformCoordinates(turf.bbox(regular_geodata)));
 ```
 
@@ -967,11 +1044,12 @@ function glyphMapSpec(width, height) {
   // console.log("in glyphmapspec", width, height);
   const bbox = turf.bbox(regular_geodata);
   return {
-    // coordType: "notmercator",
-    initialBB: [
-      ...proj.toGeo([bbox[0], bbox[1]]),
-      ...proj.toGeo([bbox[2], bbox[3]]),
-    ],
+    coordType: "notmercator",
+    initialBB: turf.bbox(dataInMorph),
+    // initialBB: [
+    //   ...proj.toGeo([bbox[0], bbox[1]]),
+    //   ...proj.toGeo([bbox[2], bbox[3]]),
+    // ],
     data: Object.values(data),
     getLocationFn: (row) => regularGeodataLookup[row.code]?.centroid,
     discretisationShape: "grid",
@@ -1097,7 +1175,7 @@ function createGlyphMap(glyphmapType, { width, height }) {
   } else if (glyphmapType == "Gridmap") {
     return glyphMap({
       ...glyphMapSpec(width, height), //takes the base spec...
-      discretiserFn: valueDiscretiser(gridGeodataLookup),
+      discretiserFn: valueDiscretiserInMorph(dataInMorph),
     });
   } else if (glyphmapType == "Gridded") {
     return glyphMap(glyphMapSpec(width, height)); //uses the base spec as it (by default, it grids)
