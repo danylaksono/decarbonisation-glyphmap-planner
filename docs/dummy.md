@@ -69,15 +69,20 @@ body, html {
          <div style="padding:10px;"> ${localAuthorityInput} </div>
          <div style="padding:10px;"> ${geogNameInput} </div>
          <div style="padding:10px;"> ${glyphmapTypeInput} </div>
+         <div style="padding:10px;"> <small>Drag to morph </small> ${tInput} </div>  
         <hr>
-        <div style="padding:10px;"> Press the 'spacebar' button to gradually morph the shape.  </div>
-        <div style="padding:10px;">morphers2 here</div>
-        <div style="padding:10px;">${tInput}</div>
+        <div style="padding:10px;"> List of layers</div>
+        <!-- <div style="padding:10px;"></div> -->
+        <!-- <div style="padding:10px;">${tInput}</div> -->
     </div>
     <div class="card glyphmaps grid-colspan-3" style="padding:8px; height:92vh;">
      ${resize((width, height) => createGlyphMap(glyphmapType, {width, height}))}
     </div>
-    <div class="card grid-colspan-1" style="padding:8px; height:92vh;">
+    <div class="card grid-colspan-1" style="padding:8px; height:92vh;"> 
+      <div style="padding:15px;">Animated morphing glyphmaps</div>
+      <div>
+        ${Plot.geo(dataInMorph).plot({projection: { type: "identity", domain: dataInMorph }})}
+      </div>
     </div>
 </div>
 
@@ -104,6 +109,18 @@ const geogNameInput = Inputs.radio(["LSOA", "MSOA"], {
 
 const geogName = Generators.input(geogNameInput);
 // display(geogName);
+```
+
+```js
+const tInput = html`<input
+  style="width: 100%; max-width:200px;"
+  type="range"
+  step="0.05"
+  min="0"
+  max="1"
+/>`;
+
+const t = Generators.input(tInput);
 ```
 
 ```js
@@ -338,26 +355,26 @@ const intGeoShapesv2 = interpolateGeoShapes(
 );
 const dataInMorph = convertToGeoJSON(intGeoShapesv2(t));
 // display(Object.values(intGeoShapesv2(t)));
-display(dataInMorph);
+// display(dataInMorph);
 ```
 
 ```js
-const tInput = Inputs.range([0, 1], {
-  label: "Morph position",
-  value: 0,
-  step: 0.1,
-});
+// const tInput = Inputs.range([0, 1], {
+//   label: "Morph position",
+//   value: 0,
+//   step: 0.1,
+// });
 
-const t = Generators.input(tInput);
+// const t = Generators.input(tInput);
 
 // display(t);
 ```
 
 ```js
-const plots = Plot.geo(dataInMorph).plot({
-  projection: { type: "identity", domain: dataInMorph },
-});
-display(plots);
+// const plots = Plot.geo(dataInMorph).plot({
+//   projection: { type: "identity", domain: dataInMorph },
+// });
+// display(plots);
 ```
 
 ```js
@@ -1033,8 +1050,8 @@ function valueDiscretiserInMorph(inp) {
   });
 }
 
-display(valueDiscretiserInMorph(dataInMorph));
-display(turf.bbox(dataInMorph));
+// display(valueDiscretiserInMorph(dataInMorph));
+// display(turf.bbox(dataInMorph));
 // display(transformCoordinates(turf.bbox(regular_geodata)));
 ```
 
