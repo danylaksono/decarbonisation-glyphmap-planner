@@ -347,6 +347,70 @@ function convertToGeoJSON(interpolatedShapes) {
 ```
 
 ```js
+function createGeometryInverter(originalGeography, width, height) {
+  // Create the same projection used in the original transformation
+  const projection = d3
+    .geoIdentity()
+    .reflectY(true)
+    .fitExtent(
+      [
+        [0, 0],
+        [width, height],
+      ],
+      originalGeography
+    );
+
+  // Create the inverse function
+  const inverseProjection = projection.invert;
+
+  // Function to invert a single coordinate pair
+  const invertCoordinate = (coord) => inverseProjection(coord);
+
+  // Function to invert an array of coordinates (for Polygons)
+  const invertPolygon = (coords) =>
+    coords.map((ring) => ring.map(invertCoordinate));
+
+  // Function to invert MultiPolygon coordinates
+  const invertMultiPolygon = (coords) => coords.map(invertPolygon);
+
+  // Main inversion function
+  return function invertGeometry(projectedGeometry) {
+    const { type, coordinates } = projectedGeometry;
+
+    switch (type) {
+      case "Polygon":
+        return {
+          type: "Polygon",
+          coordinates: invertPolygon(coordinates),
+        };
+      case "MultiPolygon":
+        return {
+          type: "MultiPolygon",
+          coordinates: invertMultiPolygon(coordinates),
+        };
+      default:
+        throw new Error(`Unsupported geometry type: ${type}`);
+    }
+  };
+}
+```
+
+```js
+function invertIntGeoShapes(intGeoShapes, t) {
+  const projectedShapes = intGeoShapes(t);
+  return Object.fromEntries(
+    Object.entries(projectedShapes).map(([code, feature]) => [
+      code,
+      {
+        ...feature,
+        geometry: invertGeometry(feature.geometry),
+      },
+    ])
+  );
+}
+```
+
+```js
 const intGeoShapesv2 = interpolateGeoShapes(
   regular_geodata_withcensus,
   grid_geodata_withcensus,
@@ -359,22 +423,35 @@ const dataInMorph = convertToGeoJSON(intGeoShapesv2(t));
 ```
 
 ```js
-// const tInput = Inputs.range([0, 1], {
-//   label: "Morph position",
-//   value: 0,
-//   step: 0.1,
-// });
-
-// const t = Generators.input(tInput);
-
-// display(t);
+const invertGeometry = createGeometryInverter(
+  regular_geodata_withcensus,
+  3000,
+  3000
+);
 ```
 
 ```js
-// const plots = Plot.geo(dataInMorph).plot({
-//   projection: { type: "identity", domain: dataInMorph },
-// });
-// display(plots);
+const geographicShapes = invertIntGeoShapes(intGeoShapesv2, t);
+// display(Object.values(geographicShapes));
+```
+
+```js
+// const transformedGeographicShapes = {
+//   ...Object.values(geographicShapes),
+//   features: Object.values(geographicShapes).map((feature) => ({
+//     ...feature,
+//     geometry: {
+//       ...feature.geometry,
+//       coordinates: transformCoordinates(feature.geometry.coordinates),
+//     },
+//   })),
+// };
+// display(transformedGeographicShapes);
+```
+
+```js
+// const geographicDataInMorph = convertToGeoJSON(transformedGeographicShapes);
+// display(geographicDataInMorph);
 ```
 
 ```js
@@ -916,7 +993,7 @@ function intermBbSize(layout, toLayout) {
 <!-- ------------------ # Gridded-Glyphmap Functions ------------------  -->
 
 ```js
-// coordinate transformation utilities
+// Coordinate transformation utilities
 function transformCoordinates(coords) {
   if (coords.length === 4 && !Array.isArray(coords[0])) {
     // bounding box
@@ -925,10 +1002,10 @@ function transformCoordinates(coords) {
       ...proj.toGeo([coords[2], coords[3]]),
     ];
   } else if (Array.isArray(coords[0])) {
-    //  arrays of coordinates
+    // arrays of coordinates
     return coords.map(transformCoordinates);
   } else {
-    //  individual coordinate pairs
+    // individual coordinate pairs
     return proj.toGeo(coords);
   }
 }
@@ -947,19 +1024,28 @@ function transformGeometry(geometry) {
   };
 }
 
-// check to see if it works
-// display(transformCoordinates([547764, 180871]));
+// Function to apply transformation to geographicShapes
+function applyTransformationToShapes(geographicShapes) {
+  return Object.fromEntries(
+    Object.entries(geographicShapes).map(([code, feature]) => [
+      code,
+      {
+        ...feature,
+        geometry: transformGeometry(feature.geometry),
+      },
+    ])
+  );
+}
 
-// const transformedGeoJSON = {
-//   ...originalGeoJSON,
-//   features: originalGeoJSON.features.map(feature => ({
-//     ...feature,
-//     geometry: {
-//       ...feature.geometry,
-//       coordinates: transformCoordinates(feature.geometry.coordinates)
-//     }
-//   }))
-// };
+// check to see if it works
+display(transformCoordinates([547764, 180871]));
+```
+
+```js
+const transformedShapes = convertToGeoJSON(
+  applyTransformationToShapes(geographicShapes)
+);
+display(transformedShapes);
 ```
 
 ```js
@@ -1051,7 +1137,8 @@ function valueDiscretiserInMorph(inp) {
 }
 
 // display(valueDiscretiserInMorph(dataInMorph));
-// display(turf.bbox(dataInMorph));
+// display("datain morph");
+// display(dataInMorph);
 // display(transformCoordinates(turf.bbox(regular_geodata)));
 ```
 
@@ -1061,8 +1148,8 @@ function glyphMapSpec(width, height) {
   // console.log("in glyphmapspec", width, height);
   const bbox = turf.bbox(regular_geodata);
   return {
-    coordType: "notmercator",
-    initialBB: turf.bbox(dataInMorph),
+    // coordType: "notmercator",
+    initialBB: turf.bbox(transformedShapes),
     // initialBB: [
     //   ...proj.toGeo([bbox[0], bbox[1]]),
     //   ...proj.toGeo([bbox[2], bbox[3]]),
@@ -1070,7 +1157,7 @@ function glyphMapSpec(width, height) {
     data: Object.values(data),
     getLocationFn: (row) => regularGeodataLookup[row.code]?.centroid,
     discretisationShape: "grid",
-    // mapType: "CartoPositron",
+    mapType: "CartoPositron",
     interactiveCellSize: true,
     cellSize: 60,
 
@@ -1192,7 +1279,7 @@ function createGlyphMap(glyphmapType, { width, height }) {
   } else if (glyphmapType == "Gridmap") {
     return glyphMap({
       ...glyphMapSpec(width, height), //takes the base spec...
-      discretiserFn: valueDiscretiserInMorph(dataInMorph),
+      discretiserFn: valueDiscretiserInMorph(transformedShapes),
     });
   } else if (glyphmapType == "Gridded") {
     return glyphMap(glyphMapSpec(width, height)); //uses the base spec as it (by default, it grids)
