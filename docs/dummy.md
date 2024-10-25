@@ -52,7 +52,7 @@ const proj = new OSGB();
 body, html {
   height: 100%;
   margin: 0 !important;
-  overflow: hidden;
+  /* overflow: hidden; */
   padding: 0;
 }
 
@@ -69,7 +69,7 @@ body, html {
          <div style="padding:10px;"> ${localAuthorityInput} </div>
          <div style="padding:10px;"> ${geogNameInput} </div>
          <div style="padding:10px;"> ${glyphmapTypeInput} </div>
-         <div style="padding:10px;"> <small>Drag to morph (choose 'Gridmap')</small> ${tInput} </div>  
+         <div style="padding:10px;"> <small>Drag to morph (choose 'Gridmap')</small> ${tInput} </div>
         <hr>
         <div style="padding:10px;"> List of layers</div>
     </div>
@@ -118,6 +118,7 @@ const geogName = Generators.input(geogNameInput);
 const tInput = html`<input
   style="width: 100%; max-width:200px;"
   type="range"
+  value="1"
   step="0.05"
   min="0"
   max="1"
@@ -145,7 +146,7 @@ AND geo.LA = (SELECT replace(${la_code}, '"', ''''))
 ```js
 const list_of_code = [...list_of_codes].map((row) => row.code);
 const regular_geodata = await downloadBoundaries(geogBoundary, list_of_code);
-// display(regular_geodata);
+// display(transformCoordinates(turf.bbox(regular_geodata)));
 ```
 
 ```js
@@ -1048,6 +1049,7 @@ function applyTransformationToShapes(geographicShapes) {
 const transformedShapes = convertToGeoJSON(
   applyTransformationToShapes(geographicShapes)
 );
+// display("transformedShapes")
 // display(transformedShapes);
 ```
 
@@ -1092,7 +1094,15 @@ const gridGeodataLookup = _.keyBy(
   (feat) => feat.properties.code
 );
 
-// display(regularGeodataLookup);
+const transformedShapesLookup = _.keyBy(
+  transformedShapes.features.map((feat) => {
+    return { ...feat, centroid: turf.getCoord(turf.centroid(feat.geometry)) };
+  }),
+  (feat) => feat.properties.code
+);
+
+// display("transformedShapesLookup");
+// display(transformedShapesLookup);
 ```
 
 ```js
@@ -1138,25 +1148,15 @@ function valueDiscretiserInMorph(inp) {
     boundaryFn: (key) => geomLookup[key]?.geometry.coordinates[0], // Access the boundary (first set of coordinates)
   });
 }
-
-// display(valueDiscretiserInMorph(dataInMorph));
-// display("datain morph");
-// display(dataInMorph);
-// display(transformCoordinates(turf.bbox(regular_geodata)));
 ```
 
 ```js
 // glyphmap basic specs
-function glyphMapSpec(width, height) {
+function glyphMapSpec(width = 800, height = 600) {
   // console.log("in glyphmapspec", width, height);
-  const bbox = turf.bbox(regular_geodata);
   return {
     // coordType: "notmercator",
-    initialBB: turf.bbox(transformedShapes),
-    // initialBB: [
-    //   ...proj.toGeo([bbox[0], bbox[1]]),
-    //   ...proj.toGeo([bbox[2], bbox[3]]),
-    // ],
+    initialBB: transformCoordinates(turf.bbox(regular_geodata)),
     data: Object.values(data),
     getLocationFn: (row) => regularGeodataLookup[row.code]?.centroid,
     discretisationShape: "grid",
@@ -1172,10 +1172,14 @@ function glyphMapSpec(width, height) {
     customMap: {
       scaleParams: [],
 
-      initFn: (cells, cellSize, global, panel) => {},
+      // discretiserFn: valueDiscretiser(regularGeodataLookup),
+
+      initFn: (cells, cellSize, global, panel) => {
+        // console.log("initFn", cells, cellSize, global, panel);
+      },
 
       preAggrFn: (cells, cellSize, global, panel) => {
-        // console.log(global);
+        // console.log("global", global);
       },
 
       aggrFn: (cell, row, weight, global, panel) => {
@@ -1222,6 +1226,9 @@ function glyphMapSpec(width, height) {
 
       drawFn: (cell, x, y, cellSize, ctx, global, panel) => {
         const boundary = cell.getBoundary(0);
+
+        // console.log("boundary", boundary);
+
         if (boundary[0] != boundary[boundary.length - 1]) {
           boundary.push(boundary[0]);
         }
@@ -1244,31 +1251,35 @@ function glyphMapSpec(width, height) {
 
         //draw a radial glyph -> change the array to real data (between 0 and 1)
         drawRadialMultivariateGlyph([0.5, 0.1, 0.9, 0.3], x, y, cellSize, ctx);
-        // drawRadialMultivariateGlyph(
-        //   [cell.deprivation, cell.vehicle, cell.heating, cell.health],
-        //   x,
-        //   y,
-        //   cellSize,
-        //   ctx
-        // );
-
-        // let rg = new RadialGlyph([
-        //   cell.deprivation,
-        //   cell.vehicle,
-        //   cell.heating,
-        //   cell.health,
-        // ]);
-        // rg.draw(ctx, x, y, cellSize / 2);
       },
 
       postDrawFn: (cells, cellSize, ctx, global, panel) => {},
 
-      tooltipTextFn: (cell) => {
-        console.log(cell.deprivation);
-      },
+      tooltipTextFn: (cell) => {},
     },
   };
 }
+```
+
+```js
+// a workaround for observable reactivity
+// const decarbonisationGlyph = glyphMap({
+//   ...glyphMapSpec(),
+//   discretiserFn: valueDiscretiserInMorph(transformedShapes),
+// });
+```
+
+```js
+t;
+// glyphMap(glyphMapSpec()).setGlyph({
+//   discretiserFn: valueDiscretiser(transformedShapesLookup),
+// });
+console.log("evaluated");
+// display(decarbonisationGlyph);
+```
+
+```js
+// glyphmapSpec().setData(transformedShapes.features);
 ```
 
 ```js
@@ -1280,16 +1291,13 @@ function createGlyphMap(glyphmapType, { width, height }) {
       discretiserFn: valueDiscretiser(regularGeodataLookup),
     });
   } else if (glyphmapType == "Gridmap") {
-    return glyphMap({
-      ...glyphMapSpec(width, height), //takes the base spec...
-      discretiserFn: valueDiscretiserInMorph(transformedShapes),
-    });
+    return glyphMap(glyphMapSpec(width, height));
   } else if (glyphmapType == "Gridded") {
     return glyphMap(glyphMapSpec(width, height)); //uses the base spec as it (by default, it grids)
   }
 }
 
-const glyphmap = glyphMapSpec();
+// const glyphmap = glyphMapSpec();
 
 // display(createGlyphMap(glyphmapType));
 // display(valueDiscretiser(regularGeodataLookup));
