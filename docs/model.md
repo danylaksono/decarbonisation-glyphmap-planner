@@ -207,9 +207,14 @@ function createCanvas(width, height) {
 
   // console.log(glyphCollection.glyphs);
   glyphCollection.glyphs.map((g, i) =>
-    g.draw(ctx, Math.floor(i / 10) * 50, (i % 10) * 50, 40, 50)
+    g.draw(
+      ctx,
+      Math.floor(i / 10) * (width / 10),
+      (i % 10) * (height / 10),
+      width / 10,
+      height / 10
+    )
   );
-
   return canvas;
 }
 ```
