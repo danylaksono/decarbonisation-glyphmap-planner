@@ -22,7 +22,7 @@ import { Model } from "./components/model.js";
 > -->
 
 <style>
-  body, html {
+body, html {
   height: 100%;
   margin: 0 !important;
   overflow: hidden;
@@ -66,16 +66,22 @@ import { Model } from "./components/model.js";
   #main-panel {
     /*grid-row: span 2;  Spans 2 rows */
     display: grid;
-    grid-template-rows: 3fr 2fr;
+    grid-template-rows: 4fr 2fr;
     height: 92vh;
     gap: 8px;
+  }
+
+  .main-top {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Split into two equal columns */
+    gap: 8px; 
   }
 
   /* Main panel bottom, split into two sections */
   .main-bottom {
     /* grid-row: 2 / 3; Takes the second row */
     display: grid;
-    grid-template-columns: 3fr 1fr; /* Split bottom row into 3/1 ratio */
+    grid-template-columns: 1fr 3fr; /* Split bottom row into 1/3 ratio */
     gap: 8px;
   }
 
@@ -84,8 +90,9 @@ import { Model } from "./components/model.js";
       justify-content: center; /* Horizontally center content */
       align-items: center; /* Vertically center content */
       text-align: center; /* Center text alignment for multiline */
-      border: 0.5px;
+      border: 1px dark-grey solid;
       padding: 8px;
+      margin: 0 !important;
       box-sizing: border-box; /* Ensure padding is included in height calculations */
     }
 
@@ -104,41 +111,19 @@ import { Model } from "./components/model.js";
   </div>
   <!-- Main panel (right side) -->
   <div id="main-panel">
-    <div class="card main-top">
-      Map View
-      <div id="main-area" style="width: 100%; min-height: 300px;">
-        ${resize((width, height) => createCanvas(width, height))}
+    <div class="main-top">
+      <div class="card">
+        <div id="map-view" style="width: 100%; height: 100%;">
+        </div>
       </div>
+      <div class="card">Sortable Table</div>
     </div>
     <div class="main-bottom">
-      <div class="card">Sortable Table</div>
-      <div class="card">Details on demand</div>
+      <div class="card">Sculptable glyph/Details on demand</div>
+      <div class="card">General Overview graph</div>
     </div>
   </div>
 </div>
-
-<!-- <section class="section">
-    <div class="container">
-      <div class="columns">
-        <div class="column is-one-third" style="margin: 0 !important; padding: 0 !important;">
-          <div class="columns is-multiline">
-            <div class="column is-full">
-              <div class="box">Box 4</div>
-            </div>
-            <div class="column is-full">
-              <div class="box">Box 5</div>
-            </div>
-          </div>
-        </div>
-        <div class="column is-two-thirds">
-          <div id="main-area" class="box" >
-            ${resize((width, height) => createCanvas(width, height))}
-          </div>
-        </div>
-      </div>
-    </div>
-
-  </section> -->
 
 ```js
 function createCanvas(width, height) {
@@ -207,14 +192,9 @@ function createCanvas(width, height) {
 
   // console.log(glyphCollection.glyphs);
   glyphCollection.glyphs.map((g, i) =>
-    g.draw(
-      ctx,
-      Math.floor(i / 10) * (width / 10),
-      (i % 10) * (height / 10),
-      width / 10,
-      height / 10
-    )
+    g.draw(ctx, Math.floor(i / 10) * 50, (i % 10) * 50, 40, 50)
   );
+
   return canvas;
 }
 ```

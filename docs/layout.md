@@ -59,9 +59,15 @@ body, html {
   #main-panel {
     /*grid-row: span 2;  Spans 2 rows */
     display: grid;
-    grid-template-rows: 3fr 2fr;
+    grid-template-rows: 4fr 2fr;
     height: 92vh;
     gap: 8px;
+  }
+
+  .main-top {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Split into two equal columns */
+    gap: 8px; 
   }
 
   /* Main panel bottom, split into two sections */
@@ -77,8 +83,9 @@ body, html {
       justify-content: center; /* Horizontally center content */
       align-items: center; /* Vertically center content */
       text-align: center; /* Center text alignment for multiline */
-      border: 0.5px;
+      border: 1px dark-grey solid;
       padding: 8px;
+      margin: 0 !important;
       box-sizing: border-box; /* Ensure padding is included in height calculations */
     }
 
@@ -97,7 +104,11 @@ body, html {
     </div>
     <!-- Main panel (right side) -->
     <div id="main-panel">
-      <div class="card main-top">Map View</div>
+      <!-- <div class="card main-top">Map View</div> -->
+      <div class="main-top">
+        <div class="card">Map View Left</div>
+        <div class="card">Map View Right</div>
+      </div>
       <div class="main-bottom">
         <div class="card">Sortable Table</div>
         <div class="card">Details on demand</div>
