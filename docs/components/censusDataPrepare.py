@@ -27,7 +27,7 @@ con.execute("""
         FROM read_parquet('https://gicentre.github.io/data/census21/englandAndWales/health.parquet');
 """)
 
-# Now run the filtered query and join the tables as described in your SQL
+# run the filtered query and join the tables
 result = con.execute("""
     -- Filter and aggregate the tables as described
     WITH filtered_pop AS (

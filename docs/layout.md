@@ -74,7 +74,7 @@ body, html {
   .main-bottom {
     /* grid-row: 2 / 3; Takes the second row */
     display: grid;
-    grid-template-columns: 3fr 1fr; /* Split bottom row into 3/1 ratio */
+    grid-template-columns: 1fr 3fr; /* Split bottom row into 3/1 ratio */
     gap: 8px;
   }
 
@@ -107,11 +107,11 @@ body, html {
       <!-- <div class="card main-top">Map View</div> -->
       <div class="main-top">
         <div class="card">Map View Left</div>
-        <div class="card">Map View Right</div>
+        <div class="card">Sortable Table</div>
       </div>
       <div class="main-bottom">
-        <div class="card">Sortable Table</div>
-        <div class="card">Details on demand</div>
+        <div class="card">Sculptable Hierarchical Glyph/Details on demand</div>
+        <div class="card">General overview graph</div>
       </div>
     </div>
   </div>

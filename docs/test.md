@@ -12,7 +12,7 @@ import {
   TimeGlyph,
   GlyphCollection,
 } from "./components/glyph-designs/timeGlyph.js";
-import { Model } from "./components/newModel.js";
+import { Model } from "./components/newModel2.js";
 // import { Model } from "./components/model.js";
 ```
 
@@ -42,7 +42,7 @@ display(nn);
 ## Test New Model
 
 ```sql id=oxford_data
-  SELECT
+  SELECT DISTINCT
     "LSOA code" AS lsoa,
     "MSOA code" AS msoa,
     "Air Source Heat Pump Potential_Building Size (m^2)" AS building_area,
@@ -95,15 +95,61 @@ const newBuildings = [...oxford_data];
 ```
 
 ```js
+// Define technologies
+const technologies = [
+  {
+    name: "ASHP",
+    allocation: 0.5,
+    config: {
+      scoreFn: (building) =>
+        building.heat_demand / (building.ashp_size * 24 * 365),
+      suitabilityKey: "ashp_suitability",
+      costKey: "ashp_total",
+      labourKey: "ashp_labour",
+      materialKey: "ashp_material",
+      savingsKey: "heat_demand",
+    },
+  },
+  {
+    name: "PV",
+    allocation: 0.3,
+    config: {
+      scoreFn: (building) => building.pv_generation / building.pv_size,
+      suitabilityKey: "pv_suitability",
+      costKey: "pv_total",
+      labourKey: "pv_labour",
+      materialKey: "pv_material",
+      savingsKey: "pv_generation",
+    },
+  },
+];
+
 let modelSpec = {
   nr_years: 10,
   yearly_funding: 300_000_000,
-  tech_allocation: { ASHP: 0.5, PV: 0.5 },
+  technologies,
 };
 
-//create (and run) model
-let model = new Model(newBuildings, modelSpec);
+// Create and run model
+const model = new Model(newBuildings, modelSpec);
 
+// Add new technology later
+model.addTechnology("GSHP", 0.2, {
+  scoreFn: (building) => building.heat_demand / building.gshp_size,
+  suitabilityKey: "gshp_suitability",
+  costKey: "gshp_total",
+  labourKey: "gshp_labour",
+  materialKey: "gshp_material",
+  savingsKey: "heat_demand",
+});
+
+// Run model
+model.runModel();
+
+const budgetTracking = model.getBudgetProgression();
+display(budgetTracking);
+
+//we group interventions first by lsoa, then technology, then year
 let lsoaTechYear = model
   .getInterventions()
   .groupBy("lsoa")
@@ -111,12 +157,15 @@ let lsoaTechYear = model
   .groupBy("year")
   .all();
 console.log("Interventions (grouped lsoa->tech->year)", lsoaTechYear);
-display(lsoaTechYear);
 
-// get building data at each simulation year, split by lsoa
+//get building data at each simulation year, split by lsoa
 let buildingsYearLsoas = d3
   .range(modelSpec.nr_years)
   .map((y) => model.getBuildings(y).groupBy("lsoa").all());
 console.log("Buildings by year (grouped lsoa)", buildingsYearLsoas);
-display(buildingsYearLsoas);
+
+console.log(
+  "Final remaining budget:",
+  model.getBudgetProgression().finalRemaining
+);
 ```
