@@ -101,6 +101,7 @@ const modelSpec = {
   initial_year: 2024,
   target_years: 5,
   overall_budget: 50_000_000,
+  uncapped_mode: false, // Explicitly set mode
   technologies: [
     {
       name: "PV",
@@ -157,7 +158,7 @@ const uncappedModel = new DecarbonisationModel(
   {
     ...modelSpec,
     overall_budget: null,
-    uncapped_mode: true,
+    uncapped_mode: true, // Explicitly set to true
   },
   newBuildings
 );

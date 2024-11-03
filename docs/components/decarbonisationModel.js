@@ -23,8 +23,12 @@ class Building {
 class Intervention {
   constructor({ name, allocation, config }) {
     this.name = name;
-    this.allocation = allocation;
+    this.allocation = Number(allocation) || 0; // Ensure numeric value
     this.config = config;
+
+    if (this.allocation < 0 || this.allocation > 1) {
+        console.warn(`Invalid allocation ${this.allocation} for ${this.name}`);
+    }
   }
 
   isSuitable(building) {
@@ -48,16 +52,29 @@ export class DecarbonisationModel {
   constructor(modelSpec, buildings) {
     this.initialYear = modelSpec.initial_year;
     this.targetYears = modelSpec.target_years;
-    this.uncappedMode = modelSpec.uncapped_mode;
+    this.uncappedMode = modelSpec.uncapped_mode || false;
     this.overallBudget = modelSpec.overall_budget;
     this.remainingBudget = modelSpec.overall_budget;
-    this.technologies = modelSpec.technologies.map(
-      (tech) => new Intervention(tech)
-    );
-    this.buildings = buildings.map((b) => new Building(b.id, b));
+    this.technologies = modelSpec.technologies.map(tech => new Intervention(tech));
+    this.buildings = buildings.map(b => new Building(b.id, b));
+
+    // Initialize tracking variables
     this.carbonSaved = 0;
+    this.totalSpent = 0;
     this.yearlyBudget = this.overallBudget / this.targetYears;
     this.yearlyCarbonSaved = {};
+
+    // Initialize yearlyCarbonSaved for all years
+    for (let year = this.initialYear; year < this.initialYear + this.targetYears; year++) {
+        this.yearlyCarbonSaved[year] = 0;
+    }
+
+    // Add validation for uncapped mode
+    if (this.uncappedMode) {
+        console.log('Running in uncapped mode - no budget constraints');
+        this.remainingBudget = Infinity;
+        this.yearlyBudget = Infinity;
+    }
   }
 
   runModel() {
@@ -71,9 +88,60 @@ export class DecarbonisationModel {
   }
 
   processYear(year) {
+    console.log(`Processing year ${year}`);
+    this.yearlyCarbonSaved[year] = 0;
+
     if (this.uncappedMode) {
-      // Process all suitable buildings without budget constraints
-      this.technologies.forEach((tech) => {
+        this.processUncappedYear(year);
+    } else {
+        if (this.remainingBudget > 0) {
+            this.processBudgetConstrainedYear(year);
+        }
+    }
+  }
+
+  processUncappedYear(year) {
+    console.log(`Processing uncapped year ${year}`);
+
+    for (const tech of this.technologies) {
+        // Find all suitable buildings that haven't been treated
+        const suitableBuildings = this.buildings
+            .filter(b => !b.interventionStatus && tech.isSuitable(b))
+            .sort((a, b) =>
+                tech.config.scoreFn(b.properties) -
+                tech.config.scoreFn(a.properties)
+            );
+
+        for (const building of suitableBuildings) {
+            const cost = tech.getCost(building);
+            const carbonSaved = tech.getCarbonSavings(building);
+
+            // In uncapped mode, we implement all possible interventions
+            building.addIntervention(year, tech.name, cost, carbonSaved);
+            this.totalSpent += cost;
+            this.yearlyCarbonSaved[year] += carbonSaved;
+            this.carbonSaved += carbonSaved;
+        }
+    }
+
+    console.log(`Year ${year} uncapped results:`, {
+        carbonSaved: this.yearlyCarbonSaved[year],
+        totalSpent: this.totalSpent
+    });
+  }
+
+  processBudgetConstrainedYear(year) {
+    let yearlyBudget = this.yearlyBudget;
+
+    console.log(`Processing year ${year}`);
+    console.log(`Remaining budget: ${this.remainingBudget}`);
+
+    for (const tech of this.technologies) {
+        const techBudget = yearlyBudget * tech.allocation;
+        console.log(`Budget for ${tech.name}: ${techBudget}`);
+        let techSpent = 0;
+
+        // Filter and prioritize buildings based on suitability and score function
         const suitableBuildings = this.buildings
           .filter((b) => !b.interventionStatus && tech.isSuitable(b))
           .sort(
@@ -82,54 +150,22 @@ export class DecarbonisationModel {
               tech.config.scoreFn(a.properties)
           );
 
-        suitableBuildings.forEach((building) => {
+        for (const building of suitableBuildings) {
           const cost = tech.getCost(building);
           const carbonSaved = tech.getCarbonSavings(building);
-          building.addIntervention(year, tech.name, cost, carbonSaved);
-          this.carbonSaved += carbonSaved;
-          this.totalSpent += cost;
-        });
-      });
-    } else {
-      // Original budget-constrained logic
-      this.processBudgetConstrainedYear(year);
-    }
-  }
 
-  processBudgetConstrainedYear(year) {
-    let yearlyBudget = this.yearlyBudget;
-    this.yearlyCarbonSaved[year] = 0;
-
-    console.log("== Processing year ", year);
-
-    for (const tech of this.technologies) {
-      const techBudget = yearlyBudget * tech.allocation;
-      let techSpent = 0;
-
-      // Filter and prioritize buildings based on suitability and score function
-      const suitableBuildings = this.buildings
-        .filter((b) => !b.interventionStatus && tech.isSuitable(b))
-        .sort(
-          (a, b) =>
-            tech.config.scoreFn(b.properties) -
-            tech.config.scoreFn(a.properties)
-        );
-
-      for (const building of suitableBuildings) {
-        const cost = tech.getCost(building);
-        const carbonSaved = tech.getCarbonSavings(building);
-
-        // Check if we can afford this intervention for the building
-        if (techSpent + cost <= techBudget && this.remainingBudget >= cost) {
-          building.addIntervention(year, tech.name, cost, carbonSaved);
-          techSpent += cost;
-          this.remainingBudget -= cost;
-          this.yearlyCarbonSaved[year] += carbonSaved;
-          this.carbonSaved += carbonSaved;
-        } else {
-          break; // Stop if we exceed budget for this technology
+          // Check if we can afford this intervention for the building
+          if (techSpent + cost <= techBudget && this.remainingBudget >= cost) {
+            building.addIntervention(year, tech.name, cost, carbonSaved);
+            techSpent += cost;
+            this.remainingBudget -= cost;
+            this.totalSpent += cost; // Add this line
+            this.yearlyCarbonSaved[year] += carbonSaved;
+            this.carbonSaved += carbonSaved;
+          } else {
+            break; // Stop if we exceed budget for this technology
+          }
         }
-      }
     }
   }
 
@@ -168,8 +204,8 @@ export class DecarbonisationModel {
   }
 
   getFinalStats() {
-    // Calculate total spent
-    const totalSpent = this.overallBudget - this.remainingBudget;
+    // Calculate total spent from tracked value instead
+    const totalSpent = this.totalSpent;
 
     // Get yearly stats by technology
     const yearlyStats = {};
