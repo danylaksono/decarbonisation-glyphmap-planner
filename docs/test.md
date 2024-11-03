@@ -12,7 +12,7 @@ import {
   TimeGlyph,
   GlyphCollection,
 } from "./components/glyph-designs/timeGlyph.js";
-import { Model } from "./components/newModel2.js";
+import { DecarbonisationModel } from "./components/decarbonisationModel.js";
 // import { Model } from "./components/model.js";
 ```
 
@@ -43,6 +43,7 @@ display(nn);
 
 ```sql id=oxford_data
   SELECT DISTINCT
+    "UPRN" AS id,
     "LSOA code" AS lsoa,
     "MSOA code" AS msoa,
     "Air Source Heat Pump Potential_Building Size (m^2)" AS building_area,
@@ -95,77 +96,53 @@ const newBuildings = [...oxford_data];
 ```
 
 ```js
-// Define technologies
-const technologies = [
-  {
-    name: "ASHP",
-    allocation: 0.5,
-    config: {
-      scoreFn: (building) =>
-        building.heat_demand / (building.ashp_size * 24 * 365),
-      suitabilityKey: "ashp_suitability",
-      costKey: "ashp_total",
-      labourKey: "ashp_labour",
-      materialKey: "ashp_material",
-      savingsKey: "heat_demand",
+// model specifications
+const modelSpec = {
+  initial_year: 2024,
+  target_years: 5,
+  overall_budget: 50_000_000,
+  technologies: [
+    {
+      name: "PV",
+      allocation: 0.4,
+      config: {
+        scoreFn: (building) => {
+          if (!building.pv_suitability) return 0;
+          return building.pv_generation / building.pv_size;
+        },
+        suitabilityKey: "pv_suitability",
+        labourKey: "pv_labour",
+        materialKey: "pv_material",
+        savingsKey: "pv_generation", // assuming 1kWh = 1kg CO2
+      },
     },
-  },
-  {
-    name: "PV",
-    allocation: 0.3,
-    config: {
-      scoreFn: (building) => building.pv_generation / building.pv_size,
-      suitabilityKey: "pv_suitability",
-      costKey: "pv_total",
-      labourKey: "pv_labour",
-      materialKey: "pv_material",
-      savingsKey: "pv_generation",
+    {
+      name: "ASHP",
+      allocation: 0.6,
+      config: {
+        scoreFn: (building) => {
+          if (!building.ashp_suitability) return 0;
+          return building.heat_demand / building.ashp_size;
+        },
+        suitabilityKey: "ashp_suitability",
+        labourKey: "ashp_labour",
+        materialKey: "ashp_material",
+        savingsKey: "heat_demand", // assuming full heat demand offset
+      },
     },
-  },
-];
-
-let modelSpec = {
-  nr_years: 10,
-  yearly_funding: 300_000_000,
-  technologies,
+  ],
 };
 
-// Create and run model
-const model = new Model(newBuildings, modelSpec);
-
-// Add new technology later
-model.addTechnology("GSHP", 0.2, {
-  scoreFn: (building) => building.heat_demand / building.gshp_size,
-  suitabilityKey: "gshp_suitability",
-  costKey: "gshp_total",
-  labourKey: "gshp_labour",
-  materialKey: "gshp_material",
-  savingsKey: "heat_demand",
-});
-
-// Run model
+const model = new DecarbonisationModel(modelSpec, newBuildings);
 model.runModel();
 
-const budgetTracking = model.getBudgetProgression();
-display(budgetTracking);
+console.log("Yearly Interventions in 2024:", model.getYearInterventions(2024));
 
-//we group interventions first by lsoa, then technology, then year
-let lsoaTechYear = model
-  .getInterventions()
-  .groupBy("lsoa")
-  .groupBy("type")
-  .groupBy("year")
-  .all();
-console.log("Interventions (grouped lsoa->tech->year)", lsoaTechYear);
+// Get interventions grouped by year and technology
+console.log(model.getGroupedInterventions());
 
-//get building data at each simulation year, split by lsoa
-let buildingsYearLsoas = d3
-  .range(modelSpec.nr_years)
-  .map((y) => model.getBuildings(y).groupBy("lsoa").all());
-console.log("Buildings by year (grouped lsoa)", buildingsYearLsoas);
+// Get final stats
+console.log(model.getFinalStats());
 
-console.log(
-  "Final remaining budget:",
-  model.getBudgetProgression().finalRemaining
-);
+display(model.getFinalStats());
 ```
