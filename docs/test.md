@@ -132,7 +132,9 @@ const modelSpec = {
     },
   ],
 };
+```
 
+```js
 const model = new DecarbonisationModel(modelSpec, newBuildings);
 model.runModel();
 
@@ -145,4 +147,33 @@ console.log(model.getGroupedInterventions());
 console.log(model.getFinalStats());
 
 display(model.getFinalStats());
+```
+
+## Uncapped MOdel
+
+```js
+// testing uncapped
+const uncappedModel = new DecarbonisationModel(
+  {
+    ...modelSpec,
+    overall_budget: null,
+    uncapped_mode: true,
+  },
+  newBuildings
+);
+
+uncappedModel.runModel();
+
+console.log(
+  "Yearly Interventions in 2024:",
+  uncappedModel.getYearInterventions(2024)
+);
+
+// Get interventions grouped by year and technology
+console.log(uncappedModel.getGroupedInterventions());
+
+// Get final stats
+console.log(uncappedModel.getFinalStats());
+
+display(uncappedModel.getFinalStats());
 ```
