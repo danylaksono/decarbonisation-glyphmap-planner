@@ -137,6 +137,7 @@ const modelSpec = {
 
 ```js
 const model = new DecarbonisationModel(modelSpec, newBuildings);
+model.addBuildingFilter(b => b.properties.substation_headroom >= 1000);
 model.runModel();
 
 console.log("Yearly Interventions in 2024:", model.getYearInterventions(2024));
@@ -158,7 +159,7 @@ const uncappedModel = new DecarbonisationModel(
   {
     ...modelSpec,
     overall_budget: null,
-    uncapped_mode: true, // Explicitly set to true
+    uncapped_mode: true,
   },
   newBuildings
 );

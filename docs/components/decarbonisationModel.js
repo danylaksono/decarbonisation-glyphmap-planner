@@ -12,6 +12,10 @@ class Building {
     this.interventions.push({ year, technology, cost, carbonSaved });
   }
 
+  getInterventions() {
+    return this.interventions;
+  }
+
   getYearInterventions(year) {
     return this.interventions.filter(
       (intervention) => intervention.year === year
@@ -57,6 +61,9 @@ export class DecarbonisationModel {
     this.remainingBudget = modelSpec.overall_budget;
     this.technologies = modelSpec.technologies.map(tech => new Intervention(tech));
     this.buildings = buildings.map(b => new Building(b.id, b));
+    // this.priorityRules = modelSpec.priorityRules || []; // [{attribute: 'deprivation_index', order: 'desc'}, ...]
+    // Validate and set priority rules
+    this.priorityRules = this.validatePriorityRules(modelSpec.priorityRules);
 
     // Initialize tracking variables
     this.carbonSaved = 0;
@@ -75,6 +82,26 @@ export class DecarbonisationModel {
         this.remainingBudget = Infinity;
         this.yearlyBudget = Infinity;
     }
+  }
+
+  addBuildingFilter(filterFn) {
+    this.buildingFilters = this.buildingFilters || [];
+    this.buildingFilters.push(filterFn);
+  }
+
+  getFilteredBuildings() {
+    if (!this.buildings) {
+      console.error('No buildings available');
+      return [];
+    }
+    let filtered = this.buildings;
+    if (this.buildingFilters) {
+        for (const filter of this.buildingFilters) {
+            filtered = filtered.filter(filter);
+        }
+        console.log(`Filtered from ${this.buildings.length} to ${filtered.length} buildings`);
+    }
+    return filtered;
   }
 
   runModel() {
@@ -104,19 +131,18 @@ export class DecarbonisationModel {
     console.log(`Processing uncapped year ${year}`);
 
     for (const tech of this.technologies) {
-        // Find all suitable buildings that haven't been treated
-        const suitableBuildings = this.buildings
-            .filter(b => !b.interventionStatus && tech.isSuitable(b))
-            .sort((a, b) =>
-                tech.config.scoreFn(b.properties) -
-                tech.config.scoreFn(a.properties)
-            );
+        // Find suitable buildings
+        // const suitableBuildings = this.buildings
+        const suitableBuildings = this.getFilteredBuildings()
+            .filter(b => !b.interventionStatus && tech.isSuitable(b));
 
-        for (const building of suitableBuildings) {
+        // Apply prioritization
+        const prioritizedBuildings = this.applyPriorityRules(suitableBuildings, tech);
+
+        for (const building of prioritizedBuildings) {
             const cost = tech.getCost(building);
             const carbonSaved = tech.getCarbonSavings(building);
 
-            // In uncapped mode, we implement all possible interventions
             building.addIntervention(year, tech.name, cost, carbonSaved);
             this.totalSpent += cost;
             this.yearlyCarbonSaved[year] += carbonSaved;
@@ -142,7 +168,8 @@ export class DecarbonisationModel {
         let techSpent = 0;
 
         // Filter and prioritize buildings based on suitability and score function
-        const suitableBuildings = this.buildings
+        // const suitableBuildings = this.buildings
+        const suitableBuildings = this.getFilteredBuildings()
           .filter((b) => !b.interventionStatus && tech.isSuitable(b))
           .sort(
             (a, b) =>
@@ -159,7 +186,7 @@ export class DecarbonisationModel {
             building.addIntervention(year, tech.name, cost, carbonSaved);
             techSpent += cost;
             this.remainingBudget -= cost;
-            this.totalSpent += cost; // Add this line
+            this.totalSpent += cost; // Track total spent
             this.yearlyCarbonSaved[year] += carbonSaved;
             this.carbonSaved += carbonSaved;
           } else {
@@ -169,11 +196,89 @@ export class DecarbonisationModel {
     }
   }
 
+  validatePriorityRules(rules) {
+    if (!rules) return [];
+
+    return rules.map(rule => {
+        // Validate rule structure
+        if (!rule.attribute || !rule.order) {
+            console.warn('Invalid priority rule structure:', rule);
+            return null;
+        }
+
+        // Validate attributes exist in buildings
+        const attributeExists = this.buildings.some(b =>
+            rule.attribute in b.properties
+        );
+        if (!attributeExists) {
+            console.warn(`Priority rule attribute '${rule.attribute}' not found in buildings`);
+            return null;
+        }
+
+        // Validate order
+        if (rule.order !== 'asc' && rule.order !== 'desc') {
+            console.warn(`Invalid order '${rule.order}' in priority rule. Using 'desc'`);
+            rule.order = 'desc';
+        }
+
+        return rule;
+    }).filter(rule => rule !== null);
+  }
+
+  applyPriorityRules(buildings, tech) {
+    if (!this.priorityRules || this.priorityRules.length === 0) {
+        // If no priority rules, just use technology scoring
+        return buildings.sort((a, b) =>
+            tech.config.scoreFn(b.properties) -
+            tech.config.scoreFn(a.properties)
+        );
+    }
+
+    return buildings.sort((a, b) => {
+        // First apply priority rules
+        for (const rule of this.priorityRules) {
+            const aValue = a.properties[rule.attribute];
+            const bValue = b.properties[rule.attribute];
+
+            if (aValue !== bValue) {
+                return rule.order === 'desc' ?
+                    (bValue - aValue) :
+                    (aValue - bValue);
+            }
+        }
+
+        // If buildings are equal on all priority rules, use tech scoring
+        return tech.config.scoreFn(b.properties) -
+               tech.config.scoreFn(a.properties);
+    });
+  }
+
+  addPriorityRule(attribute, order = 'desc') {
+    const newRule = { attribute, order };
+    const validatedRule = this.validatePriorityRules([newRule])[0];
+    if (validatedRule) {
+        this.priorityRules.push(validatedRule);
+        return true;
+    }
+    return false;
+  }
+
   getGroupedInterventions() {
     const groupedInterventions = {};
+    const filteredBuildings = this.getFilteredBuildings();
+
+    if (!filteredBuildings || filteredBuildings.length === 0) {
+      console.warn('No buildings match the current filters');
+      return groupedInterventions;
+    }
 
     // Iterate through each building
-    this.buildings.forEach((building) => {
+    // this.buildings.forEach((building) => {
+    filteredBuildings.forEach((building) => {
+      if (!building.getInterventions) {
+        console.error('Invalid building object:', building);
+        return;
+      }
       building.interventions.forEach((intervention) => {
         const { year, technology, cost, carbonSaved } = intervention;
 
@@ -198,65 +303,68 @@ export class DecarbonisationModel {
   }
 
   getYearInterventions(year) {
-    return this.buildings
-      .map((b) => ({ id: b.id, interventions: b.getYearInterventions(year) }))
-      .filter((b) => b.interventions.length > 0);
+    // Use filtered buildings instead of all buildings
+    return this.getFilteredBuildings()
+        .map((b) => ({
+            id: b.id,
+            interventions: b.getYearInterventions(year)
+        }))
+        .filter((b) => b.interventions.length > 0);
   }
 
   getFinalStats() {
-    // Calculate total spent from tracked value instead
-    const totalSpent = this.totalSpent;
+    // Get filtered buildings
+    const filteredBuildings = this.getFilteredBuildings();
+
+    // Calculate total spent from filtered buildings
+    const totalSpent = filteredBuildings.reduce((total, b) =>
+        total + b.getInterventions().reduce((sum, i) => sum + i.cost, 0), 0);
 
     // Get yearly stats by technology
     const yearlyStats = {};
     const yearRange = Array.from(
-      { length: this.targetYears },
-      (_, i) => this.initialYear + i
+        { length: this.targetYears },
+        (_, i) => this.initialYear + i
     );
 
     for (const year of yearRange) {
-      const interventions = this.getYearInterventions(year);
-      const techStats = {};
+        const interventions = this.getYearInterventions(year);
+        const techStats = {};
 
-      // Initialize counters for each technology
-      this.technologies.forEach((tech) => {
-        techStats[tech.name] = {
-          buildingCount: 0,
-          spent: 0,
-          carbonSaved: 0,
-        };
-      });
-
-      // Count interventions by technology
-      interventions.forEach((building) => {
-        building.interventions.forEach((intervention) => {
-          techStats[intervention.technology].buildingCount++;
-          techStats[intervention.technology].spent += intervention.cost;
-          techStats[intervention.technology].carbonSaved +=
-            intervention.carbonSaved;
+        // Initialize counters for each technology
+        this.technologies.forEach((tech) => {
+            techStats[tech.name] = {
+                buildingCount: 0,
+                spent: 0,
+                carbonSaved: 0,
+            };
         });
-      });
 
-      yearlyStats[year] = {
-        technologies: techStats,
-        totalBuildingsIntervened: interventions.length,
-        yearlyBudgetSpent: Object.values(techStats).reduce(
-          (acc, curr) => acc + curr.spent,
-          0
-        ),
-        yearlyCarbonSaved: this.yearlyCarbonSaved[year],
-      };
+        // Calculate stats using filtered interventions
+        interventions.forEach(building => {
+            building.interventions.forEach(intervention => {
+                const stats = techStats[intervention.technology];
+                stats.buildingCount++;
+                stats.spent += intervention.cost;
+                stats.carbonSaved += intervention.carbonSaved;
+            });
+        });
+
+        yearlyStats[year] = techStats;
     }
 
+    // Return complete stats
     return {
-      totalCarbonSaved: this.carbonSaved,
-      initialBudget: this.overallBudget,
-      remainingBudget: this.remainingBudget,
-      totalBudgetSpent: totalSpent,
-      budgetUtilization:
-        ((totalSpent / this.overallBudget) * 100).toFixed(2) + "%",
-      yearlyStats: yearlyStats,
-      mode: this.uncappedMode ? "Uncapped" : "Budget-constrained",
+        totalCarbonSaved: this.carbonSaved,
+        totalBudgetSpent: totalSpent,
+        remainingBudget: this.remainingBudget,
+        yearlyStats,
+        filters: this.buildingFilters ? {
+            totalBuildings: this.buildings.length,
+            filteredBuildings: filteredBuildings.length,
+            numberOfFilters: this.buildingFilters.length
+        } : null,
+        priorityRules: this.priorityRules || null
     };
   }
 }
