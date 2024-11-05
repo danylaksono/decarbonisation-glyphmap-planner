@@ -13,9 +13,8 @@ import {
   GlyphCollection,
 } from "./components/glyph-designs/timeGlyph.js";
 import { Model } from "./components/model.js";
-// import * as L from "npm:leaflet";
 import maplibregl from "npm:maplibre-gl@2.0.0";
-// import font awesome
+import {Mutable} from "npm:@observablehq/stdlib";
 ```
 
 <!-------- Stylesheets -------->
@@ -54,8 +53,8 @@ body, html {
 
 .grid-container {
     display: grid;
-    grid-template-columns: 1fr 4fr; 
-    grid-template-rows: repeat(2, 1fr) 1fr;  
+    grid-template-columns: 1fr 4fr;
+    grid-template-rows: repeat(2, 1fr) 1fr;
     gap: 8px; /* gap between grid items */
     padding: 8px;
     height: 92vh;
@@ -82,7 +81,7 @@ body, html {
   .main-top {
     display: grid;
     grid-template-columns: 1fr 1fr; /* Split into two equal columns */
-    gap: 8px; 
+    gap: 8px;
   }
 
   /* Main panel bottom, split into two sections */
@@ -154,7 +153,7 @@ body, html {
         </div>
       </div>
       <div class="card" style="min-width: 30em;">
-        ${Inputs.table(newBuildings, {  
+        ${Inputs.table(newBuildings, {
             rows: 18,
             maxWidth: 840,
             multiple: true,

@@ -16,27 +16,27 @@ import { DecarbonisationModel } from "./components/decarbonisationModel.js";
 // import { Model } from "./components/model.js";
 ```
 
-## Test UI
+<!-- ## Test UI -->
 
-<label for="decarbonisation-slider">Decarbonisation Progress:</label>
+<!-- <label for="decarbonisation-slider">Decarbonisation Progress:</label> -->
 
 ```js
-const n = html`<input
-  style="width: 800px;"
-  type="range"
-  step="0.1"
-  min="0"
-  max="1"
-/>`;
+// const n = html`<input
+//   style="width: 800px;"
+//   type="range"
+//   step="0.1"
+//   min="0"
+//   max="1"
+// />`;
 ```
 
 ```js
-const nn = Generators.input(n);
-display(n);
+// const nn = Generators.input(n);
+// display(n);
 ```
 
 ```js
-display(nn);
+// display(nn);
 ```
 
 ## Test New Model
@@ -100,8 +100,8 @@ const newBuildings = [...oxford_data];
 const modelSpec = {
   initial_year: 2024,
   target_years: 5,
-  overall_budget: 50_000_000,
-  uncapped_mode: false, // Explicitly set mode
+  overall_budget: overall_budget || 50_000_000,
+  uncapped_mode: false,
   technologies: [
     {
       name: "PV",
@@ -132,12 +132,18 @@ const modelSpec = {
       },
     },
   ],
+  // priorityRules: [
+  //       {attribute: 'deprivation_index', order: 'desc'},
+  //       {attribute: 'fuel_poverty', order: 'desc'}
+  // ]
 };
 ```
 
 ```js
 const model = new DecarbonisationModel(modelSpec, newBuildings);
-model.addBuildingFilter(b => b.properties.substation_headroom >= 1000);
+model.addBuildingFilter(b => b.properties.substation_headroom >= 1000);  // custom filtering
+// model.addPriorityRule('multideprivation', 'asc'); // arbitrary priority rule
+
 model.runModel();
 
 console.log("Yearly Interventions in 2024:", model.getYearInterventions(2024));
@@ -151,7 +157,7 @@ console.log(model.getFinalStats());
 display(model.getFinalStats());
 ```
 
-## Uncapped MOdel
+## Uncapped Model
 
 ```js
 // testing uncapped
@@ -178,4 +184,207 @@ console.log(uncappedModel.getGroupedInterventions());
 console.log(uncappedModel.getFinalStats());
 
 display(uncappedModel.getFinalStats());
+```
+
+## Test UI
+
+```js
+function useState(value) {
+  const state = Mutable(value);
+  const setState = (value) => (state.value = value);
+  return [state, setState];
+}
+const [config, setConfig] = useState({});
+```
+
+```js
+// Overall Budget
+// const overallBudgetInput = html`<input type="range" min="1000_000" max="100_000_000" step="500_000" value="50_000_000" style="max-width: 300px;" />`;
+
+const overallBudgetInput =  Inputs.range([0, 100_000_000], {
+    label: "Overall Buget",
+    step: 500_000,
+    value: 50_000_000
+  });
+  overallBudgetInput.number.style["max-width"] = "60px";
+  Object.assign(overallBudgetInput, {
+    oninput: (event) => event.isTrusted && event.stopImmediatePropagation(),
+    onchange: (event) => event.currentTarget.dispatchEvent(new Event("input"))
+  });
+display(overallBudgetInput);
+```
+
+```js
+const overall_budget = Generators.input(overallBudgetInput);
+```
+
+${overall_budget}
+
+
+
+
+```js
+// Technology Name
+const techNameInput = html`<input type="text" placeholder="Technology Name" style="max-width: 300px;" />`;
+const tech_name = Generators.input(techNameInput);
+
+// Allocation
+const techAllocationInput = html`<input type="range" min="0" max="1" step="0.1" placeholder="Allocation" style="max-width: 300px;" />`;
+const tech_allocation = Generators.input(techAllocationInput);
+
+// Suitability Key
+const techSuitabilityKeyInput = html`<input type="text" placeholder="Suitability Key" style="max-width: 300px;" />`;
+const tech_suitabilityKey = Generators.input(techSuitabilityKeyInput);
+
+// Labour Key
+const techLabourKeyInput = html`<input type="text" placeholder="Labour Key" style="max-width: 300px;" />`;
+const tech_labourKey = Generators.input(techLabourKeyInput);
+
+// Material Key
+const techMaterialKeyInput = html`<input type="text" placeholder="Material Key" style="max-width: 300px;" />`;
+const tech_materialKey = Generators.input(techMaterialKeyInput);
+
+// Savings Key
+const techSavingsKeyInput = html`<input type="text" placeholder="Savings Key" style="max-width: 300px;" />`;
+const tech_savingsKey = Generators.input(techSavingsKeyInput);
+```
+
+
+<!--
+```js
+// Initial Year
+const initialYearInput = html`<input type="number" min="2023" max="2030" value="2024" style="max-width: 300px;" />`;
+const initial_year = Generators.input(initialYearInput);
+
+// Target Years
+const targetYearsInput = html`<input type="range" min="1" max="20" step="1" value="5" style="max-width: 300px;" />`;
+const target_years = Generators.input(targetYearsInput);
+
+// Overall Budget
+const overallBudgetInput = html`<input type="range" min="1000000" max="100000000" step="500000" value="50000000" style="max-width: 300px;" />`;
+const overall_budget = Generators.input(overallBudgetInput);
+
+// Uncapped Mode Checkbox
+const uncappedModeInput = html`<input type="checkbox" />`;
+const uncapped_mode = Generators.input(uncappedModeInput);
+```
+
+```js
+// PV Technology Allocation
+const pvAllocationInput = html`<input type="range" min="0" max="1" step="0.1" value="0.4" style="max-width: 300px;" />`;
+const pv_allocation = Generators.input(pvAllocationInput);
+
+// PV Suitability Key
+const pvSuitabilityKeyInput = html`<input type="text" value="pv_suitability" style="max-width: 300px;" />`;
+const pv_suitabilityKey = Generators.input(pvSuitabilityKeyInput);
+
+// ASHP Technology Allocation
+const ashpAllocationInput = html`<input type="range" min="0" max="1" step="0.1" value="0.6" style="max-width: 300px;" />`;
+const ashp_allocation = Generators.input(ashpAllocationInput);
+
+// ASHP Suitability Key
+const ashpSuitabilityKeyInput = html`<input type="text" value="ashp_suitability" style="max-width: 300px;" />`;
+const ashp_suitabilityKey = Generators.input(ashpSuitabilityKeyInput);
+
+```
+
+
+```js
+// Priority Rule Attribute Selector
+const priorityAttrInput = html`<select style="max-width: 300px;">
+  <option value="deprivation_index">Deprivation Index</option>
+  <option value="fuel_poverty">Fuel Poverty</option>
+</select>`;
+const priority_attribute = Generators.input(priorityAttrInput);
+
+// Priority Rule Order Selector
+const priorityOrderInput = html`<select style="max-width: 300px;">
+  <option value="asc">Ascending</option>
+  <option value="desc">Descending</option>
+</select>`;
+const priority_order = Generators.input(priorityOrderInput);
+
+```
+
+
+```js
+function* modelSpecv2() {
+  while (true) {
+    yield {
+      initial_year,
+      target_years,
+      overall_budget,
+      uncapped_mode,
+      technologies: [
+        {
+          name: "PV",
+          allocation: pv_allocation,
+          config: {
+            suitabilityKey: pv_suitabilityKey,
+          },
+        },
+        {
+          name: "ASHP",
+          allocation: ashp_allocation,
+          config: {
+            suitabilityKey: ashp_suitabilityKey,
+            // add more later
+          },
+        },
+      ],
+      priorityRules: [
+        { attribute: priority_attribute, order: priority_order },
+      ]
+    };
+  }
+}
+
+``` -->
+
+
+<!-- <div>
+  <h3>Model Specification</h3>
+  <label>Initial Year: ${initialYearInput}</label><br>
+  <label>Target Years: ${targetYearsInput} ${target_years}</label><br>
+  <label>Overall Budget: ${overallBudgetInput} ${overall_budget}</label><br>
+  <label>Uncapped Mode: ${uncappedModeInput}</label><br>
+
+  <h4>Technologies</h4>
+  <h5>PV</h5>
+  <label>Allocation: ${pvAllocationInput}</label><br>
+  <label>Suitability Key: ${pvSuitabilityKeyInput}</label><br>
+
+  <h5>ASHP</h5>
+  <label>Allocation: ${ashpAllocationInput}</label><br>
+  <label>Suitability Key: ${ashpSuitabilityKeyInput}</label><br>
+
+  <h4>Priority Rules</h4>
+  <label>Attribute: ${priorityAttrInput}</label><br>
+  <label>Order: ${priorityOrderInput}</label><br>
+</div> -->
+
+
+
+
+```js
+let technologies = [];
+const addTechnologyButton = html`<button>Add Technology</button>`;
+addTechnologyButton.onclick = () => {
+  const newTechnology = {
+    name: tech_name,
+    allocation: tech_allocation,
+    config: {
+      suitabilityKey: tech_suitabilityKey,
+      labourKey: tech_labourKey,
+      materialKey: tech_materialKey,
+      savingsKey: tech_savingsKey
+    }
+  };
+
+  technologies.push(newTechnology);
+
+  // Log to check the technologies array is updated
+  console.log("Technologies:", technologies);
+};
+display(addTechnologyButton);
 ```

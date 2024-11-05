@@ -355,6 +355,7 @@ export class DecarbonisationModel {
 
     // Return complete stats
     return {
+        initialBudget: this.overallBudget,
         totalCarbonSaved: this.carbonSaved,
         totalBudgetSpent: totalSpent,
         remainingBudget: this.remainingBudget,
