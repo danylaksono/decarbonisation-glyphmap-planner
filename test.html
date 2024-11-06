@@ -1,93 +1,475 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<title>Testing data | Decarbonisation Glyphmap Planner</title>
+<title>Test New Model | Decarbonisation Glyphmap Planner</title>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Source+Serif+Pro:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&amp;display=swap" crossorigin>
 <link rel="preload" as="style" href="./_observablehq/theme-air,near-midnight.css">
+<link rel="preload" as="style" href="./_observablehq/stdlib/inputs.css">
 <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css2?family=Source+Serif+Pro:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&amp;display=swap" crossorigin>
 <link rel="stylesheet" type="text/css" href="./_observablehq/theme-air,near-midnight.css">
+<link rel="stylesheet" type="text/css" href="./_observablehq/stdlib/inputs.css">
 <link rel="modulepreload" href="./_observablehq/client.js">
 <link rel="modulepreload" href="./_observablehq/runtime.js">
 <link rel="modulepreload" href="./_observablehq/stdlib.js">
+<link rel="modulepreload" href="./_import/components/glyph-designs/timeGlyph.30b74103.js">
+<link rel="modulepreload" href="./_import/components/decarbonisationModel.016ae209.js">
+<link rel="modulepreload" href="./_npm/d3@7.9.0/_esm.js">
+<link rel="modulepreload" href="./_observablehq/stdlib/duckdb.js">
 <link rel="modulepreload" href="./_npm/htl@0.3.1/_esm.js">
+<link rel="modulepreload" href="./_observablehq/stdlib/inputs.js">
+<link rel="modulepreload" href="./_npm/@duckdb/duckdb-wasm@1.28.0/_esm.js">
+<link rel="modulepreload" href="./_npm/isoformat@0.2.1/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-array@3.2.4/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-axis@3.0.0/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-brush@3.0.0/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-chord@3.0.1/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-color@3.1.0/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-contour@4.0.2/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-delaunay@6.0.4/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-dispatch@3.0.1/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-drag@3.0.0/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-dsv@3.0.1/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-ease@3.0.1/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-fetch@3.0.1/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-force@3.0.0/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-format@3.1.0/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-geo@3.1.1/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-hierarchy@3.1.2/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-interpolate@3.0.1/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-path@3.1.0/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-polygon@3.0.1/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-quadtree@3.0.1/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-random@3.0.1/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-scale@4.0.2/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-scale-chromatic@3.1.0/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-selection@3.0.0/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-shape@3.2.0/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-time@3.1.0/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-time-format@4.1.0/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-timer@3.0.1/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-transition@3.0.1/_esm.js">
+<link rel="modulepreload" href="./_npm/d3-zoom@3.0.0/_esm.js">
+<link rel="modulepreload" href="./_npm/apache-arrow@18.0.0/_esm.js">
+<link rel="modulepreload" href="./_npm/internmap@2.0.3/_esm.js">
+<link rel="modulepreload" href="./_npm/delaunator@5.0.1/_esm.js">
+<link rel="modulepreload" href="./_npm/tslib@2.8.1/_esm.js">
+<link rel="modulepreload" href="./_npm/flatbuffers@24.3.25/_esm.js">
+<link rel="modulepreload" href="./_npm/robust-predicates@3.0.2/_esm.js">
 <script type="module">
 
 import {define} from "./_observablehq/client.js";
+import {registerFile, FileAttachment} from "./_observablehq/stdlib.js";
+import {registerTable} from "./_observablehq/stdlib/duckdb.js";
 
-define({id: "9aa9b90f", inputs: ["html","Generators","display"], outputs: ["n","nn"], body: (html,Generators,display) => {
-const n = html`<input
-  style="width: 800px;"
-  type="range"
-  step="0.1"
-  min="0"
-  max="1"
-/>`;
+registerFile("./data/oxford_decarbonisation_data.parquet", {"name":"./data/oxford_decarbonisation_data.parquet","path":"./_file/data/oxford_decarbonisation_data.28ee7510.parquet","lastModified":1730891302095});
+registerTable("oxford", FileAttachment("./data/oxford_decarbonisation_data.parquet"));
 
-const nn = Generators.input(n);
-
-display(n);
-return {n,nn};
+define({id: "c378fe81", outputs: ["TimeGlyph","GlyphCollection","DecarbonisationModel"], body: async () => {
+const [{TimeGlyph, GlyphCollection}, {DecarbonisationModel}] = await Promise.all([import("./_import/components/glyph-designs/timeGlyph.30b74103.js"), import("./_import/components/decarbonisationModel.016ae209.js")]);
+// import { Model } from "./components/model.js";
+return {TimeGlyph,GlyphCollection,DecarbonisationModel};
 }});
 
-define({id: "7db96cc4", inputs: ["display","nn"], body: (display,nn) => {
-display(nn);
+define({id: "606566ca", body: () => {
+// const n = html`<input
+//   style="width: 800px;"
+//   type="range"
+//   step="0.1"
+//   min="0"
+//   max="1"
+// />`;
 }});
 
-define({id: "ba102249", inputs: ["data","html","defaultCountryIndex"], outputs: ["countries","div","range","select"], body: (data,html,defaultCountryIndex) => {
-// Copy country data
-var countries = data.slice(0);
-// Make an alphabetical version
-countries.sort(function (a, b) {
-  var textA = a.Country.toUpperCase();
-  var textB = b.Country.toUpperCase();
-  return textA < textB ? -1 : textA > textB ? 1 : 0;
-});
-const div = html`
-  <select>
-    ${countries.map(
-      (country, index) => `
-      <option value="${country.Rank}">${country.Country}</option>`
-    )}</select
-  ><br />
-  <input
-    type="range"
-    min="1"
-    max=${data.length}
-    style="width:100%; max-width:640px;"
-  />
-`;
-const range = div.querySelector("[type=range]");
-const select = div.querySelector("select");
-div.value = range.value = select.value = defaultCountryIndex;
-range.addEventListener(
-  "input",
-  () => (select.value = div.value = range.valueAsNumber)
-);
-select.addEventListener(
-  "change",
-  () => (range.value = div.value = parseInt(select.value))
+define({id: "5132a93d", body: () => {
+// const nn = Generators.input(n);
+// display(n);
+}});
+
+define({id: "fad6bd7b", body: () => {
+// display(nn);
+}});
+
+define({id: "d22197ed", inputs: ["sql"], outputs: ["oxford_data"], body: async (sql) => {
+const oxford_data = await sql`  SELECT DISTINCT
+    "UPRN" AS id,
+    "LSOA code" AS lsoa,
+    "MSOA code" AS msoa,
+    "Air Source Heat Pump Potential_Building Size (m^2)" AS building_area,
+    "Air Source Heat Pump Potential_Garden Area (m^2)" AS garden_area,
+    "Air Source Heat Pump Potential_Overall Suitability Rating" AS ashp_suitability,
+    "Air Source Heat Pump Potential_Recommended Heat Pump Size [kW]" AS ashp_size,
+    "Low Carbon Technology Costs_Air Source Heat Pump - Labour" AS ashp_labour,
+    "Low Carbon Technology Costs_Air Source Heat Pump - Material" AS ashp_material,
+    "Low Carbon Technology Costs_Air Source Heat Pump - Total" AS ashp_total,
+    "Domestic Ground Source Heat Pump Potential_Overall Suitability Rating" AS gshp_suitability,
+    "Domestic Ground Source Heat Pump Potential_Recommended Heat Pump Size [kW]" AS gshp_size,
+    "Low Carbon Technology Costs_Ground Source Heat Pump - Labour" AS gshp_labour,
+    "Low Carbon Technology Costs_Ground Source Heat Pump - Materials" AS gshp_material,
+    "Low Carbon Technology Costs_Ground Source Heat Pump - Total" AS gshp_total,
+    "Domestic Heat Demand_Annual Heat Demand (kWh)" AS heat_demand,
+    "Domestic Insulation Potential_EPC Rating" AS insulation_rating,
+    "Domestic Insulation Potential_Insulation - Cavity Wall" AS insulation_cwall,
+    "Low Carbon Technology Costs_Insulation - Cavity Wall - Labour" AS insulation_cwall_labour,
+    "Low Carbon Technology Costs_Insulation - Cavity Wall  - Materials" AS insulation_cwall_materials,
+    "Low Carbon Technology Costs_Insulation - Cavity Wall - Total" AS insulation_cwall_total,
+    "Domestic Insulation Potential_Insulation - External Wall" AS insulation_ewall,
+    "Low Carbon Technology Costs_Insulation - External Wall - Labour" AS insulation_ewall_labour,
+    "Low Carbon Technology Costs_Insulation - External Wall - Material" AS insulation_ewall_materials,
+    "Low Carbon Technology Costs_Insulation - External Wall - Total" AS insulation_ewall_total,
+    "Domestic Insulation Potential_Insulation - Roof" AS insulation_roof,
+    "Low Carbon Technology Costs_Insulation - Loft - Labour" AS insulation_roof_labour,
+    "Low Carbon Technology Costs_Insulation - Loft - Material" AS insulation_roof_materials,
+    "Low Carbon Technology Costs_Insulation - Loft - Total" AS insulation_roof_total,
+    "Domestic Insulation Potential_Insulation - Under Floor" AS insulation_floor,
+    "Low Carbon Technology Costs_Insulation - Under Floor - Labour" AS insulation_floor_labour,
+    "Low Carbon Technology Costs_Insulation - Under Floor - Material" AS insulation_floor_materials,
+    "Low Carbon Technology Costs_Insulation - Under Floor- Total" AS insulation_floor_total,
+    "Domestic PV Potential_Overall Suitability" AS pv_suitability,
+    "Domestic PV Potential_Recommended Array Size [kW]" AS pv_size,
+    "Domestic PV Potential_Annual Generation [kWh]" AS pv_generation,
+    "Low Carbon Technology Costs_Rooftop PV - Labour" AS pv_labour,
+    "Low Carbon Technology Costs_Rooftop PV - Materials" AS pv_material,
+    "Low Carbon Technology Costs_Rooftop PV - Total" AS pv_total,
+    "Substation Name" AS substation_name,
+    "Substation - CapacityRating" AS substation_capacity_rating,
+    "Substation - Peakload" AS substation_peakload,
+    "Substation - Headroom" AS substation_headroom,
+    "Substation - % headroom" AS substation_headroom_pct,
+    "Substation - Demand_rag" AS substation_demand
+FROM oxford b;`;
+return {oxford_data};
+}});
+
+define({id: "e990e608", inputs: ["oxford_data"], outputs: ["newBuildings"], body: (oxford_data) => {
+const newBuildings = [...oxford_data];
+return {newBuildings};
+}});
+
+define({id: "7a1c2213", inputs: ["overall_budget"], outputs: ["modelSpec"], body: (overall_budget) => {
+// model specifications
+const modelSpec = {
+  initial_year: 2024,
+  target_years: 5,
+  overall_budget: overall_budget || 50_000_000,
+  uncapped_mode: false,
+  technologies: [
+    {
+      name: "PV",
+      allocation: 0.4,
+      config: {
+        scoreFn: (building) => {
+          if (!building.pv_suitability) return 0;
+          return building.pv_generation / building.pv_size;
+        },
+        suitabilityKey: "pv_suitability",
+        labourKey: "pv_labour",
+        materialKey: "pv_material",
+        savingsKey: "pv_generation", // assuming 1kWh = 1kg CO2
+      },
+    },
+    {
+      name: "ASHP",
+      allocation: 0.6,
+      config: {
+        scoreFn: (building) => {
+          if (!building.ashp_suitability) return 0;
+          return building.heat_demand / building.ashp_size;
+        },
+        suitabilityKey: "ashp_suitability",
+        labourKey: "ashp_labour",
+        materialKey: "ashp_material",
+        savingsKey: "heat_demand", // assuming full heat demand offset
+      },
+    },
+  ],
+  // priorityRules: [
+  //       {attribute: 'deprivation_index', order: 'desc'},
+  //       {attribute: 'fuel_poverty', order: 'desc'}
+  // ]
+};
+return {modelSpec};
+}});
+
+define({id: "0414a013", inputs: ["DecarbonisationModel","modelSpec","newBuildings","display"], outputs: ["model"], body: (DecarbonisationModel,modelSpec,newBuildings,display) => {
+const model = new DecarbonisationModel(modelSpec, newBuildings);
+model.addBuildingFilter(b => b.properties.substation_headroom >= 500);  // custom filtering
+// model.addPriorityRule('multideprivation', 'asc'); // arbitrary priority rule
+
+model.runModel();
+
+console.log("Yearly Interventions in 2024:", model.getYearInterventions(2024));
+
+
+// Get interventions grouped by year and technology
+console.log("Grouped Interventions", model.getGroupedInterventions());
+
+// Get and group interventions
+display(model.getInterventions()
+    .groupBy('year')
+    .groupBy('technology')
+    .groupBy('buildingProperties.lsoa')
+    .all()
+    );
+
+// Get final stats
+display(model.getFinalStats());
+
+return {model};
+}});
+
+define({id: "f582a03c", inputs: ["DecarbonisationModel","modelSpec","newBuildings","display"], outputs: ["uncappedModel"], body: (DecarbonisationModel,modelSpec,newBuildings,display) => {
+// testing uncapped
+const uncappedModel = new DecarbonisationModel(
+  {
+    ...modelSpec,
+    overall_budget: null,
+    uncapped_mode: true,
+  },
+  newBuildings
 );
 
-select.addEventListener(
-  "input",
-  () => (range.value = div.value = parseInt(select.value))
+uncappedModel.runModel();
+
+console.log(
+  "Yearly Interventions in 2024:",
+  uncappedModel.getYearInterventions(2024)
 );
-return {countries,div,range,select};
+
+
+// Get interventions grouped by year and technology
+console.log(uncappedModel.getGroupedInterventions());
+
+// Get final stats
+console.log(uncappedModel.getFinalStats());
+
+display(uncappedModel.getFinalStats());
+return {uncappedModel};
+}});
+
+define({id: "b19955b4", inputs: ["Mutable"], outputs: ["useState","config","setConfig"], body: (Mutable) => {
+function useState(value) {
+  const state = Mutable(value);
+  const setState = (value) => (state.value = value);
+  return [state, setState];
+}
+const [config, setConfig] = useState({});
+return {useState,config,setConfig};
+}});
+
+define({id: "b1b79755", inputs: ["Inputs","Event","display"], outputs: ["overallBudgetInput"], body: (Inputs,Event,display) => {
+// Overall Budget
+// const overallBudgetInput = html`<input type="range" min="1000_000" max="100_000_000" step="500_000" value="50_000_000" style="max-width: 300px;" />`;
+
+const overallBudgetInput =  Inputs.range([0, 100_000_000], {
+    label: "Overall Buget",
+    step: 500_000,
+    value: 50_000_000
+  });
+  overallBudgetInput.number.style["max-width"] = "60px";
+  Object.assign(overallBudgetInput, {
+    oninput: (event) => event.isTrusted && event.stopImmediatePropagation(),
+    onchange: (event) => event.currentTarget.dispatchEvent(new Event("input"))
+  });
+display(overallBudgetInput);
+return {overallBudgetInput};
+}});
+
+define({id: "65764c13", inputs: ["Generators","overallBudgetInput"], outputs: ["overall_budget"], body: (Generators,overallBudgetInput) => {
+const overall_budget = Generators.input(overallBudgetInput);
+return {overall_budget};
+}});
+
+define({id: "92440add", mode: "inline", inputs: ["overall_budget","display"], body: async (overall_budget,display) => {
+display(await(
+overall_budget
+))
+}});
+
+define({id: "72791936", inputs: ["html","Generators"], outputs: ["techNameInput","tech_name","techAllocationInput","tech_allocation","techSuitabilityKeyInput","tech_suitabilityKey","techLabourKeyInput","tech_labourKey","techMaterialKeyInput","tech_materialKey","techSavingsKeyInput","tech_savingsKey"], body: (html,Generators) => {
+// Technology Name
+const techNameInput = html`<input type="text" placeholder="Technology Name" style="max-width: 300px;" />`;
+const tech_name = Generators.input(techNameInput);
+
+// Allocation
+const techAllocationInput = html`<input type="range" min="0" max="1" step="0.1" placeholder="Allocation" style="max-width: 300px;" />`;
+const tech_allocation = Generators.input(techAllocationInput);
+
+// Suitability Key
+const techSuitabilityKeyInput = html`<input type="text" placeholder="Suitability Key" style="max-width: 300px;" />`;
+const tech_suitabilityKey = Generators.input(techSuitabilityKeyInput);
+
+// Labour Key
+const techLabourKeyInput = html`<input type="text" placeholder="Labour Key" style="max-width: 300px;" />`;
+const tech_labourKey = Generators.input(techLabourKeyInput);
+
+// Material Key
+const techMaterialKeyInput = html`<input type="text" placeholder="Material Key" style="max-width: 300px;" />`;
+const tech_materialKey = Generators.input(techMaterialKeyInput);
+
+// Savings Key
+const techSavingsKeyInput = html`<input type="text" placeholder="Savings Key" style="max-width: 300px;" />`;
+const tech_savingsKey = Generators.input(techSavingsKeyInput);
+return {techNameInput,tech_name,techAllocationInput,tech_allocation,techSuitabilityKeyInput,tech_suitabilityKey,techLabourKeyInput,tech_labourKey,techMaterialKeyInput,tech_materialKey,techSavingsKeyInput,tech_savingsKey};
+}});
+
+define({id: "74c751ac", inputs: ["html","tech_name","tech_allocation","tech_suitabilityKey","tech_labourKey","tech_materialKey","tech_savingsKey","display"], outputs: ["technologies","addTechnologyButton"], body: (html,tech_name,tech_allocation,tech_suitabilityKey,tech_labourKey,tech_materialKey,tech_savingsKey,display) => {
+let technologies = [];
+const addTechnologyButton = html`<button>Add Technology</button>`;
+addTechnologyButton.onclick = () => {
+  const newTechnology = {
+    name: tech_name,
+    allocation: tech_allocation,
+    config: {
+      suitabilityKey: tech_suitabilityKey,
+      labourKey: tech_labourKey,
+      materialKey: tech_materialKey,
+      savingsKey: tech_savingsKey
+    }
+  };
+
+  technologies.push(newTechnology);
+
+  // Log to check the technologies array is updated
+  console.log("Technologies:", technologies);
+};
+display(addTechnologyButton);
+
+return {technologies,addTechnologyButton};
 }});
 
 </script>
 <div id="observablehq-center">
 <main id="observablehq-main" class="observablehq">
-<!-------- Stylesheets -------->
-<!-- <link
-  rel="stylesheet"
-  href="https://cdn.jsdelivr.net/npm/bulma@1.0.0/css/bulma.min.css"
-> -->
-<h1 id="test-ui" tabindex="-1"><a class="observablehq-header-anchor" href="#test-ui">Test UI</a></h1>
-<p><label for="decarbonisation-slider">Decarbonisation Progress:</label></p>
-<div class="observablehq observablehq--block"><!--:9aa9b90f:--></div>
-<div class="observablehq observablehq--block"><!--:7db96cc4:--></div>
-<div class="observablehq observablehq--block"><!--:ba102249:--></div>
+<div class="observablehq observablehq--block"><!--:c378fe81:--></div>
+<!-- ## Test UI -->
+<!-- <label for="decarbonisation-slider">Decarbonisation Progress:</label> -->
+<div class="observablehq observablehq--block"><!--:606566ca:--></div>
+<div class="observablehq observablehq--block"><!--:5132a93d:--></div>
+<div class="observablehq observablehq--block"><!--:fad6bd7b:--></div>
+<h2 id="test-new-model" tabindex="-1"><a class="observablehq-header-anchor" href="#test-new-model">Test New Model</a></h2>
+<div class="observablehq observablehq--block"><!--:d22197ed:--></div>
+<div class="observablehq observablehq--block"><!--:e990e608:--></div>
+<div class="observablehq observablehq--block"><!--:7a1c2213:--></div>
+<div class="observablehq observablehq--block"><!--:0414a013:--></div>
+<h2 id="uncapped-model" tabindex="-1"><a class="observablehq-header-anchor" href="#uncapped-model">Uncapped Model</a></h2>
+<div class="observablehq observablehq--block"><!--:f582a03c:--></div>
+<h2 id="test-ui" tabindex="-1"><a class="observablehq-header-anchor" href="#test-ui">Test UI</a></h2>
+<div class="observablehq observablehq--block"><!--:b19955b4:--></div>
+<div class="observablehq observablehq--block"><!--:b1b79755:--></div>
+<div class="observablehq observablehq--block"><!--:65764c13:--></div>
+<p><observablehq-loading></observablehq-loading><!--:92440add:--></p>
+<div class="observablehq observablehq--block"><!--:72791936:--></div>
+<!--
+```js
+// Initial Year
+const initialYearInput = html`<input type="number" min="2023" max="2030" value="2024" style="max-width: 300px;" />`;
+const initial_year = Generators.input(initialYearInput);
+
+// Target Years
+const targetYearsInput = html`<input type="range" min="1" max="20" step="1" value="5" style="max-width: 300px;" />`;
+const target_years = Generators.input(targetYearsInput);
+
+// Overall Budget
+const overallBudgetInput = html`<input type="range" min="1000000" max="100000000" step="500000" value="50000000" style="max-width: 300px;" />`;
+const overall_budget = Generators.input(overallBudgetInput);
+
+// Uncapped Mode Checkbox
+const uncappedModeInput = html`<input type="checkbox" />`;
+const uncapped_mode = Generators.input(uncappedModeInput);
+```
+
+```js
+// PV Technology Allocation
+const pvAllocationInput = html`<input type="range" min="0" max="1" step="0.1" value="0.4" style="max-width: 300px;" />`;
+const pv_allocation = Generators.input(pvAllocationInput);
+
+// PV Suitability Key
+const pvSuitabilityKeyInput = html`<input type="text" value="pv_suitability" style="max-width: 300px;" />`;
+const pv_suitabilityKey = Generators.input(pvSuitabilityKeyInput);
+
+// ASHP Technology Allocation
+const ashpAllocationInput = html`<input type="range" min="0" max="1" step="0.1" value="0.6" style="max-width: 300px;" />`;
+const ashp_allocation = Generators.input(ashpAllocationInput);
+
+// ASHP Suitability Key
+const ashpSuitabilityKeyInput = html`<input type="text" value="ashp_suitability" style="max-width: 300px;" />`;
+const ashp_suitabilityKey = Generators.input(ashpSuitabilityKeyInput);
+
+```
+
+
+```js
+// Priority Rule Attribute Selector
+const priorityAttrInput = html`<select style="max-width: 300px;">
+  <option value="deprivation_index">Deprivation Index</option>
+  <option value="fuel_poverty">Fuel Poverty</option>
+</select>`;
+const priority_attribute = Generators.input(priorityAttrInput);
+
+// Priority Rule Order Selector
+const priorityOrderInput = html`<select style="max-width: 300px;">
+  <option value="asc">Ascending</option>
+  <option value="desc">Descending</option>
+</select>`;
+const priority_order = Generators.input(priorityOrderInput);
+
+```
+
+
+```js
+function* modelSpecv2() {
+  while (true) {
+    yield {
+      initial_year,
+      target_years,
+      overall_budget,
+      uncapped_mode,
+      technologies: [
+        {
+          name: "PV",
+          allocation: pv_allocation,
+          config: {
+            suitabilityKey: pv_suitabilityKey,
+          },
+        },
+        {
+          name: "ASHP",
+          allocation: ashp_allocation,
+          config: {
+            suitabilityKey: ashp_suitabilityKey,
+            // add more later
+          },
+        },
+      ],
+      priorityRules: [
+        { attribute: priority_attribute, order: priority_order },
+      ]
+    };
+  }
+}
+
+``` -->
+<!-- <div>
+  <h3>Model Specification</h3>
+  <label>Initial Year: ${initialYearInput}</label><br>
+  <label>Target Years: ${targetYearsInput} ${target_years}</label><br>
+  <label>Overall Budget: ${overallBudgetInput} ${overall_budget}</label><br>
+  <label>Uncapped Mode: ${uncappedModeInput}</label><br>
+
+  <h4>Technologies</h4>
+  <h5>PV</h5>
+  <label>Allocation: ${pvAllocationInput}</label><br>
+  <label>Suitability Key: ${pvSuitabilityKeyInput}</label><br>
+
+  <h5>ASHP</h5>
+  <label>Allocation: ${ashpAllocationInput}</label><br>
+  <label>Suitability Key: ${ashpSuitabilityKeyInput}</label><br>
+
+  <h4>Priority Rules</h4>
+  <label>Attribute: ${priorityAttrInput}</label><br>
+  <label>Order: ${priorityOrderInput}</label><br>
+</div> -->
+<div class="observablehq observablehq--block"><!--:74c751ac:--></div>
 </main>
 </div>
