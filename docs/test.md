@@ -141,20 +141,28 @@ const modelSpec = {
 
 ```js
 const model = new DecarbonisationModel(modelSpec, newBuildings);
-model.addBuildingFilter(b => b.properties.substation_headroom >= 1000);  // custom filtering
+model.addBuildingFilter(b => b.properties.substation_headroom >= 500);  // custom filtering
 // model.addPriorityRule('multideprivation', 'asc'); // arbitrary priority rule
 
 model.runModel();
 
 console.log("Yearly Interventions in 2024:", model.getYearInterventions(2024));
 
+
 // Get interventions grouped by year and technology
-console.log(model.getGroupedInterventions());
+console.log("Grouped Interventions", model.getGroupedInterventions());
+
+// Get and group interventions
+display(model.getInterventions()
+    .groupBy('year')
+    .groupBy('technology')
+    .groupBy('buildingProperties.lsoa')
+    .all()
+    );
 
 // Get final stats
-console.log(model.getFinalStats());
-
 display(model.getFinalStats());
+
 ```
 
 ## Uncapped Model
@@ -176,6 +184,7 @@ console.log(
   "Yearly Interventions in 2024:",
   uncappedModel.getYearInterventions(2024)
 );
+
 
 // Get interventions grouped by year and technology
 console.log(uncappedModel.getGroupedInterventions());

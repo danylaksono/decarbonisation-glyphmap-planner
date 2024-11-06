@@ -2,14 +2,20 @@
 class Building {
   constructor(id, properties) {
     this.id = id;
-    this.properties = properties; // Object holding building properties like area, age, suitability, costs, etc.
+    this.properties = properties; // Object holding building properties
     this.interventionStatus = false;
     this.interventions = []; // Track interventions per year
   }
 
   addIntervention(year, technology, cost, carbonSaved) {
     this.interventionStatus = true;
-    this.interventions.push({ year, technology, cost, carbonSaved });
+    this.interventions.push({
+      year,
+      technology,
+      cost,
+      carbonSaved,
+      buildingProperties: { ...this.properties }
+     });
   }
 
   getInterventions() {
@@ -51,6 +57,123 @@ class Intervention {
   }
 }
 
+// class GroupableInterventions {
+//   constructor(interventions) {
+//     this.interventions = interventions;
+//   }
+
+//   all() {
+//     return this.interventions;
+//   }
+
+//   groupBy(property) {
+//     return new GroupableInterventions(this.groupItems(this.interventions, property));
+//   }
+
+//   groupItems(items, property) {
+//     if (Array.isArray(items)) {
+//       const grouped = {};
+//       items.forEach(item => {
+//         let value;
+
+//         // Handle direct intervention properties
+//         if (['year', 'cost', 'technology'].includes(property)) {
+//           value = item[property];
+//         }
+//         // Handle building properties
+//         else if (property.startsWith('properties.')) {
+//           value = property.split('.')
+//             .reduce((obj, prop) => obj?.[prop], item.building) ?? 'undefined';
+//         }
+//         // Handle other nested properties
+//         else {
+//           value = property.split('.')
+//             .reduce((obj, prop) => obj?.[prop], item) ?? 'undefined';
+//         }
+
+//         if (!grouped[value]) {
+//           grouped[value] = [];
+//         }
+//         grouped[value].push(item);
+//       });
+//       return grouped;
+//     }
+//     return items;
+//   }
+// }
+
+class GroupableBuildings {
+  constructor(buildings) {
+    this.buildings = buildings;
+  }
+
+  all() {
+    return this.buildings;
+  }
+
+  groupBy(property) {
+    return new GroupableBuildings(this.groupItems(this.buildings, property));
+  }
+
+  groupItems(items, property) {
+    if (Array.isArray(items)) {
+      const grouped = {};
+      items.forEach(item => {
+        const value = property.split('.').reduce((obj, prop) => obj?.[prop], item) ?? 'undefined';
+        if (!grouped[value]) {
+          grouped[value] = [];
+        }
+        grouped[value].push(item);
+      });
+      return grouped;
+    }
+    return items;
+  }
+}
+
+class GroupableInterventions {
+  constructor(interventions) {
+      this.interventions = interventions;
+  }
+
+  all() {
+      return this.interventions;
+  }
+
+  groupBy(factor) {
+      const getValue = (obj, path) => {
+          if (path.includes('.')) {
+              return path.split('.').reduce((curr, key) => curr?.[key], obj);
+          }
+          return obj[factor];
+      };
+
+      return new GroupableInterventions(
+          this.#groupInterventions(this.interventions, (item) => getValue(item, factor))
+      );
+  }
+
+  #groupInterventions(interventions, getKey) {
+      if (Array.isArray(interventions)) {
+          let ret = Object();
+          interventions.forEach((i) => {
+              const key = getKey(i);
+              if (ret[key] != null) {
+                  ret[key].push(i);
+              } else {
+                  ret[key] = [i];
+              }
+          });
+          return ret;
+      } else {
+          Object.keys(interventions).forEach(
+              (k) => (interventions[k] = this.#groupInterventions(interventions[k], getKey))
+          );
+          return interventions;
+      }
+  }
+}
+
 // Main Decarbonisation Model
 export class DecarbonisationModel {
   constructor(modelSpec, buildings) {
@@ -81,7 +204,37 @@ export class DecarbonisationModel {
         console.log('Running in uncapped mode - no budget constraints');
         this.remainingBudget = Infinity;
         this.yearlyBudget = Infinity;
+      }
     }
+
+    getInterventions() {
+      const filteredBuildings = this.getFilteredBuildings();
+
+      if (!filteredBuildings || filteredBuildings.length === 0) {
+          console.warn('No buildings match the current filters');
+          return new GroupableInterventions([]);
+      }
+
+      const interventions = filteredBuildings.reduce((acc, building) => {
+          if (!building.interventions) {
+              console.error('Invalid building object:', building);
+              return acc;
+          }
+
+          const buildingInterventions = building.interventions.map(intervention => ({
+              ...intervention,
+              buildingId: building.id,
+              buildingProperties: building.properties
+          }));
+
+          return [...acc, ...buildingInterventions];
+      }, []);
+
+      return new GroupableInterventions(interventions);
+  }
+
+  getBuildings() {
+    return new GroupableBuildings(this.buildings);
   }
 
   addBuildingFilter(filterFn) {
@@ -263,54 +416,86 @@ export class DecarbonisationModel {
     return false;
   }
 
+  // getGroupedInterventions() {
+  //   const groupedInterventions = {};
+  //   const filteredBuildings = this.getFilteredBuildings();
+
+  //   if (!filteredBuildings || filteredBuildings.length === 0) {
+  //     console.warn('No buildings match the current filters');
+  //     return groupedInterventions;
+  //   }
+
+  //   // Iterate through each building (filtered)
+  //   // this.buildings.forEach((building) => {
+  //   filteredBuildings.forEach((building) => {
+  //     if (!building.getInterventions) {
+  //       console.error('Invalid building object:', building);
+  //       return;
+  //     }
+  //     building.interventions.forEach((intervention) => {
+  //       const { year, technology, cost, carbonSaved, buildingProperties } = intervention;
+
+  //       // Initialize year and technology entries if they don't exist
+  //       if (!groupedInterventions[year]) {
+  //         groupedInterventions[year] = {};
+  //       }
+  //       if (!groupedInterventions[year][technology]) {
+  //         groupedInterventions[year][technology] = [];
+  //       }
+
+  //       // Add intervention data
+  //       groupedInterventions[year][technology].push({
+  //         buildingId: building.id,
+  //         properties: buildingProperties, //include all other building properties
+  //         cost,
+  //         carbonSaved,
+  //       });
+  //     });
+  //   });
+
+  //   return groupedInterventions;
+  //   // return new InterventionGroup(groupedInterventions);
+  // }
+
   getGroupedInterventions() {
-    const groupedInterventions = {};
     const filteredBuildings = this.getFilteredBuildings();
 
     if (!filteredBuildings || filteredBuildings.length === 0) {
-      console.warn('No buildings match the current filters');
-      return groupedInterventions;
+        console.warn('No buildings match the current filters');
+        return new GroupableInterventions([]);
     }
 
-    // Iterate through each building
-    // this.buildings.forEach((building) => {
-    filteredBuildings.forEach((building) => {
-      if (!building.getInterventions) {
-        console.error('Invalid building object:', building);
-        return;
-      }
-      building.interventions.forEach((intervention) => {
-        const { year, technology, cost, carbonSaved } = intervention;
-
-        // Initialize year and technology entries if they don't exist
-        if (!groupedInterventions[year]) {
-          groupedInterventions[year] = {};
-        }
-        if (!groupedInterventions[year][technology]) {
-          groupedInterventions[year][technology] = [];
+    const interventions = filteredBuildings.reduce((acc, building) => {
+        if (!building.interventions) {
+            console.error('Invalid building object:', building);
+            return acc;
         }
 
-        // Add intervention data
-        groupedInterventions[year][technology].push({
-          buildingId: building.id,
-          cost,
-          carbonSaved,
-        });
-      });
-    });
+        const buildingInterventions = building.interventions.map(intervention => ({
+            ...intervention,
+            buildingId: building.id,
+            buildingProperties: building.properties
+        }));
 
-    return groupedInterventions;
-  }
+        return [...acc, ...buildingInterventions];
+    }, []);
+
+    return new GroupableInterventions(interventions);
+}
 
   getYearInterventions(year) {
-    // Use filtered buildings instead of all buildings
     return this.getFilteredBuildings()
-        .map((b) => ({
-            id: b.id,
-            interventions: b.getYearInterventions(year)
-        }))
+        .map((b) => {
+            const yearInterventions = b.getYearInterventions(year);
+            return {
+                id: b.id,
+                properties: yearInterventions[0]?.buildingProperties || b.properties,
+                interventions: yearInterventions
+            };
+        })
         .filter((b) => b.interventions.length > 0);
   }
+
 
   getFinalStats() {
     // Get filtered buildings
@@ -356,9 +541,9 @@ export class DecarbonisationModel {
     // Return complete stats
     return {
         initialBudget: this.overallBudget,
-        totalCarbonSaved: this.carbonSaved,
         totalBudgetSpent: totalSpent,
         remainingBudget: this.remainingBudget,
+        totalCarbonSaved: this.carbonSaved,
         yearlyStats,
         filters: this.buildingFilters ? {
             totalBuildings: this.buildings.length,
