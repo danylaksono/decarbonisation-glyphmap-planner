@@ -15,6 +15,7 @@ import {
 import { Model } from "./components/model.js";
 import maplibregl from "npm:maplibre-gl@2.0.0";
 import {Mutable} from "npm:@observablehq/stdlib";
+
 ```
 
 <!-------- Stylesheets -------->
@@ -22,6 +23,7 @@ import {Mutable} from "npm:@observablehq/stdlib";
   rel="stylesheet"
   href="https://cdn.jsdelivr.net/npm/bulma@1.0.0/css/bulma.min.css"
 >
+
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css">
 <link href="https://unpkg.com/maplibre-gl@2.1.9/dist/maplibre-gl.css" rel="stylesheet" />
 <link
@@ -42,6 +44,7 @@ body, html {
     /* width: 100% !important; */
     max-width: 100% !important;
 }
+
 
 #observablehq-center {
   margin: 0.5rem !important;
@@ -445,10 +448,12 @@ function showPlot(width, height) {
       Plot.ruleY([0]),
     ],
   });
+
 }
 ```
 
 ```js
+
 const yearsInput = html`<input
   style="max-width: 300px;"
   type="range"
@@ -547,4 +552,5 @@ function generateList(repos) {
 
 // Initialize the list
 generateList(repositories);
+
 ```
