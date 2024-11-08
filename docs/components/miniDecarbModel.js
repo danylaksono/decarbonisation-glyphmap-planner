@@ -16,6 +16,7 @@ export class MiniDecarbModel {
   constructor(modelConfig, buildings) {
     // Basic configuration
     this.initialYear = modelConfig.initial_year;
+    this.rolledoverBudget = modelConfig.rolledover_budget;
     this.yearlyBudgets = modelConfig.yearly_budgets; // Array of budgets per year
     this.numYears = this.yearlyBudgets.length;
 
@@ -42,11 +43,9 @@ export class MiniDecarbModel {
   }
 
   // Add a custom filter for buildings based on criteria
-  addBuildingFilter(filterFn) {
+  addBuildingFilter(filterFn, filterName = "Custom filter") {
     this.suitableBuildings = this.suitableBuildings.filter(filterFn);
-    this.appliedFilters.push(
-      this.tech.config.suitabilityKey || "Custom filter"
-    );
+    this.appliedFilters.push(filterName);
   }
 
   // Filter suitable buildings early based on tech requirements
@@ -145,7 +144,8 @@ export class MiniDecarbModel {
 
   // Run the model year by year with budget rollover
   runModel() {
-    let remainingBudget = 0;
+    // let remainingBudget = 0;
+    let remainingBudget = this.rolledoverBudget || 0; // Rollover budget from previous projects
 
     for (let year = 0; year < this.numYears; year++) {
       const yearBudget = this.yearlyBudgets[year] + remainingBudget;

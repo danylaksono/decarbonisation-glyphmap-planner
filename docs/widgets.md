@@ -108,6 +108,7 @@ const newBuildings = [...oxford_data];
 ```js
 const config = {
   initial_year: 2024,
+  rolledover_budget: 0,
   yearly_budgets: [1200000, 30000, 20000, 5000, 3000, 20000],
   tech: {
     name: "ASHP",
@@ -127,7 +128,10 @@ const config = {
 };
 
 const model = new MiniDecarbModel(config, newBuildings);
-model.addBuildingFilter((b) => b.properties["substation_headroom"] >= 500);
+model.addBuildingFilter(
+  (b) => b.properties["substation_headroom"] >= 500,
+  "Substation Headroom >= 500"
+);
 
 // For priority rules:
 // // Categorical priority
