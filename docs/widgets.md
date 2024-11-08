@@ -23,7 +23,6 @@ const allocator = new BudgetAllocator(totalBudget, startYear, projectLength);
 
 // linear allocation
 const linearAllocation = allocator.allocateLinear();
-// const allocations = allocator.allocateBudget("sigmoid", false);
 display(linearAllocation);
 display(allocator.visualize(linearAllocation));
 // console.log(allocator.visualize(linearAllocation));
@@ -42,16 +41,17 @@ display(allocator.visualize(linearAllocation));
 // //   allocator.allocation(expAllocation)
 // // );
 
-// const cubicAllocation = allocator.allocateCustom("cubic");
+// const sigmoid = allocator.allocateBudget("sigmoid", false);
+// const sigmoid = allocator.allocateCustom("cubic");
 // display(cubicAllocation);
-// display(allocator.visualize(cubicAllocation));
+// display(allocator.visualize(sigmoid));
 
 // console.log("Cubic Allocation Recap:", allocator.allocation(cubicAllocation));
 ```
 
 ## Test New Model
 
-```sql id=oxford_data
+```sql id=oxford_data display
   SELECT DISTINCT
     "UPRN" AS id,
     "LSOA code" AS lsoa,
@@ -108,7 +108,7 @@ const newBuildings = [...oxford_data];
 ```js
 const config = {
   initial_year: 2024,
-  yearly_budgets: [1200000, 30000, 20000],
+  yearly_budgets: [1200000, 30000, 20000, 5000, 3000, 20000],
   tech: {
     name: "ASHP",
     config: {
@@ -118,9 +118,52 @@ const config = {
       savingsKey: "heat_demand",
     },
   },
+  priorities: [
+    {
+      name: "substation_headroom",
+      order: "asc",
+    },
+  ],
 };
 
 const model = new MiniDecarbModel(config, newBuildings);
+model.addBuildingFilter((b) => b.properties["substation_headroom"] >= 500);
+
+// For priority rules:
+// // Categorical priority
+// model.addPriorityRuleCustom({
+//   attribute: 'multideprivation',
+//   scoreFunction: (value) => ({
+//     'deprived': 1000,
+//     'not-deprived': 0
+//   })[value] || 0
+// });
+
+// // Numeric threshold priority
+// model.addPriorityRuleCustom({
+//   attribute: 'fuel_poverty',
+//   scoreFunction: (value) => value > 0.5 ? 500 : 0,
+//   weight: 2.0
+// });
+
+// // Complex scoring function
+// model.addPriorityRuleCustom({
+//   attribute: 'energy_rating',
+//   scoreFunction: (value) => {
+//     const ratings = {'A': 0, 'B': 200, 'C': 400, 'D': 600, 'E': 800, 'F': 1000};
+//     return ratings[value] || 0;
+//   }
+// });
+
+model.addPriorityRuleCustom({
+  attribute: "substation_capacity_rating",
+  scoreFunction: (value) =>
+    ({
+      800: 500,
+      1500: 1000,
+    }[value] || 0),
+});
+
 model.runModel();
 const results = model.getRecap();
 display(results);

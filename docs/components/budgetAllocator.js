@@ -24,48 +24,33 @@ export class BudgetAllocator {
       // Calculate allocation based on chosen method
       switch (method) {
         case "linear":
-          budgetForYear = this.overallBudget / this.projectLength;
+          budgetForYear = this.totalBudget / this.projectLength;
           break;
         case "exponential":
           budgetForYear =
-            (this.overallBudget * Math.pow(1.1, i)) /
+            (this.totalBudget * Math.pow(1.1, i)) /
             Math.pow(1.1, this.projectLength - 1);
           break;
         case "sigmoid":
           const x = (i - this.projectLength / 2) / (this.projectLength / 8);
           budgetForYear =
-            this.overallBudget / (1 + Math.exp(-x)) - this.overallBudget / 2;
+            this.totalBudget / (1 + Math.exp(-x)) - this.totalBudget / 2;
           break;
-        // Add more custom allocation methods here if needed
         default:
           throw new Error("Unknown allocation method");
       }
 
-      // Apply inversion if needed by reversing allocation order
       if (invert) {
-        budgetForYear =
-          allocations.length > 0
-            ? allocations[allocations.length - 1] - budgetForYear
-            : this.overallBudget / this.projectLength - budgetForYear;
+        budgetForYear = this.totalBudget - budgetForYear;
       }
 
-      // Ensure budget for each year is non-negative and adjust if exceeding overall budget
-      budgetForYear = Math.max(0, budgetForYear);
+      allocations.push(budgetForYear);
       totalAllocated += budgetForYear;
-
-      allocations.push({
-        year: this.startYear + i,
-        budget: budgetForYear,
-      });
     }
 
-    // Normalize allocations to ensure total budget matches initial overall budget
-    const scaleFactor = this.overallBudget / totalAllocated;
-    allocations.forEach((entry) => {
-      entry.budget *= scaleFactor;
-    });
-
-    return allocations;
+    // Normalize allocations to ensure the total allocated budget matches the total budget
+    const normalizationFactor = this.totalBudget / totalAllocated;
+    return allocations.map((allocation) => allocation * normalizationFactor);
   }
 
   /**

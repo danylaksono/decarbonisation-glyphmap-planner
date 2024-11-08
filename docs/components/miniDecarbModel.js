@@ -34,6 +34,8 @@ export class MiniDecarbModel {
     this.remainingBudgets = [...this.yearlyBudgets];
     this.yearlyStats = {};
 
+    this.appliedFilters = [];
+
     // Initialize the model
     this.filterSuitableBuildings();
     this.calculateBuildingScores();
@@ -42,6 +44,9 @@ export class MiniDecarbModel {
   // Add a custom filter for buildings based on criteria
   addBuildingFilter(filterFn) {
     this.suitableBuildings = this.suitableBuildings.filter(filterFn);
+    this.appliedFilters.push(
+      this.tech.config.suitabilityKey || "Custom filter"
+    );
   }
 
   // Filter suitable buildings early based on tech requirements
@@ -51,7 +56,29 @@ export class MiniDecarbModel {
     );
   }
 
-  // Calculate score based on carbon savings and priorities
+  // Add a priority rule for sorting buildings
+  addPriorityRule(attribute, order) {
+    this.priorities.push({ attribute, order });
+  }
+
+  addPriorityRuleCustom(ruleConfig) {
+    /* ruleConfig example:
+    {
+      attribute: 'multideprivation',
+      scoreFunction: (value) => {
+        // Custom scoring logic
+        const scores = {
+          'deprived': 1000,
+          'not-deprived': 0
+        };
+        return scores[value] || 0;
+      },
+      weight: 1.0  // Optional weighting factor
+    }
+    */
+    this.priorities.push(ruleConfig);
+  }
+
   calculateBuildingScores() {
     // Rank buildings based on carbon savings potential
     const rankedBuildings = [...this.suitableBuildings].sort((a, b) => {
@@ -63,20 +90,51 @@ export class MiniDecarbModel {
 
     // Assign initial score based on ranking
     rankedBuildings.forEach((building, index) => {
-      building.score = rankedBuildings.length - index; // Higher rank gets higher score
+      building.score = rankedBuildings.length - index;
     });
 
-    // Apply priority adjustments
+    // Apply custom priority rules
     this.suitableBuildings.forEach((building) => {
-      this.priorities.forEach((priority) => {
-        const value = building.properties[priority.attribute] || 0;
-        building.score += value * (priority.order === "desc" ? 1 : -1);
+      this.priorities.forEach((rule) => {
+        const value = building.properties[rule.attribute];
+        if (value !== undefined) {
+          const priorityScore = rule.scoreFunction(value);
+          const weight = rule.weight || 1.0;
+          building.score += priorityScore * weight;
+        }
       });
     });
 
     // Sort by final score in descending order
     this.suitableBuildings.sort((a, b) => b.score - a.score);
   }
+
+  // Calculate score based on carbon savings and priorities
+  //   calculateBuildingScores() {
+  //     // Rank buildings based on carbon savings potential
+  //     const rankedBuildings = [...this.suitableBuildings].sort((a, b) => {
+  //       return (
+  //         b.properties[this.tech.config.savingsKey] -
+  //         a.properties[this.tech.config.savingsKey]
+  //       );
+  //     });
+
+  //     // Assign initial score based on ranking
+  //     rankedBuildings.forEach((building, index) => {
+  //       building.score = rankedBuildings.length - index; // Higher rank gets higher score
+  //     });
+
+  //     // Apply priority adjustments
+  //     this.suitableBuildings.forEach((building) => {
+  //       this.priorities.forEach((priority) => {
+  //         const value = building.properties[priority.attribute] || 0;
+  //         building.score += value * (priority.order === "desc" ? 1 : -1);
+  //       });
+  //     });
+
+  //     // Sort by final score in descending order
+  //     this.suitableBuildings.sort((a, b) => b.score - a.score);
+  //   }
 
   // Get intervention cost for a building
   getBuildingCost(building) {
@@ -135,8 +193,15 @@ export class MiniDecarbModel {
       initialBudget: this.yearlyBudgets,
       totalBudget: totalAllocated,
       yearlyStats: this.yearlyStats,
+      allBuildings: this.suitableBuildings,
       intervenedBuildings: this.suitableBuildings.filter((b) => b.isIntervened),
       untouchedBuildings: this.suitableBuildings.filter((b) => !b.isIntervened),
+      appliedFilters: this.appliedFilters,
+      priorityRules: this.priorities.map((rule) => ({
+        attribute: rule.attribute,
+        hasCustomScore: !!rule.scoreFunction,
+        weight: rule.weight || 1.0,
+      })),
     };
   }
 }
