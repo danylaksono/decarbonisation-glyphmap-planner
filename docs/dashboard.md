@@ -1,4 +1,5 @@
 ---
+
 theme: dashboard
 title: Morphing Glyphmaps
 toc: false
@@ -52,7 +53,9 @@ const proj = new OSGB();
 body, html {
   height: 100%;
   margin: 0 !important;
+
   overflow: hidden;
+
   padding: 0;
 }
 
@@ -64,11 +67,14 @@ body, html {
 
 </style>
 
+
 <div id="left-panel" class="grid grid-cols-4" style="padding:8px; height:92vh;">
+
     <div class="card grid-colspan-1">
          <div style="padding:10px;"> ${localAuthorityInput} </div>
          <div style="padding:10px;"> ${geogNameInput} </div>
          <div style="padding:10px;"> ${glyphmapTypeInput} </div>
+
          <div style="padding:10px;"> <small>Drag to morph (choose 'Gridmap')</small> ${tInput} </div>  
         <hr>
         <div style="padding:10px;"> List of layers</div>
@@ -86,6 +92,7 @@ body, html {
                 ${Plot.geo(dataInMorph).plot({projection: { type: "identity", domain: dataInMorph }})}
             </div>
         </div>
+
     </div>
 </div>
 
@@ -115,6 +122,7 @@ const geogName = Generators.input(geogNameInput);
 ```
 
 ```js
+
 const tInput = html`<input
   style="width: 100%; max-width:200px;"
   type="range"
@@ -127,6 +135,7 @@ const t = Generators.input(tInput);
 ```
 
 ```js
+
 const la_code = [...list_la].find((row) => row.label === local_authority).code;
 const geogBoundary = geogName.toLowerCase() + "s";
 ```
@@ -213,6 +222,7 @@ const data = _.keyBy(
   }),
   "code"
 );
+
 // display(data);
 ```
 
@@ -220,6 +230,7 @@ const data = _.keyBy(
 // display(
 //   prepareGeoJsonForMorphingLib(regular_geodata, regular_geodata, 300, 300)
 // );
+
 ```
 
 ```js
@@ -258,6 +269,7 @@ const layouts = [
 ```
 
 ```js
+
 // using observable framework resize callback function
 // const morphers = resize((width, height) =>
 //   inSituMorphMouse(
@@ -277,6 +289,7 @@ const layouts = [
 <!-- ------------------ # Morphing Geometry Functions ------------------  -->
 
 ```js
+
 const extractCoordinatesForFlubber = (features) => {
   return features.map((feature) => {
     const { type, coordinates } = feature.geometry;
@@ -458,6 +471,7 @@ const geographicShapes = invertIntGeoShapes(intGeoShapesv2, t);
 ```
 
 ```js
+
 // ---------------------- Functions for morphing ----------------------
 
 function inSituMorphMouse(options, width) {
@@ -996,7 +1010,9 @@ function intermBbSize(layout, toLayout) {
 <!-- ------------------ # Gridded-Glyphmap Functions ------------------  -->
 
 ```js
+
 // Coordinate transformation utilities
+
 function transformCoordinates(coords) {
   if (coords.length === 4 && !Array.isArray(coords[0])) {
     // bounding box
@@ -1005,10 +1021,12 @@ function transformCoordinates(coords) {
       ...proj.toGeo([coords[2], coords[3]]),
     ];
   } else if (Array.isArray(coords[0])) {
+
     // arrays of coordinates
     return coords.map(transformCoordinates);
   } else {
     // individual coordinate pairs
+
     return proj.toGeo(coords);
   }
 }
@@ -1049,6 +1067,7 @@ const transformedShapes = convertToGeoJSON(
   applyTransformationToShapes(geographicShapes)
 );
 // display(transformedShapes);
+
 ```
 
 ```js
@@ -1112,6 +1131,7 @@ function valueDiscretiser(geomLookup) {
     boundaryFn: (key) => geomLookup[key]?.geometry.coordinates[0],
   });
 }
+
 ```
 
 ```js
@@ -1142,6 +1162,7 @@ function valueDiscretiserInMorph(inp) {
 // display(valueDiscretiserInMorph(dataInMorph));
 // display("datain morph");
 // display(dataInMorph);
+
 // display(transformCoordinates(turf.bbox(regular_geodata)));
 ```
 
@@ -1149,6 +1170,7 @@ function valueDiscretiserInMorph(inp) {
 // glyphmap basic specs
 function glyphMapSpec(width, height) {
   // console.log("in glyphmapspec", width, height);
+
   // const bbox = turf.bbox(regular_geodata);
   return {
     // coordType: "notmercator",
@@ -1161,6 +1183,7 @@ function glyphMapSpec(width, height) {
     getLocationFn: (row) => regularGeodataLookup[row.code]?.centroid,
     discretisationShape: "grid",
     mapType: "CartoPositron",
+
     interactiveCellSize: true,
     cellSize: 60,
 
