@@ -106,32 +106,26 @@ const newBuildings = [...oxford_data];
 ```
 
 ```js
-const config = {
+const configASHP = {
   initial_year: 2024,
-  rolledover_budget: 0,
-  yearly_budgets: [1200000, 30000, 20000, 5000, 3000, 20000],
+  rolledover_budget: 50_000_000,
+  yearly_budgets: [1200000, 30000, 20000, 5000, 3000, 20000], // this will be assigned from budgetAllocator
   tech: {
     name: "ASHP",
     config: {
       suitabilityKey: "ashp_suitability",
       labourKey: "ashp_labour",
       materialKey: "ashp_material",
-      savingsKey: "heat_demand",
+      savingsKey: "heat_demand", // will be calculated from a lookup and stored in the building data
     },
   },
   priorities: [
     {
-      name: "substation_headroom",
+      name: "substation_headroom", //sort by substation headroom
       order: "asc",
     },
   ],
 };
-
-const model = new MiniDecarbModel(config, newBuildings);
-model.addBuildingFilter(
-  (b) => b.properties["substation_headroom"] >= 500,
-  "Substation Headroom >= 500"
-);
 
 // For priority rules:
 // // Categorical priority
@@ -158,8 +152,13 @@ model.addBuildingFilter(
 //     return ratings[value] || 0;
 //   }
 // });
+const modelASHP = new MiniDecarbModel(configASHP, newBuildings);
+modelASHP.addBuildingFilter(
+  (b) => b.properties["substation_headroom"] >= 500,
+  "Substation Headroom >= 500"
+);
 
-model.addPriorityRuleCustom({
+modelASHP.addPriorityRuleCustom({
   attribute: "substation_capacity_rating",
   scoreFunction: (value) =>
     ({
@@ -168,7 +167,11 @@ model.addPriorityRuleCustom({
     }[value] || 0),
 });
 
-model.runModel();
-const results = model.getRecap();
+modelASHP.runModel();
+const results = modelASHP.getRecap();
 display(results);
+```
+
+```js
+display(Inputs.table(results.allBuildings));
 ```

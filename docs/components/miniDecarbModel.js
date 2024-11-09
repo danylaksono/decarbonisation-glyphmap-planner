@@ -191,7 +191,7 @@ export class MiniDecarbModel {
     return {
       techName: this.tech.name,
       initialBudget: this.yearlyBudgets,
-      totalBudget: totalAllocated,
+      totalBudgetSpent: totalAllocated,
       yearlyStats: this.yearlyStats,
       allBuildings: this.suitableBuildings,
       intervenedBuildings: this.suitableBuildings.filter((b) => b.isIntervened),
