@@ -142,28 +142,27 @@ const modelSpec = {
 
 ```js
 const model = new DecarbonisationModel(modelSpec, newBuildings);
-model.addBuildingFilter(b => b.properties.substation_headroom >= 500);  // custom filtering
+model.addBuildingFilter((b) => b.properties.substation_headroom >= 500); // custom filtering
 // model.addPriorityRule('multideprivation', 'asc'); // arbitrary priority rule
 
 model.runModel();
 
-console.log("Yearly Interventions in 2024:", model.getYearInterventions(2024));
+// console.log("Yearly Interventions in 2024:", model.getYearInterventions(2024));
 
-
+// display(model.getYearInterventions(2024));
 // Get interventions grouped by year and technology
-console.log("Grouped Interventions", model.getGroupedInterventions());
+display(model.getGroupedYearTechInterventions()[2024]["PV"]);
 
-// Get and group interventions
-display(model.getInterventions()
-    .groupBy('year')
-    .groupBy('technology')
-    .groupBy('buildingProperties.lsoa')
-    .all()
-    );
+// Custom groupings interventions
+// display(model.getInterventions()
+//     .groupBy('year')
+//     .groupBy('technology')
+//     .groupBy('buildingProperties.lsoa')
+//     .all()
+//     );
 
 // Get final stats
 display(model.getFinalStats());
-
 ```
 
 ## Uncapped Model
@@ -179,21 +178,20 @@ const uncappedModel = new DecarbonisationModel(
   newBuildings
 );
 
-uncappedModel.runModel();
+// uncappedModel.runModel();
 
-console.log(
-  "Yearly Interventions in 2024:",
-  uncappedModel.getYearInterventions(2024)
-);
+// console.log(
+//   "Yearly Interventions in 2024:",
+//   uncappedModel.getYearInterventions(2024)
+// );
 
+// // Get interventions grouped by year and technology
+// console.log(uncappedModel.getGroupedInterventions());
 
-// Get interventions grouped by year and technology
-console.log(uncappedModel.getGroupedInterventions());
+// // Get final stats
+// console.log(uncappedModel.getFinalStats());
 
-// Get final stats
-console.log(uncappedModel.getFinalStats());
-
-display(uncappedModel.getFinalStats());
+// display(uncappedModel.getFinalStats());
 ```
 
 ## Test UI
@@ -211,16 +209,16 @@ const [config, setConfig] = useState({});
 // Overall Budget
 // const overallBudgetInput = html`<input type="range" min="1000_000" max="100_000_000" step="500_000" value="50_000_000" style="max-width: 300px;" />`;
 
-const overallBudgetInput =  Inputs.range([0, 100_000_000], {
-    label: "Overall Buget",
-    step: 500_000,
-    value: 50_000_000
-  });
-  overallBudgetInput.number.style["max-width"] = "60px";
-  Object.assign(overallBudgetInput, {
-    oninput: (event) => event.isTrusted && event.stopImmediatePropagation(),
-    onchange: (event) => event.currentTarget.dispatchEvent(new Event("input"))
-  });
+const overallBudgetInput = Inputs.range([0, 100_000_000], {
+  label: "Overall Buget",
+  step: 500_000,
+  value: 50_000_000,
+});
+overallBudgetInput.number.style["max-width"] = "60px";
+Object.assign(overallBudgetInput, {
+  oninput: (event) => event.isTrusted && event.stopImmediatePropagation(),
+  onchange: (event) => event.currentTarget.dispatchEvent(new Event("input")),
+});
 display(overallBudgetInput);
 ```
 
@@ -230,35 +228,58 @@ const overall_budget = Generators.input(overallBudgetInput);
 
 ${overall_budget}
 
-
-
-
 ```js
 // Technology Name
-const techNameInput = html`<input type="text" placeholder="Technology Name" style="max-width: 300px;" />`;
+const techNameInput = html`<input
+  type="text"
+  placeholder="Technology Name"
+  style="max-width: 300px;"
+/>`;
 const tech_name = Generators.input(techNameInput);
 
 // Allocation
-const techAllocationInput = html`<input type="range" min="0" max="1" step="0.1" placeholder="Allocation" style="max-width: 300px;" />`;
+const techAllocationInput = html`<input
+  type="range"
+  min="0"
+  max="1"
+  step="0.1"
+  placeholder="Allocation"
+  style="max-width: 300px;"
+/>`;
 const tech_allocation = Generators.input(techAllocationInput);
 
 // Suitability Key
-const techSuitabilityKeyInput = html`<input type="text" placeholder="Suitability Key" style="max-width: 300px;" />`;
+const techSuitabilityKeyInput = html`<input
+  type="text"
+  placeholder="Suitability Key"
+  style="max-width: 300px;"
+/>`;
 const tech_suitabilityKey = Generators.input(techSuitabilityKeyInput);
 
 // Labour Key
-const techLabourKeyInput = html`<input type="text" placeholder="Labour Key" style="max-width: 300px;" />`;
+const techLabourKeyInput = html`<input
+  type="text"
+  placeholder="Labour Key"
+  style="max-width: 300px;"
+/>`;
 const tech_labourKey = Generators.input(techLabourKeyInput);
 
 // Material Key
-const techMaterialKeyInput = html`<input type="text" placeholder="Material Key" style="max-width: 300px;" />`;
+const techMaterialKeyInput = html`<input
+  type="text"
+  placeholder="Material Key"
+  style="max-width: 300px;"
+/>`;
 const tech_materialKey = Generators.input(techMaterialKeyInput);
 
 // Savings Key
-const techSavingsKeyInput = html`<input type="text" placeholder="Savings Key" style="max-width: 300px;" />`;
+const techSavingsKeyInput = html`<input
+  type="text"
+  placeholder="Savings Key"
+  style="max-width: 300px;"
+/>`;
 const tech_savingsKey = Generators.input(techSavingsKeyInput);
 ```
-
 
 <!--
 ```js
@@ -351,7 +372,6 @@ function* modelSpecv2() {
 
 ``` -->
 
-
 <!-- <div>
   <h3>Model Specification</h3>
   <label>Initial Year: ${initialYearInput}</label><br>
@@ -373,9 +393,6 @@ function* modelSpecv2() {
   <label>Order: ${priorityOrderInput}</label><br>
 </div> -->
 
-
-
-
 ```js
 let technologies = [];
 const addTechnologyButton = html`<button>Add Technology</button>`;
@@ -387,8 +404,8 @@ addTechnologyButton.onclick = () => {
       suitabilityKey: tech_suitabilityKey,
       labourKey: tech_labourKey,
       materialKey: tech_materialKey,
-      savingsKey: tech_savingsKey
-    }
+      savingsKey: tech_savingsKey,
+    },
   };
 
   technologies.push(newTechnology);
