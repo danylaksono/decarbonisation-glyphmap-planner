@@ -13,7 +13,7 @@
 <link rel="modulepreload" href="./_observablehq/runtime.js">
 <link rel="modulepreload" href="./_observablehq/stdlib.js">
 <link rel="modulepreload" href="./_import/components/glyph-designs/timeGlyph.30b74103.js">
-<link rel="modulepreload" href="./_import/components/decarbonisationModel.016ae209.js">
+<link rel="modulepreload" href="./_import/components/decarbonisationModel.ce39898f.js">
 <link rel="modulepreload" href="./_npm/d3@7.9.0/_esm.js">
 <link rel="modulepreload" href="./_observablehq/stdlib/duckdb.js">
 <link rel="modulepreload" href="./_npm/htl@0.3.1/_esm.js">
@@ -62,11 +62,11 @@ import {define} from "./_observablehq/client.js";
 import {registerFile, FileAttachment} from "./_observablehq/stdlib.js";
 import {registerTable} from "./_observablehq/stdlib/duckdb.js";
 
-registerFile("./data/oxford_decarbonisation_data.parquet", {"name":"./data/oxford_decarbonisation_data.parquet","path":"./_file/data/oxford_decarbonisation_data.28ee7510.parquet","lastModified":1731155157057});
+registerFile("./data/oxford_decarbonisation_data.parquet", {"name":"./data/oxford_decarbonisation_data.parquet","path":"./_file/data/oxford_decarbonisation_data.28ee7510.parquet","lastModified":1731194509384});
 registerTable("oxford", FileAttachment("./data/oxford_decarbonisation_data.parquet"));
 
 define({id: "c378fe81", outputs: ["TimeGlyph","GlyphCollection","DecarbonisationModel"], body: async () => {
-const [{TimeGlyph, GlyphCollection}, {DecarbonisationModel}] = await Promise.all([import("./_import/components/glyph-designs/timeGlyph.30b74103.js"), import("./_import/components/decarbonisationModel.016ae209.js")]);
+const [{TimeGlyph, GlyphCollection}, {DecarbonisationModel}] = await Promise.all([import("./_import/components/glyph-designs/timeGlyph.30b74103.js"), import("./_import/components/decarbonisationModel.ce39898f.js")]);
 // import { Model } from "./components/model.js";
 return {TimeGlyph,GlyphCollection,DecarbonisationModel};
 }});
@@ -191,34 +191,33 @@ const modelSpec = {
 return {modelSpec};
 }});
 
-define({id: "0414a013", inputs: ["DecarbonisationModel","modelSpec","newBuildings","display"], outputs: ["model"], body: (DecarbonisationModel,modelSpec,newBuildings,display) => {
+define({id: "fa04a1de", inputs: ["DecarbonisationModel","modelSpec","newBuildings","display"], outputs: ["model"], body: (DecarbonisationModel,modelSpec,newBuildings,display) => {
 const model = new DecarbonisationModel(modelSpec, newBuildings);
-model.addBuildingFilter(b => b.properties.substation_headroom >= 500);  // custom filtering
+model.addBuildingFilter((b) => b.properties.substation_headroom >= 500); // custom filtering
 // model.addPriorityRule('multideprivation', 'asc'); // arbitrary priority rule
 
 model.runModel();
 
-console.log("Yearly Interventions in 2024:", model.getYearInterventions(2024));
+// console.log("Yearly Interventions in 2024:", model.getYearInterventions(2024));
 
-
+// display(model.getYearInterventions(2024));
 // Get interventions grouped by year and technology
-console.log("Grouped Interventions", model.getGroupedInterventions());
+display(model.getGroupedYearTechInterventions()[2024]["PV"]);
 
-// Get and group interventions
-display(model.getInterventions()
-    .groupBy('year')
-    .groupBy('technology')
-    .groupBy('buildingProperties.lsoa')
-    .all()
-    );
+// Custom groupings interventions
+// display(model.getInterventions()
+//     .groupBy('year')
+//     .groupBy('technology')
+//     .groupBy('buildingProperties.lsoa')
+//     .all()
+//     );
 
 // Get final stats
 display(model.getFinalStats());
-
 return {model};
 }});
 
-define({id: "f582a03c", inputs: ["DecarbonisationModel","modelSpec","newBuildings","display"], outputs: ["uncappedModel"], body: (DecarbonisationModel,modelSpec,newBuildings,display) => {
+define({id: "97f07bba", inputs: ["DecarbonisationModel","modelSpec","newBuildings"], outputs: ["uncappedModel"], body: (DecarbonisationModel,modelSpec,newBuildings) => {
 // testing uncapped
 const uncappedModel = new DecarbonisationModel(
   {
@@ -229,21 +228,20 @@ const uncappedModel = new DecarbonisationModel(
   newBuildings
 );
 
-uncappedModel.runModel();
+// uncappedModel.runModel();
 
-console.log(
-  "Yearly Interventions in 2024:",
-  uncappedModel.getYearInterventions(2024)
-);
+// console.log(
+//   "Yearly Interventions in 2024:",
+//   uncappedModel.getYearInterventions(2024)
+// );
 
+// // Get interventions grouped by year and technology
+// console.log(uncappedModel.getGroupedInterventions());
 
-// Get interventions grouped by year and technology
-console.log(uncappedModel.getGroupedInterventions());
+// // Get final stats
+// console.log(uncappedModel.getFinalStats());
 
-// Get final stats
-console.log(uncappedModel.getFinalStats());
-
-display(uncappedModel.getFinalStats());
+// display(uncappedModel.getFinalStats());
 return {uncappedModel};
 }});
 
@@ -257,20 +255,20 @@ const [config, setConfig] = useState({});
 return {useState,config,setConfig};
 }});
 
-define({id: "b1b79755", inputs: ["Inputs","Event","display"], outputs: ["overallBudgetInput"], body: (Inputs,Event,display) => {
+define({id: "be58ccf8", inputs: ["Inputs","Event","display"], outputs: ["overallBudgetInput"], body: (Inputs,Event,display) => {
 // Overall Budget
 // const overallBudgetInput = html`<input type="range" min="1000_000" max="100_000_000" step="500_000" value="50_000_000" style="max-width: 300px;" />`;
 
-const overallBudgetInput =  Inputs.range([0, 100_000_000], {
-    label: "Overall Buget",
-    step: 500_000,
-    value: 50_000_000
-  });
-  overallBudgetInput.number.style["max-width"] = "60px";
-  Object.assign(overallBudgetInput, {
-    oninput: (event) => event.isTrusted && event.stopImmediatePropagation(),
-    onchange: (event) => event.currentTarget.dispatchEvent(new Event("input"))
-  });
+const overallBudgetInput = Inputs.range([0, 100_000_000], {
+  label: "Overall Buget",
+  step: 500_000,
+  value: 50_000_000,
+});
+overallBudgetInput.number.style["max-width"] = "60px";
+Object.assign(overallBudgetInput, {
+  oninput: (event) => event.isTrusted && event.stopImmediatePropagation(),
+  onchange: (event) => event.currentTarget.dispatchEvent(new Event("input")),
+});
 display(overallBudgetInput);
 return {overallBudgetInput};
 }});
@@ -286,34 +284,61 @@ overall_budget
 ))
 }});
 
-define({id: "72791936", inputs: ["html","Generators"], outputs: ["techNameInput","tech_name","techAllocationInput","tech_allocation","techSuitabilityKeyInput","tech_suitabilityKey","techLabourKeyInput","tech_labourKey","techMaterialKeyInput","tech_materialKey","techSavingsKeyInput","tech_savingsKey"], body: (html,Generators) => {
+define({id: "b9a4b229", inputs: ["html","Generators"], outputs: ["techNameInput","tech_name","techAllocationInput","tech_allocation","techSuitabilityKeyInput","tech_suitabilityKey","techLabourKeyInput","tech_labourKey","techMaterialKeyInput","tech_materialKey","techSavingsKeyInput","tech_savingsKey"], body: (html,Generators) => {
 // Technology Name
-const techNameInput = html`<input type="text" placeholder="Technology Name" style="max-width: 300px;" />`;
+const techNameInput = html`<input
+  type="text"
+  placeholder="Technology Name"
+  style="max-width: 300px;"
+/>`;
 const tech_name = Generators.input(techNameInput);
 
 // Allocation
-const techAllocationInput = html`<input type="range" min="0" max="1" step="0.1" placeholder="Allocation" style="max-width: 300px;" />`;
+const techAllocationInput = html`<input
+  type="range"
+  min="0"
+  max="1"
+  step="0.1"
+  placeholder="Allocation"
+  style="max-width: 300px;"
+/>`;
 const tech_allocation = Generators.input(techAllocationInput);
 
 // Suitability Key
-const techSuitabilityKeyInput = html`<input type="text" placeholder="Suitability Key" style="max-width: 300px;" />`;
+const techSuitabilityKeyInput = html`<input
+  type="text"
+  placeholder="Suitability Key"
+  style="max-width: 300px;"
+/>`;
 const tech_suitabilityKey = Generators.input(techSuitabilityKeyInput);
 
 // Labour Key
-const techLabourKeyInput = html`<input type="text" placeholder="Labour Key" style="max-width: 300px;" />`;
+const techLabourKeyInput = html`<input
+  type="text"
+  placeholder="Labour Key"
+  style="max-width: 300px;"
+/>`;
 const tech_labourKey = Generators.input(techLabourKeyInput);
 
 // Material Key
-const techMaterialKeyInput = html`<input type="text" placeholder="Material Key" style="max-width: 300px;" />`;
+const techMaterialKeyInput = html`<input
+  type="text"
+  placeholder="Material Key"
+  style="max-width: 300px;"
+/>`;
 const tech_materialKey = Generators.input(techMaterialKeyInput);
 
 // Savings Key
-const techSavingsKeyInput = html`<input type="text" placeholder="Savings Key" style="max-width: 300px;" />`;
+const techSavingsKeyInput = html`<input
+  type="text"
+  placeholder="Savings Key"
+  style="max-width: 300px;"
+/>`;
 const tech_savingsKey = Generators.input(techSavingsKeyInput);
 return {techNameInput,tech_name,techAllocationInput,tech_allocation,techSuitabilityKeyInput,tech_suitabilityKey,techLabourKeyInput,tech_labourKey,techMaterialKeyInput,tech_materialKey,techSavingsKeyInput,tech_savingsKey};
 }});
 
-define({id: "74c751ac", inputs: ["html","tech_name","tech_allocation","tech_suitabilityKey","tech_labourKey","tech_materialKey","tech_savingsKey","display"], outputs: ["technologies","addTechnologyButton"], body: (html,tech_name,tech_allocation,tech_suitabilityKey,tech_labourKey,tech_materialKey,tech_savingsKey,display) => {
+define({id: "c7184a89", inputs: ["html","tech_name","tech_allocation","tech_suitabilityKey","tech_labourKey","tech_materialKey","tech_savingsKey","display"], outputs: ["technologies","addTechnologyButton"], body: (html,tech_name,tech_allocation,tech_suitabilityKey,tech_labourKey,tech_materialKey,tech_savingsKey,display) => {
 let technologies = [];
 const addTechnologyButton = html`<button>Add Technology</button>`;
 addTechnologyButton.onclick = () => {
@@ -324,8 +349,8 @@ addTechnologyButton.onclick = () => {
       suitabilityKey: tech_suitabilityKey,
       labourKey: tech_labourKey,
       materialKey: tech_materialKey,
-      savingsKey: tech_savingsKey
-    }
+      savingsKey: tech_savingsKey,
+    },
   };
 
   technologies.push(newTechnology);
@@ -351,15 +376,15 @@ return {technologies,addTechnologyButton};
 <div class="observablehq observablehq--block"><!--:d22197ed:--></div>
 <div class="observablehq observablehq--block"><!--:e990e608:--></div>
 <div class="observablehq observablehq--block"><!--:7a1c2213:--></div>
-<div class="observablehq observablehq--block"><!--:0414a013:--></div>
+<div class="observablehq observablehq--block"><!--:fa04a1de:--></div>
 <h2 id="uncapped-model" tabindex="-1"><a class="observablehq-header-anchor" href="#uncapped-model">Uncapped Model</a></h2>
-<div class="observablehq observablehq--block"><!--:f582a03c:--></div>
+<div class="observablehq observablehq--block"><!--:97f07bba:--></div>
 <h2 id="test-ui" tabindex="-1"><a class="observablehq-header-anchor" href="#test-ui">Test UI</a></h2>
 <div class="observablehq observablehq--block"><!--:b19955b4:--></div>
-<div class="observablehq observablehq--block"><!--:b1b79755:--></div>
+<div class="observablehq observablehq--block"><!--:be58ccf8:--></div>
 <div class="observablehq observablehq--block"><!--:65764c13:--></div>
 <p><observablehq-loading></observablehq-loading><!--:92440add:--></p>
-<div class="observablehq observablehq--block"><!--:72791936:--></div>
+<div class="observablehq observablehq--block"><!--:b9a4b229:--></div>
 <!--
 ```js
 // Initial Year
@@ -470,6 +495,6 @@ function* modelSpecv2() {
   <label>Attribute: ${priorityAttrInput}</label><br>
   <label>Order: ${priorityOrderInput}</label><br>
 </div> -->
-<div class="observablehq observablehq--block"><!--:74c751ac:--></div>
+<div class="observablehq observablehq--block"><!--:c7184a89:--></div>
 </main>
 </div>
