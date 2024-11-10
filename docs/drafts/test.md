@@ -1,19 +1,18 @@
 ---
-
 title: Test New Model
 toc: false
 sidebar: false
 footer: false
 sql:
-  oxford: ./data/oxford_decarbonisation_data.parquet
+  oxford: ./../data/oxford_decarbonisation_data.parquet
 ---
 
 ```js
 import {
   TimeGlyph,
   GlyphCollection,
-} from "./components/glyph-designs/timeGlyph.js";
-import { DecarbonisationModel } from "./components/decarbonisationModel.js";
+} from "./../components/glyph-designs/timeGlyph.js";
+import { DecarbonisationModel } from "./../components/decarbonisationModel.js";
 // import { Model } from "./components/model.js";
 ```
 
@@ -414,5 +413,4 @@ addTechnologyButton.onclick = () => {
   console.log("Technologies:", technologies);
 };
 display(addTechnologyButton);
-
 ```
