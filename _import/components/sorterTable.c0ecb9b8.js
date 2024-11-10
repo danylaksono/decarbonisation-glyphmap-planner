@@ -371,6 +371,7 @@ export function createTable(data, columns, changed) {
     0, 0.01, 0.02, 0.03, 0.04, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
     0.9, 0.95, 0.96, 0.97, 0.98, 0.99, 1,
   ];
+
   function percentalize(v, dir = "top") {
     if (dir === "bottom") {
       for (let i = 1; i < percentiles.length; i++) {
@@ -469,8 +470,10 @@ export function createTable(data, columns, changed) {
   this.getSelection = () => {
     let ret = [];
     tBody.querySelectorAll("tr").forEach((tr, i) => {
+      console.log(`Row ${i} selected: ${tr.selected}`);
       if (tr.selected) ret.push({ index: i, data: data[dataInd[i]] });
     });
+    console.log("Selection result:", ret);
     return ret;
   };
 
@@ -696,7 +699,7 @@ export function createTable(data, columns, changed) {
       //deal with selection
       tr.addEventListener("click", (event) => {
         let rowIndex = getRowIndex(tr);
-
+        console.log("row clicked", rowIndex);
         //limit to contiguous selections by not allowing ctrl selection
         /* if (ctrlDown){
                     if (tr.selected) {
@@ -730,7 +733,8 @@ export function createTable(data, columns, changed) {
           clearSelection();
           selectRow(tr);
         }
-        console.log(selectionUpdated());
+        console.log("selection updated", selectRow(tr));
+        selectionUpdated();
       });
 
       tr.addEventListener("mouseover", (event) => {

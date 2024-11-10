@@ -10,7 +10,7 @@
 <link rel="modulepreload" href="../_observablehq/client.js">
 <link rel="modulepreload" href="../_observablehq/runtime.js">
 <link rel="modulepreload" href="../_observablehq/stdlib.js">
-<link rel="modulepreload" href="../_import/components/sorterTable.7caf89b2.js">
+<link rel="modulepreload" href="../_import/components/sorterTable.c0ecb9b8.js">
 <link rel="modulepreload" href="../_npm/d3@7.9.0/_esm.js">
 <link rel="modulepreload" href="../_observablehq/stdlib/duckdb.js">
 <link rel="modulepreload" href="../_npm/@duckdb/duckdb-wasm@1.28.0/_esm.js">
@@ -56,12 +56,12 @@ import {define} from "../_observablehq/client.js";
 import {registerFile, FileAttachment} from "../_observablehq/stdlib.js";
 import {registerTable} from "../_observablehq/stdlib/duckdb.js";
 
-registerFile("./../data/oxford_decarbonisation_data.parquet", {"name":"./../data/oxford_decarbonisation_data.parquet","path":"../_file/data/oxford_decarbonisation_data.28ee7510.parquet","lastModified":1731198479499});
+registerFile("./../data/oxford_decarbonisation_data.parquet", {"name":"./../data/oxford_decarbonisation_data.parquet","path":"../_file/data/oxford_decarbonisation_data.28ee7510.parquet","lastModified":1731274491372});
 registerTable("oxford", FileAttachment("../data/oxford_decarbonisation_data.parquet"));
 
-define({id: "ba62539a", outputs: ["createTable"], body: async () => {
-const {createTable} = await import("../_import/components/sorterTable.7caf89b2.js");
-
+define({id: "5da2df3a", outputs: ["createTable"], body: async () => {
+const {createTable} = await import("../_import/components/sorterTable.c0ecb9b8.js");
+// import { sorterTable } from "./../components/sorterTableClass.js";
 return {createTable};
 }});
 
@@ -143,8 +143,25 @@ const cols = [
 return {cols};
 }});
 
-define({id: "caa5cc8f", inputs: ["createTable","buildings","cols"], outputs: ["table"], body: (createTable,buildings,cols) => {
-const table = new createTable(buildings, cols, () => {});
+define({id: "ec01b706", inputs: ["Mutable"], outputs: ["useState","selected","setSelected"], body: (Mutable) => {
+function useState(value) {
+  const state = Mutable(value);
+  const setState = (value) => (state.value = value);
+  return [state, setState];
+}
+const [selected, setSelected] = useState({});
+return {useState,selected,setSelected};
+}});
+
+define({id: "da74c421", inputs: ["createTable","buildings","cols","setSelected"], outputs: ["table"], body: (createTable,buildings,cols,setSelected) => {
+// const table = new createTable(buildings, cols, () => {});
+
+const table = new createTable(buildings, cols, (changes) => {
+  console.log("Table changed:", changes);
+  setSelected(changes.selection);
+});
+
+// const table = sorter_table.createTable(buildings, cols, () => {});
 return {table};
 }});
 
@@ -152,20 +169,21 @@ define({id: "19721a50", inputs: ["display","table"], body: (display,table) => {
 display(table.getNode());
 }});
 
-define({id: "d262e820", inputs: ["display","table"], body: (display,table) => {
-display(table.getSelection());
+define({id: "15548009", inputs: ["display","selected"], body: (display,selected) => {
+display(selected);
 }});
 
 </script>
 <div id="observablehq-center">
 <main id="observablehq-main" class="observablehq">
-<div class="observablehq observablehq--block"><!--:ba62539a:--></div>
+<div class="observablehq observablehq--block"><!--:5da2df3a:--></div>
 <h1 id="table-experiments-2" tabindex="-1"><a class="observablehq-header-anchor" href="#table-experiments-2">Table Experiments 2</a></h1>
 <div class="observablehq observablehq--block"><!--:d22197ed:--></div>
 <div class="observablehq observablehq--block"><!--:d11f8e11:--></div>
 <div class="observablehq observablehq--block"><!--:66011008:--></div>
-<div class="observablehq observablehq--block"><!--:caa5cc8f:--></div>
+<div class="observablehq observablehq--block"><!--:ec01b706:--></div>
+<div class="observablehq observablehq--block"><!--:da74c421:--></div>
 <div class="observablehq observablehq--block"><!--:19721a50:--></div>
-<div class="observablehq observablehq--block"><!--:d262e820:--></div>
+<div class="observablehq observablehq--block"><!--:15548009:--></div>
 </main>
 </div>
