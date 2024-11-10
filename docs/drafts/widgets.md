@@ -8,8 +8,8 @@ sql:
 ---
 
 ```js
-import { BudgetAllocator } from "./components/budgetAllocator.js";
-import { MiniDecarbModel } from "./components/miniDecarbModel.js";
+import { BudgetAllocator } from "./../components/budgetAllocator.js";
+import { MiniDecarbModel } from "./../components/miniDecarbModel.js";
 ```
 
 ## Budget Allocator

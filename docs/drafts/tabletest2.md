@@ -9,6 +9,7 @@ sql:
 
 ```js
 import { createTable } from "./../components/sorterTable.js";
+// import { sorterTable } from "./../components/sorterTableClass.js";
 ```
 
 # Table Experiments 2
@@ -89,7 +90,23 @@ const cols = [
 ```
 
 ```js
-const table = new createTable(buildings, cols, () => {});
+function useState(value) {
+  const state = Mutable(value);
+  const setState = (value) => (state.value = value);
+  return [state, setState];
+}
+const [selected, setSelected] = useState({});
+```
+
+```js
+// const table = new createTable(buildings, cols, () => {});
+
+const table = new createTable(buildings, cols, (changes) => {
+  console.log("Table changed:", changes);
+  setSelected(changes.selection);
+});
+
+// const table = sorter_table.createTable(buildings, cols, () => {});
 ```
 
 ```js
@@ -97,5 +114,5 @@ display(table.getNode());
 ```
 
 ```js
-display(table.getSelection());
+display(selected);
 ```
