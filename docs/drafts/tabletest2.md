@@ -101,7 +101,7 @@ const [selected, setSelected] = useState({});
 ```js
 // const table = new createTable(buildings, cols, () => {});
 
-const table = new createTable(buildings, cols, (changes) => {
+const table = new createTable(buildings.map( p => ({...p})), cols, (changes) => {
   console.log("Table changed:", changes);
   setSelected(changes.selection);
 });
