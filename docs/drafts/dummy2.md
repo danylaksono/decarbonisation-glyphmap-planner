@@ -5,8 +5,8 @@ toc: false
 sidebar: false
 footer: ""
 sql:
-  geo: ./data/geo.csv
-  census_data_source: ./data/census_data_output.parquet
+  geo: ./../data/geo.csv
+  census_data_source: ./../data/census_data_output.parquet
 ---
 
 <!-- ------------------ # Imports ------------------  -->
@@ -17,19 +17,19 @@ import * as turf from "@turf/turf";
 import { require } from "npm:d3-require";
 const d3 = require("d3", "d3-geo-projection");
 const flubber = require("flubber@0.4");
-import { RadialGlyph } from "./components/radialglyph.js";
+import { RadialGlyph } from "./../components/radialglyph.js";
 import {
   glyphMap,
   createDiscretiserValue,
   _drawCellBackground,
-} from "./components/gridded-glyphmaps/index.min.js";
-import { OSGB } from "./components/osgb/index.js";
+} from "./../components/gridded-glyphmaps/index.min.js";
+import { OSGB } from "./../components/osgb/index.js";
 import {
   downloadBoundaries,
   joinCensusDataToGeoJSON,
   convertGridCsvToGeoJson,
   context2d,
-} from "./components/utils.js";
+} from "./../components/utils.js";
 // import {
 //   inSituMorphMouse,
 //   prepareGeoJsonForMorphingLib,

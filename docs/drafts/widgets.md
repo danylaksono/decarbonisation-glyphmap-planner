@@ -4,7 +4,7 @@ toc: false
 sidebar: false
 footer: false
 sql:
-  oxford: ./data/oxford_decarbonisation_data.parquet
+  oxford: ./../data/oxford_decarbonisation_data.parquet
 ---
 
 ```js
@@ -12,46 +12,9 @@ import { BudgetAllocator } from "./../components/budgetAllocator.js";
 import { MiniDecarbModel } from "./../components/miniDecarbModel.js";
 ```
 
-## Budget Allocator
+<!-- ------------ Data ------------ -->
 
-```js
-const totalBudget = 100_000;
-const startYear = 2024;
-const projectLength = 10;
-
-const allocator = new BudgetAllocator(totalBudget, startYear, projectLength);
-
-// linear allocation
-const linearAllocation = allocator.allocateLinear();
-display(linearAllocation);
-display(allocator.visualize(linearAllocation));
-// console.log(allocator.visualize(linearAllocation));
-// document.body.appendChild(allocator.visualize(linearAllocation));
-
-// // custom allocation with different curve types
-// const logAllocation = allocator.allocateCustom("sqrt");
-// console.log("sqrt    Allocation Recap:", allocator.allocation(logAllocation));
-
-// const expAllocation = allocator.allocateCustom("exp", { exponent: 2 });
-// display(expAllocation);
-// display(allocator.visualize(expAllocation));
-
-// // console.log(
-// //   "Exponential Allocation Recap:",
-// //   allocator.allocation(expAllocation)
-// // );
-
-// const sigmoid = allocator.allocateBudget("sigmoid", false);
-// const sigmoid = allocator.allocateCustom("cubic");
-// display(cubicAllocation);
-// display(allocator.visualize(sigmoid));
-
-// console.log("Cubic Allocation Recap:", allocator.allocation(cubicAllocation));
-```
-
-## Test New Model
-
-```sql id=oxford_data display
+```sql id=oxford_data
   SELECT DISTINCT
     "UPRN" AS id,
     "LSOA code" AS lsoa,
@@ -103,14 +66,96 @@ FROM oxford b;
 
 ```js
 const newBuildings = [...oxford_data];
+const columns = Object.keys(newBuildings[0]);
+```
+
+## Budget Allocator
+
+```js
+// Starting year
+const total_budget = view(
+  Inputs.text({
+    label: html`<b>Total Budget</b>`,
+    placeholder: "Available Budget in GBP",
+    value: 100_000_000,
+    submit: true,
+  })
+);
+
+// Starting year
+const start_year = view(
+  Inputs.text({
+    label: html`<b>Start Year</b>`,
+    placeholder: "Starting year?",
+    value: 2024,
+    submit: true,
+  })
+);
+
+// Project length
+const projectLength = Inputs.range([0, 20], {
+  label: html`<b>Project length in years</b>`,
+  step: 1,
+  value: 10,
+});
+projectLength.number.style["max-width"] = "60px";
+Object.assign(projectLength, {
+  oninput: (event) => event.isTrusted && event.stopImmediatePropagation(),
+  onchange: (event) => event.currentTarget.dispatchEvent(new Event("input")),
+});
+const project_length = Generators.input(projectLength);
+display(projectLength);
+
+// Allocation type
+const allocationType = view(
+  Inputs.radio(["linear", "sqrt", "exp", "cubic"], {
+    label: html`<b>Allocation Type</b>`,
+    value: "linear",
+  })
+);
 ```
 
 ```js
-const configASHP = {
-  initial_year: 2024,
-  rolledover_budget: 50_000_000,
-  yearly_budgets: [1200000, 30000, 20000, 5000, 3000, 20000], // this will be assigned from budgetAllocator
-  tech: {
+const allocator = new BudgetAllocator(
+  total_budget,
+  Number(start_year),
+  Number(project_length)
+);
+
+let allocations;
+if (allocationType === "linear") {
+  allocations = allocator.allocateLinear();
+} else {
+  allocations = allocator.allocateCustom(allocationType);
+}
+
+// linear allocation
+// const linearAllocation = allocator.allocateLinear();
+// display(linearAllocation);
+display(allocator.visualise(allocations));
+```
+
+## Test New Model
+
+```js
+function addTechConfig(techConfig) {
+  config.tech = {
+    name: techConfig.name,
+    config: techConfig.config,
+  };
+}
+
+function addPriority(name, order = "asc") {
+  const newPriority = {
+    name: name,
+    order: order,
+  };
+
+  config.priorities.push(newPriority);
+}
+
+const listOfTech = {
+  ASHP: {
     name: "ASHP",
     config: {
       suitabilityKey: "ashp_suitability",
@@ -119,14 +164,64 @@ const configASHP = {
       savingsKey: "heat_demand", // will be calculated from a lookup and stored in the building data
     },
   },
-  priorities: [
-    {
-      name: "substation_headroom", //sort by substation headroom
-      order: "asc",
+  PV: {
+    name: "PV",
+    config: {
+      suitabilityKey: "pv_suitability",
+      labourKey: "pv_labour",
+      materialKey: "pv_material",
+      savingsKey: "solar_generation",
     },
-  ],
+  },
 };
 
+let config = {
+  initial_year: Number(start_year),
+  rolledover_budget: 0,
+  yearly_budgets: allocations.map((item) => item.budget),
+  tech: {},
+  priorities: [],
+};
+
+// update config here
+addTechConfig(listOfTech.ASHP);
+// addPriority("substation_headroom", "asc");
+```
+
+Model Configuration:
+
+```js
+// display("Model Configuration");
+display(config);
+```
+
+```js
+// const configASHP = {
+//   initial_year: 2024,
+//   rolledover_budget: 50_000_000,
+//   yearly_budgets: [1_200_000, 30000, 20000, 5000, 3000, 20000], // this will be assigned from budgetAllocator
+//   tech: {
+//     name: "ASHP",
+//     config: {
+//       suitabilityKey: "ashp_suitability",
+//       labourKey: "ashp_labour",
+//       materialKey: "ashp_material",
+//       savingsKey: "heat_demand", // will be calculated from a lookup and stored in the building data
+//     },
+//   },
+//   priorities: [
+//     {
+//       name: "substation_headroom", //sort by substation headroom
+//       order: "asc",
+//     },
+//   ],
+// };
+// display("configuration SAHP");
+
+// display(configASHP);
+```
+
+```js
 // For priority rules:
 // // Categorical priority
 // model.addPriorityRuleCustom({
@@ -152,25 +247,80 @@ const configASHP = {
 //     return ratings[value] || 0;
 //   }
 // });
-const modelASHP = new MiniDecarbModel(configASHP, newBuildings);
-modelASHP.addBuildingFilter(
-  (b) => b.properties["substation_headroom"] >= 500,
-  "Substation Headroom >= 500"
-);
+const modelASHP = new MiniDecarbModel(config, newBuildings);
+// modelASHP.addBuildingFilter(
+//   (b) => b.properties["substation_headroom"] >= 500,
+//   "Substation Headroom >= 500"
+// );
 
-modelASHP.addPriorityRuleCustom({
-  attribute: "substation_capacity_rating",
-  scoreFunction: (value) =>
-    ({
-      800: 500,
-      1500: 1000,
-    }[value] || 0),
-});
+// modelASHP.addPriorityRuleCustom({
+//   attribute: "substation_capacity_rating",
+//   scoreFunction: (value) =>
+//     ({
+//       800: 500,
+//       1500: 1000,
+//     }[value] || 0),
+// });
 
 modelASHP.runModel();
 const results = modelASHP.getRecap();
-display(results);
+// display(results);
 ```
+
+```js
+const data = Object.entries(results.yearlyStats).map(([year, stats]) => ({
+  year: +year,
+  budgetSpent: stats.budgetSpent,
+  buildingsIntervened: stats.buildingsIntervened,
+}));
+```
+
+```js
+const v1 = (d) => d.budgetSpent;
+const v2 = (d) => d.buildingsIntervened;
+const y2 = d3.scaleLinear(d3.extent(data, v2), [0, d3.max(data, v1)]);
+
+display(
+  Plot.plot({
+    x: {
+      tickFormat: "", // display years without commas
+      label: "Year",
+    },
+    y: {
+      axis: "left",
+      label: "Budget Spent (£)",
+    },
+    marks: [
+      // Right axis for buildings intervened
+      Plot.axisY(y2.ticks(), {
+        color: "steelblue",
+        anchor: "right",
+        label: "Buildings Intervened",
+        y: y2,
+        tickFormat: y2.tickFormat(),
+      }),
+      // Rule at Y=0 for budget spent line baseline
+      Plot.ruleY([0]),
+      // Line for budget spent
+      Plot.line(data, {
+        x: "year",
+        y: v1,
+      }),
+      // Line for buildings intervened with mapped y2 scale
+      Plot.line(
+        data,
+        Plot.mapY((D) => D.map(y2), {
+          x: "year",
+          y: v2,
+          stroke: "steelblue",
+        })
+      ),
+    ],
+  })
+);
+```
+
+All suitable buildings, with attribute showing intervention or non-intervention:
 
 ```js
 display(Inputs.table(results.allBuildings));
