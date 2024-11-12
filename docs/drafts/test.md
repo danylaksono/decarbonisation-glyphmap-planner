@@ -150,7 +150,7 @@ model.runModel();
 
 // display(model.getYearInterventions(2024));
 // Get interventions grouped by year and technology
-display(model.getGroupedYearTechInterventions()[2024]["PV"]);
+display(model.getGroupedYearTechInterventions()[2024]);
 
 // Custom groupings interventions
 // display(model.getInterventions()
@@ -206,8 +206,6 @@ const [config, setConfig] = useState({});
 
 ```js
 // Overall Budget
-// const overallBudgetInput = html`<input type="range" min="1000_000" max="100_000_000" step="500_000" value="50_000_000" style="max-width: 300px;" />`;
-
 const overallBudgetInput = Inputs.range([0, 100_000_000], {
   label: "Overall Buget",
   step: 500_000,

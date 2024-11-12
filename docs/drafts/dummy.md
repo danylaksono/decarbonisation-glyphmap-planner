@@ -5,8 +5,8 @@ toc: false
 sidebar: false
 footer: ""
 sql:
-  geo: ./data/geo.csv
-  census_data_source: ./data/census_data_output.parquet
+  geo: ./../data/geo.csv
+  census_data_source: ./../data/census_data_output.parquet
 ---
 
 <!-- ------------------ # Imports ------------------  -->
@@ -17,19 +17,19 @@ import * as turf from "@turf/turf";
 import { require } from "npm:d3-require";
 const d3 = require("d3", "d3-geo-projection");
 const flubber = require("flubber@0.4");
-import { RadialGlyph } from "./components/radialglyph.js";
+import { RadialGlyph } from "./../components/radialglyph.js";
 import {
   glyphMap,
   createDiscretiserValue,
   _drawCellBackground,
-} from "./components/gridded-glyphmaps/index.min.js";
-import { OSGB } from "./components/osgb/index.js";
+} from "./../components/gridded-glyphmaps/index.min.js";
+import { OSGB } from "./../components/osgb/index.js";
 import {
   downloadBoundaries,
   joinCensusDataToGeoJSON,
   convertGridCsvToGeoJson,
   context2d,
-} from "./components/utils.js";
+} from "./../components/utils.js";
 // import {
 //   inSituMorphMouse,
 //   prepareGeoJsonForMorphingLib,
@@ -148,7 +148,6 @@ const list_of_code = [...list_of_codes].map((row) => row.code);
 const regular_geodata = await downloadBoundaries(geogBoundary, list_of_code);
 
 // display(transformCoordinates(turf.bbox(regular_geodata)));
-
 ```
 
 ```js
@@ -1098,7 +1097,6 @@ const gridGeodataLookup = _.keyBy(
   (feat) => feat.properties.code
 );
 
-
 const transformedShapesLookup = _.keyBy(
   transformedShapes.features.map((feat) => {
     return { ...feat, centroid: turf.getCoord(turf.centroid(feat.geometry)) };
@@ -1108,7 +1106,6 @@ const transformedShapesLookup = _.keyBy(
 
 // display("transformedShapesLookup");
 // display(transformedShapesLookup);
-
 ```
 
 ```js
@@ -1154,7 +1151,6 @@ function valueDiscretiserInMorph(inp) {
     boundaryFn: (key) => geomLookup[key]?.geometry.coordinates[0], // Access the boundary (first set of coordinates)
   });
 }
-
 ```
 
 ```js
@@ -1181,7 +1177,6 @@ function glyphMapSpec(width = 800, height = 600) {
     customMap: {
       scaleParams: [],
 
-
       // discretiserFn: valueDiscretiser(regularGeodataLookup),
 
       initFn: (cells, cellSize, global, panel) => {
@@ -1190,7 +1185,6 @@ function glyphMapSpec(width = 800, height = 600) {
 
       preAggrFn: (cells, cellSize, global, panel) => {
         // console.log("global", global);
-
       },
 
       aggrFn: (cell, row, weight, global, panel) => {
@@ -1238,9 +1232,7 @@ function glyphMapSpec(width = 800, height = 600) {
       drawFn: (cell, x, y, cellSize, ctx, global, panel) => {
         const boundary = cell.getBoundary(0);
 
-
         // console.log("boundary", boundary);
-
 
         if (boundary[0] != boundary[boundary.length - 1]) {
           boundary.push(boundary[0]);
@@ -1264,18 +1256,15 @@ function glyphMapSpec(width = 800, height = 600) {
 
         //draw a radial glyph -> change the array to real data (between 0 and 1)
         drawRadialMultivariateGlyph([0.5, 0.1, 0.9, 0.3], x, y, cellSize, ctx);
-
       },
       postDrawFn: (cells, cellSize, ctx, global, panel) => {},
       tooltipTextFn: (cell) => {},
-
     },
   };
 }
 ```
 
 ```js
-
 // a workaround for observable reactivity
 // const decarbonisationGlyph = glyphMap({
 //   ...glyphMapSpec(),
@@ -1297,7 +1286,6 @@ console.log("evaluated");
 ```
 
 ```js
-
 function createGlyphMap(glyphmapType, { width, height }) {
   // console.log(width, height);
   if (glyphmapType == "Polygons") {
@@ -1312,9 +1300,7 @@ function createGlyphMap(glyphmapType, { width, height }) {
   }
 }
 
-
 // const glyphmap = glyphMapSpec();
-
 
 // display(createGlyphMap(glyphmapType));
 // display(valueDiscretiser(regularGeodataLookup));

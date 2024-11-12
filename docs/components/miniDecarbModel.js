@@ -87,7 +87,7 @@ export class MiniDecarbModel {
       );
     });
 
-    // Assign initial score based on ranking
+    // Assign initial score based on suitability 4cvranking
     rankedBuildings.forEach((building, index) => {
       building.score = rankedBuildings.length - index;
     });
