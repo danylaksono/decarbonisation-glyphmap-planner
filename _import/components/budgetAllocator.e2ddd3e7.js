@@ -70,54 +70,53 @@ export class BudgetAllocator {
    */
   allocateCustom(curveType, options = {}) {
     let curveFunction;
-    const { exponent = 2 } = options; // default exponent for 'pow' curves
+    const { exponent = 2 } = options;
 
     // create a scale based on the selected curveType
     switch (curveType) {
       case "linear":
-        curveFunction = d3.scaleLinear().domain([0, 1]).range([1, 10]);
+        curveFunction = d3.scaleLinear().domain([0, 1]).range([10, 1]); // Flipped range
         break;
       case "log":
         curveFunction = d3
           .scaleLog()
           .domain([1, this.projectLength])
-          .range([1, 10])
+          .range([10, 1]) // Flipped range
           .clamp(true);
         break;
       case "sqrt":
-        curveFunction = d3.scaleSqrt().domain([0, 1]).range([1, 10]);
+        curveFunction = d3.scaleSqrt().domain([0, 1]).range([10, 1]); // Flipped range
         break;
       case "exp":
         curveFunction = d3
           .scalePow()
           .exponent(exponent)
           .domain([0, 1])
-          .range([1, 10]);
+          .range([10, 1]); // Flipped range
         break;
       case "quad":
-        curveFunction = d3.scalePow().exponent(2).domain([0, 1]).range([1, 10]);
+        curveFunction = d3.scalePow().exponent(2).domain([0, 1]).range([10, 1]); // Flipped range
         break;
       case "cubic":
-        curveFunction = d3.scalePow().exponent(3).domain([0, 1]).range([1, 10]);
+        curveFunction = d3.scalePow().exponent(3).domain([0, 1]).range([10, 1]); // Flipped range
         break;
       default:
         throw new Error(`Unsupported curve type: ${curveType}`);
     }
 
-    // calculate relative weight for each year
+    // Rest of the method remains the same
     const weights = this.years.map((_, i) =>
       curveFunction(i / (this.projectLength - 1))
     );
     const weightSum = d3.sum(weights);
 
-    // ensure total budget allocation matches initial budget
     let allocatedBudget = 0;
     const allocations = this.years.map((year, i) => {
       if (allocatedBudget >= this.totalBudget) return { year, budget: 0 };
 
       let budget = (weights[i] / weightSum) * this.totalBudget;
       if (allocatedBudget + budget > this.totalBudget) {
-        budget = this.totalBudget - allocatedBudget; // adjust final allocation
+        budget = this.totalBudget - allocatedBudget;
       }
       allocatedBudget += budget;
       return { year, budget };
@@ -154,10 +153,10 @@ export class BudgetAllocator {
    * @param {Array} allocations - array of annual allocations
    * @returns {HTMLElement} - SVG element containing the visualization
    */
-  visualize(allocations) {
+  visualise(allocations) {
     const width = 640; // Define desired chart width
     const height = 400; // Define desired chart height
-    const margin = { top: 20, right: 30, bottom: 40, left: 50 };
+    const margin = { top: 20, right: 30, bottom: 40, left: 80 };
 
     // Create SVG element using d3.create, with responsive viewBox
     const svg = d3
@@ -173,10 +172,10 @@ export class BudgetAllocator {
       .domain([this.startYear, this.startYear + this.projectLength - 1])
       .range([margin.left, width - margin.right]);
 
-    const yMax = d3.max(allocations, (d) => d.budget);
+    const linearYearlyBudget = this.totalBudget / this.projectLength;
     const yScale = d3
       .scaleLinear()
-      .domain([0, yMax])
+      .domain([0, linearYearlyBudget * 2])
       .range([height - margin.bottom, margin.top]);
 
     // Create line generator for budget allocations
@@ -226,7 +225,7 @@ export class BudgetAllocator {
     svg
       .append("text")
       .attr("transform", "rotate(-90)")
-      .attr("y", margin.left - 35)
+      .attr("y", margin.left - 70)
       .attr("x", -height / 2)
       .attr("text-anchor", "middle")
       .text("Budget Allocation");
