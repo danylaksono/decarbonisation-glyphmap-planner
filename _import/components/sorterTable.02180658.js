@@ -435,6 +435,8 @@ export function createTable(data, columns, changed) {
 
   function filter() {
     rules.push(getSelectionRule());
+
+    let filterRule = getSelectionRule();
     //keep only data indeces that are selected
     history.push({ type: "filter", data: dataInd });
     dataInd = thisObject.getSelection().map((s) => dataInd[s.index]);
@@ -445,7 +447,7 @@ export function createTable(data, columns, changed) {
     visControllers.map((vc, vci) =>
       vc.updateData(dataInd.map((i) => data[i][columns[vci].column]))
     );
-    changed({ type: "filter", indeces: dataInd, rule: getSelectionRule() });
+    changed({ type: "filter", indeces: dataInd, rule: filterRule });
   }
 
   this.getAllRules = () => rules;
@@ -470,7 +472,7 @@ export function createTable(data, columns, changed) {
   this.getSelection = () => {
     let ret = [];
     tBody.querySelectorAll("tr").forEach((tr, i) => {
-      console.log(`Row ${i} selected: ${tr.selected}`);
+     // console.log(`Row ${i} selected: ${tr.selected}`);
       if (tr.selected) ret.push({ index: i, data: data[dataInd[i]] });
     });
     console.log("Selection result:", ret);
@@ -481,6 +483,10 @@ export function createTable(data, columns, changed) {
     let sel = thisObject.getSelection();
 
     let sortKeys = Object.keys(compoundSorting);
+
+    if (sel.length == 0){
+      return null;
+    }
 
     //there is no sorting; for now we assume that there's no rule
     //however, in the future we should revisit this... users could
@@ -496,6 +502,8 @@ export function createTable(data, columns, changed) {
       //also, for now selections are contiguous
       let firstIndex = sel[sel.length - 1].index;
       let lastIndex = sel[sel.length - 1].index;
+
+      console.log("selruledebug1");
 
       if ((firstIndex = 0 && lastIndex == dataInd.length - 1))
         //all data selected, no rule
@@ -753,6 +761,7 @@ export function createTable(data, columns, changed) {
   }
 
   function sortChanged(controller) {
+
     history.push({ type: "sort", data: [...dataInd] });
     //single sorting for now
     compoundSorting = new Object();
@@ -835,6 +844,7 @@ export function createTable(data, columns, changed) {
     //so, first, we have to add indeces to each table element
     dataInd.map((v, i) => (data[v].tabindex = i));
 
+
     dataInd.sort((a, b) => {
       let scoreA = 0;
       Object.keys(sorts).map(
@@ -854,6 +864,7 @@ export function createTable(data, columns, changed) {
 
     //update the actual table
     createTable();
+
 
     changed({ type: "sort", sort: compoundSorting, indeces: dataInd });
   }
@@ -880,6 +891,10 @@ export function createTable(data, columns, changed) {
   tableControllersRow.appendChild(tdController);
   let undoController = new UndoController(undo);
   tdController.appendChild(undoController.getNode());
+
+  tdController = document.createElement("td");
+  tdController.style.width = "100%";
+  tableControllersRow.appendChild(tdController);
 
   container.appendChild(tableControllers);
   container.appendChild(table);
