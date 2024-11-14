@@ -12,6 +12,8 @@ import { BudgetAllocator } from "./../components/budgetAllocator.js";
 import { MiniDecarbModel } from "./../components/miniDecarbModel.js";
 ```
 
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
 ```js
 function useState(value) {
   const state = Mutable(value);
@@ -19,6 +21,7 @@ function useState(value) {
   return [state, setState];
 }
 const [selected, setSelected] = useState({});
+const [getIntervention, setIntervention] = useState([]);
 ```
 
 <!-- ------------ Data ------------ -->
@@ -163,7 +166,7 @@ const allocations = selected ? getAllocations(selected) : initialAllocations;
 ## Test New Model
 
 ```js
-let interventions = [];
+let interventions = getIntervention;
 
 function createConfigTemplate(start_year, allocations) {
   return {
@@ -197,14 +200,14 @@ function addIntervention(
 
   // psuh to interventions list
   interventions.push(config);
+  setIntervention(interventions);
   console.log("Intervention added:", config);
 }
 
 // remove intervention
 function removeIntervention(index) {
   if (index >= 0 && index < interventions.length) {
-    interventions.splice(index, 1);
-    console.log(`Intervention at index ${index} removed.`);
+    setIntervention(interventions.filter((_, i) => i !== index));
   } else {
     console.log("Invalid index.");
   }
@@ -224,7 +227,7 @@ function addNewIntervention() {
   // Retrieve techConfig from the selected technology
   const techConfig = listOfTech[techName];
 
-  // Example filters and priorities (these could be made dynamic too)
+  // Example filters and priorities
   const filters = [(b) => b.properties["substation_headroom"] >= 500];
 
   const priorities = [{ name: "substation_capacity_rating", order: "asc" }];
@@ -232,12 +235,12 @@ function addNewIntervention() {
   addIntervention(techConfig, start_year, allocations, filters, priorities);
 
   // Re-render the interventions list to update the view
-  document.getElementById("interventions-list").innerHTML = interventions
-    .map(
-      (config, index) =>
-        `<li>${config.tech.name} (Start Year: ${config.initial_year}) - <button onclick="removeIntervention(${index})">Remove</button></li>`
-    )
-    .join("");
+  // document.getElementById("interventions-list").innerHTML = interventions
+  //   .map(
+  //     (config, index) =>
+  //       `<li>${config.tech.name} (Start Year: ${config.initial_year}) - <button onclick="removeIntervention(${index})">Remove</button></li>`
+  //   )
+  //   .join("");
 }
 ```
 
@@ -280,7 +283,15 @@ const interventionForm = html`
   <ul id="interventions-list">
     ${interventions.map(
       (config, index) =>
-        html`<li>${config.tech.name} (Start Year: ${config.initial_year})</li>`
+        html`<li>
+          ${config.tech.name} (Start Year: ${config.initial_year}) -
+          <button
+            onclick=${() => removeIntervention(index)}
+            style="border:none; background:none; cursor:pointer;"
+          >
+            <i class="fas fa-trash" style="color:red;"></i>
+          </button>
+        </li>`
     )}
   </ul>
 `;
