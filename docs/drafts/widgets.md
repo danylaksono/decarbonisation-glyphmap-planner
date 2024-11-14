@@ -163,6 +163,153 @@ const allocations = selected ? getAllocations(selected) : initialAllocations;
 ## Test New Model
 
 ```js
+let interventions = [];
+
+function createConfigTemplate(start_year, allocations) {
+  return {
+    initial_year: Number(start_year),
+    rolledover_budget: 0,
+    yearly_budgets: allocations.map((item) => item.budget),
+    tech: {},
+    priorities: [],
+  };
+}
+
+// add new intervention
+function addIntervention(
+  techConfig,
+  start_year,
+  allocations,
+  filters = [],
+  priorities = []
+) {
+  const config = createConfigTemplate(start_year, allocations);
+  config.tech = {
+    name: techConfig.name,
+    config: techConfig.config,
+  };
+
+  // Apply filters and priorities
+  filters.forEach((filter) =>
+    config.filters ? config.filters.push(filter) : (config.filters = [filter])
+  );
+  priorities.forEach((priority) => config.priorities.push(priority));
+
+  // psuh to interventions list
+  interventions.push(config);
+  console.log("Intervention added:", config);
+}
+
+// remove intervention
+function removeIntervention(index) {
+  if (index >= 0 && index < interventions.length) {
+    interventions.splice(index, 1);
+    console.log(`Intervention at index ${index} removed.`);
+  } else {
+    console.log("Invalid index.");
+  }
+}
+```
+
+```js
+// handle form submission
+function addNewIntervention() {
+  const start_year = document.getElementById("start_year").value;
+  const techName = document.getElementById("technology").value;
+  const allocations = document
+    .getElementById("allocations")
+    .value.split(",")
+    .map((b) => ({ budget: Number(b.trim()) }));
+
+  // Retrieve techConfig from the selected technology
+  const techConfig = listOfTech[techName];
+
+  // Example filters and priorities (these could be made dynamic too)
+  const filters = [(b) => b.properties["substation_headroom"] >= 500];
+
+  const priorities = [{ name: "substation_capacity_rating", order: "asc" }];
+
+  addIntervention(techConfig, start_year, allocations, filters, priorities);
+
+  // Re-render the interventions list to update the view
+  document.getElementById("interventions-list").innerHTML = interventions
+    .map(
+      (config, index) =>
+        `<li>${config.tech.name} (Start Year: ${config.initial_year}) - <button onclick="removeIntervention(${index})">Remove</button></li>`
+    )
+    .join("");
+}
+```
+
+```js
+function runAllInterventions() {
+  interventions.forEach((config, index) => {
+    const model = new MiniDecarbModel(config, newBuildings);
+    model.runModel();
+    const results = model.getRecap();
+    console.log(`Results for intervention ${index + 1}:`, results);
+  });
+}
+
+// Trigger running all models
+runAllInterventions();
+```
+
+```js
+const interventionForm = html`
+  <form>
+    <label
+      >Start Year: <input type="number" id="start_year" value="2025" /></label
+    ><br />
+    <label
+      >Technology:
+      <select id="technology">
+        <option value="ASHP">ASHP</option>
+        <option value="PV">PV</option>
+      </select> </label
+    ><br />
+    <label
+      >Yearly Budget (comma-separated):
+      <input type="text" id="allocations" value="1000,1500,2000" /></label
+    ><br />
+    <button type="button" onclick=${addNewIntervention}>
+      Add Intervention
+    </button>
+  </form>
+
+  <ul id="interventions-list">
+    ${interventions.map(
+      (config, index) =>
+        html`<li>${config.tech.name} (Start Year: ${config.initial_year})</li>`
+    )}
+  </ul>
+`;
+display(interventionForm);
+// display(
+//   html`<button onclick=${remove}>Remove last intervention</button>`
+// );
+display(
+  html`<button onclick=${runAllInterventions}>Run All Interventions</button>`
+);
+```
+
+```js
+display(interventions);
+```
+
+## Old code
+
+<!-- --------------------------------------------------------- -->
+
+```js
+let config = {
+  initial_year: Number(start_year),
+  rolledover_budget: 0,
+  yearly_budgets: allocations.map((item) => item.budget),
+  tech: {},
+  priorities: [],
+};
+
 function addTechConfig(techConfig) {
   config.tech = {
     name: techConfig.name,
@@ -186,7 +333,7 @@ const listOfTech = {
       suitabilityKey: "ashp_suitability",
       labourKey: "ashp_labour",
       materialKey: "ashp_material",
-      savingsKey: "heat_demand", // will be calculated from a lookup and stored in the building data
+      savingsKey: "heat_demand",
     },
   },
   PV: {
@@ -198,14 +345,6 @@ const listOfTech = {
       savingsKey: "solar_generation",
     },
   },
-};
-
-let config = {
-  initial_year: Number(start_year),
-  rolledover_budget: 0,
-  yearly_budgets: allocations.map((item) => item.budget),
-  tech: {},
-  priorities: [],
 };
 
 // update config here
