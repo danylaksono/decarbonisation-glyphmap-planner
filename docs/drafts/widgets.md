@@ -12,6 +12,15 @@ import { BudgetAllocator } from "./../components/budgetAllocator.js";
 import { MiniDecarbModel } from "./../components/miniDecarbModel.js";
 ```
 
+```js
+function useState(value) {
+  const state = Mutable(value);
+  const setState = (value) => (state.value = value);
+  return [state, setState];
+}
+const [selected, setSelected] = useState({});
+```
+
 <!-- ------------ Data ------------ -->
 
 ```sql id=oxford_data
@@ -121,18 +130,34 @@ const allocator = new BudgetAllocator(
   Number(start_year),
   Number(project_length)
 );
+```
 
-let allocations;
+```js
+let initialAllocations;
 if (allocationType === "linear") {
-  allocations = allocator.allocateLinear();
+  initialAllocations = allocator.allocateLinear();
 } else {
-  allocations = allocator.allocateCustom(allocationType);
+  initialAllocations = allocator.allocateCustom(allocationType);
 }
 
 // linear allocation
 // const linearAllocation = allocator.allocateLinear();
 // display(linearAllocation);
-display(allocator.visualise(allocations));
+const { svg, getAllocations } = allocator.visualise(
+  initialAllocations,
+  (changes) => {
+    // console.log("data changed:", changes);
+    setSelected(changes);
+  }
+);
+display(svg);
+```
+
+```js
+allocationType;
+const allocations = selected ? getAllocations(selected) : initialAllocations;
+// display(selected);
+// display(allocations);
 ```
 
 ## Test New Model
