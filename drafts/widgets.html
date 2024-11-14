@@ -12,7 +12,7 @@
 <link rel="modulepreload" href="../_observablehq/client.js">
 <link rel="modulepreload" href="../_observablehq/runtime.js">
 <link rel="modulepreload" href="../_observablehq/stdlib.js">
-<link rel="modulepreload" href="../_import/components/budgetAllocator.e2ddd3e7.js">
+<link rel="modulepreload" href="../_import/components/budgetAllocator.c772f675.js">
 <link rel="modulepreload" href="../_import/components/miniDecarbModel.d0583510.js">
 <link rel="modulepreload" href="../_npm/d3@7.9.0/_esm.js">
 <link rel="modulepreload" href="../_observablehq/stdlib/duckdb.js">
@@ -65,13 +65,23 @@ import {define} from "../_observablehq/client.js";
 import {registerFile, FileAttachment} from "../_observablehq/stdlib.js";
 import {registerTable} from "../_observablehq/stdlib/duckdb.js";
 
-registerFile("./../data/oxford_decarbonisation_data.parquet", {"name":"./../data/oxford_decarbonisation_data.parquet","path":"../_file/data/oxford_decarbonisation_data.28ee7510.parquet","lastModified":1731422078380});
+registerFile("./../data/oxford_decarbonisation_data.parquet", {"name":"./../data/oxford_decarbonisation_data.parquet","path":"../_file/data/oxford_decarbonisation_data.28ee7510.parquet","lastModified":1731543891057});
 registerTable("oxford", FileAttachment("../data/oxford_decarbonisation_data.parquet"));
 
 define({id: "bda9fba7", outputs: ["BudgetAllocator","MiniDecarbModel"], body: async () => {
-const [{BudgetAllocator}, {MiniDecarbModel}] = await Promise.all([import("../_import/components/budgetAllocator.e2ddd3e7.js"), import("../_import/components/miniDecarbModel.d0583510.js")]);
+const [{BudgetAllocator}, {MiniDecarbModel}] = await Promise.all([import("../_import/components/budgetAllocator.c772f675.js"), import("../_import/components/miniDecarbModel.d0583510.js")]);
 
 return {BudgetAllocator,MiniDecarbModel};
+}});
+
+define({id: "ec01b706", inputs: ["Mutable"], outputs: ["useState","selected","setSelected"], body: (Mutable) => {
+function useState(value) {
+  const state = Mutable(value);
+  const setState = (value) => (state.value = value);
+  return [state, setState];
+}
+const [selected, setSelected] = useState({});
+return {useState,selected,setSelected};
 }});
 
 define({id: "d22197ed", inputs: ["sql"], outputs: ["oxford_data"], body: async (sql) => {
@@ -176,25 +186,43 @@ const allocationType = view(
 return {total_budget,start_year,projectLength,project_length,allocationType};
 }});
 
-define({id: "c3ba039f", inputs: ["BudgetAllocator","total_budget","start_year","project_length","allocationType","display"], outputs: ["allocator","allocations"], body: (BudgetAllocator,total_budget,start_year,project_length,allocationType,display) => {
+define({id: "cc54eba5", inputs: ["BudgetAllocator","total_budget","start_year","project_length"], outputs: ["allocator"], body: (BudgetAllocator,total_budget,start_year,project_length) => {
 const allocator = new BudgetAllocator(
   total_budget,
   Number(start_year),
   Number(project_length)
 );
+return {allocator};
+}});
 
-let allocations;
+define({id: "d8a2d83b", inputs: ["allocationType","allocator","setSelected","display"], outputs: ["initialAllocations","svg","getAllocations"], body: (allocationType,allocator,setSelected,display) => {
+let initialAllocations;
 if (allocationType === "linear") {
-  allocations = allocator.allocateLinear();
+  initialAllocations = allocator.allocateLinear();
 } else {
-  allocations = allocator.allocateCustom(allocationType);
+  initialAllocations = allocator.allocateCustom(allocationType);
 }
 
 // linear allocation
 // const linearAllocation = allocator.allocateLinear();
 // display(linearAllocation);
-display(allocator.visualise(allocations));
-return {allocator,allocations};
+const { svg, getAllocations } = allocator.visualise(
+  initialAllocations,
+  (changes) => {
+    // console.log("data changed:", changes);
+    setSelected(changes);
+  }
+);
+display(svg);
+return {initialAllocations,svg,getAllocations};
+}});
+
+define({id: "79b75dc9", inputs: ["allocationType","selected","getAllocations","initialAllocations"], outputs: ["allocations"], body: (allocationType,selected,getAllocations,initialAllocations) => {
+allocationType;
+const allocations = selected ? getAllocations(selected) : initialAllocations;
+// display(selected);
+// display(allocations);
+return {allocations};
 }});
 
 define({id: "f7665dd7", inputs: ["start_year","allocations"], outputs: ["addTechConfig","addPriority","listOfTech","config"], body: (start_year,allocations) => {
@@ -390,12 +418,15 @@ display(Inputs.table(results.allBuildings));
 <div id="observablehq-center">
 <main id="observablehq-main" class="observablehq">
 <div class="observablehq observablehq--block"><!--:bda9fba7:--></div>
+<div class="observablehq observablehq--block"><!--:ec01b706:--></div>
 <!-- ------------ Data ------------ -->
 <div class="observablehq observablehq--block"><!--:d22197ed:--></div>
 <div class="observablehq observablehq--block"><!--:2adb250b:--></div>
 <h2 id="budget-allocator" tabindex="-1"><a class="observablehq-header-anchor" href="#budget-allocator">Budget Allocator</a></h2>
 <div class="observablehq observablehq--block"><!--:5c004f34:--></div>
-<div class="observablehq observablehq--block"><!--:c3ba039f:--></div>
+<div class="observablehq observablehq--block"><!--:cc54eba5:--></div>
+<div class="observablehq observablehq--block"><!--:d8a2d83b:--></div>
+<div class="observablehq observablehq--block"><!--:79b75dc9:--></div>
 <h2 id="test-new-model" tabindex="-1"><a class="observablehq-header-anchor" href="#test-new-model">Test New Model</a></h2>
 <div class="observablehq observablehq--block"><!--:f7665dd7:--></div>
 <p>Model Configuration:</p>

@@ -153,10 +153,15 @@ export class BudgetAllocator {
    * @param {Array} allocations - array of annual allocations
    * @returns {HTMLElement} - SVG element containing the visualization
    */
-  visualise(allocations) {
+  visualise(allocations, onUpdate) {
     const width = 640; // Define desired chart width
     const height = 400; // Define desired chart height
     const margin = { top: 20, right: 30, bottom: 40, left: 80 };
+
+    let currentAllocations = allocations.map((d) => ({ ...d }));
+
+    const totalBudget = this.totalBudget;
+    const numYears = this.projectLength;
 
     // Create SVG element using d3.create, with responsive viewBox
     const svg = d3
@@ -172,10 +177,10 @@ export class BudgetAllocator {
       .domain([this.startYear, this.startYear + this.projectLength - 1])
       .range([margin.left, width - margin.right]);
 
-    const linearYearlyBudget = this.totalBudget / this.projectLength;
+    const maxBudget = d3.max(allocations, (d) => d.budget) * 1.2;
     const yScale = d3
       .scaleLinear()
-      .domain([0, linearYearlyBudget * 2])
+      .domain([0, maxBudget])
       .range([height - margin.bottom, margin.top]);
 
     // Create line generator for budget allocations
@@ -205,15 +210,90 @@ export class BudgetAllocator {
       .attr("stroke-width", 2)
       .attr("d", line);
 
+    const linePath = svg
+      .append("path")
+      .datum(allocations)
+      .attr("fill", "none")
+      .attr("stroke", "#007acc")
+      .attr("stroke-width", 2)
+      .attr("d", line);
+
     // Draw circles at each allocation point
-    svg
+    const circles = svg
       .selectAll("circle")
       .data(allocations)
       .join("circle")
       .attr("cx", (d) => xScale(d.year))
       .attr("cy", (d) => yScale(d.budget))
       .attr("r", 4)
-      .attr("fill", "#ff5722");
+      .attr("fill", "#ff5722")
+      .attr("cursor", "ns-resize");
+
+    // Total budget label
+    const totalDisplay = svg
+      .append("text")
+      .attr("x", width - margin.right)
+      .attr("y", margin.top)
+      .attr("text-anchor", "end")
+      .attr("font-size", "12px");
+
+    const tooltip = d3
+      .select("body")
+      .append("div")
+      .attr("class", "tooltip")
+      .style("position", "absolute")
+      .style("visibility", "hidden")
+      .style("background-color", "white")
+      .style("border", "1px solid #ddd")
+      .style("padding", "5px")
+      .style("border-radius", "3px");
+
+    circles
+      .on("mouseover", function (event, d) {
+        tooltip
+          .style("visibility", "visible")
+          .html(`Year: ${d.year}<br>Budget: ${d3.format(",.0f")(d.budget)}`);
+      })
+      .on("mousemove", function (event) {
+        tooltip
+          .style("top", event.pageY - 10 + "px")
+          .style("left", event.pageX + 10 + "px");
+      })
+      .on("mouseout", function () {
+        tooltip.style("visibility", "hidden");
+      });
+
+    const drag = d3
+      .drag()
+      .on("drag", (event, d) => {
+        const newY = Math.max(
+          margin.top,
+          Math.min(height - margin.bottom, event.y)
+        );
+        const newBudget = yScale.invert(newY);
+        d.budget = newBudget;
+
+        // Update circles and line
+        circles.data(allocations).attr("cy", (d) => yScale(d.budget));
+        linePath.datum(allocations).attr("d", line).attr("stroke", "#e91e63");
+
+        // Update total display
+        const totalAllocated = d3.sum(allocations, (d) => d.budget);
+        totalDisplay.text(
+          `Total: ${totalAllocated.toFixed(2)} / ${this.totalBudget}`
+        );
+
+        // currentAllocations = allocations.map((d) => ({ ...d }));
+        // console.log("currentAllocations", currentAllocations);
+      })
+      .on("end", () => {
+        // Update currentAllocations once drag is released
+        currentAllocations = allocations.map((d) => ({ ...d }));
+        if (onUpdate) onUpdate(currentAllocations);
+      });
+
+    // Apply drag behavior to circles
+    circles.call(drag);
 
     // Axis labels
     svg
@@ -230,7 +310,10 @@ export class BudgetAllocator {
       .attr("text-anchor", "middle")
       .text("Budget Allocation");
 
-    // Return the SVG node, which Observable automatically renders
-    return svg.node();
+    // return svg.node();
+    return {
+      svg: svg.node(),
+      getAllocations: () => currentAllocations,
+    };
   }
 }
