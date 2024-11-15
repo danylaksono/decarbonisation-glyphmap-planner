@@ -65,7 +65,7 @@ import {define} from "../_observablehq/client.js";
 import {registerFile, FileAttachment} from "../_observablehq/stdlib.js";
 import {registerTable} from "../_observablehq/stdlib/duckdb.js";
 
-registerFile("./../data/oxford_decarbonisation_data.parquet", {"name":"./../data/oxford_decarbonisation_data.parquet","path":"../_file/data/oxford_decarbonisation_data.28ee7510.parquet","lastModified":1731551855974});
+registerFile("./../data/oxford_decarbonisation_data.parquet", {"name":"./../data/oxford_decarbonisation_data.parquet","path":"../_file/data/oxford_decarbonisation_data.28ee7510.parquet","lastModified":1731655360947});
 registerTable("oxford", FileAttachment("../data/oxford_decarbonisation_data.parquet"));
 
 define({id: "bda9fba7", outputs: ["BudgetAllocator","MiniDecarbModel"], body: async () => {
@@ -74,7 +74,7 @@ const [{BudgetAllocator}, {MiniDecarbModel}] = await Promise.all([import("../_im
 return {BudgetAllocator,MiniDecarbModel};
 }});
 
-define({id: "175a2d06", inputs: ["Mutable"], outputs: ["useState","selected","setSelected","getIntervention","setIntervention"], body: (Mutable) => {
+define({id: "e9e6659e", inputs: ["Mutable"], outputs: ["useState","selected","setSelected","getIntervention","setIntervention","getResults","setResults"], body: (Mutable) => {
 function useState(value) {
   const state = Mutable(value);
   const setState = (value) => (state.value = value);
@@ -82,7 +82,8 @@ function useState(value) {
 }
 const [selected, setSelected] = useState({});
 const [getIntervention, setIntervention] = useState([]);
-return {useState,selected,setSelected,getIntervention,setIntervention};
+const [getResults, setResults] = useState([]);
+return {useState,selected,setSelected,getIntervention,setIntervention,getResults,setResults};
 }});
 
 define({id: "d22197ed", inputs: ["sql"], outputs: ["oxford_data"], body: async (sql) => {
@@ -226,9 +227,13 @@ const allocations = selected ? getAllocations(selected) : initialAllocations;
 return {allocations};
 }});
 
-define({id: "73ea30a4", inputs: ["getIntervention","setIntervention"], outputs: ["interventions","createConfigTemplate","addIntervention","removeIntervention"], body: (getIntervention,setIntervention) => {
+define({id: "2872498c", inputs: ["getIntervention","getResults"], outputs: ["interventions","results"], body: (getIntervention,getResults) => {
 let interventions = getIntervention;
+let results = getResults;
+return {interventions,results};
+}});
 
+define({id: "29f6e155", inputs: ["setIntervention","interventions","runModel","newBuildings","setResults","results"], outputs: ["createConfigTemplate","addIntervention","removeIntervention"], body: (setIntervention,interventions,runModel,newBuildings,setResults,results) => {
 function createConfigTemplate(start_year, allocations) {
   return {
     initial_year: Number(start_year),
@@ -236,6 +241,7 @@ function createConfigTemplate(start_year, allocations) {
     yearly_budgets: allocations.map((item) => item.budget),
     tech: {},
     priorities: [],
+    filters: [],
   };
 }
 
@@ -254,14 +260,23 @@ function addIntervention(
   };
 
   // Apply filters and priorities
-  filters.forEach((filter) =>
-    config.filters ? config.filters.push(filter) : (config.filters = [filter])
-  );
-  priorities.forEach((priority) => config.priorities.push(priority));
+  // filters.forEach((filter) =>
+  //   config.filters ? config.filters.push(filter) : (config.filters = [filter])
+  // );
+  // priorities.forEach((priority) => config.priorities.push(priority));
+
+  // Apply filters and priorities - append to existing
+  config.filters = [...(config.filters || []), ...filters];
+  config.priorities = [...(config.priorities || []), ...priorities];
+
+  const newIntervention = { ...config, id: Date.now() }; // Unique ID for each intervention
+  // interventions = [...interventions, newIntervention];
 
   // psuh to interventions list
-  interventions.push(config);
-  setIntervention(interventions);
+  // interventions.push(newIntervention);
+  setIntervention([...interventions, newIntervention]);
+  let modelResult = runModel(newIntervention, newBuildings);
+  setResults([...results, modelResult]);
   console.log("Intervention added:", config);
 }
 
@@ -269,14 +284,17 @@ function addIntervention(
 function removeIntervention(index) {
   if (index >= 0 && index < interventions.length) {
     setIntervention(interventions.filter((_, i) => i !== index));
+
+    // when intervention is removed, remove the corresponding results
+    setResults(results.filter((_, i) => i !== index));
   } else {
     console.log("Invalid index.");
   }
 }
-return {interventions,createConfigTemplate,addIntervention,removeIntervention};
+return {createConfigTemplate,addIntervention,removeIntervention};
 }});
 
-define({id: "0b62225e", inputs: ["listOfTech","addIntervention"], outputs: ["addNewIntervention"], body: (listOfTech,addIntervention) => {
+define({id: "71d37e71", inputs: ["listOfTech","addIntervention"], outputs: ["addNewIntervention"], body: (listOfTech,addIntervention) => {
 // handle form submission
 function addNewIntervention() {
   const start_year = document.getElementById("start_year").value;
@@ -291,7 +309,6 @@ function addNewIntervention() {
 
   // Example filters and priorities
   const filters = [(b) => b.properties["substation_headroom"] >= 500];
-
   const priorities = [{ name: "substation_capacity_rating", order: "asc" }];
 
   addIntervention(techConfig, start_year, allocations, filters, priorities);
@@ -305,6 +322,15 @@ function addNewIntervention() {
   //   .join("");
 }
 return {addNewIntervention};
+}});
+
+define({id: "350b4a24", inputs: ["MiniDecarbModel"], outputs: ["runModel"], body: (MiniDecarbModel) => {
+function runModel(config, buildings) {
+  const model = new MiniDecarbModel(config, buildings);
+  model.runModel();
+  return model.getRecap();
+}
+return {runModel};
 }});
 
 define({id: "e479d6a9", inputs: ["interventions","MiniDecarbModel","newBuildings"], outputs: ["runAllInterventions"], body: (interventions,MiniDecarbModel,newBuildings) => {
@@ -322,7 +348,7 @@ runAllInterventions();
 return {runAllInterventions};
 }});
 
-define({id: "44b1c934", inputs: ["html","addNewIntervention","interventions","removeIntervention","display","runAllInterventions"], outputs: ["interventionForm"], body: (html,addNewIntervention,interventions,removeIntervention,display,runAllInterventions) => {
+define({id: "6832c15f", inputs: ["html","addNewIntervention","interventions","removeIntervention","display"], outputs: ["interventionForm"], body: (html,addNewIntervention,interventions,removeIntervention,display) => {
 const interventionForm = html`
   <form>
     <label
@@ -363,14 +389,18 @@ display(interventionForm);
 // display(
 //   html`<button onclick=${remove}>Remove last intervention</button>`
 // );
-display(
-  html`<button onclick=${runAllInterventions}>Run All Interventions</button>`
-);
+// display(
+//   html`<button onclick=${runAllInterventions}>Run All Interventions</button>`
+// );
 return {interventionForm};
 }});
 
 define({id: "d6469914", inputs: ["display","interventions"], body: (display,interventions) => {
 display(interventions);
+}});
+
+define({id: "bda3ad04", inputs: ["display","results"], body: (display,results) => {
+display(results);
 }});
 
 define({id: "0a36b6f0", inputs: ["start_year","allocations"], outputs: ["config","addTechConfig","addPriority","listOfTech"], body: (start_year,allocations) => {
@@ -456,7 +486,7 @@ define({id: "79324e46", body: () => {
 // display(configASHP);
 }});
 
-define({id: "3141ed6a", inputs: ["MiniDecarbModel","config","newBuildings"], outputs: ["modelASHP","results"], body: (MiniDecarbModel,config,newBuildings) => {
+define({id: "b1e18226", inputs: ["MiniDecarbModel","config","newBuildings"], outputs: ["modelASHP"], body: (MiniDecarbModel,config,newBuildings) => {
 // For priority rules:
 // // Categorical priority
 // model.addPriorityRuleCustom({
@@ -498,9 +528,9 @@ const modelASHP = new MiniDecarbModel(config, newBuildings);
 // });
 
 modelASHP.runModel();
-const results = modelASHP.getRecap();
+// const results = modelASHP.getRecap();
 // display(results);
-return {modelASHP,results};
+return {modelASHP};
 }});
 
 define({id: "0ed95c73", inputs: ["results"], outputs: ["data"], body: (results) => {
@@ -567,7 +597,7 @@ display(Inputs.table(results.allBuildings));
 <main id="observablehq-main" class="observablehq">
 <div class="observablehq observablehq--block"><!--:bda9fba7:--></div>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-<div class="observablehq observablehq--block"><!--:175a2d06:--></div>
+<div class="observablehq observablehq--block"><!--:e9e6659e:--></div>
 <!-- ------------ Data ------------ -->
 <div class="observablehq observablehq--block"><!--:d22197ed:--></div>
 <div class="observablehq observablehq--block"><!--:2adb250b:--></div>
@@ -577,18 +607,21 @@ display(Inputs.table(results.allBuildings));
 <div class="observablehq observablehq--block"><!--:d8a2d83b:--></div>
 <div class="observablehq observablehq--block"><!--:79b75dc9:--></div>
 <h2 id="test-new-model" tabindex="-1"><a class="observablehq-header-anchor" href="#test-new-model">Test New Model</a></h2>
-<div class="observablehq observablehq--block"><!--:73ea30a4:--></div>
-<div class="observablehq observablehq--block"><!--:0b62225e:--></div>
+<div class="observablehq observablehq--block"><!--:2872498c:--></div>
+<div class="observablehq observablehq--block"><!--:29f6e155:--></div>
+<div class="observablehq observablehq--block"><!--:71d37e71:--></div>
+<div class="observablehq observablehq--block"><!--:350b4a24:--></div>
 <div class="observablehq observablehq--block"><!--:e479d6a9:--></div>
-<div class="observablehq observablehq--block"><!--:44b1c934:--></div>
+<div class="observablehq observablehq--block"><!--:6832c15f:--></div>
 <div class="observablehq observablehq--block"><!--:d6469914:--></div>
+<div class="observablehq observablehq--block"><!--:bda3ad04:--></div>
 <h2 id="old-code" tabindex="-1"><a class="observablehq-header-anchor" href="#old-code">Old code</a></h2>
 <!-- --------------------------------------------------------- -->
 <div class="observablehq observablehq--block"><!--:0a36b6f0:--></div>
 <p>Model Configuration:</p>
 <div class="observablehq observablehq--block"><!--:203a2375:--></div>
 <div class="observablehq observablehq--block"><!--:79324e46:--></div>
-<div class="observablehq observablehq--block"><!--:3141ed6a:--></div>
+<div class="observablehq observablehq--block"><!--:b1e18226:--></div>
 <div class="observablehq observablehq--block"><!--:0ed95c73:--></div>
 <div class="observablehq observablehq--block"><!--:06fe437e:--></div>
 <p>All suitable buildings, with attribute showing intervention or non-intervention:</p>
