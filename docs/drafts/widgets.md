@@ -22,6 +22,7 @@ function useState(value) {
 }
 const [selected, setSelected] = useState({});
 const [getIntervention, setIntervention] = useState([]);
+const [getResults, setResults] = useState([]);
 ```
 
 <!-- ------------ Data ------------ -->
@@ -167,7 +168,10 @@ const allocations = selected ? getAllocations(selected) : initialAllocations;
 
 ```js
 let interventions = getIntervention;
+let results = getResults;
+```
 
+```js
 function createConfigTemplate(start_year, allocations) {
   return {
     initial_year: Number(start_year),
@@ -175,6 +179,7 @@ function createConfigTemplate(start_year, allocations) {
     yearly_budgets: allocations.map((item) => item.budget),
     tech: {},
     priorities: [],
+    filters: [],
   };
 }
 
@@ -193,14 +198,23 @@ function addIntervention(
   };
 
   // Apply filters and priorities
-  filters.forEach((filter) =>
-    config.filters ? config.filters.push(filter) : (config.filters = [filter])
-  );
-  priorities.forEach((priority) => config.priorities.push(priority));
+  // filters.forEach((filter) =>
+  //   config.filters ? config.filters.push(filter) : (config.filters = [filter])
+  // );
+  // priorities.forEach((priority) => config.priorities.push(priority));
+
+  // Apply filters and priorities - append to existing
+  config.filters = [...(config.filters || []), ...filters];
+  config.priorities = [...(config.priorities || []), ...priorities];
+
+  const newIntervention = { ...config, id: Date.now() }; // Unique ID for each intervention
+  // interventions = [...interventions, newIntervention];
 
   // psuh to interventions list
-  interventions.push(config);
-  setIntervention(interventions);
+  // interventions.push(newIntervention);
+  setIntervention([...interventions, newIntervention]);
+  let modelResult = runModel(newIntervention, newBuildings);
+  setResults([...results, modelResult]);
   console.log("Intervention added:", config);
 }
 
@@ -208,6 +222,9 @@ function addIntervention(
 function removeIntervention(index) {
   if (index >= 0 && index < interventions.length) {
     setIntervention(interventions.filter((_, i) => i !== index));
+
+    // when intervention is removed, remove the corresponding results
+    setResults(results.filter((_, i) => i !== index));
   } else {
     console.log("Invalid index.");
   }
@@ -229,7 +246,6 @@ function addNewIntervention() {
 
   // Example filters and priorities
   const filters = [(b) => b.properties["substation_headroom"] >= 500];
-
   const priorities = [{ name: "substation_capacity_rating", order: "asc" }];
 
   addIntervention(techConfig, start_year, allocations, filters, priorities);
@@ -241,6 +257,14 @@ function addNewIntervention() {
   //       `<li>${config.tech.name} (Start Year: ${config.initial_year}) - <button onclick="removeIntervention(${index})">Remove</button></li>`
   //   )
   //   .join("");
+}
+```
+
+```js
+function runModel(config, buildings) {
+  const model = new MiniDecarbModel(config, buildings);
+  model.runModel();
+  return model.getRecap();
 }
 ```
 
@@ -299,13 +323,17 @@ display(interventionForm);
 // display(
 //   html`<button onclick=${remove}>Remove last intervention</button>`
 // );
-display(
-  html`<button onclick=${runAllInterventions}>Run All Interventions</button>`
-);
+// display(
+//   html`<button onclick=${runAllInterventions}>Run All Interventions</button>`
+// );
 ```
 
 ```js
 display(interventions);
+```
+
+```js
+display(results);
 ```
 
 ## Old code
@@ -438,7 +466,7 @@ const modelASHP = new MiniDecarbModel(config, newBuildings);
 // });
 
 modelASHP.runModel();
-const results = modelASHP.getRecap();
+// const results = modelASHP.getRecap();
 // display(results);
 ```
 
