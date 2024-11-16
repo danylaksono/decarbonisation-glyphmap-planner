@@ -153,9 +153,9 @@ export class BudgetAllocator {
    * @param {Array} allocations - array of annual allocations
    * @returns {HTMLElement} - SVG element containing the visualization
    */
-  visualise(allocations, onUpdate) {
-    const width = 640; // Define desired chart width
-    const height = 400; // Define desired chart height
+  visualise(allocations, onUpdate, width = 600, height = 200) {
+    // const width = width || 640;
+    // const height = height || 200;
     const margin = { top: 20, right: 30, bottom: 40, left: 80 };
 
     let currentAllocations = allocations.map((d) => ({ ...d }));

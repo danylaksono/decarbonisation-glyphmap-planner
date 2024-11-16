@@ -1,11 +1,13 @@
 ---
-title: Testing data
+title: Decarbonisation Planner
 toc: false
 sidebar: false
 footer: false
 sql:
   oxford: ./data/oxford_decarbonisation_data.parquet
 ---
+
+<!-- ------------ Imports ------------ -->
 
 ```js
 import {
@@ -14,166 +16,14 @@ import {
 } from "./components/glyph-designs/timeGlyph.js";
 import { Model } from "./components/model.js";
 import maplibregl from "npm:maplibre-gl@2.0.0";
-import {Mutable} from "npm:@observablehq/stdlib";
+import { Mutable } from "npm:@observablehq/stdlib";
 
+import { BudgetAllocator } from "./components/budgetAllocator.js";
+import { MiniDecarbModel } from "./components/miniDecarbModel.js";
+import { createTable } from "./components/sorterTable.js";
 ```
 
-<!-------- Stylesheets -------->
-<link
-  rel="stylesheet"
-  href="https://cdn.jsdelivr.net/npm/bulma@1.0.0/css/bulma.min.css"
->
-
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css">
-<link href="https://unpkg.com/maplibre-gl@2.1.9/dist/maplibre-gl.css" rel="stylesheet" />
-<link
-  rel="stylesheet"
-  href="./styles/dashboard.css"
->
-
-<style>
-body, html {
-  height: 100%;
-  margin: 0 !important;
-  overflow: hidden;
-  padding: 0;
-}
-
-#observablehq-main, #observablehq-header, #observablehq-footer {
-    margin: 0 !important;
-    /* width: 100% !important; */
-    max-width: 100% !important;
-}
-
-
-#observablehq-center {
-  margin: 0.5rem !important;
-}
-
-.grid {
-  margin: 0 !important;
-}
-
-.grid-container {
-    display: grid;
-    grid-template-columns: 1fr 4fr;
-    grid-template-rows: repeat(2, 1fr) 1fr;
-    gap: 8px; /* gap between grid items */
-    padding: 8px;
-    height: 92vh;
-  }
-
-  /* Left panel boxes */
-  #left-panel {
-     /* Spans 2 rows */
-    display: grid;
-    grid-template-rows: 1fr 1fr; /* Two equal rows */
-    gap: 8px;
-  }
-
-
-  /* Right panel boxes */
-  #main-panel {
-    /*grid-row: span 2;  Spans 2 rows */
-    display: grid;
-    grid-template-rows: 4fr 2fr;
-    height: 92vh;
-    gap: 8px;
-  }
-
-  .main-top {
-    display: grid;
-    grid-template-columns: 1fr 1fr; /* Split into two equal columns */
-    gap: 8px;
-  }
-
-  /* Main panel bottom, split into two sections */
-  .main-bottom {
-    /* grid-row: 2 / 3; Takes the second row */
-    display: grid;
-    grid-template-columns: 1fr 3fr; /* Split bottom row into 1/3 ratio */
-    gap: 8px;
-  }
-
-    .card {
-      /* display: flex; /* Use Flexbox */
-      /* justify-content: center; Horizontally center content */
-      /* align-items: center; Vertically center content */
-      /* text-align: center; Center text alignment for multiline */ */
-      border: 1px dark-grey solid;
-      padding: 8px;
-      margin: 0 !important;
-      box-sizing: border-box; /* Ensure padding is included in height calculations */
-    }
-
-  .main-top,
-  .main-bottom .card {
-      height: 100%; /* Let the grid layout define height naturally */
-  }
-
-.dragging {
-  opacity: 0.5;
-  cursor: grabbing;}
-
-</style>
-
-<!-------- HTML Layout -------->
-
-<div class="grid-container" style="padding:8px; height:92vh;">
-  <!-- Left panel (two boxes, stacked vertically) -->
-  <!-- HTML Structure -->
-  <div id="left-panel">
-    <div id="project-properties" class="card">
-      <h1>Decarbonisation Dashboard</h1>
-      <br><br>
-      <div class="form-group">
-        <label for="years-slider">No. of years:</label>
-        ${yearsInput}
-        <span id="years-value">${years}</span>
-      </div>
-      <div class="form-group">
-        <label for="total-budget">Total Budget:</label>
-        <input type="text" id="total-budget" placeholder="Enter budget">
-      </div>
-      <br>
-      <button class="create-btn">Create Project</button>
-    </div>
-    <div class="card">
-      Interventions
-      <nav class="panel" id="panel">
-        <!-- <p class="panel-heading"></p> -->
-        <!-- List generated here -->
-      </nav>
-      <button class="create-btn">Add interventions</button>
-      </div>
-  </div>
-
-  <!-- Main panel (right side) -->
-  <div id="main-panel">
-    <div class="main-top">
-      <div class="card">
-        <div id="map-container" style="min-width: 20em; height: 100%;">
-        </div>
-      </div>
-      <div class="card" style="min-width: 30em;">
-        ${Inputs.table(newBuildings, {
-            rows: 18,
-            maxWidth: 840,
-            multiple: true,
-        })}
-        </div>
-    </div>
-    <div class="main-bottom">
-      <div class="card">Sculptable glyph/Details on demand
-        ${resize((width, height) => showGlyphs(width-20, height-30))}
-      </div>
-      <div class="card">
-        General Overview graph
-        ${resize((width, height) => showPlot(width-20, height-30))}
-        </div>
-    </div>
-  </div>
-</div>
+<!-- ---------------- Data ---------------- -->
 
 ```sql id=oxford_data
   SELECT DISTINCT
@@ -225,332 +75,467 @@ FROM oxford b;
 ```
 
 ```js
-const newBuildings = [...oxford_data];
+const buildingsData = [...oxford_data];
+const flatData = buildingsData.map((p) => ({ ...p }));
+const allColumns = Object.keys(buildingsData[0]);
 ```
 
+<!-- ------------ Getter-Setter ------------ -->
+
 ```js
-function createCanvas(width, height) {
-  //CREATE CANVAS AND GLYPHS
-  let canvas = document.createElement("canvas");
-  let ctx = canvas.getContext("2d");
-  canvas.width = width;
-  canvas.height = width;
-
-  //MODEL BUILDING
-
-  //repack actual data in a more compact format
-
-  //configure model specifications (for now only two tech, ASHP and PV, hardcoded)
-  let modelSpec = {
-    nr_years: 10,
-    yearly_funding: 300000000,
-    tech_allocation: { ASHP: 0.5, PV: 0.5 },
-  };
-
-  //create (and run) model
-  let model = new Model(newBuildings, modelSpec);
-
-  //to support global normalisations and, in the future, mirrored interactions
-  // let glyphCollection = new GlyphCollection();
-
-  //we start prepping the data that goes into the glyphs
-
-  //we group interventions first by lsoa, then technology, then year
-  let lsoaTechYear = model
-    .getInterventions()
-    .groupBy("lsoa")
-    .groupBy("type")
-    .groupBy("year")
-    .all();
-  console.log("Interventions (grouped lsoa->tech->year)", lsoaTechYear);
-
-  //get building data at each simulation year, split by lsoa
-  let buildingsYearLsoas = d3
-    .range(modelSpec.nr_years)
-    .map((y) => model.getBuildings(y).groupBy("lsoa").all());
-  console.log("Buildings by year (grouped lsoa)", buildingsYearLsoas);
-
-  //prepare glyphs, for now two options:
-  //1. show all technologies (ASHP and PV for now) stacked on top of each other,
-  //either cummulatively or not (allTech = true)
-  //2. show one tech (ASHP for now) with yearly savings and cummulative potential for saving (allTech = false)
-
-  let allTech = false; //allTech will show all technologies as stacked time chart
-  //!allTech will show ASHP saved and potential
-  let cummulative = false; //cummulative savings?
-  //only used when !allTech
-  let sqrt = true; // potential for saving is much larger than actual saving and
-  //showing it in sqrt scale might be handy
-  let stacked = false; //stacked=false (overlaid) is better for non-cummulative, !allTech, overlaid is better
-
-  let glyphCollection = prepareGlyphs({
-    lsoaTechYear,
-    buildingsYearLsoas,
-    modelSpec,
-    allTech,
-    cummulative,
-    sqrt,
-    stacked,
-  });
-
-  // console.log(glyphCollection.glyphs);
-  glyphCollection.glyphs.map((g, i) =>
-    g.draw(ctx, Math.floor(i / 10) * 50, (i % 10) * 50, 40, 50)
-  );
-
-  return canvas;
+function useState(value) {
+  const state = Mutable(value);
+  const setState = (value) => (state.value = value);
+  return [state, setState];
 }
+const [selected, setSelected] = useState({});
+const [getIntervention, setIntervention] = useState([]);
+const [getResults, setResults] = useState([]);
 ```
 
-```js
-// Modularise glyph preparation
-function prepareGlyphs({
-  lsoaTechYear,
-  buildingsYearLsoas,
-  modelSpec,
-  allTech = true,
-  cummulative = false,
-  sqrt = false,
-  stacked = false,
-  tech = "ASHP",
-}) {
-  let glyphCollection = new GlyphCollection();
+<!-------- Stylesheets -------->
+<link
+  rel="stylesheet"
+  href="https://cdn.jsdelivr.net/npm/bulma@1.0.0/css/bulma.min.css"
+>
 
-  // Adjust settings based on allTech flag
-  if (allTech) {
-    cummulative = false;
-    stacked = true;
-  } else {
-    cummulative = false;
-    sqrt = true;
-    stacked = false;
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css">
+
+<link href="https://unpkg.com/maplibre-gl@2.1.9/dist/maplibre-gl.css" rel="stylesheet" />
+
+<link
+  rel="stylesheet"
+  href="./styles/dashboard.css"
+>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+<style>
+body, html {
+  height: 100%;
+  margin: 0 !important;
+  /* overflow: hidden; */
+  padding: 0;
+}
+
+#observablehq-main, #observablehq-header, #observablehq-footer {
+    margin: 0 !important;
+    /* width: 100% !important; */
+    max-width: 100% !important;
+}
+
+#observablehq-center {
+  margin: 0.5rem !important;
+}
+
+.grid {
+  margin: 0 !important;
+}
+
+.grid-container {
+    display: grid;
+    grid-template-columns: 1fr 4fr;
+    grid-template-rows: repeat(2, 1fr) 1fr;
+    gap: 8px; /* gap between grid items */
+    padding: 8px;
+    height: 92vh;
   }
 
-  // Loop through each LSOA
-  Object.keys(lsoaTechYear).map((lsoaCode, i) => {
-    let lsoa = lsoaTechYear[lsoaCode];
-    let glyphData = {};
+  /* Left panel boxes */
+  #left-panel {
+     /* Spans 2 rows */
+    display: grid;
+    grid-template-rows: 1fr 1fr; /* Two equal rows */
+    gap: 8px;
+  }
 
-    // Stacked glyph with saved MW for all categories
-    if (allTech) {
-      Object.keys(modelSpec.tech_allocation).map((tech) => {
-        glyphData[tech] = d3
-          .range(modelSpec.nr_years)
-          .map((year) =>
-            lsoa[tech][year] == null
-              ? 0
-              : d3.sum(lsoa[tech][year].map((i) => i.saved))
-          );
-      });
-    } else {
-      // Stacked glyph with saved MW vs. total saving potential
-      glyphData["potential"] = d3
-        .range(modelSpec.nr_years)
-        .map((year) =>
-          d3.sum(
-            buildingsYearLsoas[year][lsoaCode]
-              .filter((b) => b.ashp_suitability)
-              .map((b) => b.heat_demand)
-          )
-        );
-      if (sqrt)
-        glyphData["potential"] = glyphData["potential"].map((v) =>
-          Math.sqrt(v)
-        );
 
-      // Cumulative or individual savings
-      let sum = 0;
-      glyphData[tech] = d3.range(modelSpec.nr_years).map((year) => {
-        if (cummulative)
-          sum +=
-            lsoa[tech][year] == null
-              ? 0
-              : d3.sum(lsoa[tech][year].map((i) => i.saved));
-        else
-          sum =
-            lsoa[tech][year] == null
-              ? 0
-              : d3.sum(lsoa[tech][year].map((i) => i.saved));
+  /* Right panel boxes */
+  #main-panel {
+    /*grid-row: span 2;  Spans 2 rows */
+    display: grid;
+    grid-template-rows: 4fr 2fr;
+    height: 92vh;
+    gap: 8px;
+  }
 
-        return sum;
-      });
+  .main-top {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Split into two equal columns */
+    gap: 8px;
+  }
 
-      if (sqrt) glyphData[tech] = glyphData[tech].map((v) => Math.sqrt(v));
+  /* Main panel bottom, split into two sections */
+  .main-bottom {
+    /* grid-row: 2 / 3; Takes the second row */
+    display: grid;
+    grid-template-columns: 3fr 1fr; /* Split bottom row into 1/3 ratio */
+    gap: 8px;
+  }
+
+    .card {
+      /* display: flex; /* Use Flexbox */
+      /* justify-content: center; Horizontally center content */
+      /* align-items: center; Vertically center content */
+      /* text-align: center; Center text alignment for multiline */ */
+      border: 1px dark-grey solid;
+      padding: 8px;
+      margin: 0 !important;
+      box-sizing: border-box; /* Ensure padding is included in height calculations */
     }
 
-    let tg = new TimeGlyph(glyphData, glyphCollection, stacked);
-    glyphCollection.add(tg);
-  });
+  .main-top,
+  .main-bottom .card {
+      height: 100%; /* Let the grid layout define height naturally */
+  }
 
-  glyphCollection.recalculate = function () {
-    glyphCollection.norm = d3.max(this.glyphs.map((g) => g.maxAllTime()));
-    console.log("norm val: " + glyphCollection.norm);
-  };
-  glyphCollection.recalculate();
+.dragging {
+  opacity: 0.5;
+  cursor: grabbing;}
 
-  return glyphCollection;
-}
-```
+</style>
 
-```js
-function showGlyphs(width, height) {
-  // Dummy data for testing the TimeGlyph drawing function
-  const dummyData = {
-    ASHP: [0.1, 0.2, 0.3, 0.4, 0.5],
-    PV: [0.2, 0.1, 0.4, 0.3, 0.2],
-  };
+<!-- ---------------- HTML Layout ---------------- -->
 
-  // Create a new TimeGlyph instance with the dummy data
-  const timeGlyph = new TimeGlyph(dummyData);
+<div class="grid-container" style="padding:8px; height:92vh;">
+  <!-- Left panel (two boxes, stacked vertically) -->
+  <div id="left-panel">
+    <div id="project-properties" class="card">
+      <h1>Decarbonisation Dashboard</h1>
+      <br>
+      <div class="form-group">
+        ${techsInput}
+      </div>
+      <div class="form-group">
+        <!-- <label for="total-budget">Total Budget:</label> -->
+        ${totalBudgetInput}
+      </div>
+      <div class="form-group">
+        <!--label for="total-budget">Start Year:</label-->
+        ${startYearInput}
+      </div>
+      <div class="form-group">
+        <label for="total-budget">Project length (years):</label>
+        ${projectLengthInput}
+      </div>
+      <div class="form-group">
+      <label for="total-budget">Budget Allocation Type:</label>
+        ${allocationTypeInput}
+      </div>
+        ${svg}
+      <div class="form-group">
+        ${priorityInput}
+      </div>
+      <div class="form-group">
+        ${filterInput}
+      </div>
+      <div class="form-group">
+        ${html`<button class="create-btn" type="button" onclick=${addNewIntervention}>
+          Add New Intervention
+        </button>`}
+      </div>
+    </div>
+  </div>
+  <!-- Main panel (right side) -->
+  <div id="main-panel">
+    <!-- <div class="card main-top">Map View</div> -->
+    <div class="main-top">
+      <div class="card">
+      Sortable Table
+      ${Inputs.table(results)}
+      </div>
+      <div class="card">Map View</div>
+    </div>
+    <div class="main-bottom">
+      <div class="card">
+      <h2> General overview graph </h2>
+      <br>
+      <div id="graph-container">
+      <!-- List generated here -->
+          <ul id="interventions-list">
+            ${html`${interventions.map(
+              (config, index) =>
+                html`<li>
+                  ${config.tech.name} (Start Year: ${config.initial_year}) -
+                  <button
+                    onclick=${() => removeIntervention(index)}
+                    style="border:none; background:none; cursor:pointer;"
+                  >
+                    <i class="fas fa-trash" style="color:red;"></i>
+                  </button>
+                </li>`
+            )}
+          </ul>
+        `}
+      </div>
+    </div>
+    <div class="card">Sculptable Hierarchical Glyph/Details on demand</div>
+  </div>
+</div>
 
-  // Create a canvas context for drawing
-  const canvas = document.createElement("canvas");
-  canvas.width = width;
-  canvas.height = height;
-  document.body.appendChild(canvas);
-  const ctx = canvas.getContext("2d");
-
-  // Draw the glyph on the canvas
-  timeGlyph.draw(ctx, 50, 50, 400, 400);
-
-  return canvas;
-}
-```
-
-```js
-const unemployment = Array.from({ length: 100 }, (_, i) => {
-  const date = new Date(2020, 0, i); // Generate dates in 2020
-  return [
-    { date, unemployed: Math.random() * 500 + 200, industry: "Manufacturing" },
-    { date, unemployed: Math.random() * 400 + 150, industry: "Retail" },
-    { date, unemployed: Math.random() * 300 + 100, industry: "Healthcare" },
-    { date, unemployed: Math.random() * 250 + 120, industry: "Construction" },
-    { date, unemployed: Math.random() * 200 + 80, industry: "Education" },
-  ];
-}).flat();
-
-function showPlot(width, height) {
-  return Plot.plot({
-    marginLeft: 50,
-    width: width,
-    height: height,
-    y: {
-      grid: true,
-      label: "↑ Unemployed (thousands)",
-    },
-    marks: [
-      Plot.areaY(unemployment, {
-        x: "date",
-        y: "unemployed",
-        fill: "industry",
-        title: "industry",
-      }),
-      Plot.ruleY([0]),
-    ],
-  });
-
-}
-```
-
-```js
-
-const yearsInput = html`<input
-  style="max-width: 300px;"
-  type="range"
-  step="1"
-  min="1"
-  max="20"
-/>`;
-```
-
-```js
-const years = Generators.input(yearsInput);
-```
-
-```js
-const map = new maplibregl.Map({
-  boxZoom: true,
-  pitch: 0,
-  bearing: 0,
-  maplibreLogo: true,
-  container: "map-container",
-  center: [110, -7],
-  zoom: 12,
-  style:
-    "https://basemaps.cartocdn.com/gl/dark-matter-nolabels-gl-style/style.json",
-  // see more: https://deck.gl/docs/api-reference/carto/basemap
-  scrollZoom: true,
-});
-
-map.fitBounds([
-  [93.216, -12.922],
-  [143.07, 7.738],
-]);
-
-// invalidation.then(() => map.remove());
-```
+<!-- ---------------- Input form declarations ---------------- -->
 
 ```js
-const repositories = [
-  { id: 1, name: "Air Source heatpump", icon: "fa fa-bolt" },
-  { id: 2, name: "Solar PV Panel", icon: "fa fa-book" },
+// list of decarb technologies
+const techsInput = Inputs.select(
+  [
+    "PV",
+    "ASHP",
+    "GSHP",
+    "Insulation - Cavity Wall",
+    "Insulation - External Wall",
+    "Insulation - Roof",
+    "Insulation - Under Floor",
+  ],
   {
-    id: 3,
-    name: "Ground Source Heat Pump",
-    icon: "fa fa-thermometer-full",
+    label: html`<b>Technology</b>`,
+    value: "ASHP",
+  }
+);
+const technology = Generators.input(techsInput);
+// display(techsInput);
+
+// Total Budget
+const totalBudgetInput = Inputs.text({
+  label: html`<b>Total Budget</b>`,
+  placeholder: "Available Budget in GBP",
+  value: 100_000_000,
+  // submit: html`<button class="create-btn" style="color:white;">Submit</button>`,
+});
+totalBudgetInput.style["max-width"] = "300px";
+const total_budget = Generators.input(totalBudgetInput);
+
+// Start Year
+const startYearInput = Inputs.text({
+  label: html`<b>Start Year</b>`,
+  placeholder: "Starting year?",
+  value: 2024,
+  // submit: html`<button class="create-btn" style="color:white;">Submit</button>`,
+});
+startYearInput.style["max-width"] = "300px";
+// console.log("startYearInput.style", startYearInput.columns);
+const start_year = Generators.input(startYearInput);
+
+// Project Length
+const projectLengthInput = Inputs.range([0, 20], {
+  // label: html`<b>Project length in years</b>`,
+  step: 1,
+  value: 10,
+});
+projectLengthInput.number.style["max-width"] = "60px";
+Object.assign(projectLengthInput, {
+  oninput: (event) => event.isTrusted && event.stopImmediatePropagation(),
+  onchange: (event) => event.currentTarget.dispatchEvent(new Event("input")),
+});
+const project_length = Generators.input(projectLengthInput);
+
+// Allocation Type
+const allocationTypeInput = Inputs.radio(["linear", "sqrt", "exp", "cubic"], {
+  // label: html`<b>Allocation Type</b>`,
+  value: "linear",
+});
+const allocation_type = Generators.input(allocationTypeInput);
+
+const priorityInput = Inputs.form([
+  Inputs.select([...allColumns, "None"], {
+    label: html`<b>Sorting Priority</b>`,
+    value: "None",
+  }),
+  Inputs.radio(["asc", "desc"], {
+    label: "Order",
+    value: "asc",
+  }),
+]);
+const priority_input = Generators.input(priorityInput);
+
+const filterInput = Inputs.form([
+  Inputs.select([...allColumns, "None"], {
+    label: html`<b>Filter Column</b>`,
+    value: "None",
+  }),
+  Inputs.text({
+    label: "Filter Value",
+    placeholder: "Enter filter value",
+  }),
+]);
+const filter_input = Generators.input(filterInput);
+```
+
+```js
+// Budget Allocator
+const allocator = new BudgetAllocator(
+  total_budget,
+  Number(start_year),
+  Number(project_length)
+);
+
+let initialAllocations;
+if (allocation_type === "linear") {
+  initialAllocations = allocator.allocateLinear();
+} else {
+  initialAllocations = allocator.allocateCustom(allocation_type);
+}
+```
+
+```js
+const { svg, getAllocations } = allocator.visualise(
+  initialAllocations,
+  (changes) => {
+    // console.log("data changed:", changes);
+    setSelected(changes);
   },
-];
+  400,
+  200
+);
+// display(results);
+```
 
-// Drag behavior for reordering
-const drag = d3
-  .drag()
-  .on("start", function (event, d) {
-    d3.select(this).classed("dragging", true);
-    d3.select(this).raise(); // Bring the dragged item to the top
-  })
-  .on("drag", function (event, d) {
-    d3.select(this).style("transform", `translateY(${event.y}px)`);
-  })
-  .on("end", function (event, d) {
-    d3.select(this).classed("dragging", false).style("transform", "none");
+```js
+// set allocation based on custom graph
+allocation_type;
+const allocations = selected ? getAllocations(selected) : initialAllocations;
+// display(interventions);
+```
 
-    // Determine the new order based on the positions
-    const newOrder = [...d3.selectAll(".panel-block").nodes()]
-      .sort(
-        (a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top
-      )
-      .map((node) =>
-        repositories.find((repo) => repo.id == node.getAttribute("data-id"))
-      );
+```js
+// store intervention results
+let interventions = getIntervention;
+let results = getResults;
+```
 
-    // Update repositories and re-render
-    repositories.length = 0;
-    repositories.push(...newOrder);
-    generateList(repositories);
-  });
+<!-- ---------------- Functions ---------------- -->
 
-// Function to generate the list dynamically
-function generateList(repos) {
-  const panel = d3.select("#panel");
-
-  // Bind data to elements
-  panel
-    .selectAll(".panel-block")
-    .data(repos, (d) => d.id)
-    .join((enter) =>
-      enter
-        .append("p")
-        .attr("class", "panel-block")
-        .attr("data-id", (d) => d.id)
-        .call(drag) // Attach drag behavior
-        .html(
-          (d) =>
-            `<span class="panel-icon"><i class="${d.icon}" aria-hidden="true"></i></span> ${d.name}`
-        )
-    );
+```js
+// create config template
+function createConfigTemplate(start_year, allocations) {
+  return {
+    initial_year: Number(start_year),
+    rolledover_budget: 0,
+    yearly_budgets: allocations.map((item) => item.budget),
+    tech: {},
+    priorities: [],
+    filters: [],
+  };
 }
 
-// Initialize the list
-generateList(repositories);
+// add new intervention
+function addIntervention(
+  techConfig,
+  start_year,
+  allocation,
+  filters = [],
+  priorities = []
+) {
+  const config = createConfigTemplate(start_year, allocation);
+  // console.log("configuration sent", config);
 
+  config.tech = {
+    name: techConfig.name,
+    config: techConfig.config,
+  };
+
+  // console.log("techConfig Name", techConfig);
+
+  // Apply filters and priorities - append to existing
+  config.filters = [...(config.filters || []), ...filters];
+  config.priorities = [...(config.priorities || []), ...priorities];
+
+  const newIntervention = { ...config, id: Date.now() };
+  setIntervention([...interventions, newIntervention]);
+  const modelResult = runModel(newIntervention, buildingsData);
+  setResults([...results, modelResult]);
+  console.log("Intervention added:", config);
+}
+
+// remove intervention
+function removeIntervention(index) {
+  if (index >= 0 && index < interventions.length) {
+    setIntervention(interventions.filter((_, i) => i !== index));
+
+    // when intervention is removed, remove the corresponding results
+    setResults(results.filter((_, i) => i !== index));
+  } else {
+    console.log("Invalid index.");
+  }
+}
+
+// handle form submission
+function addNewIntervention() {
+  const new_start_year = start_year;
+  const new_tech = technology;
+  const new_allocations = allocations;
+
+  // Retrieve techConfig from the selected technology
+  const techConfig = listOfTech[new_tech];
+  // console.log("techConfig", techConfig);
+
+  // Example filters and priorities
+  const filters = [(b) => b.properties["substation_headroom"] >= 500];
+  const priorities = [{ name: "substation_capacity_rating", order: "asc" }];
+
+  addIntervention(
+    techConfig,
+    new_start_year,
+    new_allocations,
+    filters,
+    priorities
+  );
+}
+```
+
+```js
+let config = {
+  initial_year: Number(start_year),
+  rolledover_budget: 0,
+  yearly_budgets: allocations.map((item) => item.budget),
+  tech: {},
+  priorities: [],
+};
+
+const listOfTech = {
+  ASHP: {
+    name: "ASHP",
+    config: {
+      suitabilityKey: "ashp_suitability",
+      labourKey: "ashp_labour",
+      materialKey: "ashp_material",
+      savingsKey: "heat_demand",
+    },
+  },
+  PV: {
+    name: "PV",
+    config: {
+      suitabilityKey: "pv_suitability",
+      labourKey: "pv_labour",
+      materialKey: "pv_material",
+      savingsKey: "solar_generation",
+    },
+  },
+};
+
+function addTechConfig(techConfig) {
+  config.tech = {
+    name: techConfig.name,
+    config: techConfig.config,
+  };
+}
+
+function addPriority(name, order = "asc") {
+  const newPriority = {
+    name: name,
+    order: order,
+  };
+
+  config.priorities.push(newPriority);
+}
+
+function runModel(config, buildings) {
+  const model = new MiniDecarbModel(config, buildings);
+  model.runModel();
+  return model.getRecap();
+}
+
+// update config here
+// addTechConfig(listOfTech.ASHP);
+// // addPriority("substation_headroom", "asc");
 ```

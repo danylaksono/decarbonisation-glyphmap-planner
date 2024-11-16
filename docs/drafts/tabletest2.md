@@ -66,6 +66,9 @@ FROM oxford b;
 
 ```js
 const buildings = [...oxford_data];
+const flattenned = buildings.map((p) => ({ ...p }));
+// display(buildings);
+// display(flattenned);
 ```
 
 ```js
@@ -101,10 +104,14 @@ const [selected, setSelected] = useState({});
 ```js
 // const table = new createTable(buildings, cols, () => {});
 
-const table = new createTable(buildings.map( p => ({...p})), cols, (changes) => {
-  console.log("Table changed:", changes);
-  setSelected(changes.selection);
-});
+const table = new createTable(
+  buildings.map((p) => ({ ...p })),
+  cols,
+  (changes) => {
+    console.log("Table changed:", changes);
+    setSelected(changes.selection);
+  }
+);
 
 // const table = sorter_table.createTable(buildings, cols, () => {});
 ```

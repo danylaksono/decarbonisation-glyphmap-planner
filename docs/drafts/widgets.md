@@ -14,6 +14,8 @@ import { MiniDecarbModel } from "./../components/miniDecarbModel.js";
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 
+<link rel="stylesheet" href="./../styles/custom.css">
+
 ```js
 function useState(value) {
   const state = Mutable(value);
@@ -152,7 +154,9 @@ const { svg, getAllocations } = allocator.visualise(
   (changes) => {
     // console.log("data changed:", changes);
     setSelected(changes);
-  }
+  },
+  400,
+  200
 );
 display(svg);
 ```
@@ -527,4 +531,172 @@ All suitable buildings, with attribute showing intervention or non-intervention:
 
 ```js
 display(Inputs.table(results.allBuildings));
+```
+
+## Modal
+
+<button id="openModalBtn">Open Modal</button>
+
+<div class="modal" id="simpleModal">
+  <div class="modal-content">
+    <div class="modal-header">Are you sure?</div>
+    <p>You are about to confirm this action.</p>
+    <div class="modal-buttons">
+      <button class="btn-confirm" id="confirmBtn">Confirm</button>
+      <button class="btn-close" id="closeModalBtn">Close</button>
+    </div>
+  </div>
+</div>
+
+```js
+const openModalBtn = document.getElementById("openModalBtn");
+const closeModalBtn = document.getElementById("closeModalBtn");
+const confirmBtn = document.getElementById("confirmBtn");
+const modal = document.getElementById("simpleModal");
+
+// Open modal
+openModalBtn.addEventListener("click", () => {
+  modal.style.display = "flex";
+});
+
+// Close modal
+closeModalBtn.addEventListener("click", () => {
+  modal.style.display = "none";
+});
+
+// Confirm action
+confirmBtn.addEventListener("click", () => {
+  alert("Action confirmed!");
+  modal.style.display = "none";
+});
+
+// Close modal if clicking outside modal content
+window.addEventListener("click", (e) => {
+  if (e.target === modal) {
+    modal.style.display = "none";
+  }
+});
+```
+
+<button class="toggle-button" id="toggleButton">Click More</button>
+
+<div class="hidden-content" id="hiddenContent">
+  <h3>More Information</h3>
+  <p>
+    This is additional content that was hidden. You can toggle this visibility
+    by clicking the button again.
+  </p>
+</div>
+
+```js
+const toggleButton = document.getElementById("toggleButton");
+const hiddenContent = document.getElementById("hiddenContent");
+
+toggleButton.addEventListener("click", () => {
+  if (
+    hiddenContent.style.display === "none" ||
+    hiddenContent.style.display === ""
+  ) {
+    hiddenContent.style.display = "block";
+    toggleButton.textContent = "Show Less";
+  } else {
+    hiddenContent.style.display = "none";
+    toggleButton.textContent = "Click More";
+  }
+});
+```
+
+## Selectable list
+
+<ul id="selectableList"></ul>
+<div class="output" id="output">Selected ID: None</div>
+
+```js
+const items = [
+  { id: 1, name: "Item 1" },
+  { id: 2, name: "Item 2" },
+  { id: 3, name: "Item 3" },
+  { id: 4, name: "Item 4" },
+  { id: 5, name: "Item 5" },
+];
+
+// References to DOM elements
+const listElement = document.getElementById("selectableList");
+const outputElement = document.getElementById("output");
+
+// Render list items from JavaScript array
+items.forEach((item) => {
+  const listItem = document.createElement("li");
+  listItem.textContent = item.name;
+  listItem.dataset.id = item.id; // Store the ID in a data attribute
+
+  // Add click event listener for selecting
+  listItem.addEventListener("click", () => {
+    // Remove 'selected' class from all items
+    document
+      .querySelectorAll("#selectableList li")
+      .forEach((li) => li.classList.remove("selected"));
+    // Add 'selected' class to clicked item
+    listItem.classList.add("selected");
+    // Display selected ID
+    outputElement.textContent = `Selected ID: ${listItem.dataset.id}`;
+    setSelected(parseInt(listItem.dataset.id, 10));
+  });
+
+  // Create button container
+  const buttonContainer = document.createElement("div");
+  buttonContainer.className = "buttons";
+
+  // Edit button
+  const editButton = document.createElement("button");
+  editButton.innerHTML = '<i class="fas fa-edit"></i>';
+  editButton.addEventListener("click", (e) => {
+    e.stopPropagation(); // Prevent triggering list item click
+    const newName = prompt("Edit item name:", item.name);
+    if (newName) {
+      item.name = newName;
+      listItem.firstChild.textContent = newName;
+    }
+  });
+
+  // Remove button
+  const removeButton = document.createElement("button");
+  removeButton.innerHTML = '<i class="fas fa-trash-alt"></i>';
+  removeButton.addEventListener("click", (e) => {
+    e.stopPropagation(); // Prevent triggering list item click
+    listElement.removeChild(listItem); // Remove from DOM
+  });
+
+  // Append buttons to button container
+  buttonContainer.appendChild(editButton);
+  buttonContainer.appendChild(removeButton);
+
+  // Append button container to list item
+  listItem.appendChild(buttonContainer);
+
+  // Append list item to the list
+  listElement.appendChild(listItem);
+});
+```
+
+```js
+// const ul = html`<ul style="list-style: none; padding: 0;"></ul>`;
+
+// // Re-render the list whenever items change
+// function render() {
+//   ul.innerHTML = ""; // Clear previous content
+//   for (const item of items) {
+//     const li = html`<li
+//       style="display: flex; align-items: center; margin-bottom: 5px; padding: 10px;
+//         border: 1px solid #ddd; border-radius: 4px; background-color: #f9f9f9;"
+//     >
+//       <span style="flex-grow: 1; cursor: pointer;"> ${item.name} </span>
+//       <button style="margin-left: 10px;">Edit</button>
+//       <button style="margin-left: 10px;">Remove</button>
+//     </li>`;
+//     ul.appendChild(li);
+//   }
+// }
+
+display(selected);
 ```
