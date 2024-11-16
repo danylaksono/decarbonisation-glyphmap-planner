@@ -1,145 +1,29 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<title>Morphing Glyphmaps | Decarbonisation Glyphmap Planner</title>
+<title>Decarbonisation Planner | Decarbonisation Glyphmap Planner</title>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Source+Serif+Pro:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&amp;display=swap" crossorigin>
-<link rel="preload" as="style" href="./_observablehq/theme-air,near-midnight,alt,wide.css">
+<link rel="preload" as="style" href="./_observablehq/theme-air,near-midnight.css">
 <link rel="preload" as="style" href="./_observablehq/stdlib/inputs.css">
 <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css2?family=Source+Serif+Pro:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&amp;display=swap" crossorigin>
-<link rel="stylesheet" type="text/css" href="./_observablehq/theme-air,near-midnight,alt,wide.css">
+<link rel="stylesheet" type="text/css" href="./_observablehq/theme-air,near-midnight.css">
 <link rel="stylesheet" type="text/css" href="./_observablehq/stdlib/inputs.css">
 <link rel="modulepreload" href="./_observablehq/client.js">
 <link rel="modulepreload" href="./_observablehq/runtime.js">
 <link rel="modulepreload" href="./_observablehq/stdlib.js">
-<link rel="modulepreload" href="./_node/@turf/turf@7.1.0/index.js">
-<link rel="modulepreload" href="./_npm/d3-require@1.3.0/_esm.js">
-<link rel="modulepreload" href="./_import/components/radialglyph.e10c9304.js">
-<link rel="modulepreload" href="./_import/components/gridded-glyphmaps/index.min.e22a1d11.js">
-<link rel="modulepreload" href="./_import/components/osgb/index.1d2476df.js">
-<link rel="modulepreload" href="./_import/components/utils.ec49f1d6.js">
+<link rel="modulepreload" href="./_import/components/glyph-designs/timeGlyph.30b74103.js">
+<link rel="modulepreload" href="./_import/components/model.0139f19a.js">
+<link rel="modulepreload" href="./_npm/maplibre-gl@2.0.0/_esm.js">
+<link rel="modulepreload" href="./_import/components/budgetAllocator.46c04ac3.js">
+<link rel="modulepreload" href="./_import/components/miniDecarbModel.d0583510.js">
+<link rel="modulepreload" href="./_import/components/sorterTable.02180658.js">
 <link rel="modulepreload" href="./_npm/d3@7.9.0/_esm.js">
-<link rel="modulepreload" href="./_import/components/osgb/ellipsoid.1ac4eba6.js">
-<link rel="modulepreload" href="./_npm/topojson-client@3.1.0/_esm.js">
-<link rel="modulepreload" href="./_npm/lodash@4.17.21/_esm.js">
 <link rel="modulepreload" href="./_observablehq/stdlib/duckdb.js">
 <link rel="modulepreload" href="./_npm/htl@0.3.1/_esm.js">
 <link rel="modulepreload" href="./_observablehq/stdlib/inputs.js">
-<link rel="modulepreload" href="./_npm/@observablehq/plot@0.6.16/_esm.js">
 <link rel="modulepreload" href="./_npm/@duckdb/duckdb-wasm@1.28.0/_esm.js">
 <link rel="modulepreload" href="./_npm/isoformat@0.2.1/_esm.js">
-<link rel="modulepreload" href="./_node/@turf/along@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/angle@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/area@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/bbox@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/bbox-clip@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/bbox-polygon@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/bearing@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/bezier-spline@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/boolean-clockwise@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/boolean-concave@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/boolean-contains@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/boolean-crosses@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/boolean-disjoint@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/boolean-equal@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/boolean-intersects@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/boolean-overlap@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/boolean-parallel@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/boolean-point-in-polygon@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/boolean-point-on-line@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/boolean-touches@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/boolean-valid@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/boolean-within@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/buffer@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/center@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/center-mean@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/center-median@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/center-of-mass@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/centroid@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/circle@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/clean-coords@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/clone@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/clusters@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/clusters-dbscan@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/clusters-kmeans@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/collect@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/combine@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/concave@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/convex@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/destination@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/difference@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/dissolve@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/distance@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/distance-weight@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/ellipse@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/envelope@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/explode@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/flatten@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/flip@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/geojson-rbush@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/great-circle@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/helpers@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/hex-grid@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/interpolate@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/intersect@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/invariant@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/isobands@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/isolines@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/kinks@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/length@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/line-arc@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/line-chunk@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/line-intersect@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/line-offset@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/line-overlap@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/line-segment@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/line-slice@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/line-slice-along@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/line-split@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/line-to-polygon@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/mask@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/meta@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/midpoint@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/moran-index@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/nearest-neighbor-analysis@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/nearest-point@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/nearest-point-on-line@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/nearest-point-to-line@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/planepoint@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/point-grid@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/point-on-feature@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/points-within-polygon@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/point-to-line-distance@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/polygonize@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/polygon-smooth@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/polygon-tangents@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/polygon-to-line@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/projection@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/quadrat-analysis@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/random@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/rectangle-grid@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/rewind@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/rhumb-bearing@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/rhumb-destination@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/rhumb-distance@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/sample@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/sector@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/shortest-path@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/simplify@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/square@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/square-grid@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/standard-deviational-ellipse@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/tag@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/tesselate@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/tin@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/transform-rotate@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/transform-scale@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/transform-translate@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/triangle-grid@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/truncate@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/union@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/unkink-polygon@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/voronoi@7.1.0/index.js">
 <link rel="modulepreload" href="./_npm/d3-array@3.2.4/_esm.js">
 <link rel="modulepreload" href="./_npm/d3-axis@3.0.0/_esm.js">
 <link rel="modulepreload" href="./_npm/d3-brush@3.0.0/_esm.js">
@@ -170,32 +54,11 @@
 <link rel="modulepreload" href="./_npm/d3-timer@3.0.1/_esm.js">
 <link rel="modulepreload" href="./_npm/d3-transition@3.0.1/_esm.js">
 <link rel="modulepreload" href="./_npm/d3-zoom@3.0.0/_esm.js">
-<link rel="modulepreload" href="./_npm/interval-tree-1d@1.0.4/_esm.js">
 <link rel="modulepreload" href="./_npm/apache-arrow@18.0.0/_esm.js">
-<link rel="modulepreload" href="./_node/geojson-equality-ts@1.0.2/index.js">
-<link rel="modulepreload" href="./_node/point-in-polygon-hao@1.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/jsts@2.7.1/index.js">
-<link rel="modulepreload" href="./_node/d3-geo@1.7.1/index.js">
-<link rel="modulepreload" href="./_node/rbush@3.0.1/index.js">
-<link rel="modulepreload" href="./_node/skmeans@0.9.7/index.js">
-<link rel="modulepreload" href="./_node/topojson-client@3.1.0/index.js">
-<link rel="modulepreload" href="./_node/topojson-server@3.0.1/index.js">
-<link rel="modulepreload" href="./_node/concaveman@1.2.1/index.js">
-<link rel="modulepreload" href="./_node/polygon-clipping@0.15.7/index.js">
-<link rel="modulepreload" href="./_node/marchingsquares@1.3.3/index.js">
-<link rel="modulepreload" href="./_node/sweepline-intersections@1.5.0/index.js">
-<link rel="modulepreload" href="./_node/fast-deep-equal@3.1.3/index.js">
-<link rel="modulepreload" href="./_node/earcut@2.2.4/index.js">
-<link rel="modulepreload" href="./_node/d3-voronoi@1.1.2/index.js">
 <link rel="modulepreload" href="./_npm/internmap@2.0.3/_esm.js">
 <link rel="modulepreload" href="./_npm/delaunator@5.0.1/_esm.js">
-<link rel="modulepreload" href="./_npm/binary-search-bounds@2.0.5/_esm.js">
 <link rel="modulepreload" href="./_npm/tslib@2.8.1/_esm.js">
 <link rel="modulepreload" href="./_npm/flatbuffers@24.3.25/_esm.js">
-<link rel="modulepreload" href="./_node/d3-array@1.2.4/index.js">
-<link rel="modulepreload" href="./_node/tinyqueue@2.0.3/index.js">
-<link rel="modulepreload" href="./_node/point-in-polygon@1.1.0/index.js">
-<link rel="modulepreload" href="./_node/robust-predicates@2.0.4/umd/orient2d.min.js">
 <link rel="modulepreload" href="./_npm/robust-predicates@3.0.2/_esm.js">
 <script type="module">
 
@@ -203,1384 +66,498 @@ import {define} from "./_observablehq/client.js";
 import {registerFile, FileAttachment} from "./_observablehq/stdlib.js";
 import {registerTable} from "./_observablehq/stdlib/duckdb.js";
 
-registerFile("./data/census_data_output.parquet", {"name":"./data/census_data_output.parquet","path":"./_file/data/census_data_output.1374b127.parquet","lastModified":1731655360859});
-registerFile("./data/geo.csv", {"name":"./data/geo.csv","mimeType":"text/csv","path":"./_file/data/geo.8ba75b99.csv","lastModified":1731655360875});
-registerTable("geo", FileAttachment("./data/geo.csv"));
-registerTable("census_data_source", FileAttachment("./data/census_data_output.parquet"));
+registerFile("./data/oxford_decarbonisation_data.parquet", {"name":"./data/oxford_decarbonisation_data.parquet","path":"./_file/data/oxford_decarbonisation_data.28ee7510.parquet","lastModified":1731794591395});
+registerTable("oxford", FileAttachment("./data/oxford_decarbonisation_data.parquet"));
 
-define({id: "1f3981d9", outputs: ["turf","require","d3","flubber","RadialGlyph","glyphMap","createDiscretiserValue","_drawCellBackground","OSGB","downloadBoundaries","joinCensusDataToGeoJSON","convertGridCsvToGeoJson","context2d"], body: async () => {
-const [turf, {require}, {RadialGlyph}, {glyphMap, createDiscretiserValue, _drawCellBackground}, {OSGB}, {downloadBoundaries, joinCensusDataToGeoJSON, convertGridCsvToGeoJson, context2d}] = await Promise.all([import("./_node/@turf/turf@7.1.0/index.js"), import("./_npm/d3-require@1.3.0/_esm.js"), import("./_import/components/radialglyph.e10c9304.js"), import("./_import/components/gridded-glyphmaps/index.min.e22a1d11.js"), import("./_import/components/osgb/index.1d2476df.js"), import("./_import/components/utils.ec49f1d6.js")]);
-// import * as d3 from "npm:d3";
-const d3 = require("d3", "d3-geo-projection");
-const flubber = require("flubber@0.4");
-// import {
-//   inSituMorphMouse,
-//   prepareGeoJsonForMorphingLib,
-// } from "./components/morpher.js";
-return {turf,require,d3,flubber,RadialGlyph,glyphMap,createDiscretiserValue,_drawCellBackground,OSGB,downloadBoundaries,joinCensusDataToGeoJSON,convertGridCsvToGeoJson,context2d};
+define({id: "91188f07", outputs: ["TimeGlyph","GlyphCollection","Model","maplibregl","Mutable","BudgetAllocator","MiniDecarbModel","createTable"], body: async () => {
+const [{TimeGlyph, GlyphCollection}, {Model}, {default: maplibregl}, {Mutable}, {BudgetAllocator}, {MiniDecarbModel}, {createTable}] = await Promise.all([import("./_import/components/glyph-designs/timeGlyph.30b74103.js"), import("./_import/components/model.0139f19a.js"), import("./_npm/maplibre-gl@2.0.0/_esm.js"), import("./_observablehq/stdlib.js"), import("./_import/components/budgetAllocator.46c04ac3.js"), import("./_import/components/miniDecarbModel.d0583510.js"), import("./_import/components/sorterTable.02180658.js")]);
+
+
+return {TimeGlyph,GlyphCollection,Model,maplibregl,Mutable,BudgetAllocator,MiniDecarbModel,createTable};
 }});
 
-define({id: "5dd85f8f", inputs: ["OSGB"], outputs: ["proj"], body: (OSGB) => {
-const proj = new OSGB();
-return {proj};
+define({id: "6949098a", inputs: ["sql"], outputs: ["oxford_data"], body: async (sql) => {
+const oxford_data = await sql`  SELECT DISTINCT
+    "LSOA code" AS lsoa,
+    "MSOA code" AS msoa,
+    "Air Source Heat Pump Potential_Building Size (m^2)" AS building_area,
+    "Air Source Heat Pump Potential_Garden Area (m^2)" AS garden_area,
+    "Air Source Heat Pump Potential_Overall Suitability Rating" AS ashp_suitability,
+    "Air Source Heat Pump Potential_Recommended Heat Pump Size [kW]" AS ashp_size,
+    "Low Carbon Technology Costs_Air Source Heat Pump - Labour" AS ashp_labour,
+    "Low Carbon Technology Costs_Air Source Heat Pump - Material" AS ashp_material,
+    "Low Carbon Technology Costs_Air Source Heat Pump - Total" AS ashp_total,
+    "Domestic Ground Source Heat Pump Potential_Overall Suitability Rating" AS gshp_suitability,
+    "Domestic Ground Source Heat Pump Potential_Recommended Heat Pump Size [kW]" AS gshp_size,
+    "Low Carbon Technology Costs_Ground Source Heat Pump - Labour" AS gshp_labour,
+    "Low Carbon Technology Costs_Ground Source Heat Pump - Materials" AS gshp_material,
+    "Low Carbon Technology Costs_Ground Source Heat Pump - Total" AS gshp_total,
+    "Domestic Heat Demand_Annual Heat Demand (kWh)" AS heat_demand,
+    "Domestic Insulation Potential_EPC Rating" AS insulation_rating,
+    "Domestic Insulation Potential_Insulation - Cavity Wall" AS insulation_cwall,
+    "Low Carbon Technology Costs_Insulation - Cavity Wall - Labour" AS insulation_cwall_labour,
+    "Low Carbon Technology Costs_Insulation - Cavity Wall  - Materials" AS insulation_cwall_materials,
+    "Low Carbon Technology Costs_Insulation - Cavity Wall - Total" AS insulation_cwall_total,
+    "Domestic Insulation Potential_Insulation - External Wall" AS insulation_ewall,
+    "Low Carbon Technology Costs_Insulation - External Wall - Labour" AS insulation_ewall_labour,
+    "Low Carbon Technology Costs_Insulation - External Wall - Material" AS insulation_ewall_materials,
+    "Low Carbon Technology Costs_Insulation - External Wall - Total" AS insulation_ewall_total,
+    "Domestic Insulation Potential_Insulation - Roof" AS insulation_roof,
+    "Low Carbon Technology Costs_Insulation - Loft - Labour" AS insulation_roof_labour,
+    "Low Carbon Technology Costs_Insulation - Loft - Material" AS insulation_roof_materials,
+    "Low Carbon Technology Costs_Insulation - Loft - Total" AS insulation_roof_total,
+    "Domestic Insulation Potential_Insulation - Under Floor" AS insulation_floor,
+    "Low Carbon Technology Costs_Insulation - Under Floor - Labour" AS insulation_floor_labour,
+    "Low Carbon Technology Costs_Insulation - Under Floor - Material" AS insulation_floor_materials,
+    "Low Carbon Technology Costs_Insulation - Under Floor- Total" AS insulation_floor_total,
+    "Domestic PV Potential_Overall Suitability" AS pv_suitability,
+    "Domestic PV Potential_Recommended Array Size [kW]" AS pv_size,
+    "Domestic PV Potential_Annual Generation [kWh]" AS pv_generation,
+    "Low Carbon Technology Costs_Rooftop PV - Labour" AS pv_labour,
+    "Low Carbon Technology Costs_Rooftop PV - Materials" AS pv_material,
+    "Low Carbon Technology Costs_Rooftop PV - Total" AS pv_total,
+    "Substation Name" AS substation_name,
+    "Substation - CapacityRating" AS substation_capacity_rating,
+    "Substation - Peakload" AS substation_peakload,
+    "Substation - Headroom" AS substation_headroom,
+    "Substation - % headroom" AS substation_headroom_pct,
+    "Substation - Demand_rag" AS substation_demand
+FROM oxford b;`;
+return {oxford_data};
 }});
 
-define({id: "71bd6feb", mode: "inline", inputs: ["geogNameInput","display"], body: async (geogNameInput,display) => {
+define({id: "28c25a2a", inputs: ["oxford_data"], outputs: ["buildingsData","flatData","allColumns"], body: (oxford_data) => {
+const buildingsData = [...oxford_data];
+const flatData = buildingsData.map((p) => ({ ...p }));
+const allColumns = Object.keys(buildingsData[0]);
+return {buildingsData,flatData,allColumns};
+}});
+
+define({id: "d47e63b1", inputs: ["Mutable"], outputs: ["useState","selected","setSelected","getIntervention","setIntervention","getResults","setResults","selectedIntervention","setSelectedIntervention"], body: (Mutable) => {
+function useState(value) {
+  const state = Mutable(value);
+  const setState = (value) => (state.value = value);
+  return [state, setState];
+}
+const [selected, setSelected] = useState({});
+const [getIntervention, setIntervention] = useState([]);
+const [getResults, setResults] = useState([]);
+const [selectedIntervention, setSelectedIntervention] = useState(null);
+return {useState,selected,setSelected,getIntervention,setIntervention,getResults,setResults,selectedIntervention,setSelectedIntervention};
+}});
+
+define({id: "437e2ff2", mode: "inline", inputs: ["techsInput","display"], body: async (techsInput,display) => {
 display(await(
-geogNameInput
+techsInput
 ))
 }});
 
-define({id: "c0e452dc", mode: "inline", inputs: ["glyphmapTypeInput","display"], body: async (glyphmapTypeInput,display) => {
+define({id: "a4ca7b63", mode: "inline", inputs: ["totalBudgetInput","display"], body: async (totalBudgetInput,display) => {
 display(await(
-glyphmapTypeInput
+totalBudgetInput
 ))
 }});
 
-define({id: "d5a91e5c", mode: "inline", inputs: ["tInput","display"], body: async (tInput,display) => {
+define({id: "c73bfedc", mode: "inline", inputs: ["startYearInput","display"], body: async (startYearInput,display) => {
 display(await(
-tInput
+startYearInput
 ))
 }});
 
-define({id: "271c02bf", mode: "inline", inputs: ["resize","createGlyphMap","glyphmapType","display"], body: async (resize,createGlyphMap,glyphmapType,display) => {
+define({id: "580b039d", mode: "inline", inputs: ["projectLengthInput","display"], body: async (projectLengthInput,display) => {
 display(await(
-resize((width, height) => createGlyphMap(glyphmapType, {width, height}))
+projectLengthInput
 ))
 }});
 
-define({id: "2ad25b31", mode: "inline", inputs: ["Plot","dataInMorph","display"], body: async (Plot,dataInMorph,display) => {
+define({id: "92cf87a9", mode: "inline", inputs: ["allocationTypeInput","display"], body: async (allocationTypeInput,display) => {
 display(await(
-Plot.geo(dataInMorph).plot({projection: { type: "identity", domain: dataInMorph }})
+allocationTypeInput
 ))
 }});
 
-define({id: "17a1fc11", inputs: ["Inputs","list_la","Generators"], outputs: ["localAuthorityInput","local_authority"], body: (Inputs,list_la,Generators) => {
-const localAuthorityInput = Inputs.select(
-  [...list_la].map((item) => item.label),
+define({id: "acdb1373", mode: "inline", inputs: ["svg","display"], body: async (svg,display) => {
+display(await(
+svg
+))
+}});
+
+define({id: "bc6d8af2", mode: "inline", inputs: ["priorityInput","display"], body: async (priorityInput,display) => {
+display(await(
+priorityInput
+))
+}});
+
+define({id: "d2a5955e", mode: "inline", inputs: ["filterInput","display"], body: async (filterInput,display) => {
+display(await(
+filterInput
+))
+}});
+
+define({id: "61c03daa", mode: "inline", inputs: ["html","addNewIntervention","display"], body: async (html,addNewIntervention,display) => {
+display(await(
+html`<button class="create-btn" type="button" onclick=${addNewIntervention}>
+          Add New Intervention
+        </button>`
+))
+}});
+
+define({id: "7388e6e9", mode: "inline", inputs: ["Inputs","selectedIntervention","display"], body: async (Inputs,selectedIntervention,display) => {
+display(await(
+Inputs.table(selectedIntervention.allBuildings.map((building) => ({
+        ...building.properties,
+      }))
+      )
+))
+}});
+
+define({id: "fdc077a6", mode: "inline", inputs: ["html","interventions","selectIntervention","removeIntervention","display"], body: async (html,interventions,selectIntervention,removeIntervention,display) => {
+display(await(
+html`${interventions.map(
+              (config, index) =>
+                html`<li
+                  onclick=${() => selectIntervention(index)} 
+                  style="cursor: pointer; padding: 8px; border-bottom: 1px solid #ddd;"
+                >
+                  <span>${config.tech.name} (Start Year: ${config.initial_year})</span>
+                  <button
+                    onclick=${(e) => {
+                      e.stopPropagation(); // Prevent the click event on the list item
+                      removeIntervention(index);
+                    }}
+                    style="border:none; background:none; cursor:pointer; margin-left: 8px;"
+                  >
+                    <i class="fas fa-edit" style="color:green;"></i>
+                    <i class="fas fa-trash" style="color:red;"></i>
+                  </button>
+                </li>`
+            )}`
+))
+}});
+
+define({id: "1947ba21", inputs: ["setSelectedIntervention","results"], outputs: ["selectedInterventionIndex","selectIntervention"], body: (setSelectedIntervention,results) => {
+// for dealing with selected list items
+let selectedInterventionIndex = null; // Track the selected intervention index
+
+function selectIntervention(index) {
+  // Update the selected index
+  selectedInterventionIndex = index;
+
+  // Clear previous selection
+  document
+    .querySelectorAll("#interventions-list li")
+    .forEach((li) => li.classList.remove("selected"));
+
+  // Highlight the selected item
+  const selectedItem = document.querySelector(
+    `#interventions-list li:nth-child(${index + 1})`
+  );
+  setSelectedIntervention(results[selectedInterventionIndex]);
+  // console.log("selectedItem: ", results[selectedInterventionIndex]);
+  // setSelectedIntervention(selectedItem);
+  if (selectedItem) selectedItem.classList.add("selected");
+}
+return {selectedInterventionIndex,selectIntervention};
+}});
+
+define({id: "143f3770", inputs: ["Inputs","html","Generators","Event","allColumns"], outputs: ["techsInput","technology","totalBudgetInput","total_budget","startYearInput","start_year","projectLengthInput","project_length","allocationTypeInput","allocation_type","priorityInput","priority_input","filterInput","filter_input"], body: (Inputs,html,Generators,Event,allColumns) => {
+// list of decarb technologies
+const techsInput = Inputs.select(
+  [
+    "PV",
+    "ASHP",
+    "GSHP",
+    "Insulation - Cavity Wall",
+    "Insulation - External Wall",
+    "Insulation - Roof",
+    "Insulation - Under Floor",
+  ],
   {
-    value: "Bradford",
-    label: "Local Authority:",
+    label: html`<b>Technology</b>`,
+    value: "ASHP",
   }
 );
-const local_authority = Generators.input(localAuthorityInput);
-return {localAuthorityInput,local_authority};
-}});
+const technology = Generators.input(techsInput);
+// display(techsInput);
 
-define({id: "0bef96a5", inputs: ["Inputs","Generators"], outputs: ["geogNameInput","geogName"], body: (Inputs,Generators) => {
-const geogNameInput = Inputs.radio(["LSOA", "MSOA"], {
-  value: "MSOA",
-  label: "Geography",
+// Total Budget
+const totalBudgetInput = Inputs.text({
+  label: html`<b>Total Budget</b>`,
+  placeholder: "Available Budget in GBP",
+  value: 100_000_000,
+  // submit: html`<button class="create-btn" style="color:white;">Submit</button>`,
 });
+totalBudgetInput.style["max-width"] = "300px";
+const total_budget = Generators.input(totalBudgetInput);
 
-const geogName = Generators.input(geogNameInput);
-// display(geogName);
-return {geogNameInput,geogName};
-}});
+// Start Year
+const startYearInput = Inputs.text({
+  label: html`<b>Start Year</b>`,
+  placeholder: "Starting year?",
+  value: 2024,
+  // submit: html`<button class="create-btn" style="color:white;">Submit</button>`,
+});
+startYearInput.style["max-width"] = "300px";
+// console.log("startYearInput.style", startYearInput.columns);
+const start_year = Generators.input(startYearInput);
 
-define({id: "5428040c", inputs: ["html","Generators"], outputs: ["tInput","t"], body: (html,Generators) => {
-const tInput = html`<input
-  style="width: 100%; max-width:200px;"
-  type="range"
-  step="0.05"
-  min="0"
-  max="1"
-/>`;
+// Project Length
+const projectLengthInput = Inputs.range([0, 20], {
+  // label: html`<b>Project length in years</b>`,
+  step: 1,
+  value: 10,
+});
+projectLengthInput.number.style["max-width"] = "60px";
+Object.assign(projectLengthInput, {
+  oninput: (event) => event.isTrusted && event.stopImmediatePropagation(),
+  onchange: (event) => event.currentTarget.dispatchEvent(new Event("input")),
+});
+const project_length = Generators.input(projectLengthInput);
 
-const t = Generators.input(tInput);
-return {tInput,t};
-}});
+// Allocation Type
+const allocationTypeInput = Inputs.radio(["linear", "sqrt", "exp", "cubic"], {
+  // label: html`<b>Allocation Type</b>`,
+  value: "linear",
+});
+const allocation_type = Generators.input(allocationTypeInput);
 
-define({id: "2bfedaef", inputs: ["list_la","local_authority","geogName"], outputs: ["la_code","geogBoundary"], body: (list_la,local_authority,geogName) => {
-const la_code = [...list_la].find((row) => row.label === local_authority).code;
-const geogBoundary = geogName.toLowerCase() + "s";
-return {la_code,geogBoundary};
-}});
-
-define({id: "ac7e408e", inputs: ["sql"], outputs: ["list_la"], body: async (sql) => {
-const list_la = await sql`select distinct label, code from geo where geography = 'LA' order by label`;
-return {list_la};
-}});
-
-define({id: "cad06486", inputs: ["sql","geogName","la_code"], outputs: ["list_of_codes"], body: async (sql,geogName,la_code) => {
-const list_of_codes = await sql`SELECT code
-FROM geo
-WHERE geo.geography = (SELECT replace(${geogName}, '"', ''''))
-AND geo.LA = (SELECT replace(${la_code}, '"', ''''))`;
-return {list_of_codes};
-}});
-
-define({id: "6542bf3e", inputs: ["list_of_codes","downloadBoundaries","geogBoundary"], outputs: ["list_of_code","regular_geodata"], body: async (list_of_codes,downloadBoundaries,geogBoundary) => {
-const list_of_code = [...list_of_codes].map((row) => row.code);
-const regular_geodata = await downloadBoundaries(geogBoundary, list_of_code);
-// display(regular_geodata);
-return {list_of_code,regular_geodata};
-}});
-
-define({id: "0edc8540", inputs: ["d3","convertGridCsvToGeoJson","local_authority","geogBoundary","turf","regular_geodata","display"], outputs: ["convertGridIfExists","filename","bb","grid_geodata"], body: async (d3,convertGridCsvToGeoJson,local_authority,geogBoundary,turf,regular_geodata,display) => {
-async function convertGridIfExists(filename, bb) {
-  // take from stored preprocessed grids for now
-  // future version will use the grid generation code
-  const gridPath = `https://www.danylaksono.com/datasets/cartogram/${filename}.csv`;
-
-  try {
-    const gridCsv = await d3.csv(gridPath);
-    return convertGridCsvToGeoJson(gridCsv, bb);
-  } catch (error) {
-    // console.log(`Grid file ${filename}.csv not found or couldn't be loaded.`);
-    return error;
-  }
-}
-
-const filename = `${local_authority.toLowerCase()}_${geogBoundary}_grids`;
-const bb = turf.bbox(regular_geodata);
-
-// display(filename);
-
-const grid_geodata = await convertGridIfExists(filename, bb);
-if (grid_geodata instanceof Error) {
-  display("Grid file not found or couldn't be loaded.");
-  // return;
-}
-// display(bb);
-// display(grid_geodata);
-return {convertGridIfExists,filename,bb,grid_geodata};
-}});
-
-define({id: "47b53055", inputs: ["sql"], outputs: ["census_data"], body: async (sql) => {
-const census_data = await sql`--  Load the census data --
-select * from census_data_source;`;
-return {census_data};
-}});
-
-define({id: "ad7c741c", inputs: ["regular_geodata_withcensus","d3","_"], outputs: ["normalizeValue","data"], body: (regular_geodata_withcensus,d3,_) => {
-// normalise the data
-function normalizeValue(paramName, value) {
-  const values = regular_geodata_withcensus.features.map(
-    (feature) => feature.properties[paramName]
-  );
-  const min = d3.min(values);
-  const max = d3.max(values);
-
-  return (value - min) / (max - min);
-}
-
-const data = _.keyBy(
-  regular_geodata_withcensus.features.map((feat) => {
-    return {
-      code: feat.properties.code,
-      population: +feat.properties.population,
-      data: feat.properties,
-      deprivation: normalizeValue(
-        "deprivation_value",
-        feat.properties.deprivation_value
-      ),
-      vehicle: normalizeValue("vehicle_value", feat.properties.vehicle_value),
-      heating: normalizeValue("heating_value", feat.properties.heating_value),
-      health: normalizeValue("health_value", feat.properties.health_value),
-    };
+const priorityInput = Inputs.form([
+  Inputs.select([...allColumns, "None"], {
+    label: html`<b>Sorting Priority</b>`,
+    value: "None",
   }),
-  "code"
+  Inputs.radio(["asc", "desc"], {
+    label: "Order",
+    value: "asc",
+  }),
+]);
+const priority_input = Generators.input(priorityInput);
+
+const filterInput = Inputs.form([
+  Inputs.select([...allColumns, "None"], {
+    label: html`<b>Filter Column</b>`,
+    value: "None",
+  }),
+  Inputs.text({
+    label: "Filter Value",
+    placeholder: "Enter filter value",
+  }),
+]);
+const filter_input = Generators.input(filterInput);
+return {techsInput,technology,totalBudgetInput,total_budget,startYearInput,start_year,projectLengthInput,project_length,allocationTypeInput,allocation_type,priorityInput,priority_input,filterInput,filter_input};
+}});
+
+define({id: "fbf1b5a3", inputs: ["BudgetAllocator","total_budget","start_year","project_length","allocation_type"], outputs: ["allocator","initialAllocations"], body: (BudgetAllocator,total_budget,start_year,project_length,allocation_type) => {
+// Budget Allocator
+const allocator = new BudgetAllocator(
+  total_budget,
+  Number(start_year),
+  Number(project_length)
 );
 
-// display(data);
-return {normalizeValue,data};
+let initialAllocations;
+if (allocation_type === "linear") {
+  initialAllocations = allocator.allocateLinear();
+} else {
+  initialAllocations = allocator.allocateCustom(allocation_type);
+}
+return {allocator,initialAllocations};
 }});
 
-define({id: "f56eeb6b", body: () => {
-// display(
-//   prepareGeoJsonForMorphingLib(regular_geodata, regular_geodata, 300, 300)
-// );
-
-}});
-
-define({id: "5acb849c", inputs: ["d3","data","prepareGeoJsonForMorphingLib","regular_geodata","local_authority","geogName","grid_geodata"], outputs: ["colourScalePop","layouts"], body: (d3,data,prepareGeoJsonForMorphingLib,regular_geodata,local_authority,geogName,grid_geodata) => {
-const colourScalePop = d3
-  .scaleSequential(d3.interpolateBlues)
-  .domain([0, d3.max(Object.values(data).map((row) => row.population))]);
-
-const layouts = [
-  {
-    shapes: prepareGeoJsonForMorphingLib(
-      regular_geodata,
-      regular_geodata,
-      200,
-      200
-    ),
-    colourFn: (key) => colourScalePop(data[key].population),
-    description: local_authority + " " + geogName + " Choropleth Map.",
+define({id: "39e29da4", inputs: ["allocator","initialAllocations","setSelected"], outputs: ["svg","getAllocations"], body: (allocator,initialAllocations,setSelected) => {
+const { svg, getAllocations } = allocator.visualise(
+  initialAllocations,
+  (changes) => {
+    // console.log("data changed:", changes);
+    setSelected(changes);
   },
-  {
-    shapes: prepareGeoJsonForMorphingLib(
-      grid_geodata,
-      regular_geodata,
-      200,
-      200
-    ),
-    colourFn: (key) => colourScalePop(data[key].population),
-    description: local_authority + " " + geogName + "Gridmaps.",
-  },
-];
-
-// const morphers = inSituMorphMouse({
-//   interactive: true,
-//   showDescription: false,
-//   layouts,
-// });
-return {colourScalePop,layouts};
+  400,
+  200
+);
+// display(results);
+return {svg,getAllocations};
 }});
 
-define({id: "1f74eb9f", body: () => {
-// using observable framework resize callback function
-// const morphers = resize((width, height) =>
-//   inSituMorphMouse(
-//     {
-//       interactive: true,
-//       showDescription: false,
-//       layouts2,
-//       width,
-//     },
-//     width
-//   )
-// );
-
-// display(morphers);
+define({id: "30ef2d9c", inputs: ["allocation_type","selected","getAllocations","initialAllocations"], outputs: ["allocations"], body: (allocation_type,selected,getAllocations,initialAllocations) => {
+// set allocation based on custom graph
+allocation_type;
+const allocations = selected ? getAllocations(selected) : initialAllocations;
+// display(interventions);
+return {allocations};
 }});
 
-define({id: "48878e8b", inputs: ["prepareGeoJsonForMorphingLib","flubber"], outputs: ["extractCoordinatesForFlubber","interpolateGeoShapes","convertToGeoJSON"], body: (prepareGeoJsonForMorphingLib,flubber) => {
-const extractCoordinatesForFlubber = (features) => {
-  return features.map((feature) => {
-    const { type, coordinates } = feature.geometry;
+define({id: "def3b8eb", inputs: ["getIntervention","getResults"], outputs: ["interventions","results"], body: (getIntervention,getResults) => {
+// store intervention results
+let interventions = getIntervention;
+let results = getResults;
+return {interventions,results};
+}});
 
-    if (type === "Polygon") {
-      return coordinates[0]; // Use the first ring in the polygon
-    } else if (type === "MultiPolygon") {
-      return coordinates.flat(2); // Flatten MultiPolygon into a single array of points
-    } else {
-      throw new Error(`Unsupported geometry type: ${type}`);
-    }
-  });
-};
-
-const interpolateGeoShapes = (geography, cartogram, w, h) => {
-  const geogProjected = prepareGeoJsonForMorphingLib(
-    geography,
-    geography,
-    w,
-    h
-  );
-  const cartProjected = prepareGeoJsonForMorphingLib(
-    cartogram,
-    geography,
-    w,
-    h
-  );
-
-  const geogCoords = extractCoordinatesForFlubber(Object.values(geogProjected));
-  const cartCoords = extractCoordinatesForFlubber(Object.values(cartProjected));
-
-  // console.log("geogCoords", geogCoords);
-
-  const interpolator = flubber.interpolateAll(geogCoords, cartCoords, {
-    string: false,
-    single: true,
-  });
-
-  return (t) => {
-    const interpolatedCoords = interpolator(t);
-    return Object.keys(geogProjected).reduce((acc, code, index) => {
-      acc[code] = {
-        ...geogProjected[code],
-        geometry: {
-          ...geogProjected[code].geometry,
-          coordinates: [interpolatedCoords[index]],
-        },
-      };
-      return acc;
-    }, {});
-  };
-};
-
-function convertToGeoJSON(interpolatedShapes) {
-  // console.log("interpolatedShapes", interpolatedShapes);
+define({id: "7b8b3e59", inputs: ["setIntervention","interventions","runModel","buildingsData","setResults","results","start_year","technology","allocations","listOfTech"], outputs: ["createConfigTemplate","addIntervention","removeIntervention","addNewIntervention"], body: (setIntervention,interventions,runModel,buildingsData,setResults,results,start_year,technology,allocations,listOfTech) => {
+// create config template
+function createConfigTemplate(start_year, allocations) {
   return {
-    type: "FeatureCollection",
-    features: Object.entries(interpolatedShapes).map(([code, feature]) => ({
-      type: "Feature",
-      properties: {
-        ...feature.properties,
-        code: code,
-      },
-      geometry: {
-        type: feature.geometry.type,
-        coordinates: feature.geometry.coordinates,
-      },
-    })),
+    initial_year: Number(start_year),
+    rolledover_budget: 0,
+    yearly_budgets: allocations.map((item) => item.budget),
+    tech: {},
+    priorities: [],
+    filters: [],
   };
 }
-return {extractCoordinatesForFlubber,interpolateGeoShapes,convertToGeoJSON};
-}});
 
-define({id: "4461947e", inputs: ["d3"], outputs: ["createGeometryInverter"], body: (d3) => {
-function createGeometryInverter(originalGeography, width, height) {
-  // Create the same projection used in the original transformation
-  const projection = d3
-    .geoIdentity()
-    .reflectY(true)
-    .fitExtent(
-      [
-        [0, 0],
-        [width, height],
-      ],
-      originalGeography
-    );
+// add new intervention
+function addIntervention(
+  techConfig,
+  start_year,
+  allocation,
+  filters = [],
+  priorities = []
+) {
+  const config = createConfigTemplate(start_year, allocation);
+  // console.log("configuration sent", config);
 
-  // Create the inverse function
-  const inverseProjection = projection.invert;
-
-  // Function to invert a single coordinate pair
-  const invertCoordinate = (coord) => inverseProjection(coord);
-
-  // Function to invert an array of coordinates (for Polygons)
-  const invertPolygon = (coords) =>
-    coords.map((ring) => ring.map(invertCoordinate));
-
-  // Function to invert MultiPolygon coordinates
-  const invertMultiPolygon = (coords) => coords.map(invertPolygon);
-
-  // Main inversion function
-  return function invertGeometry(projectedGeometry) {
-    const { type, coordinates } = projectedGeometry;
-
-    switch (type) {
-      case "Polygon":
-        return {
-          type: "Polygon",
-          coordinates: invertPolygon(coordinates),
-        };
-      case "MultiPolygon":
-        return {
-          type: "MultiPolygon",
-          coordinates: invertMultiPolygon(coordinates),
-        };
-      default:
-        throw new Error(`Unsupported geometry type: ${type}`);
-    }
-  };
-}
-return {createGeometryInverter};
-}});
-
-define({id: "0a0330f3", inputs: ["invertGeometry"], outputs: ["invertIntGeoShapes"], body: (invertGeometry) => {
-function invertIntGeoShapes(intGeoShapes, t) {
-  const projectedShapes = intGeoShapes(t);
-  return Object.fromEntries(
-    Object.entries(projectedShapes).map(([code, feature]) => [
-      code,
-      {
-        ...feature,
-        geometry: invertGeometry(feature.geometry),
-      },
-    ])
-  );
-}
-return {invertIntGeoShapes};
-}});
-
-define({id: "d685c337", inputs: ["interpolateGeoShapes","regular_geodata_withcensus","grid_geodata_withcensus","convertToGeoJSON","t"], outputs: ["intGeoShapesv2","dataInMorph"], body: (interpolateGeoShapes,regular_geodata_withcensus,grid_geodata_withcensus,convertToGeoJSON,t) => {
-const intGeoShapesv2 = interpolateGeoShapes(
-  regular_geodata_withcensus,
-  grid_geodata_withcensus,
-  3000,
-  3000
-);
-const dataInMorph = convertToGeoJSON(intGeoShapesv2(t));
-// display(Object.values(intGeoShapesv2(t)));
-// display(dataInMorph);
-return {intGeoShapesv2,dataInMorph};
-}});
-
-define({id: "2e428462", inputs: ["createGeometryInverter","regular_geodata_withcensus"], outputs: ["invertGeometry"], body: (createGeometryInverter,regular_geodata_withcensus) => {
-const invertGeometry = createGeometryInverter(
-  regular_geodata_withcensus,
-  3000,
-  3000
-);
-return {invertGeometry};
-}});
-
-define({id: "4bfa126b", inputs: ["invertIntGeoShapes","intGeoShapesv2","t"], outputs: ["geographicShapes"], body: (invertIntGeoShapes,intGeoShapesv2,t) => {
-const geographicShapes = invertIntGeoShapes(intGeoShapesv2, t);
-// display(Object.values(geographicShapes));
-return {geographicShapes};
-}});
-
-define({id: "ee9fe065", body: () => {
-// const transformedGeographicShapes = {
-//   ...Object.values(geographicShapes),
-//   features: Object.values(geographicShapes).map((feature) => ({
-//     ...feature,
-//     geometry: {
-//       ...feature.geometry,
-//       coordinates: transformCoordinates(feature.geometry.coordinates),
-//     },
-//   })),
-// };
-// display(transformedGeographicShapes);
-}});
-
-define({id: "53ad4c83", body: () => {
-// const geographicDataInMorph = convertToGeoJSON(transformedGeographicShapes);
-// display(geographicDataInMorph);
-}});
-
-define({id: "e1679362", inputs: ["d3","_","turf","context2d","flubber","OffscreenCanvas"], outputs: ["inSituMorphMouse","_insertIntermediateLayouts","intermTranslate","prepareGeoJsonForMorphingLib","intermTranslateV","intermCircles","intermChangeShape","intermBbSize"], body: (d3,_,turf,context2d,flubber,OffscreenCanvas) => {
-// ---------------------- Functions for morphing ----------------------
-
-function inSituMorphMouse(options, width) {
-  //interactive: true|false Whether responds to mouse for animation
-  //layouts: is an array of layouts with the following structure
-  //   shape: {key,feature}
-  //   colourFn: (key)=>colour
-  //   staggered: EITHER true/false OR function (key)=> delay (delay based on values' keys) OR an object with indivDelayFn an indivDuration
-  let layouts = options.layouts;
-  let interactive = options.interactive;
-  let showDescription = options.showDescription;
-  let restrictWidthToChart = options.restrictWidthToChart;
-  let isAnimating = false;
-  let curStepAndAmt = 0; //only use as read only
-  let frame;
-  layouts = _insertIntermediateLayouts(layouts); //also parses the string shortcuts
-
-  let thisSelectorFn = () => false;
-  let thisSelectorColour = d3.color("red");
-
-  //work out which are fades and which are tweens
-  const transitions = [];
-  for (let i = 0; i < layouts.length - 1; i++) {
-    // console.log(layouts[i].shapes);
-    // console.log(layouts[i + 1].shapes);
-    if (
-      _.intersection(
-        Object.keys(layouts[i].shapes),
-        Object.keys(layouts[i + 1].shapes)
-      ).length > 0
-    )
-      transitions.push("tween");
-    else transitions.push("fade");
-  }
-
-  //find bb of the union of all shapes
-  const bb = turf.bbox(
-    turf.featureCollection(
-      _.flatten(
-        layouts
-          .map((layout) => layout.shapes)
-          .map((shape) => Object.values(shape))
-      )
-    )
-  );
-
-  const chartWH = bb[3];
-
-  const throttled = _.throttle((stepAndAmt) => draw(stepAndAmt), 100);
-  // const context = context2d(restrictWidthToChart ? chartWH : width, chartWH);
-  const context = context2d(
-    width || (restrictWidthToChart ? chartWH : options.width),
-    chartWH
-  );
-  // const context = DOM.context2d(
-  //   restrictWidthToChart ? chartWH : width,
-  //   chartWH
-  // );
-
-  if (interactive) {
-    let amtValue = 0; // initialize amtValue
-    let increasing = true; // direction flag to track the direction of change
-    document.addEventListener("keydown", (e) => {
-      if (e.code === "Space") {
-        // console.log("Spacebar pressed");
-        if (frame) cancelAnimationFrame(frame);
-        isAnimating = false;
-
-        if (increasing) {
-          amtValue += 0.1;
-          if (amtValue >= 1) {
-            amtValue = 1;
-            increasing = false;
-          }
-        } else {
-          amtValue -= 0.1;
-          if (amtValue <= 0) {
-            amtValue = 0;
-            increasing = true;
-          }
-        }
-
-        throttled(amtValue);
-      }
-    });
-  }
-
-  // if (interactive)
-  //   context.canvas.addEventListener("mousemove", (e) => {
-  //     if (e.shiftKey) {
-  //       if (frame) cancelAnimationFrame(frame);
-  //       isAnimating = false;
-  //       const mouseX = d3.pointer(e)[0];
-  //       const amtValue = _.clamp(Math.min(mouseX, chartWH) / chartWH, 0, 1);
-  //       throttled(amtValue);
-  //     }
-  //   });
-
-  //Calculate all the necessary flubber interpolators for everything
-  const flubbers = [];
-  for (let i = 0; i < layouts.length - 1; i++) {
-    flubbers.push(
-      Object.fromEntries(
-        _.intersection(
-          Object.keys(layouts[i].shapes),
-          Object.keys(layouts[i + 1].shapes)
-        ).map((key) => [
-          key,
-          flubber.interpolate(
-            d3.geoPath()(layouts[i].shapes[key]),
-            d3.geoPath()(layouts[i + 1].shapes[key]),
-            { string: false }
-          ),
-        ])
-      )
-    );
-  }
-
-  function calcStepAndAmt(amtValue) {
-    let transitionDurations = layouts
-      .slice(0, -1)
-      .map((row) => (row.transitionDuration ? row.transitionDuration : 1));
-    let maxAmt = d3.sum(transitionDurations);
-
-    let st = 0;
-    let i = 0;
-    let cumDur = 0;
-    while (cumDur + transitionDurations[i] < maxAmt * amtValue) {
-      cumDur += transitionDurations[i];
-      i++;
-    }
-    let step = i;
-    let amt = (amtValue * maxAmt - cumDur) / transitionDurations[i];
-    if (step >= layouts.length - 1) {
-      step = layouts.length - 1;
-      amt = 1;
-    }
-    return [step, amt];
-  }
-
-  function draw(amtValue) {
-    const stepAndAmt = calcStepAndAmt(amtValue);
-    const step = stepAndAmt[0];
-    const amt = stepAndAmt[1];
-    curStepAndAmt = amtValue;
-    if (transitions[step] == "tween") animateShapes(step, amt);
-    else fadeShapes(step, amt);
-
-    if (showDescription) {
-      context.font = "14px serif";
-      const colour = d3.color("black");
-      for (let i = 0; i < layouts.length; i++) {
-        if (i == step)
-          colour.opacity = 1 - d3.scaleLinear([0, 1], [0.1, 1])(amt);
-        else if (i == step + 1)
-          colour.opacity = d3.scaleLinear([0, 1], [0.1, 1])(amt);
-        else colour.opacity = 0.1;
-
-        context.fillStyle = colour;
-        context.fillText(
-          layouts[i].description ? layouts[i].description : "",
-          chartWH,
-          i * 14 + 14
-        );
-      }
-    }
-  }
-
-  function animateShapes(layoutIdx, amt) {
-    context.clearRect(0, 0, width, chartWH);
-    let keys = _.intersection(
-      (Object.keys(layouts[layoutIdx].shapes),
-      Object.keys(layouts[layoutIdx + 1].shapes))
-    );
-    let maxDelay = 1;
-    if (layouts[layoutIdx].staggered === true) maxDelay = keys.length;
-    else if (layouts[layoutIdx].staggered) {
-      if (_.isFunction(layouts[layoutIdx].staggered)) {
-        maxDelay = d3.max(keys, (key) => layouts[layoutIdx].staggered(key));
-      } else if (
-        layouts[layoutIdx].staggered.indivDelayFn &&
-        _.isFunction(layouts[layoutIdx].staggered.indivDelayFn)
-      ) {
-        maxDelay = d3.max(keys, (key) =>
-          layouts[layoutIdx].staggered.indivDelayFn(key)
-        );
-      }
-    }
-    let dur = maxDelay;
-    if (
-      layouts[layoutIdx].staggered &&
-      layouts[layoutIdx].staggered.indivDuration
-    )
-      dur = layouts[layoutIdx].staggered.indivDuration;
-    maxDelay += dur; //This makes sure the last duration is animated
-
-    if (thisSelectorFn) {
-      keys = _.sortBy(keys, (key) => thisSelectorFn(key));
-    }
-
-    let i = 0;
-    for (const key of keys) {
-      let indivDelay = 0;
-      if (layouts[layoutIdx].staggered === true) indivDelay = i;
-      else if (layouts[layoutIdx].staggered) {
-        if (_.isFunction(layouts[layoutIdx].staggered))
-          indivDelay = layouts[layoutIdx].staggered(key);
-        else if (_.isFunction(layouts[layoutIdx].staggered.indivDelayFn))
-          indivDelay = layouts[layoutIdx].staggered.indivDelayFn(key);
-      }
-
-      let combinedAmt = amt;
-      if (layouts[layoutIdx].staggered) {
-        combinedAmt = _.clamp(
-          d3.scaleLinear(
-            [indivDelay / maxDelay, (indivDelay + dur) / maxDelay],
-            [0, 1]
-          )(amt),
-          0,
-          1
-        );
-      }
-
-      const cs = flubbers[layoutIdx][key](combinedAmt);
-      context.beginPath();
-      d3.geoPath().context(context)(turf.polygon([[...cs, cs[0]]]));
-
-      let colour = 0;
-      if (thisSelectorFn && thisSelectorFn(key)) {
-        colour = thisSelectorColour;
-      } else {
-        const fromColour = layouts[layoutIdx].colourFn
-          ? layouts[layoutIdx].colourFn(key)
-          : "#ddd";
-        const toColour = layouts[layoutIdx + 1].colourFn
-          ? layouts[layoutIdx + 1].colourFn(key)
-          : "#ddd";
-        colour = d3.interpolateRgb(fromColour, toColour)(amt);
-      }
-      context.fillStyle = colour;
-      context.fill();
-      i++;
-    }
-  }
-
-  function fadeShapes(layoutIdx, amt) {
-    context.clearRect(0, 0, width, chartWH);
-    for (const key of Object.keys(layouts[layoutIdx].shapes)) {
-      context.beginPath();
-      d3.geoPath().context(context)(layouts[layoutIdx].shapes[key]);
-      context.fillStyle =
-        thisSelectorFn && thisSelectorFn(key)
-          ? thisSelectorColour
-          : layouts[layoutIdx].colourFn(key);
-      context.fill();
-    }
-
-    const offScreen = new OffscreenCanvas(chartWH, chartWH);
-    const offScreenContext = offScreen.getContext("2d");
-
-    offScreenContext.beginPath();
-    d3.geoPath().context(offScreenContext)(
-      turf.bboxPolygon([0, 0, width, chartWH])
-    );
-    offScreenContext.fillStyle = "rgb(255,255,255)";
-    offScreenContext.fill();
-
-    for (const key of Object.keys(layouts[layoutIdx + 1].shapes)) {
-      offScreenContext.beginPath();
-      d3.geoPath().context(offScreenContext)(
-        layouts[layoutIdx + 1].shapes[key]
-      );
-      offScreenContext.fillStyle =
-        thisSelectorFn && thisSelectorFn(key)
-          ? thisSelectorColour
-          : layouts[layoutIdx + 1].colourFn(key);
-
-      offScreenContext.fill();
-    }
-    context.globalAlpha = amt;
-    context.drawImage(offScreen, 0, 0);
-    context.globalAlpha = 1;
-  }
-
-  draw(0);
-
-  context.canvas.highlightShapes = (
-    selectorFn,
-    selectorColour = "rgb(230, 195, 73)"
-  ) => {
-    thisSelectorFn = selectorFn;
-    thisSelectorColour = selectorColour;
-    draw(curStepAndAmt);
+  config.tech = {
+    name: techConfig.name,
+    config: techConfig.config,
   };
 
-  context.canvas.draw = (amtValue) => draw(amtValue);
+  // console.log("techConfig Name", techConfig);
 
-  context.canvas.animate = (inc) => {
-    if (frame) cancelAnimationFrame(frame);
-    isAnimating = true;
-    let forward = true;
-    let st = curStepAndAmt;
-    function tick() {
-      if (forward) {
-        st += inc;
-        if (st > 1) {
-          st = 1;
-          forward = false;
-        }
-      }
-      if (!forward) {
-        st -= inc;
-        if (st < 0) {
-          st = 0;
-          forward = true;
-        }
-      }
-      if (isAnimating) {
-        draw(st);
-        frame = requestAnimationFrame(tick);
-      } else cancelAnimationFrame(frame);
-    }
-    requestAnimationFrame(tick);
-  };
+  // Apply filters and priorities - append to existing
+  config.filters = [...(config.filters || []), ...filters];
+  config.priorities = [...(config.priorities || []), ...priorities];
 
-  return context.canvas;
+  const newIntervention = { ...config, id: Date.now() };
+  setIntervention([...interventions, newIntervention]);
+  const modelResult = runModel(newIntervention, buildingsData);
+  setResults([...results, modelResult]);
+  console.log("Intervention added:", config);
 }
 
-function _insertIntermediateLayouts(layouts) {
-  //first insert the intermediate layouts
-  const newLayouts = [];
-  //first insert intermediate layouts
-  for (let i = 0; i < layouts.length - 1; i++) {
-    if (layouts[i].staged) {
-      if (!_.isArray(layouts[i].staged))
-        layouts[i].staged = [layouts[i].staged];
-      const intermediateLayouts = [];
-      let prevShapes = layouts[i].shapes;
-      const numStages = layouts[i].staged.length;
-      for (const intermediateSpec of layouts[i].staged) {
-        let newShapes;
-        if (_.isFunction(intermediateSpec)) {
-          newShapes = intermediateSpec(
-            prevShapes,
-            layouts[i + 1].shapes,
-            layouts[i].shapes
-          );
-          prevShapes = newShapes;
-        } else {
-          for (const intermediateSpecPart of intermediateSpec.split("&")) {
-            if (intermediateSpecPart == "translateX")
-              newShapes = intermTranslate(
-                prevShapes,
-                layouts[i + 1].shapes,
-                "x"
-              );
-            if (intermediateSpecPart.startsWith("translateX=")) {
-              const amount = +intermediateSpecPart.split("=")[1];
-              // console.log(amount);
-              newShapes = intermTranslateV(prevShapes, [amount, 0]);
-            } else if (intermediateSpecPart == "translateY")
-              newShapes = intermTranslate(
-                prevShapes,
-                layouts[i + 1].shapes,
-                "y"
-              );
-            else if (intermediateSpecPart == "translate")
-              newShapes = intermTranslate(prevShapes, layouts[i + 1].shapes);
-            else if (intermediateSpecPart == "changeShapeCircle")
-              newShapes = intermCircles(prevShapes, 10);
-            else if (intermediateSpecPart == "changeShape")
-              newShapes = intermChangeShape(prevShapes, layouts[i + 1].shapes);
-            else if (intermediateSpecPart == "changeShapeOriginal")
-              newShapes = intermChangeShape(prevShapes, layouts[i].shapes);
-            else if (intermediateSpecPart == "changeBbSize")
-              newShapes = intermBbSize(prevShapes, layouts[i + 1].shapes);
-            else if (intermediateSpecPart == "changeBbSizeOriginal")
-              newShapes = intermBbSize(prevShapes, layouts[i].shapes);
-            if (newShapes) prevShapes = newShapes;
-          }
-        }
-        if (newShapes) {
-          intermediateLayouts.push({
-            ...layouts[i],
-            shapes: newShapes,
-            transitionDuration: layouts[i].transitionDuration
-              ? layouts[i].transitionDuration / numStages
-              : undefined,
-          });
-          prevShapes = newShapes;
-        }
-      }
-      newLayouts.push(layouts[i]);
-      newLayouts.push(...intermediateLayouts);
-    } else {
-      newLayouts.push(layouts[i]);
-    }
-  }
-  newLayouts.push(layouts[layouts.length - 1]);
-  return newLayouts;
-}
+// remove intervention
+function removeIntervention(index) {
+  if (index >= 0 && index < interventions.length) {
+    setIntervention(interventions.filter((_, i) => i !== index));
 
-function intermTranslate(layout, toLayout, type = "xy") {
-  const centroids = _.mapValues(toLayout, (value) =>
-    turf.getCoord(turf.centroid(value))
-  );
-  return _.mapValues(layout, (value, key) => {
-    const centroid1 = turf.getCoord(turf.centroid(value));
-    const centroid2 = centroids[key];
-
-    if (type == "xy")
-      return d3.geoProject(
-        value,
-        d3
-          .geoIdentity()
-          .translate([centroid2[0] - centroid1[0], centroid2[1] - centroid1[1]])
-      );
-    else if (type == "x")
-      return d3.geoProject(
-        value,
-        d3.geoIdentity().translate([centroid2[0] - centroid1[0], 0])
-      );
-    else if (type == "y")
-      return d3.geoProject(
-        value,
-        d3.geoIdentity().translate([0, centroid2[1] - centroid1[1]])
-      );
-  });
-}
-
-const prepareGeoJsonForMorphingLib = function (geoJson, extentGeoJson, w, h) {
-  if (!geoJson || !geoJson.features || geoJson.features.length === 0) {
-    console.error("GeoJSON features are not ready yet");
-    return {};
-  }
-
-  const polyFeats = d3.geoProject(
-    geoJson,
-    d3
-      .geoIdentity()
-      .reflectY(true)
-      .fitExtent(
-        [
-          [0, 0],
-          [w, h],
-        ],
-        geoJson
-      )
-  );
-  return _.keyBy(
-    polyFeats.features.map((feat) => feat),
-    (feat) => feat.properties.code
-  );
-};
-
-function intermTranslateV(layout, xy) {
-  return _.mapValues(layout, (value, key) => {
-    const centroid1 = turf.getCoord(turf.centroid(value));
-
-    return d3.geoProject(value, d3.geoIdentity().translate(xy));
-  });
-}
-
-function intermCircles(layout, radius, align) {
-  const steps = 20;
-  return _.mapValues(layout, (value, key) => {
-    const bb = turf.bbox(value);
-    let circleCentre;
-    if (align == "topLeft") circleCentre = [bb[0], bb[1]];
-    else if (align == "topRight") circleCentre = [bb[2], bb[1]];
-    else if (align == "bottomRight") circleCentre = [bb[2], bb[3]];
-    else if (align == "bottomLeft") circleCentre = [bb[0], bb[3]];
-    else if (align == "top")
-      circleCentre = [bb[0] + (bb[2] - bb[0]) / 2, bb[1]];
-    else if (!align || align == "centre")
-      circleCentre = [bb[0] + (bb[2] - bb[0]) / 2, bb[1] + (bb[3] - bb[1]) / 2];
-    // console.log(circleCentre);
-    const circleCoords = [];
-    //https://stackoverflow.com/questions/155649/circle-coordinates-to-array-in-javascript
-    for (let i = 0; i < steps; i++) {
-      circleCoords.push([
-        circleCentre[0] + radius * Math.cos((2 * Math.PI * i) / steps),
-        circleCentre[1] + radius * Math.sin((2 * Math.PI * i) / steps),
-      ]);
-    }
-    circleCoords.push(circleCoords[0]);
-    return turf.polygon([circleCoords]);
-  });
-}
-
-function intermChangeShape(layout, toLayout) {
-  const centroids = _.mapValues(layout, (value) =>
-    turf.getCoord(turf.centroid(value))
-  );
-  return _.mapValues(toLayout, (value, key) => {
-    const shapeCentroid = turf.getCoord(turf.centroid(value));
-    const targetCentroid = centroids[key];
-    if (targetCentroid)
-      return d3.geoProject(
-        value,
-        d3
-          .geoIdentity()
-          .translate([
-            targetCentroid[0] - shapeCentroid[0],
-            targetCentroid[1] - shapeCentroid[1],
-          ])
-      );
-  });
-}
-
-function intermBbSize(layout, toLayout) {
-  const bbs = _.mapValues(toLayout, (value) => turf.bbox(value));
-  return _.mapValues(layout, (value, key) => {
-    const toBbSize = bbs[key];
-    const bb = turf.bbox(value);
-
-    const toBbSizeW = toBbSize[2] - toBbSize[0];
-    const toBbSizeH = toBbSize[3] - toBbSize[1];
-    const bbW = bb[2] - bb[0];
-    const bbH = bb[3] - bb[1];
-
-    return d3.geoProject(
-      value,
-      d3.geoIdentity().fitExtent(
-        [
-          [bb[0] + bbW / 2 - toBbSizeW / 2, bb[1] + bbH / 2 - toBbSizeH / 2],
-          [bb[0] + bbW / 2 + toBbSizeW / 2, bb[1] + bbH / 2 + toBbSizeH / 2],
-        ],
-        turf.bboxPolygon(bb)
-      )
-    );
-  });
-}
-return {inSituMorphMouse,_insertIntermediateLayouts,intermTranslate,prepareGeoJsonForMorphingLib,intermTranslateV,intermCircles,intermChangeShape,intermBbSize};
-}});
-
-define({id: "dc10622c", inputs: ["proj"], outputs: ["transformCoordinates","transformGeometry","applyTransformationToShapes"], body: (proj) => {
-// Coordinate transformation utilities
-
-function transformCoordinates(coords) {
-  if (coords.length === 4 && !Array.isArray(coords[0])) {
-    // bounding box
-    return [
-      ...proj.toGeo([coords[0], coords[1]]),
-      ...proj.toGeo([coords[2], coords[3]]),
-    ];
-  } else if (Array.isArray(coords[0])) {
-
-    // arrays of coordinates
-    return coords.map(transformCoordinates);
+    // when intervention is removed, remove the corresponding results
+    setResults(results.filter((_, i) => i !== index));
   } else {
-    // individual coordinate pairs
-
-    return proj.toGeo(coords);
+    console.log("Invalid index.");
   }
 }
 
-function transformGeometry(geometry) {
-  if (geometry.type === "GeometryCollection") {
-    return {
-      ...geometry,
-      geometries: geometry.geometries.map(transformGeometry),
-    };
-  }
+// handle form submission
+function addNewIntervention() {
+  const new_start_year = start_year;
+  const new_tech = technology;
+  const new_allocations = allocations;
 
-  return {
-    ...geometry,
-    coordinates: transformCoordinates(geometry.coordinates),
+  // Retrieve techConfig from the selected technology
+  const techConfig = listOfTech[new_tech];
+  // console.log("techConfig", techConfig);
+
+  // Example filters and priorities
+  const filters = [(b) => b.properties["substation_headroom"] >= 500];
+  const priorities = [{ name: "substation_capacity_rating", order: "asc" }];
+
+  addIntervention(
+    techConfig,
+    new_start_year,
+    new_allocations,
+    filters,
+    priorities
+  );
+}
+return {createConfigTemplate,addIntervention,removeIntervention,addNewIntervention};
+}});
+
+define({id: "79e5d210", inputs: ["start_year","allocations","MiniDecarbModel"], outputs: ["config","listOfTech","addTechConfig","addPriority","runModel"], body: (start_year,allocations,MiniDecarbModel) => {
+let config = {
+  initial_year: Number(start_year),
+  rolledover_budget: 0,
+  yearly_budgets: allocations.map((item) => item.budget),
+  tech: {},
+  priorities: [],
+};
+
+const listOfTech = {
+  ASHP: {
+    name: "ASHP",
+    config: {
+      suitabilityKey: "ashp_suitability",
+      labourKey: "ashp_labour",
+      materialKey: "ashp_material",
+      savingsKey: "heat_demand",
+    },
+  },
+  PV: {
+    name: "PV",
+    config: {
+      suitabilityKey: "pv_suitability",
+      labourKey: "pv_labour",
+      materialKey: "pv_material",
+      savingsKey: "solar_generation",
+    },
+  },
+};
+
+function addTechConfig(techConfig) {
+  config.tech = {
+    name: techConfig.name,
+    config: techConfig.config,
   };
 }
 
-// Function to apply transformation to geographicShapes
-function applyTransformationToShapes(geographicShapes) {
-  return Object.fromEntries(
-    Object.entries(geographicShapes).map(([code, feature]) => [
-      code,
-      {
-        ...feature,
-        geometry: transformGeometry(feature.geometry),
-      },
-    ])
-  );
-}
-
-// check to see if it works
-// display(transformCoordinates([547764, 180871]));
-return {transformCoordinates,transformGeometry,applyTransformationToShapes};
-}});
-
-define({id: "ec853745", inputs: ["convertToGeoJSON","applyTransformationToShapes","geographicShapes"], outputs: ["transformedShapes"], body: (convertToGeoJSON,applyTransformationToShapes,geographicShapes) => {
-const transformedShapes = convertToGeoJSON(
-  applyTransformationToShapes(geographicShapes)
-);
-// display(transformedShapes);
-
-return {transformedShapes};
-}});
-
-define({id: "4913bd0b", inputs: ["_","regular_geodata_withcensus","transformGeometry","turf","grid_geodata_withcensus"], outputs: ["regularGeodataLookup","gridGeodataLookup"], body: (_,regular_geodata_withcensus,transformGeometry,turf,grid_geodata_withcensus) => {
-// const regularGeodataLookup = _.keyBy(
-//   regular_geodata_withcensus.features.map((feat) => {
-//     return { ...feat, centroid: turf.getCoord(turf.centroid(feat.geometry)) };
-//   }),
-//   (feat) => feat.properties.code
-// );
-
-// const gridGeodataLookup = _.keyBy(
-//   grid_geodata_withcensus.features.map((feat) => {
-//     return { ...feat, centroid: turf.getCoord(turf.centroid(feat.geometry)) };
-//   }),
-//   (feat) => feat.properties.code
-// );
-
-const regularGeodataLookup = _.keyBy(
-  regular_geodata_withcensus.features.map((feat) => {
-    const transformedGeometry = transformGeometry(feat.geometry);
-    const centroid = turf.getCoord(turf.centroid(transformedGeometry));
-    return {
-      ...feat,
-      geometry: transformedGeometry,
-      centroid: centroid,
-    };
-  }),
-  (feat) => feat.properties.code
-);
-
-const gridGeodataLookup = _.keyBy(
-  grid_geodata_withcensus.features.map((feat) => {
-    const transformedGeometry = transformGeometry(feat.geometry);
-    const centroid = turf.getCoord(turf.centroid(transformedGeometry));
-    return {
-      ...feat,
-      geometry: transformedGeometry,
-      centroid: centroid,
-    };
-  }),
-  (feat) => feat.properties.code
-);
-
-// display(regularGeodataLookup);
-return {regularGeodataLookup,gridGeodataLookup};
-}});
-
-define({id: "c95c42db", inputs: ["Inputs","Generators","createDiscretiserValue"], outputs: ["glyphmapTypeInput","glyphmapType","valueDiscretiser"], body: (Inputs,Generators,createDiscretiserValue) => {
-const glyphmapTypeInput = Inputs.radio(["Polygons", "Gridmap", "Gridded"], {
-  label: "Type of map",
-  value: "Polygons",
-});
-const glyphmapType = Generators.input(glyphmapTypeInput);
-
-function valueDiscretiser(geomLookup) {
-  return createDiscretiserValue({
-    //... and adds a discretisation function that aggregates by CODE and supplies the polygons for each cell
-    valueFn: (row) => {
-      return row.code;
-    },
-    glyphLocationFn: (key) => geomLookup[key]?.centroid,
-    boundaryFn: (key) => geomLookup[key]?.geometry.coordinates[0],
-  });
-}
-
-return {glyphmapTypeInput,glyphmapType,valueDiscretiser};
-}});
-
-define({id: "7d5286c3", inputs: ["turf","createDiscretiserValue"], outputs: ["valueDiscretiserInMorph"], body: (turf,createDiscretiserValue) => {
-function valueDiscretiserInMorph(inp) {
-  // create lookup on the fly
-  let geomLookup = Object.fromEntries(
-    inp.features.map((feature) => {
-      const centroid = turf.centroid(feature).geometry.coordinates; // calculate centroid
-      return [
-        feature.properties.code,
-        {
-          ...feature,
-          centroid, // store centroid
-        },
-      ];
-    })
-  );
-
-  // console.log(geomLookup);
-
-  return createDiscretiserValue({
-    valueFn: (row) => row.code,
-    glyphLocationFn: (key) => geomLookup[key]?.centroid, // Use the calculated centroid
-    boundaryFn: (key) => geomLookup[key]?.geometry.coordinates[0], // Access the boundary (first set of coordinates)
-  });
-}
-
-// display(valueDiscretiserInMorph(dataInMorph));
-// display("datain morph");
-// display(dataInMorph);
-
-// display(transformCoordinates(turf.bbox(regular_geodata)));
-return {valueDiscretiserInMorph};
-}});
-
-define({id: "be62aa21", inputs: ["turf","transformedShapes","data","regularGeodataLookup","d3","insideCell","drawRadialMultivariateGlyph"], outputs: ["glyphMapSpec"], body: (turf,transformedShapes,data,regularGeodataLookup,d3,insideCell,drawRadialMultivariateGlyph) => {
-// glyphmap basic specs
-function glyphMapSpec(width, height) {
-  // console.log("in glyphmapspec", width, height);
-
-  // const bbox = turf.bbox(regular_geodata);
-  return {
-    // coordType: "notmercator",
-    initialBB: turf.bbox(transformedShapes),
-    // initialBB: [
-    //   ...proj.toGeo([bbox[0], bbox[1]]),
-    //   ...proj.toGeo([bbox[2], bbox[3]]),
-    // ],
-    data: Object.values(data),
-    getLocationFn: (row) => regularGeodataLookup[row.code]?.centroid,
-    discretisationShape: "grid",
-    mapType: "CartoPositron",
-
-    interactiveCellSize: true,
-    cellSize: 60,
-
-    // width: 800,
-    // height: 600,
-    width: width,
-    height: height,
-
-    customMap: {
-      scaleParams: [],
-
-      initFn: (cells, cellSize, global, panel) => {},
-
-      preAggrFn: (cells, cellSize, global, panel) => {
-        // console.log(global);
-      },
-
-      aggrFn: (cell, row, weight, global, panel) => {
-        if (cell.population) {
-          cell.population += row.population;
-          cell.deprivation += row.deprivation;
-          cell.vehicle += row.vehicle;
-          cell.heating += row.heating;
-          cell.health += row.health;
-        } else {
-          cell.population = row.population;
-          cell.deprivation = row.deprivation;
-          cell.vehicle = row.vehicle;
-          cell.heating = row.heating;
-          cell.health = row.health;
-        }
-      },
-
-      postAggrFn: (cells, cellSize, global, panel) => {
-        //add cell interaction
-        let canvas = d3.select(panel).select("canvas").node();
-
-        canvas.addEventListener("click", function (evt) {
-          //check which cell the click was in
-          const rect = canvas.getBoundingClientRect();
-          let x = evt.clientX - rect.left;
-          let y = evt.clientY - rect.top;
-          global.clickedCell = null;
-          for (let i = 0; i < cells.length; i++)
-            if (insideCell(cells[i], x, y)) global.clickedCell = cells[i];
-        });
-      },
-
-      preDrawFn: (cells, cellSize, ctx, global, panel) => {
-        if (!cells || cells.length === 0) {
-          console.error("No cells data available");
-          return;
-        }
-        global.pathGenerator = d3.geoPath().context(ctx);
-        global.colourScalePop = d3
-          .scaleSequential(d3.interpolateBlues)
-          .domain([0, d3.max(cells.map((row) => row.population))]);
-      },
-
-      drawFn: (cell, x, y, cellSize, ctx, global, panel) => {
-        const boundary = cell.getBoundary(0);
-        if (boundary[0] != boundary[boundary.length - 1]) {
-          boundary.push(boundary[0]);
-        }
-        const boundaryFeat = turf.polygon([boundary]);
-
-        ctx.beginPath();
-        global.pathGenerator(boundaryFeat);
-        ctx.fillStyle = global.colourScalePop(cell.population);
-        ctx.fill();
-
-        //add contour to clicked cells
-        if (global.clickedCell == cell) {
-          ctx.lineWidth = 4;
-          ctx.strokeStyle = "rgb(250,250,250)";
-          ctx.stroke();
-          ctx.lineWidth = 2;
-          ctx.strokeStyle = "rgb(50,50,50)";
-          ctx.stroke();
-        }
-
-        //draw a radial glyph -> change the array to real data (between 0 and 1)
-        drawRadialMultivariateGlyph([0.5, 0.1, 0.9, 0.3], x, y, cellSize, ctx);
-        // drawRadialMultivariateGlyph(
-        //   [cell.deprivation, cell.vehicle, cell.heating, cell.health],
-        //   x,
-        //   y,
-        //   cellSize,
-        //   ctx
-        // );
-
-        // let rg = new RadialGlyph([
-        //   cell.deprivation,
-        //   cell.vehicle,
-        //   cell.heating,
-        //   cell.health,
-        // ]);
-        // rg.draw(ctx, x, y, cellSize / 2);
-      },
-
-      postDrawFn: (cells, cellSize, ctx, global, panel) => {},
-
-      tooltipTextFn: (cell) => {
-        console.log(cell.deprivation);
-      },
-    },
+function addPriority(name, order = "asc") {
+  const newPriority = {
+    name: name,
+    order: order,
   };
-}
-return {glyphMapSpec};
-}});
 
-define({id: "a8ee3415", inputs: ["glyphMap","glyphMapSpec","valueDiscretiser","regularGeodataLookup","valueDiscretiserInMorph","transformedShapes"], outputs: ["createGlyphMap","glyphmap"], body: (glyphMap,glyphMapSpec,valueDiscretiser,regularGeodataLookup,valueDiscretiserInMorph,transformedShapes) => {
-function createGlyphMap(glyphmapType, { width, height }) {
-  // console.log(width, height);
-  if (glyphmapType == "Polygons") {
-    return glyphMap({
-      ...glyphMapSpec(width, height), //takes the base spec...
-      discretiserFn: valueDiscretiser(regularGeodataLookup),
-    });
-  } else if (glyphmapType == "Gridmap") {
-    return glyphMap({
-      ...glyphMapSpec(width, height), //takes the base spec...
-      discretiserFn: valueDiscretiserInMorph(transformedShapes),
-    });
-  } else if (glyphmapType == "Gridded") {
-    return glyphMap(glyphMapSpec(width, height)); //uses the base spec as it (by default, it grids)
-  }
+  config.priorities.push(newPriority);
 }
 
-const glyphmap = glyphMapSpec();
-
-// display(createGlyphMap(glyphmapType));
-// display(valueDiscretiser(regularGeodataLookup));
-return {createGlyphMap,glyphmap};
-}});
-
-define({id: "92e60971", inputs: ["joinCensusDataToGeoJSON","census_data","regular_geodata","grid_geodata"], outputs: ["regular_geodata_withcensus","grid_geodata_withcensus"], body: (joinCensusDataToGeoJSON,census_data,regular_geodata,grid_geodata) => {
-// joining census data to geodata
-const regular_geodata_withcensus = joinCensusDataToGeoJSON(
-  [...census_data],
-  regular_geodata
-);
-const grid_geodata_withcensus = joinCensusDataToGeoJSON(
-  [...census_data],
-  grid_geodata
-);
-
-// display(regular_geodata_withcensus);
-return {regular_geodata_withcensus,grid_geodata_withcensus};
-}});
-
-define({id: "246c80d3", inputs: ["d3","drawPieSlice"], outputs: ["drawRadialMultivariateGlyph"], body: (d3,drawPieSlice) => {
-function drawRadialMultivariateGlyph(normalisedData, x, y, size, ctx) {
-  let angle = (2 * Math.PI) / normalisedData.length;
-  let centerX = x;
-  let centerY = y;
-  let radius = size / 2;
-  // console.log(radius);
-
-  //get a colour palette
-  let colors = d3
-    .scaleOrdinal(d3.schemeTableau10)
-    .domain(d3.range(normalisedData.length));
-
-  normalisedData.map((d, i) => {
-    drawPieSlice(
-      ctx,
-      centerX,
-      centerY,
-      radius * 0.9,
-      angle * (i + 0.1),
-      angle * (i + 0.9),
-      "rgba(0,0,0,0.05)"
-    );
-    drawPieSlice(
-      ctx,
-      centerX,
-      centerY,
-      radius * Math.sqrt(d) * 0.95,
-      angle * (i + 0.1),
-      angle * (i + 0.9),
-      colors(i)
-    );
-  });
+function runModel(config, buildings) {
+  const model = new MiniDecarbModel(config, buildings);
+  model.runModel();
+  return model.getRecap();
 }
-return {drawRadialMultivariateGlyph};
+
+// update config here
+// addTechConfig(listOfTech.ASHP);
+// // addPriority("substation_headroom", "asc");
+return {config,listOfTech,addTechConfig,addPriority,runModel};
 }});
 
-define({id: "9d040433", outputs: ["drawPieSlice"], body: () => {
-function drawPieSlice(ctx, cx, cy, r, angleStart, angleEnd, color) {
-  ctx.beginPath();
-  ctx.moveTo(cx, cy);
-  ctx.arc(cx, cy, r, angleStart, angleEnd);
-  ctx.lineTo(cx, cy);
-  ctx.fillStyle = color;
-  ctx.fill();
-}
-return {drawPieSlice};
-}});
-
-define({id: "520e6d60", outputs: ["insideCell"], body: () => {
-function insideCell(c, x, y) {
-  // console.log(x + " " + y  + " " + c.getXCentre() + " " + c.getYCentre() + " " + c.getCellSize());
-  if (
-    x >= c.getXCentre() - c.getCellSize() &&
-    x <= c.getXCentre() + c.getCellSize() &&
-    y >= c.getYCentre() - c.getCellSize() &&
-    y <= c.getYCentre() + c.getCellSize()
-  )
-    return true;
-  return false;
-}
-return {insideCell};
+define({id: "273872e3", body: () => {
+// let temp = selectedIntervention.allBuildings.map((building) => ({
+//   ...building.properties,
+// }));
+// console.log("trying to flatten Interventions", temp);
 }});
 
 </script>
 <div id="observablehq-center">
 <main id="observablehq-main" class="observablehq">
-<!-- ------------------ # Imports ------------------  -->
-<div class="observablehq observablehq--block"><!--:1f3981d9:--></div>
-<div class="observablehq observablehq--block"><!--:5dd85f8f:--></div>
-<!-- ------------ The HTML Layout ------------ -->
+<!-- ------------ Imports ------------ -->
+<div class="observablehq observablehq--block"><!--:91188f07:--></div>
+<!-- ---------------- Data ---------------- -->
+<div class="observablehq observablehq--block"><!--:6949098a:--></div>
+<div class="observablehq observablehq--block"><!--:28c25a2a:--></div>
+<!-- ------------ Getter-Setter ------------ -->
+<div class="observablehq observablehq--block"><!--:d47e63b1:--></div>
 <!-------- Stylesheets -------->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.0/css/bulma.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css">
+<link href="https://unpkg.com/maplibre-gl@2.1.9/dist/maplibre-gl.css" rel="stylesheet">
+<link rel="stylesheet" href="./_file/styles/dashboard.2badc1f5.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 <style>
 body, html {
   height: 100%;
   margin: 0 !important;
-
-  overflow: hidden;
-
+  /* overflow: hidden; */
   padding: 0;
 }
 
@@ -1590,70 +567,163 @@ body, html {
     max-width: 100% !important;
 }
 
+#observablehq-center {
+  margin: 0.5rem !important;
+}
+
+.grid {
+  margin: 0 !important;
+}
+
+.grid-container {
+    display: grid;
+    grid-template-columns: 1fr 4fr;
+    grid-template-rows: repeat(2, 1fr) 1fr;
+    gap: 8px; /* gap between grid items */
+    padding: 8px;
+    height: 92vh;
+  }
+
+  /* Left panel boxes */
+  #left-panel {
+     /* Spans 2 rows */
+    display: grid;
+    grid-template-rows: 1fr 1fr; /* Two equal rows */
+    gap: 8px;
+  }
+
+
+  /* Right panel boxes */
+  #main-panel {
+    /*grid-row: span 2;  Spans 2 rows */
+    display: grid;
+    grid-template-rows: 4fr 2fr;
+    height: 92vh;
+    gap: 8px;
+  }
+
+  .main-top {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Split into two equal columns */
+    gap: 8px;
+  }
+
+  /* Main panel bottom, split into two sections */
+  .main-bottom {
+    /* grid-row: 2 / 3; Takes the second row */
+    display: grid;
+    grid-template-columns: 3fr 1fr; /* Split bottom row into 1/3 ratio */
+    gap: 8px;
+  }
+
+    .card {
+      /* display: flex; /* Use Flexbox */
+      /* justify-content: center; Horizontally center content */
+      /* align-items: center; Vertically center content */
+      /* text-align: center; Center text alignment for multiline */ */
+      border: 1px dark-grey solid;
+      padding: 8px;
+      margin: 0 !important;
+      box-sizing: border-box; /* Ensure padding is included in height calculations */
+    }
+
+  .main-top,
+  .main-bottom .card {
+      height: 100%; /* Let the grid layout define height naturally */
+  }
+
+.dragging {
+  opacity: 0.5;
+  cursor: grabbing;
+}
+
+#interventions-list li {
+  transition: background-color 0.3s;
+}
+
+#interventions-list li:hover {
+  background-color: #f9f9f9;
+}
+
+#interventions-list li.selected {
+  background-color: #e0f7fa; /* Light cyan for selection */
+  font-weight: bold;
+  border-left: 4px solid #00bcd4; /* Accent border */
+}
+
 </style>
-<div id="left-panel" class="grid grid-cols-4" style="padding:8px; height:92vh;">
-<pre><code>&lt;div class="card grid-colspan-1"&gt;
-     &lt;div style="padding:10px;"&gt; ${localAuthorityInput} &lt;/div&gt;
-</code></pre>
-<p></p><div style="padding:10px;"> <observablehq-loading></observablehq-loading><!--:71bd6feb:--> </div>
-&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<div style="padding:10px;"> <observablehq-loading></observablehq-loading><!--:c0e452dc:--> </div><p></p>
-<p></p><div style="padding:10px;"> <small>Drag to morph (choose 'Gridmap')</small> <observablehq-loading></observablehq-loading><!--:d5a91e5c:--> </div><br>
-<hr>
-<div style="padding:10px;"> List of layers</div>
+<!-- ---------------- HTML Layout ---------------- -->
+<div class="grid-container" style="padding:8px; height:92vh;">
+  <!-- Left panel (two boxes, stacked vertically) -->
+  <div id="left-panel">
+    <div id="project-properties" class="card">
+      <h1>Decarbonisation Dashboard</h1>
+      <br>
+      <div class="form-group">
+        <observablehq-loading></observablehq-loading><!--:437e2ff2:-->
+      </div>
+      <div class="form-group">
+        <!-- <label for="total-budget">Total Budget:</label> -->
+        <observablehq-loading></observablehq-loading><!--:a4ca7b63:-->
+      </div>
+      <div class="form-group">
+        <!--label for="total-budget">Start Year:</label-->
+        <observablehq-loading></observablehq-loading><!--:c73bfedc:-->
+      </div>
+      <div class="form-group">
+        <label for="total-budget">Project length (years):</label>
+        <observablehq-loading></observablehq-loading><!--:580b039d:-->
+      </div>
+      <div class="form-group">
+      <label for="total-budget">Budget Allocation Type:</label>
+        <observablehq-loading></observablehq-loading><!--:92cf87a9:-->
+      </div>
+        <observablehq-loading></observablehq-loading><!--:acdb1373:-->
+      <div class="form-group">
+        <observablehq-loading></observablehq-loading><!--:bc6d8af2:-->
+      </div>
+      <div class="form-group">
+        <observablehq-loading></observablehq-loading><!--:d2a5955e:-->
+      </div>
+      <div class="form-group">
+        <observablehq-loading></observablehq-loading><!--:61c03daa:-->
+      </div>
+    </div>
+  </div>
+  <!-- Main panel (right side) -->
+  <div id="main-panel">
+    <!-- <div class="card main-top">Map View</div> -->
+    <div class="main-top">
+      <div class="card" style="overflow-x:hidden">
+      Sortable Table
+      <observablehq-loading></observablehq-loading><!--:7388e6e9:-->
+      </div>
+      <div class="card">Map View</div>
+    </div>
+    <div class="main-bottom">
+      <div class="card">
+      <h2> General overview graph </h2>
+      <br>
+      <div id="graph-container">
+      <!-- List generated here -->
+          <ul id="interventions-list">
+            <observablehq-loading></observablehq-loading><!--:fdc077a6:-->
+          </ul>
+      </div>
+    </div>
+    <div class="card">Sculptable Hierarchical Glyph/Details on demand</div>
+  </div>
 </div>
-<div id="main-panel" class="card glyphmaps grid-colspan-3" style="padding:8px; height:92vh;">
-<observablehq-loading></observablehq-loading><!--:271c02bf:-->
-</div>
-<div id="right-panel" class="grid-colspan-1" style="display: flex; flex-direction: column; padding:8px; height:92vh;">
-<div class="card" style="flex-grow: 1;">
-Glyph view here
-</div>
-<div class="card" style="flex-grow: 1;">
-<div style="padding:15px;">Animated morphing glyphmaps</div>
-<div>
-<observablehq-loading></observablehq-loading><!--:2ad25b31:-->
-</div>
-</div><p></p>
-<pre><code>&lt;/div&gt;
-</code></pre>
-</div>
-<!-- ------------------ # Data and Inputs ------------------  -->
-<!-- Select the Local authority from the list below -->
-<div class="observablehq observablehq--block"><!--:17a1fc11:--></div>
-<div class="observablehq observablehq--block"><!--:0bef96a5:--></div>
-<div class="observablehq observablehq--block"><!--:5428040c:--></div>
-<div class="observablehq observablehq--block"><!--:2bfedaef:--></div>
-<div class="observablehq observablehq--block"><!--:ac7e408e:--></div>
-<div class="observablehq observablehq--block"><!--:cad06486:--></div>
-<div class="observablehq observablehq--block"><!--:6542bf3e:--></div>
-<div class="observablehq observablehq--block"><!--:0edc8540:--></div>
-<div class="observablehq observablehq--block"><!--:47b53055:--></div>
-<!-- ------------------ # Morphing Geometry Functions ------------------  -->
-<div class="observablehq observablehq--block"><!--:ad7c741c:--></div>
-<div class="observablehq observablehq--block"><!--:f56eeb6b:--></div>
-<div class="observablehq observablehq--block"><!--:5acb849c:--></div>
-<div class="observablehq observablehq--block"><!--:1f74eb9f:--></div>
-<!-- ------------------ # Morphing Geometry Functions ------------------  -->
-<div class="observablehq observablehq--block"><!--:48878e8b:--></div>
-<div class="observablehq observablehq--block"><!--:4461947e:--></div>
-<div class="observablehq observablehq--block"><!--:0a0330f3:--></div>
-<div class="observablehq observablehq--block"><!--:d685c337:--></div>
-<div class="observablehq observablehq--block"><!--:2e428462:--></div>
-<div class="observablehq observablehq--block"><!--:4bfa126b:--></div>
-<div class="observablehq observablehq--block"><!--:ee9fe065:--></div>
-<div class="observablehq observablehq--block"><!--:53ad4c83:--></div>
-<div class="observablehq observablehq--block"><!--:e1679362:--></div>
-<!-- ------------------ # Gridded-Glyphmap Functions ------------------  -->
-<div class="observablehq observablehq--block"><!--:dc10622c:--></div>
-<div class="observablehq observablehq--block"><!--:ec853745:--></div>
-<div class="observablehq observablehq--block"><!--:4913bd0b:--></div>
-<div class="observablehq observablehq--block"><!--:c95c42db:--></div>
-<div class="observablehq observablehq--block"><!--:7d5286c3:--></div>
-<div class="observablehq observablehq--block"><!--:be62aa21:--></div>
-<div class="observablehq observablehq--block"><!--:a8ee3415:--></div>
-<div class="observablehq observablehq--block"><!--:92e60971:--></div>
-<div class="observablehq observablehq--block"><!--:246c80d3:--></div>
-<div class="observablehq observablehq--block"><!--:9d040433:--></div>
-<div class="observablehq observablehq--block"><!--:520e6d60:--></div>
-</main>
+<div class="observablehq observablehq--block"><!--:1947ba21:--></div>
+<!-- ---------------- Input form declarations ---------------- -->
+<div class="observablehq observablehq--block"><!--:143f3770:--></div>
+<div class="observablehq observablehq--block"><!--:fbf1b5a3:--></div>
+<div class="observablehq observablehq--block"><!--:39e29da4:--></div>
+<div class="observablehq observablehq--block"><!--:30ef2d9c:--></div>
+<div class="observablehq observablehq--block"><!--:def3b8eb:--></div>
+<!-- ---------------- Functions ---------------- -->
+<div class="observablehq observablehq--block"><!--:7b8b3e59:--></div>
+<div class="observablehq observablehq--block"><!--:79e5d210:--></div>
+<div class="observablehq observablehq--block"><!--:273872e3:--></div>
+</div></main>
 </div>

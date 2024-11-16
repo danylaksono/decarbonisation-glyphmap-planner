@@ -56,7 +56,7 @@ import {define} from "../_observablehq/client.js";
 import {registerFile, FileAttachment} from "../_observablehq/stdlib.js";
 import {registerTable} from "../_observablehq/stdlib/duckdb.js";
 
-registerFile("./../data/oxford_decarbonisation_data.parquet", {"name":"./../data/oxford_decarbonisation_data.parquet","path":"../_file/data/oxford_decarbonisation_data.28ee7510.parquet","lastModified":1731655360947});
+registerFile("./../data/oxford_decarbonisation_data.parquet", {"name":"./../data/oxford_decarbonisation_data.parquet","path":"../_file/data/oxford_decarbonisation_data.28ee7510.parquet","lastModified":1731794591395});
 registerTable("oxford", FileAttachment("../data/oxford_decarbonisation_data.parquet"));
 
 define({id: "5da2df3a", outputs: ["createTable"], body: async () => {
@@ -116,9 +116,12 @@ FROM oxford b;`;
 return {oxford_data};
 }});
 
-define({id: "d11f8e11", inputs: ["oxford_data"], outputs: ["buildings"], body: (oxford_data) => {
+define({id: "02502bdf", inputs: ["oxford_data"], outputs: ["buildings","flattenned"], body: (oxford_data) => {
 const buildings = [...oxford_data];
-return {buildings};
+const flattenned = buildings.map((p) => ({ ...p }));
+// display(buildings);
+// display(flattenned);
+return {buildings,flattenned};
 }});
 
 define({id: "66011008", outputs: ["cols"], body: () => {
@@ -153,13 +156,17 @@ const [selected, setSelected] = useState({});
 return {useState,selected,setSelected};
 }});
 
-define({id: "814fc617", inputs: ["createTable","buildings","cols","setSelected"], outputs: ["table"], body: (createTable,buildings,cols,setSelected) => {
+define({id: "e124d779", inputs: ["createTable","buildings","cols","setSelected"], outputs: ["table"], body: (createTable,buildings,cols,setSelected) => {
 // const table = new createTable(buildings, cols, () => {});
 
-const table = new createTable(buildings.map( p => ({...p})), cols, (changes) => {
-  console.log("Table changed:", changes);
-  setSelected(changes.selection);
-});
+const table = new createTable(
+  buildings.map((p) => ({ ...p })),
+  cols,
+  (changes) => {
+    console.log("Table changed:", changes);
+    setSelected(changes.selection);
+  }
+);
 
 // const table = sorter_table.createTable(buildings, cols, () => {});
 return {table};
@@ -179,10 +186,10 @@ display(selected);
 <div class="observablehq observablehq--block"><!--:5da2df3a:--></div>
 <h1 id="table-experiments-2" tabindex="-1"><a class="observablehq-header-anchor" href="#table-experiments-2">Table Experiments 2</a></h1>
 <div class="observablehq observablehq--block"><!--:d22197ed:--></div>
-<div class="observablehq observablehq--block"><!--:d11f8e11:--></div>
+<div class="observablehq observablehq--block"><!--:02502bdf:--></div>
 <div class="observablehq observablehq--block"><!--:66011008:--></div>
 <div class="observablehq observablehq--block"><!--:ec01b706:--></div>
-<div class="observablehq observablehq--block"><!--:814fc617:--></div>
+<div class="observablehq observablehq--block"><!--:e124d779:--></div>
 <div class="observablehq observablehq--block"><!--:19721a50:--></div>
 <div class="observablehq observablehq--block"><!--:15548009:--></div>
 </main>

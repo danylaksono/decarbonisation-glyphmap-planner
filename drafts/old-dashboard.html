@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<title>Morphing Glyphmaps 2 | Decarbonisation Glyphmap Planner</title>
+<title>Morphing Glyphmaps | Decarbonisation Glyphmap Planner</title>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Source+Serif+Pro:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&amp;display=swap" crossorigin>
 <link rel="preload" as="style" href="../_observablehq/theme-air,near-midnight,alt,wide.css">
@@ -14,13 +14,10 @@
 <link rel="modulepreload" href="../_observablehq/stdlib.js">
 <link rel="modulepreload" href="../_node/@turf/turf@7.1.0/index.js">
 <link rel="modulepreload" href="../_npm/d3-require@1.3.0/_esm.js">
-<link rel="modulepreload" href="../_import/components/radialglyph.e10c9304.js">
-<link rel="modulepreload" href="../_import/components/gridded-glyphmaps/index.min.e22a1d11.js">
-<link rel="modulepreload" href="../_import/components/osgb/index.1d2476df.js">
-<link rel="modulepreload" href="../_import/components/utils.ec49f1d6.js">
-<link rel="modulepreload" href="../_npm/d3@7.9.0/_esm.js">
-<link rel="modulepreload" href="../_import/components/osgb/ellipsoid.1ac4eba6.js">
-<link rel="modulepreload" href="../_npm/topojson-client@3.1.0/_esm.js">
+<link rel="modulepreload" href="./components/radialglyph.js">
+<link rel="modulepreload" href="./components/gridded-glyphmaps/index.min.js">
+<link rel="modulepreload" href="./components/osgb/index.js">
+<link rel="modulepreload" href="./components/utils.js">
 <link rel="modulepreload" href="../_npm/lodash@4.17.21/_esm.js">
 <link rel="modulepreload" href="../_observablehq/stdlib/duckdb.js">
 <link rel="modulepreload" href="../_npm/htl@0.3.1/_esm.js">
@@ -140,6 +137,24 @@
 <link rel="modulepreload" href="../_node/@turf/union@7.1.0/index.js">
 <link rel="modulepreload" href="../_node/@turf/unkink-polygon@7.1.0/index.js">
 <link rel="modulepreload" href="../_node/@turf/voronoi@7.1.0/index.js">
+<link rel="modulepreload" href="../_npm/d3@7.9.0/_esm.js">
+<link rel="modulepreload" href="../_npm/interval-tree-1d@1.0.4/_esm.js">
+<link rel="modulepreload" href="../_npm/apache-arrow@18.0.0/_esm.js">
+<link rel="modulepreload" href="../_node/geojson-equality-ts@1.0.2/index.js">
+<link rel="modulepreload" href="../_node/point-in-polygon-hao@1.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/jsts@2.7.1/index.js">
+<link rel="modulepreload" href="../_node/d3-geo@1.7.1/index.js">
+<link rel="modulepreload" href="../_node/rbush@3.0.1/index.js">
+<link rel="modulepreload" href="../_node/skmeans@0.9.7/index.js">
+<link rel="modulepreload" href="../_node/topojson-client@3.1.0/index.js">
+<link rel="modulepreload" href="../_node/topojson-server@3.0.1/index.js">
+<link rel="modulepreload" href="../_node/concaveman@1.2.1/index.js">
+<link rel="modulepreload" href="../_node/polygon-clipping@0.15.7/index.js">
+<link rel="modulepreload" href="../_node/marchingsquares@1.3.3/index.js">
+<link rel="modulepreload" href="../_node/sweepline-intersections@1.5.0/index.js">
+<link rel="modulepreload" href="../_node/fast-deep-equal@3.1.3/index.js">
+<link rel="modulepreload" href="../_node/earcut@2.2.4/index.js">
+<link rel="modulepreload" href="../_node/d3-voronoi@1.1.2/index.js">
 <link rel="modulepreload" href="../_npm/d3-array@3.2.4/_esm.js">
 <link rel="modulepreload" href="../_npm/d3-axis@3.0.0/_esm.js">
 <link rel="modulepreload" href="../_npm/d3-brush@3.0.0/_esm.js">
@@ -170,25 +185,6 @@
 <link rel="modulepreload" href="../_npm/d3-timer@3.0.1/_esm.js">
 <link rel="modulepreload" href="../_npm/d3-transition@3.0.1/_esm.js">
 <link rel="modulepreload" href="../_npm/d3-zoom@3.0.0/_esm.js">
-<link rel="modulepreload" href="../_npm/interval-tree-1d@1.0.4/_esm.js">
-<link rel="modulepreload" href="../_npm/apache-arrow@18.0.0/_esm.js">
-<link rel="modulepreload" href="../_node/geojson-equality-ts@1.0.2/index.js">
-<link rel="modulepreload" href="../_node/point-in-polygon-hao@1.1.0/index.js">
-<link rel="modulepreload" href="../_node/@turf/jsts@2.7.1/index.js">
-<link rel="modulepreload" href="../_node/d3-geo@1.7.1/index.js">
-<link rel="modulepreload" href="../_node/rbush@3.0.1/index.js">
-<link rel="modulepreload" href="../_node/skmeans@0.9.7/index.js">
-<link rel="modulepreload" href="../_node/topojson-client@3.1.0/index.js">
-<link rel="modulepreload" href="../_node/topojson-server@3.0.1/index.js">
-<link rel="modulepreload" href="../_node/concaveman@1.2.1/index.js">
-<link rel="modulepreload" href="../_node/polygon-clipping@0.15.7/index.js">
-<link rel="modulepreload" href="../_node/marchingsquares@1.3.3/index.js">
-<link rel="modulepreload" href="../_node/sweepline-intersections@1.5.0/index.js">
-<link rel="modulepreload" href="../_node/fast-deep-equal@3.1.3/index.js">
-<link rel="modulepreload" href="../_node/earcut@2.2.4/index.js">
-<link rel="modulepreload" href="../_node/d3-voronoi@1.1.2/index.js">
-<link rel="modulepreload" href="../_npm/internmap@2.0.3/_esm.js">
-<link rel="modulepreload" href="../_npm/delaunator@5.0.1/_esm.js">
 <link rel="modulepreload" href="../_npm/binary-search-bounds@2.0.5/_esm.js">
 <link rel="modulepreload" href="../_npm/tslib@2.8.1/_esm.js">
 <link rel="modulepreload" href="../_npm/flatbuffers@24.3.25/_esm.js">
@@ -196,6 +192,8 @@
 <link rel="modulepreload" href="../_node/tinyqueue@2.0.3/index.js">
 <link rel="modulepreload" href="../_node/point-in-polygon@1.1.0/index.js">
 <link rel="modulepreload" href="../_node/robust-predicates@2.0.4/umd/orient2d.min.js">
+<link rel="modulepreload" href="../_npm/internmap@2.0.3/_esm.js">
+<link rel="modulepreload" href="../_npm/delaunator@5.0.1/_esm.js">
 <link rel="modulepreload" href="../_npm/robust-predicates@3.0.2/_esm.js">
 <script type="module">
 
@@ -203,13 +201,13 @@ import {define} from "../_observablehq/client.js";
 import {registerFile, FileAttachment} from "../_observablehq/stdlib.js";
 import {registerTable} from "../_observablehq/stdlib/duckdb.js";
 
-registerFile("./../data/census_data_output.parquet", {"name":"./../data/census_data_output.parquet","path":"../_file/data/census_data_output.1374b127.parquet","lastModified":1731794591307});
-registerFile("./../data/geo.csv", {"name":"./../data/geo.csv","mimeType":"text/csv","path":"../_file/data/geo.8ba75b99.csv","lastModified":1731794591323});
-registerTable("geo", FileAttachment("../data/geo.csv"));
-registerTable("census_data_source", FileAttachment("../data/census_data_output.parquet"));
+registerFile("./data/census_data_output.parquet", {"name":"./data/census_data_output.parquet","path":"./data/census_data_output.parquet"});
+registerFile("./data/geo.csv", {"name":"./data/geo.csv","mimeType":"text/csv","path":"./data/geo.csv"});
+registerTable("geo", FileAttachment("./data/geo.csv"));
+registerTable("census_data_source", FileAttachment("./data/census_data_output.parquet"));
 
-define({id: "f8ff4578", outputs: ["turf","require","d3","flubber","RadialGlyph","glyphMap","createDiscretiserValue","_drawCellBackground","OSGB","downloadBoundaries","joinCensusDataToGeoJSON","convertGridCsvToGeoJson","context2d"], body: async () => {
-const [turf, {require}, {RadialGlyph}, {glyphMap, createDiscretiserValue, _drawCellBackground}, {OSGB}, {downloadBoundaries, joinCensusDataToGeoJSON, convertGridCsvToGeoJson, context2d}] = await Promise.all([import("../_node/@turf/turf@7.1.0/index.js"), import("../_npm/d3-require@1.3.0/_esm.js"), import("../_import/components/radialglyph.e10c9304.js"), import("../_import/components/gridded-glyphmaps/index.min.e22a1d11.js"), import("../_import/components/osgb/index.1d2476df.js"), import("../_import/components/utils.ec49f1d6.js")]);
+define({id: "1f3981d9", outputs: ["turf","require","d3","flubber","RadialGlyph","glyphMap","createDiscretiserValue","_drawCellBackground","OSGB","downloadBoundaries","joinCensusDataToGeoJSON","convertGridCsvToGeoJson","context2d"], body: async () => {
+const [turf, {require}, {RadialGlyph}, {glyphMap, createDiscretiserValue, _drawCellBackground}, {OSGB}, {downloadBoundaries, joinCensusDataToGeoJSON, convertGridCsvToGeoJson, context2d}] = await Promise.all([import("../_node/@turf/turf@7.1.0/index.js"), import("../_npm/d3-require@1.3.0/_esm.js"), import("./components/radialglyph.js"), import("./components/gridded-glyphmaps/index.min.js"), import("./components/osgb/index.js"), import("./components/utils.js")]);
 // import * as d3 from "npm:d3";
 const d3 = require("d3", "d3-geo-projection");
 const flubber = require("flubber@0.4");
@@ -223,12 +221,6 @@ return {turf,require,d3,flubber,RadialGlyph,glyphMap,createDiscretiserValue,_dra
 define({id: "5dd85f8f", inputs: ["OSGB"], outputs: ["proj"], body: (OSGB) => {
 const proj = new OSGB();
 return {proj};
-}});
-
-define({id: "2d300212", mode: "inline", inputs: ["localAuthorityInput","display"], body: async (localAuthorityInput,display) => {
-display(await(
-localAuthorityInput
-))
 }});
 
 define({id: "71bd6feb", mode: "inline", inputs: ["geogNameInput","display"], body: async (geogNameInput,display) => {
@@ -284,11 +276,10 @@ const geogName = Generators.input(geogNameInput);
 return {geogNameInput,geogName};
 }});
 
-define({id: "4d5f9e9a", inputs: ["html","Generators"], outputs: ["tInput","t"], body: (html,Generators) => {
+define({id: "5428040c", inputs: ["html","Generators"], outputs: ["tInput","t"], body: (html,Generators) => {
 const tInput = html`<input
   style="width: 100%; max-width:200px;"
   type="range"
-  value="1"
   step="0.05"
   min="0"
   max="1"
@@ -298,7 +289,7 @@ const t = Generators.input(tInput);
 return {tInput,t};
 }});
 
-define({id: "76ba71c3", inputs: ["list_la","local_authority","geogName"], outputs: ["la_code","geogBoundary"], body: (list_la,local_authority,geogName) => {
+define({id: "2bfedaef", inputs: ["list_la","local_authority","geogName"], outputs: ["la_code","geogBoundary"], body: (list_la,local_authority,geogName) => {
 const la_code = [...list_la].find((row) => row.label === local_authority).code;
 const geogBoundary = geogName.toLowerCase() + "s";
 return {la_code,geogBoundary};
@@ -317,10 +308,10 @@ AND geo.LA = (SELECT replace(${la_code}, '"', ''''))`;
 return {list_of_codes};
 }});
 
-define({id: "27ac10e4", inputs: ["list_of_codes","downloadBoundaries","geogBoundary"], outputs: ["list_of_code","regular_geodata"], body: async (list_of_codes,downloadBoundaries,geogBoundary) => {
+define({id: "6542bf3e", inputs: ["list_of_codes","downloadBoundaries","geogBoundary"], outputs: ["list_of_code","regular_geodata"], body: async (list_of_codes,downloadBoundaries,geogBoundary) => {
 const list_of_code = [...list_of_codes].map((row) => row.code);
 const regular_geodata = await downloadBoundaries(geogBoundary, list_of_code);
-// display(transformCoordinates(turf.bbox(regular_geodata)));
+// display(regular_geodata);
 return {list_of_code,regular_geodata};
 }});
 
@@ -360,7 +351,7 @@ select * from census_data_source;`;
 return {census_data};
 }});
 
-define({id: "352d8c82", inputs: ["regular_geodata_withcensus","d3","_"], outputs: ["normalizeValue","data"], body: (regular_geodata_withcensus,d3,_) => {
+define({id: "ad7c741c", inputs: ["regular_geodata_withcensus","d3","_"], outputs: ["normalizeValue","data"], body: (regular_geodata_withcensus,d3,_) => {
 // normalise the data
 function normalizeValue(paramName, value) {
   const values = regular_geodata_withcensus.features.map(
@@ -389,30 +380,16 @@ const data = _.keyBy(
   }),
   "code"
 );
+
 // display(data);
 return {normalizeValue,data};
 }});
 
-define({id: "7fd98eeb", inputs: ["joinCensusDataToGeoJSON","census_data","regular_geodata","grid_geodata"], outputs: ["regular_geodata_withcensus","grid_geodata_withcensus"], body: (joinCensusDataToGeoJSON,census_data,regular_geodata,grid_geodata) => {
-// joining census data to geodata
-const regular_geodata_withcensus = joinCensusDataToGeoJSON(
-  [...census_data],
-  regular_geodata
-);
-const grid_geodata_withcensus = joinCensusDataToGeoJSON(
-  [...census_data],
-  grid_geodata
-);
-
-// display("regular geodata with census data");
-// display(regular_geodata_withcensus);
-return {regular_geodata_withcensus,grid_geodata_withcensus};
-}});
-
-define({id: "3fee57e5", body: () => {
+define({id: "f56eeb6b", body: () => {
 // display(
 //   prepareGeoJsonForMorphingLib(regular_geodata, regular_geodata, 300, 300)
 // );
+
 }});
 
 define({id: "5acb849c", inputs: ["d3","data","prepareGeoJsonForMorphingLib","regular_geodata","local_authority","geogName","grid_geodata"], outputs: ["colourScalePop","layouts"], body: (d3,data,prepareGeoJsonForMorphingLib,regular_geodata,local_authority,geogName,grid_geodata) => {
@@ -451,7 +428,7 @@ const layouts = [
 return {colourScalePop,layouts};
 }});
 
-define({id: "30d51695", body: () => {
+define({id: "1f74eb9f", body: () => {
 // using observable framework resize callback function
 // const morphers = resize((width, height) =>
 //   inSituMorphMouse(
@@ -468,7 +445,194 @@ define({id: "30d51695", body: () => {
 // display(morphers);
 }});
 
-define({id: "147250e0", inputs: ["d3","_","turf","context2d","flubber","OffscreenCanvas"], outputs: ["inSituMorphMouse","_insertIntermediateLayouts","intermTranslate","prepareGeoJsonForMorphingLib","intermTranslateV","intermCircles","intermChangeShape","intermBbSize"], body: (d3,_,turf,context2d,flubber,OffscreenCanvas) => {
+define({id: "48878e8b", inputs: ["prepareGeoJsonForMorphingLib","flubber"], outputs: ["extractCoordinatesForFlubber","interpolateGeoShapes","convertToGeoJSON"], body: (prepareGeoJsonForMorphingLib,flubber) => {
+const extractCoordinatesForFlubber = (features) => {
+  return features.map((feature) => {
+    const { type, coordinates } = feature.geometry;
+
+    if (type === "Polygon") {
+      return coordinates[0]; // Use the first ring in the polygon
+    } else if (type === "MultiPolygon") {
+      return coordinates.flat(2); // Flatten MultiPolygon into a single array of points
+    } else {
+      throw new Error(`Unsupported geometry type: ${type}`);
+    }
+  });
+};
+
+const interpolateGeoShapes = (geography, cartogram, w, h) => {
+  const geogProjected = prepareGeoJsonForMorphingLib(
+    geography,
+    geography,
+    w,
+    h
+  );
+  const cartProjected = prepareGeoJsonForMorphingLib(
+    cartogram,
+    geography,
+    w,
+    h
+  );
+
+  const geogCoords = extractCoordinatesForFlubber(Object.values(geogProjected));
+  const cartCoords = extractCoordinatesForFlubber(Object.values(cartProjected));
+
+  // console.log("geogCoords", geogCoords);
+
+  const interpolator = flubber.interpolateAll(geogCoords, cartCoords, {
+    string: false,
+    single: true,
+  });
+
+  return (t) => {
+    const interpolatedCoords = interpolator(t);
+    return Object.keys(geogProjected).reduce((acc, code, index) => {
+      acc[code] = {
+        ...geogProjected[code],
+        geometry: {
+          ...geogProjected[code].geometry,
+          coordinates: [interpolatedCoords[index]],
+        },
+      };
+      return acc;
+    }, {});
+  };
+};
+
+function convertToGeoJSON(interpolatedShapes) {
+  // console.log("interpolatedShapes", interpolatedShapes);
+  return {
+    type: "FeatureCollection",
+    features: Object.entries(interpolatedShapes).map(([code, feature]) => ({
+      type: "Feature",
+      properties: {
+        ...feature.properties,
+        code: code,
+      },
+      geometry: {
+        type: feature.geometry.type,
+        coordinates: feature.geometry.coordinates,
+      },
+    })),
+  };
+}
+return {extractCoordinatesForFlubber,interpolateGeoShapes,convertToGeoJSON};
+}});
+
+define({id: "4461947e", inputs: ["d3"], outputs: ["createGeometryInverter"], body: (d3) => {
+function createGeometryInverter(originalGeography, width, height) {
+  // Create the same projection used in the original transformation
+  const projection = d3
+    .geoIdentity()
+    .reflectY(true)
+    .fitExtent(
+      [
+        [0, 0],
+        [width, height],
+      ],
+      originalGeography
+    );
+
+  // Create the inverse function
+  const inverseProjection = projection.invert;
+
+  // Function to invert a single coordinate pair
+  const invertCoordinate = (coord) => inverseProjection(coord);
+
+  // Function to invert an array of coordinates (for Polygons)
+  const invertPolygon = (coords) =>
+    coords.map((ring) => ring.map(invertCoordinate));
+
+  // Function to invert MultiPolygon coordinates
+  const invertMultiPolygon = (coords) => coords.map(invertPolygon);
+
+  // Main inversion function
+  return function invertGeometry(projectedGeometry) {
+    const { type, coordinates } = projectedGeometry;
+
+    switch (type) {
+      case "Polygon":
+        return {
+          type: "Polygon",
+          coordinates: invertPolygon(coordinates),
+        };
+      case "MultiPolygon":
+        return {
+          type: "MultiPolygon",
+          coordinates: invertMultiPolygon(coordinates),
+        };
+      default:
+        throw new Error(`Unsupported geometry type: ${type}`);
+    }
+  };
+}
+return {createGeometryInverter};
+}});
+
+define({id: "0a0330f3", inputs: ["invertGeometry"], outputs: ["invertIntGeoShapes"], body: (invertGeometry) => {
+function invertIntGeoShapes(intGeoShapes, t) {
+  const projectedShapes = intGeoShapes(t);
+  return Object.fromEntries(
+    Object.entries(projectedShapes).map(([code, feature]) => [
+      code,
+      {
+        ...feature,
+        geometry: invertGeometry(feature.geometry),
+      },
+    ])
+  );
+}
+return {invertIntGeoShapes};
+}});
+
+define({id: "d685c337", inputs: ["interpolateGeoShapes","regular_geodata_withcensus","grid_geodata_withcensus","convertToGeoJSON","t"], outputs: ["intGeoShapesv2","dataInMorph"], body: (interpolateGeoShapes,regular_geodata_withcensus,grid_geodata_withcensus,convertToGeoJSON,t) => {
+const intGeoShapesv2 = interpolateGeoShapes(
+  regular_geodata_withcensus,
+  grid_geodata_withcensus,
+  3000,
+  3000
+);
+const dataInMorph = convertToGeoJSON(intGeoShapesv2(t));
+// display(Object.values(intGeoShapesv2(t)));
+// display(dataInMorph);
+return {intGeoShapesv2,dataInMorph};
+}});
+
+define({id: "2e428462", inputs: ["createGeometryInverter","regular_geodata_withcensus"], outputs: ["invertGeometry"], body: (createGeometryInverter,regular_geodata_withcensus) => {
+const invertGeometry = createGeometryInverter(
+  regular_geodata_withcensus,
+  3000,
+  3000
+);
+return {invertGeometry};
+}});
+
+define({id: "4bfa126b", inputs: ["invertIntGeoShapes","intGeoShapesv2","t"], outputs: ["geographicShapes"], body: (invertIntGeoShapes,intGeoShapesv2,t) => {
+const geographicShapes = invertIntGeoShapes(intGeoShapesv2, t);
+// display(Object.values(geographicShapes));
+return {geographicShapes};
+}});
+
+define({id: "ee9fe065", body: () => {
+// const transformedGeographicShapes = {
+//   ...Object.values(geographicShapes),
+//   features: Object.values(geographicShapes).map((feature) => ({
+//     ...feature,
+//     geometry: {
+//       ...feature.geometry,
+//       coordinates: transformCoordinates(feature.geometry.coordinates),
+//     },
+//   })),
+// };
+// display(transformedGeographicShapes);
+}});
+
+define({id: "53ad4c83", body: () => {
+// const geographicDataInMorph = convertToGeoJSON(transformedGeographicShapes);
+// display(geographicDataInMorph);
+}});
+
+define({id: "e1679362", inputs: ["d3","_","turf","context2d","flubber","OffscreenCanvas"], outputs: ["inSituMorphMouse","_insertIntermediateLayouts","intermTranslate","prepareGeoJsonForMorphingLib","intermTranslateV","intermCircles","intermChangeShape","intermBbSize"], body: (d3,_,turf,context2d,flubber,OffscreenCanvas) => {
 // ---------------------- Functions for morphing ----------------------
 
 function inSituMorphMouse(options, width) {
@@ -1005,8 +1169,9 @@ function intermBbSize(layout, toLayout) {
 return {inSituMorphMouse,_insertIntermediateLayouts,intermTranslate,prepareGeoJsonForMorphingLib,intermTranslateV,intermCircles,intermChangeShape,intermBbSize};
 }});
 
-define({id: "e38f4f2a", inputs: ["proj"], outputs: ["transformCoordinates","transformGeometry","applyTransformationToShapes"], body: (proj) => {
+define({id: "dc10622c", inputs: ["proj"], outputs: ["transformCoordinates","transformGeometry","applyTransformationToShapes"], body: (proj) => {
 // Coordinate transformation utilities
+
 function transformCoordinates(coords) {
   if (coords.length === 4 && !Array.isArray(coords[0])) {
     // bounding box
@@ -1015,10 +1180,12 @@ function transformCoordinates(coords) {
       ...proj.toGeo([coords[2], coords[3]]),
     ];
   } else if (Array.isArray(coords[0])) {
+
     // arrays of coordinates
     return coords.map(transformCoordinates);
   } else {
     // individual coordinate pairs
+
     return proj.toGeo(coords);
   }
 }
@@ -1055,53 +1222,45 @@ function applyTransformationToShapes(geographicShapes) {
 return {transformCoordinates,transformGeometry,applyTransformationToShapes};
 }});
 
-define({id: "b82b6a6c", inputs: ["OSGB","turf","regular_geodata_withcensus"], outputs: ["osgb","clone","regularGeodataCensusWgs84"], body: (OSGB,turf,regular_geodata_withcensus) => {
-const osgb = new OSGB();
-let clone = turf.clone(regular_geodata_withcensus);
-turf.coordEach(clone, (currentCoord) => {
-  const newCoord = osgb.toGeo(currentCoord);
-  currentCoord[0] = newCoord[0];
-  currentCoord[1] = newCoord[1];
-});
-const regularGeodataCensusWgs84 = clone;
+define({id: "ec853745", inputs: ["convertToGeoJSON","applyTransformationToShapes","geographicShapes"], outputs: ["transformedShapes"], body: (convertToGeoJSON,applyTransformationToShapes,geographicShapes) => {
+const transformedShapes = convertToGeoJSON(
+  applyTransformationToShapes(geographicShapes)
+);
+// display(transformedShapes);
 
-// display("regularGeodataCensusWgs84");
-// display(regularGeodataCensusWgs84);
-return {osgb,clone,regularGeodataCensusWgs84};
+return {transformedShapes};
 }});
 
-define({id: "f78d3444", inputs: ["OSGB","turf","grid_geodata_withcensus"], outputs: ["osgb","clone","gridGeodataCensusWgs84"], body: (OSGB,turf,grid_geodata_withcensus) => {
-const osgb = new OSGB();
-let clone = turf.clone(grid_geodata_withcensus);
-turf.coordEach(clone, (currentCoord) => {
-  const newCoord = osgb.toGeo(currentCoord);
-  currentCoord[0] = newCoord[0];
-  currentCoord[1] = newCoord[1];
-});
-const gridGeodataCensusWgs84 = clone;
+define({id: "4913bd0b", inputs: ["_","regular_geodata_withcensus","transformGeometry","turf","grid_geodata_withcensus"], outputs: ["regularGeodataLookup","gridGeodataLookup"], body: (_,regular_geodata_withcensus,transformGeometry,turf,grid_geodata_withcensus) => {
+// const regularGeodataLookup = _.keyBy(
+//   regular_geodata_withcensus.features.map((feat) => {
+//     return { ...feat, centroid: turf.getCoord(turf.centroid(feat.geometry)) };
+//   }),
+//   (feat) => feat.properties.code
+// );
 
-// display("gridGeodataCensusWgs84");
-// display(gridGeodataCensusWgs84);
-return {osgb,clone,gridGeodataCensusWgs84};
-}});
+// const gridGeodataLookup = _.keyBy(
+//   grid_geodata_withcensus.features.map((feat) => {
+//     return { ...feat, centroid: turf.getCoord(turf.centroid(feat.geometry)) };
+//   }),
+//   (feat) => feat.properties.code
+// );
 
-define({id: "c7a15d60", inputs: ["_","regular_geodata_withcensus","turf","grid_geodata_withcensus","transformGeometry"], outputs: ["regularGeodataLookup","gridGeodataLookup","regularGeodataLookupWGS84","gridGeodataLookupWGS84"], body: (_,regular_geodata_withcensus,turf,grid_geodata_withcensus,transformGeometry) => {
 const regularGeodataLookup = _.keyBy(
   regular_geodata_withcensus.features.map((feat) => {
-    return { ...feat, centroid: turf.getCoord(turf.centroid(feat.geometry)) };
+    const transformedGeometry = transformGeometry(feat.geometry);
+    const centroid = turf.getCoord(turf.centroid(transformedGeometry));
+    return {
+      ...feat,
+      geometry: transformedGeometry,
+      centroid: centroid,
+    };
   }),
   (feat) => feat.properties.code
 );
 
 const gridGeodataLookup = _.keyBy(
   grid_geodata_withcensus.features.map((feat) => {
-    return { ...feat, centroid: turf.getCoord(turf.centroid(feat.geometry)) };
-  }),
-  (feat) => feat.properties.code
-);
-
-const regularGeodataLookupWGS84 = _.keyBy(
-  regular_geodata_withcensus.features.map((feat) => {
     const transformedGeometry = transformGeometry(feat.geometry);
     const centroid = turf.getCoord(turf.centroid(transformedGeometry));
     return {
@@ -1113,58 +1272,11 @@ const regularGeodataLookupWGS84 = _.keyBy(
   (feat) => feat.properties.code
 );
 
-const gridGeodataLookupWGS84 = _.keyBy(
-  grid_geodata_withcensus.features.map((feat) => {
-    const transformedGeometry = transformGeometry(feat.geometry);
-    const centroid = turf.getCoord(turf.centroid(transformedGeometry));
-    return {
-      ...feat,
-      geometry: transformedGeometry,
-      centroid: centroid,
-    };
-  }),
-  (feat) => feat.properties.code
-);
-
-// const transformedShapesLookup = _.keyBy(
-//   transformedShapes.features.map((feat) => {
-//     return { ...feat, centroid: turf.getCoord(turf.centroid(feat.geometry)) };
-//   }),
-//   (feat) => feat.properties.code
-// );
-
-// display("regulargeodatalookup");
 // display(regularGeodataLookup);
-
-// display("transformedShapesLookup");
-// display(transformedShapesLookup);
-return {regularGeodataLookup,gridGeodataLookup,regularGeodataLookupWGS84,gridGeodataLookupWGS84};
+return {regularGeodataLookup,gridGeodataLookup};
 }});
 
-define({id: "43eaa4b6", inputs: ["gridGeodataLookupWGS84","regularGeodataLookupWGS84","flubber","turf","_","t"], outputs: ["flubbers","tweenWGS84Lookup"], body: (gridGeodataLookupWGS84,regularGeodataLookupWGS84,flubber,turf,_,t) => {
-const flubbers = {};
-
-for (const key of Object.keys(gridGeodataLookupWGS84)) {
-  if (regularGeodataLookupWGS84[key] && gridGeodataLookupWGS84[key]) {
-    flubbers[key] = flubber.interpolate(
-      turf.getCoords(regularGeodataLookupWGS84[key])[0],
-      turf.getCoords(gridGeodataLookupWGS84[key])[0],
-      { string: false }
-    );
-  }
-}
-const tweenWGS84Lookup = _.mapValues(flubbers, (v, k) => {
-  const feat = turf.multiLineString([v(t)], { code: k });
-  feat.centroid = turf.getCoord(turf.centroid(feat.geometry));
-  return feat;
-});
-
-// display("tweenWGS84Lookup");
-// display(tweenWGS84Lookup);
-return {flubbers,tweenWGS84Lookup};
-}});
-
-define({id: "21da4792", inputs: ["Inputs","Generators","createDiscretiserValue"], outputs: ["glyphmapTypeInput","glyphmapType","valueDiscretiser"], body: (Inputs,Generators,createDiscretiserValue) => {
+define({id: "c95c42db", inputs: ["Inputs","Generators","createDiscretiserValue"], outputs: ["glyphmapTypeInput","glyphmapType","valueDiscretiser"], body: (Inputs,Generators,createDiscretiserValue) => {
 const glyphmapTypeInput = Inputs.radio(["Polygons", "Gridmap", "Gridded"], {
   label: "Type of map",
   value: "Polygons",
@@ -1181,10 +1293,11 @@ function valueDiscretiser(geomLookup) {
     boundaryFn: (key) => geomLookup[key]?.geometry.coordinates[0],
   });
 }
+
 return {glyphmapTypeInput,glyphmapType,valueDiscretiser};
 }});
 
-define({id: "36d82749", inputs: ["turf","createDiscretiserValue"], outputs: ["valueDiscretiserInMorph"], body: (turf,createDiscretiserValue) => {
+define({id: "7d5286c3", inputs: ["turf","createDiscretiserValue"], outputs: ["valueDiscretiserInMorph"], body: (turf,createDiscretiserValue) => {
 function valueDiscretiserInMorph(inp) {
   // create lookup on the fly
   let geomLookup = Object.fromEntries(
@@ -1208,168 +1321,145 @@ function valueDiscretiserInMorph(inp) {
     boundaryFn: (key) => geomLookup[key]?.geometry.coordinates[0], // Access the boundary (first set of coordinates)
   });
 }
+
+// display(valueDiscretiserInMorph(dataInMorph));
+// display("datain morph");
+// display(dataInMorph);
+
+// display(transformCoordinates(turf.bbox(regular_geodata)));
 return {valueDiscretiserInMorph};
 }});
 
-define({id: "417b699c", inputs: ["transformCoordinates","turf","regular_geodata","data","regularGeodataLookup","d3","insideCell","drawRadialMultivariateGlyph"], outputs: ["glyphMapSpec"], body: (transformCoordinates,turf,regular_geodata,data,regularGeodataLookup,d3,insideCell,drawRadialMultivariateGlyph) => {
+define({id: "be62aa21", inputs: ["turf","transformedShapes","data","regularGeodataLookup","d3","insideCell","drawRadialMultivariateGlyph"], outputs: ["glyphMapSpec"], body: (turf,transformedShapes,data,regularGeodataLookup,d3,insideCell,drawRadialMultivariateGlyph) => {
 // glyphmap basic specs
-// function glyphMapSpec(width = 800, height = 600) {
-// console.log("in glyphmapspec", width, height);
-const glyphMapSpec = {
-  coordType: "notmercator",
-  initialBB: transformCoordinates(turf.bbox(regular_geodata)),
-  data: Object.values(data),
-  getLocationFn: (row) => regularGeodataLookup[row.code]?.centroid,
-  discretisationShape: "grid",
-  mapType: "CartoPositron",
-  interactiveCellSize: true,
-  cellSize: 30,
+function glyphMapSpec(width, height) {
+  // console.log("in glyphmapspec", width, height);
 
-  width: 800,
-  height: 600,
-  // width: width,
-  // height: height,
+  // const bbox = turf.bbox(regular_geodata);
+  return {
+    // coordType: "notmercator",
+    initialBB: turf.bbox(transformedShapes),
+    // initialBB: [
+    //   ...proj.toGeo([bbox[0], bbox[1]]),
+    //   ...proj.toGeo([bbox[2], bbox[3]]),
+    // ],
+    data: Object.values(data),
+    getLocationFn: (row) => regularGeodataLookup[row.code]?.centroid,
+    discretisationShape: "grid",
+    mapType: "CartoPositron",
 
-  customMap: {
-    scaleParams: [],
+    interactiveCellSize: true,
+    cellSize: 60,
 
-    // discretiserFn: valueDiscretiser(regularGeodataLookup),
+    // width: 800,
+    // height: 600,
+    width: width,
+    height: height,
 
-    initFn: (cells, cellSize, global, panel) => {
-      // console.log("initFn", cells, cellSize, global, panel);
+    customMap: {
+      scaleParams: [],
+
+      initFn: (cells, cellSize, global, panel) => {},
+
+      preAggrFn: (cells, cellSize, global, panel) => {
+        // console.log(global);
+      },
+
+      aggrFn: (cell, row, weight, global, panel) => {
+        if (cell.population) {
+          cell.population += row.population;
+          cell.deprivation += row.deprivation;
+          cell.vehicle += row.vehicle;
+          cell.heating += row.heating;
+          cell.health += row.health;
+        } else {
+          cell.population = row.population;
+          cell.deprivation = row.deprivation;
+          cell.vehicle = row.vehicle;
+          cell.heating = row.heating;
+          cell.health = row.health;
+        }
+      },
+
+      postAggrFn: (cells, cellSize, global, panel) => {
+        //add cell interaction
+        let canvas = d3.select(panel).select("canvas").node();
+
+        canvas.addEventListener("click", function (evt) {
+          //check which cell the click was in
+          const rect = canvas.getBoundingClientRect();
+          let x = evt.clientX - rect.left;
+          let y = evt.clientY - rect.top;
+          global.clickedCell = null;
+          for (let i = 0; i < cells.length; i++)
+            if (insideCell(cells[i], x, y)) global.clickedCell = cells[i];
+        });
+      },
+
+      preDrawFn: (cells, cellSize, ctx, global, panel) => {
+        if (!cells || cells.length === 0) {
+          console.error("No cells data available");
+          return;
+        }
+        global.pathGenerator = d3.geoPath().context(ctx);
+        global.colourScalePop = d3
+          .scaleSequential(d3.interpolateBlues)
+          .domain([0, d3.max(cells.map((row) => row.population))]);
+      },
+
+      drawFn: (cell, x, y, cellSize, ctx, global, panel) => {
+        const boundary = cell.getBoundary(0);
+        if (boundary[0] != boundary[boundary.length - 1]) {
+          boundary.push(boundary[0]);
+        }
+        const boundaryFeat = turf.polygon([boundary]);
+
+        ctx.beginPath();
+        global.pathGenerator(boundaryFeat);
+        ctx.fillStyle = global.colourScalePop(cell.population);
+        ctx.fill();
+
+        //add contour to clicked cells
+        if (global.clickedCell == cell) {
+          ctx.lineWidth = 4;
+          ctx.strokeStyle = "rgb(250,250,250)";
+          ctx.stroke();
+          ctx.lineWidth = 2;
+          ctx.strokeStyle = "rgb(50,50,50)";
+          ctx.stroke();
+        }
+
+        //draw a radial glyph -> change the array to real data (between 0 and 1)
+        drawRadialMultivariateGlyph([0.5, 0.1, 0.9, 0.3], x, y, cellSize, ctx);
+        // drawRadialMultivariateGlyph(
+        //   [cell.deprivation, cell.vehicle, cell.heating, cell.health],
+        //   x,
+        //   y,
+        //   cellSize,
+        //   ctx
+        // );
+
+        // let rg = new RadialGlyph([
+        //   cell.deprivation,
+        //   cell.vehicle,
+        //   cell.heating,
+        //   cell.health,
+        // ]);
+        // rg.draw(ctx, x, y, cellSize / 2);
+      },
+
+      postDrawFn: (cells, cellSize, ctx, global, panel) => {},
+
+      tooltipTextFn: (cell) => {
+        console.log(cell.deprivation);
+      },
     },
-
-    preAggrFn: (cells, cellSize, global, panel) => {
-      // console.log("global", global);
-    },
-
-    aggrFn: (cell, row, weight, global, panel) => {
-      if (cell.population) {
-        cell.population += row.population;
-        cell.deprivation += row.deprivation;
-        cell.vehicle += row.vehicle;
-        cell.heating += row.heating;
-        cell.health += row.health;
-      } else {
-        cell.population = row.population;
-        cell.deprivation = row.deprivation;
-        cell.vehicle = row.vehicle;
-        cell.heating = row.heating;
-        cell.health = row.health;
-      }
-    },
-
-    postAggrFn: (cells, cellSize, global, panel) => {
-      //add cell interaction
-      let canvas = d3.select(panel).select("canvas").node();
-
-      canvas.addEventListener("click", function (evt) {
-        //check which cell the click was in
-        const rect = canvas.getBoundingClientRect();
-        let x = evt.clientX - rect.left;
-        let y = evt.clientY - rect.top;
-        global.clickedCell = null;
-        for (let i = 0; i < cells.length; i++)
-          if (insideCell(cells[i], x, y)) global.clickedCell = cells[i];
-      });
-    },
-
-    preDrawFn: (cells, cellSize, ctx, global, panel) => {
-      if (!cells || cells.length === 0) {
-        console.error("No cells data available");
-        return;
-      }
-      global.pathGenerator = d3.geoPath().context(ctx);
-      global.colourScalePop = d3
-        .scaleSequential(d3.interpolateBlues)
-        .domain([0, d3.max(cells.map((row) => row.population))]);
-    },
-
-    drawFn: (cell, x, y, cellSize, ctx, global, panel) => {
-      const boundary = cell.getBoundary(0);
-
-      // console.log("boundary", boundary);
-
-      if (boundary[0] != boundary[boundary.length - 1]) {
-        boundary.push(boundary[0]);
-      }
-      const boundaryFeat = turf.polygon([boundary]);
-
-      ctx.beginPath();
-      global.pathGenerator(boundaryFeat);
-      ctx.fillStyle = global.colourScalePop(cell.population);
-      ctx.fill();
-
-      //add contour to clicked cells
-      if (global.clickedCell == cell) {
-        ctx.lineWidth = 4;
-        ctx.strokeStyle = "rgb(250,250,250)";
-        ctx.stroke();
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = "rgb(50,50,50)";
-        ctx.stroke();
-      }
-
-      //draw a radial glyph -> change the array to real data (between 0 and 1)
-      drawRadialMultivariateGlyph([0.5, 0.1, 0.9, 0.3], x, y, cellSize, ctx);
-    },
-
-    postDrawFn: (cells, cellSize, ctx, global, panel) => {},
-
-    tooltipTextFn: (cell) => {},
-  },
-};
+  };
+}
 return {glyphMapSpec};
 }});
 
-define({id: "504498f3", inputs: ["t","morphGlyphMap","valueDiscretiser","tweenWGS84Lookup"], body: (t,morphGlyphMap,valueDiscretiser,tweenWGS84Lookup) => {
-t; //causes code to run whenever the slider is moved
-// display(t);
-morphGlyphMap.setGlyph({ discretiserFn: valueDiscretiser(tweenWGS84Lookup) });
-}});
-
-define({id: "c0cea466", inputs: ["glyphMapSpec","turf","regularGeodataCensusWgs84","regularGeodataLookupWGS84"], outputs: ["glyphMapSpecWgs84"], body: (glyphMapSpec,turf,regularGeodataCensusWgs84,regularGeodataLookupWGS84) => {
-const glyphMapSpecWgs84 = {
-  ...glyphMapSpec,
-  coordType: "mercator", //project from lat/lon rather then using local Cartesian coordinates
-  initialBB: turf.bbox(regularGeodataCensusWgs84), //use the WGS84 extent
-  getLocationFn: (row) => regularGeodataLookupWGS84[row.code]?.centroid, //use the WGS84 location (needed for the gridded glyphmaps)
-};
-// display("glyphMapSpecWgs84");
-// display(glyphMapSpecWgs84);
-return {glyphMapSpecWgs84};
-}});
-
-define({id: "e6841bbe", inputs: ["glyphMap","glyphMapSpecWgs84"], outputs: ["createMorphGlyphMap","morphGlyphMap"], body: (glyphMap,glyphMapSpecWgs84) => {
-//morphGlyphMap as a factory function returning an object with setGlyph
-function createMorphGlyphMap(width, height) {
-  // Create the glyph map instance with the WGS84 specifications
-  const glyphMapInstance = glyphMap({
-    ...glyphMapSpecWgs84, //takes the base spec...
-    width: width,
-    height: height,
-  });
-
-  return glyphMapInstance;
-}
-const morphGlyphMap = createMorphGlyphMap(800, 600);
-return {createMorphGlyphMap,morphGlyphMap};
-}});
-
-define({id: "7428bbdc", body: () => {
-// function morphGlyphMap(width, height) {
-//   return glyphMap({
-//     // ...glyphMapSpec, // this is for non-mercator CRS
-//     ...glyphMapSpecWgs84, //takes the base spec...
-//     width: width,
-//     height: height,
-//     //discretiserFn: valueDiscretiser(intermed) //uses the polyon lookup for spatialunits
-//   });
-// }
-// display("morphGlyphMap");
-}});
-
-define({id: "c1325318", inputs: ["glyphMap","glyphMapSpec","valueDiscretiser","regularGeodataLookup","morphGlyphMap"], outputs: ["createGlyphMap"], body: (glyphMap,glyphMapSpec,valueDiscretiser,regularGeodataLookup,morphGlyphMap) => {
+define({id: "a8ee3415", inputs: ["glyphMap","glyphMapSpec","valueDiscretiser","regularGeodataLookup","valueDiscretiserInMorph","transformedShapes"], outputs: ["createGlyphMap","glyphmap"], body: (glyphMap,glyphMapSpec,valueDiscretiser,regularGeodataLookup,valueDiscretiserInMorph,transformedShapes) => {
 function createGlyphMap(glyphmapType, { width, height }) {
   // console.log(width, height);
   if (glyphmapType == "Polygons") {
@@ -1378,17 +1468,35 @@ function createGlyphMap(glyphmapType, { width, height }) {
       discretiserFn: valueDiscretiser(regularGeodataLookup),
     });
   } else if (glyphmapType == "Gridmap") {
-    return morphGlyphMap;
+    return glyphMap({
+      ...glyphMapSpec(width, height), //takes the base spec...
+      discretiserFn: valueDiscretiserInMorph(transformedShapes),
+    });
   } else if (glyphmapType == "Gridded") {
     return glyphMap(glyphMapSpec(width, height)); //uses the base spec as it (by default, it grids)
   }
 }
 
-// const glyphmap = glyphMapSpec();
+const glyphmap = glyphMapSpec();
 
 // display(createGlyphMap(glyphmapType));
 // display(valueDiscretiser(regularGeodataLookup));
-return {createGlyphMap};
+return {createGlyphMap,glyphmap};
+}});
+
+define({id: "92e60971", inputs: ["joinCensusDataToGeoJSON","census_data","regular_geodata","grid_geodata"], outputs: ["regular_geodata_withcensus","grid_geodata_withcensus"], body: (joinCensusDataToGeoJSON,census_data,regular_geodata,grid_geodata) => {
+// joining census data to geodata
+const regular_geodata_withcensus = joinCensusDataToGeoJSON(
+  [...census_data],
+  regular_geodata
+);
+const grid_geodata_withcensus = joinCensusDataToGeoJSON(
+  [...census_data],
+  grid_geodata
+);
+
+// display(regular_geodata_withcensus);
+return {regular_geodata_withcensus,grid_geodata_withcensus};
 }});
 
 define({id: "246c80d3", inputs: ["d3","drawPieSlice"], outputs: ["drawRadialMultivariateGlyph"], body: (d3,drawPieSlice) => {
@@ -1459,7 +1567,7 @@ return {insideCell};
 <div id="observablehq-center">
 <main id="observablehq-main" class="observablehq">
 <!-- ------------------ # Imports ------------------  -->
-<div class="observablehq observablehq--block"><!--:f8ff4578:--></div>
+<div class="observablehq observablehq--block"><!--:1f3981d9:--></div>
 <div class="observablehq observablehq--block"><!--:5dd85f8f:--></div>
 <!-- ------------ The HTML Layout ------------ -->
 <!-------- Stylesheets -------->
@@ -1468,7 +1576,9 @@ return {insideCell};
 body, html {
   height: 100%;
   margin: 0 !important;
-  /* overflow: hidden; */
+
+  overflow: hidden;
+
   padding: 0;
 }
 
@@ -1480,62 +1590,66 @@ body, html {
 
 </style>
 <div id="left-panel" class="grid grid-cols-4" style="padding:8px; height:92vh;">
-    <div class="card grid-colspan-1">
-         <div style="padding:10px;"> <observablehq-loading></observablehq-loading><!--:2d300212:--> </div>
-&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<div style="padding:10px;"> <observablehq-loading></observablehq-loading><!--:71bd6feb:--> </div>
-&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<div style="padding:10px;"> <observablehq-loading></observablehq-loading><!--:c0e452dc:--> </div>
-&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<div style="padding:10px;"> <small>Drag to morph (choose 'Gridmap')</small> <observablehq-loading></observablehq-loading><!--:d5a91e5c:--> </div>
-        <hr>
-        <div style="padding:10px;"> List of layers</div>
-    </div>
-    <div id="main-panel" class="card glyphmaps grid-colspan-3" style="padding:8px; height:92vh;">
-     <observablehq-loading></observablehq-loading><!--:271c02bf:-->
-    </div>
-    <div id="right-panel" class="grid-colspan-1" style="display: flex; flex-direction: column; padding:8px; height:92vh;">
-        <div class="card" style="flex-grow: 1;">
-          Glyph view here
-        </div>
-        <div class="card" style="flex-grow: 1;">
-            <div style="padding:15px;">Animated morphing glyphmaps</div>
-            <div>
-                <observablehq-loading></observablehq-loading><!--:2ad25b31:-->
-            </div>
-        </div>
-    </div>
+<pre><code>&lt;div class="card grid-colspan-1"&gt;
+     &lt;div style="padding:10px;"&gt; ${localAuthorityInput} &lt;/div&gt;
+</code></pre>
+<p></p><div style="padding:10px;"> <observablehq-loading></observablehq-loading><!--:71bd6feb:--> </div>
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<div style="padding:10px;"> <observablehq-loading></observablehq-loading><!--:c0e452dc:--> </div><p></p>
+<p></p><div style="padding:10px;"> <small>Drag to morph (choose 'Gridmap')</small> <observablehq-loading></observablehq-loading><!--:d5a91e5c:--> </div><br>
+<hr>
+<div style="padding:10px;"> List of layers</div>
+</div>
+<div id="main-panel" class="card glyphmaps grid-colspan-3" style="padding:8px; height:92vh;">
+<observablehq-loading></observablehq-loading><!--:271c02bf:-->
+</div>
+<div id="right-panel" class="grid-colspan-1" style="display: flex; flex-direction: column; padding:8px; height:92vh;">
+<div class="card" style="flex-grow: 1;">
+Glyph view here
+</div>
+<div class="card" style="flex-grow: 1;">
+<div style="padding:15px;">Animated morphing glyphmaps</div>
+<div>
+<observablehq-loading></observablehq-loading><!--:2ad25b31:-->
+</div>
+</div><p></p>
+<pre><code>&lt;/div&gt;
+</code></pre>
 </div>
 <!-- ------------------ # Data and Inputs ------------------  -->
 <!-- Select the Local authority from the list below -->
 <div class="observablehq observablehq--block"><!--:17a1fc11:--></div>
 <div class="observablehq observablehq--block"><!--:0bef96a5:--></div>
-<div class="observablehq observablehq--block"><!--:4d5f9e9a:--></div>
-<div class="observablehq observablehq--block"><!--:76ba71c3:--></div>
+<div class="observablehq observablehq--block"><!--:5428040c:--></div>
+<div class="observablehq observablehq--block"><!--:2bfedaef:--></div>
 <div class="observablehq observablehq--block"><!--:ac7e408e:--></div>
 <div class="observablehq observablehq--block"><!--:cad06486:--></div>
-<div class="observablehq observablehq--block"><!--:27ac10e4:--></div>
+<div class="observablehq observablehq--block"><!--:6542bf3e:--></div>
 <div class="observablehq observablehq--block"><!--:0edc8540:--></div>
 <div class="observablehq observablehq--block"><!--:47b53055:--></div>
 <!-- ------------------ # Morphing Geometry Functions ------------------  -->
-<div class="observablehq observablehq--block"><!--:352d8c82:--></div>
-<div class="observablehq observablehq--block"><!--:7fd98eeb:--></div>
-<div class="observablehq observablehq--block"><!--:3fee57e5:--></div>
+<div class="observablehq observablehq--block"><!--:ad7c741c:--></div>
+<div class="observablehq observablehq--block"><!--:f56eeb6b:--></div>
 <div class="observablehq observablehq--block"><!--:5acb849c:--></div>
-<div class="observablehq observablehq--block"><!--:30d51695:--></div>
-<div class="observablehq observablehq--block"><!--:147250e0:--></div>
+<div class="observablehq observablehq--block"><!--:1f74eb9f:--></div>
+<!-- ------------------ # Morphing Geometry Functions ------------------  -->
+<div class="observablehq observablehq--block"><!--:48878e8b:--></div>
+<div class="observablehq observablehq--block"><!--:4461947e:--></div>
+<div class="observablehq observablehq--block"><!--:0a0330f3:--></div>
+<div class="observablehq observablehq--block"><!--:d685c337:--></div>
+<div class="observablehq observablehq--block"><!--:2e428462:--></div>
+<div class="observablehq observablehq--block"><!--:4bfa126b:--></div>
+<div class="observablehq observablehq--block"><!--:ee9fe065:--></div>
+<div class="observablehq observablehq--block"><!--:53ad4c83:--></div>
+<div class="observablehq observablehq--block"><!--:e1679362:--></div>
 <!-- ------------------ # Gridded-Glyphmap Functions ------------------  -->
-<div class="observablehq observablehq--block"><!--:e38f4f2a:--></div>
-<!-- ------------------ # Gridded-Glyphmap Data Functions ------------------  -->
-<div class="observablehq observablehq--block"><!--:b82b6a6c:--></div>
-<div class="observablehq observablehq--block"><!--:f78d3444:--></div>
-<div class="observablehq observablehq--block"><!--:c7a15d60:--></div>
-<div class="observablehq observablehq--block"><!--:43eaa4b6:--></div>
-<div class="observablehq observablehq--block"><!--:21da4792:--></div>
-<div class="observablehq observablehq--block"><!--:36d82749:--></div>
-<div class="observablehq observablehq--block"><!--:417b699c:--></div>
-<div class="observablehq observablehq--block"><!--:504498f3:--></div>
-<div class="observablehq observablehq--block"><!--:c0cea466:--></div>
-<div class="observablehq observablehq--block"><!--:e6841bbe:--></div>
-<div class="observablehq observablehq--block"><!--:7428bbdc:--></div>
-<div class="observablehq observablehq--block"><!--:c1325318:--></div>
+<div class="observablehq observablehq--block"><!--:dc10622c:--></div>
+<div class="observablehq observablehq--block"><!--:ec853745:--></div>
+<div class="observablehq observablehq--block"><!--:4913bd0b:--></div>
+<div class="observablehq observablehq--block"><!--:c95c42db:--></div>
+<div class="observablehq observablehq--block"><!--:7d5286c3:--></div>
+<div class="observablehq observablehq--block"><!--:be62aa21:--></div>
+<div class="observablehq observablehq--block"><!--:a8ee3415:--></div>
+<div class="observablehq observablehq--block"><!--:92e60971:--></div>
 <div class="observablehq observablehq--block"><!--:246c80d3:--></div>
 <div class="observablehq observablehq--block"><!--:9d040433:--></div>
 <div class="observablehq observablehq--block"><!--:520e6d60:--></div>
