@@ -91,6 +91,7 @@ function useState(value) {
 const [selected, setSelected] = useState({});
 const [getIntervention, setIntervention] = useState([]);
 const [getResults, setResults] = useState([]);
+const [selectedIntervention, setSelectedIntervention] = useState(null);
 ```
 
 <!-------- Stylesheets -------->
@@ -191,7 +192,22 @@ body, html {
 
 .dragging {
   opacity: 0.5;
-  cursor: grabbing;}
+  cursor: grabbing;
+}
+
+#interventions-list li {
+  transition: background-color 0.3s;
+}
+
+#interventions-list li:hover {
+  background-color: #f9f9f9;
+}
+
+#interventions-list li.selected {
+  background-color: #e0f7fa; /* Light cyan for selection */
+  font-weight: bold;
+  border-left: 4px solid #00bcd4; /* Accent border */
+}
 
 </style>
 
@@ -240,9 +256,12 @@ body, html {
   <div id="main-panel">
     <!-- <div class="card main-top">Map View</div> -->
     <div class="main-top">
-      <div class="card">
+      <div class="card" style="overflow-x:hidden">
       Sortable Table
-      ${Inputs.table(results)}
+      ${Inputs.table(selectedIntervention.allBuildings.map((building) => ({
+        ...building.properties,
+      }))
+      )}
       </div>
       <div class="card">Map View</div>
     </div>
@@ -255,23 +274,53 @@ body, html {
           <ul id="interventions-list">
             ${html`${interventions.map(
               (config, index) =>
-                html`<li>
-                  ${config.tech.name} (Start Year: ${config.initial_year}) -
+                html`<li
+                  onclick=${() => selectIntervention(index)} 
+                  style="cursor: pointer; padding: 8px; border-bottom: 1px solid #ddd;"
+                >
+                  <span>${config.tech.name} (Start Year: ${config.initial_year})</span>
                   <button
-                    onclick=${() => removeIntervention(index)}
-                    style="border:none; background:none; cursor:pointer;"
+                    onclick=${(e) => {
+                      e.stopPropagation(); // Prevent the click event on the list item
+                      removeIntervention(index);
+                    }}
+                    style="border:none; background:none; cursor:pointer; margin-left: 8px;"
                   >
+                    <i class="fas fa-edit" style="color:green;"></i>
                     <i class="fas fa-trash" style="color:red;"></i>
                   </button>
                 </li>`
-            )}
+            )}`}
           </ul>
-        `}
       </div>
     </div>
     <div class="card">Sculptable Hierarchical Glyph/Details on demand</div>
   </div>
 </div>
+
+```js
+// for dealing with selected list items
+let selectedInterventionIndex = null; // Track the selected intervention index
+
+function selectIntervention(index) {
+  // Update the selected index
+  selectedInterventionIndex = index;
+
+  // Clear previous selection
+  document
+    .querySelectorAll("#interventions-list li")
+    .forEach((li) => li.classList.remove("selected"));
+
+  // Highlight the selected item
+  const selectedItem = document.querySelector(
+    `#interventions-list li:nth-child(${index + 1})`
+  );
+  setSelectedIntervention(results[selectedInterventionIndex]);
+  // console.log("selectedItem: ", results[selectedInterventionIndex]);
+  // setSelectedIntervention(selectedItem);
+  if (selectedItem) selectedItem.classList.add("selected");
+}
+```
 
 <!-- ---------------- Input form declarations ---------------- -->
 
@@ -538,4 +587,11 @@ function runModel(config, buildings) {
 // update config here
 // addTechConfig(listOfTech.ASHP);
 // // addPriority("substation_headroom", "asc");
+```
+
+```js
+// let temp = selectedIntervention.allBuildings.map((building) => ({
+//   ...building.properties,
+// }));
+// console.log("trying to flatten Interventions", temp);
 ```

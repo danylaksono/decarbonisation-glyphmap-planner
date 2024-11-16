@@ -700,3 +700,86 @@ items.forEach((item) => {
 
 display(selected);
 ```
+
+## New test
+
+```js
+function renderSelectableList(
+  items,
+  listElementId,
+  outputElementId,
+  setSelected
+) {
+  // References to DOM elements
+  const listElement = document.getElementById(listElementId);
+  const outputElement = document.getElementById(outputElementId);
+
+  // Clear the existing list if any
+  listElement.innerHTML = "";
+
+  // Render list items from JavaScript array
+  items.forEach((item) => {
+    const listItem = document.createElement("li");
+    listItem.textContent = item.name;
+    listItem.dataset.id = item.id; // Store the ID in a data attribute
+
+    // Add click event listener for selecting
+    listItem.addEventListener("click", () => {
+      // Remove 'selected' class from all items
+      document
+        .querySelectorAll(`#${listElementId} li`)
+        .forEach((li) => li.classList.remove("selected"));
+      // Add 'selected' class to clicked item
+      listItem.classList.add("selected");
+      // Display selected ID
+      outputElement.textContent = `Selected ID: ${listItem.dataset.id}`;
+      setSelected(parseInt(listItem.dataset.id, 10));
+    });
+
+    // Create button container
+    const buttonContainer = document.createElement("div");
+    buttonContainer.className = "buttons";
+
+    // Edit button
+    const editButton = document.createElement("button");
+    editButton.innerHTML = '<i class="fas fa-edit"></i>';
+    // editButton.addEventListener("click", (e) => {
+    //   e.stopPropagation(); // Prevent triggering list item click
+    //   const newName = prompt("Edit item name:", item.name);
+    //   if (newName) {
+    //     item.name = newName;
+    //     listItem.firstChild.textContent = newName;
+    //   }
+    // });
+
+    // Remove button
+    const removeButton = document.createElement("button");
+    removeButton.innerHTML = '<i class="fas fa-trash-alt"></i>';
+    // removeButton.addEventListener("click", (e) => {
+    //   e.stopPropagation(); // Prevent triggering list item click
+    //   listElement.removeChild(listItem); // Remove from DOM
+    // });
+
+    // Append buttons to button container
+    buttonContainer.appendChild(editButton);
+    buttonContainer.appendChild(removeButton);
+
+    // Append button container to list item
+    listItem.appendChild(buttonContainer);
+
+    // Append list item to the list
+    listElement.appendChild(listItem);
+  });
+}
+
+function handleSelected(id) {
+  console.log("Selected ID:", id);
+}
+
+renderSelectableList(items, "selectableList", "output", handleSelected);
+```
+
+<div>
+  <ul id="selectableList"></ul>
+  <div id="output">Selected ID: None</div>
+</div>
