@@ -124,8 +124,6 @@ const [selectedIntervention, setSelectedIntervention] = useState(null);
   rel="stylesheet"
   href="https://cdn.jsdelivr.net/npm/bulma@1.0.0/css/bulma.min.css"
 >
-<!-- 
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css"> -->
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 
@@ -262,11 +260,9 @@ body, html {
         ${techsInput}
       </div>
       <div class="form-group">
-        <!-- <label for="total-budget">Total Budget:</label> -->
         ${totalBudgetInput}
       </div>
       <div class="form-group">
-        <!--label for="total-budget">Start Year:</label-->
         ${startYearInput}
       </div>
       <div class="form-group">
@@ -301,6 +297,7 @@ body, html {
       </div>
       <div class="card" style="overflow-x:hidden; min-width: 400px;">
       Map View
+      ${glyphmapTypeInput}
       </div>
     </div>
     <div class="main-bottom">
@@ -386,6 +383,7 @@ const techsInput = Inputs.select(
     value: "ASHP",
   }
 );
+techsInput.style["max-width"] = "300px";
 const technology = Generators.input(techsInput);
 // display(techsInput);
 
@@ -453,6 +451,12 @@ const filterInput = Inputs.form([
   }),
 ]);
 const filter_input = Generators.input(filterInput);
+
+const glyphmapTypeInput = Inputs.radio(["Polygons", "Gridmap", "Gridded"], {
+  label: "Type of map",
+  value: "Polygons",
+});
+const glyphmapType = Generators.input(glyphmapTypeInput);
 ```
 
 ```js
@@ -673,14 +677,21 @@ const cols = [
 ```
 
 ```js
-const tableData = selectedIntervention.allBuildings.map((building) => ({
-  ...building.properties,
-  intervention: building.isIntervened,
-}));
-const table = new createTable(tableData, cols, (changes) => {
-  console.log("Table changed:", changes);
-  setSelected(changes.selection);
-});
+const tableData = selectedIntervention
+  ? selectedIntervention.allBuildings.map((building) => ({
+      ...building.properties,
+      intervention: building.isIntervened,
+    }))
+  : flatData;
+
+const table = new createTable(
+  selectedIntervention ? tableData : flatData,
+  cols,
+  (changes) => {
+    console.log("Table changed:", changes);
+    setSelected(changes.selection);
+  }
+);
 ```
 
 ```js
@@ -688,3 +699,109 @@ console.log("Test inferring data types", inferTypes(tableData));
 ```
 
 <!-- ---------------- Glyph Maps ---------------- -->
+
+```js
+// glyphmap basic specs
+// function glyphMapSpec(width = 800, height = 600) {
+// console.log("in glyphmapspec", width, height);
+const glyphMapSpec = {
+  // coordType: "notmercator",
+  initialBB: [],
+  data: flatData,
+  getLocationFn: (row) => row,
+  discretisationShape: "grid",
+  mapType: "CartoPositron",
+  interactiveCellSize: true,
+  cellSize: 30,
+
+  width: 800,
+  height: 600,
+  // width: width,
+  // height: height,
+
+  customMap: {
+    scaleParams: [],
+
+    // discretiserFn: valueDiscretiser(regularGeodataLookup),
+
+    initFn: (cells, cellSize, global, panel) => {
+      // console.log("initFn", cells, cellSize, global, panel);
+    },
+
+    preAggrFn: (cells, cellSize, global, panel) => {
+      // console.log("global", global);
+    },
+
+    aggrFn: (cell, row, weight, global, panel) => {
+      if (cell.population) {
+        cell.population += row.population;
+        cell.deprivation += row.deprivation;
+        cell.vehicle += row.vehicle;
+        cell.heating += row.heating;
+        cell.health += row.health;
+      } else {
+        cell.population = row.population;
+        cell.deprivation = row.deprivation;
+        cell.vehicle = row.vehicle;
+        cell.heating = row.heating;
+        cell.health = row.health;
+      }
+    },
+
+    postAggrFn: (cells, cellSize, global, panel) => {
+      //add cell interaction
+      let canvas = d3.select(panel).select("canvas").node();
+    },
+
+    preDrawFn: (cells, cellSize, ctx, global, panel) => {
+      if (!cells || cells.length === 0) {
+        console.error("No cells data available");
+        return;
+      }
+      global.pathGenerator = d3.geoPath().context(ctx);
+      global.colourScalePop = d3
+        .scaleSequential(d3.interpolateBlues)
+        .domain([0, d3.max(cells.map((row) => row.population))]);
+    },
+
+    drawFn: (cell, x, y, cellSize, ctx, global, panel) => {
+      const boundary = cell.getBoundary(0);
+
+      // console.log("boundary", boundary);
+
+      if (boundary[0] != boundary[boundary.length - 1]) {
+        boundary.push(boundary[0]);
+      }
+      const boundaryFeat = turf.polygon([boundary]);
+
+      ctx.beginPath();
+      global.pathGenerator(boundaryFeat);
+      ctx.fillStyle = global.colourScalePop(cell.population);
+      ctx.fill();
+
+      //add contour to clicked cells
+      if (global.clickedCell == cell) {
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = "rgb(250,250,250)";
+        ctx.stroke();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = "rgb(50,50,50)";
+        ctx.stroke();
+      }
+    },
+
+    postDrawFn: (cells, cellSize, ctx, global, panel) => {},
+
+    tooltipTextFn: (cell) => {},
+  },
+};
+```
+
+```js
+const glyphMapSpecWgs84 = {
+  ...glyphMapSpec,
+  // coordType: "mercator", //project from lat/lon rather then using local Cartesian coordinates
+  initialBB: {}, //use the WGS84 extent
+  getLocationFn: (row) => {}, //use the WGS84 location (needed for the gridded glyphmaps)
+};
+```

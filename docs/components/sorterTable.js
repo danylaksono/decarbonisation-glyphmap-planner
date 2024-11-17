@@ -472,7 +472,7 @@ export function createTable(data, columns, changed) {
   this.getSelection = () => {
     let ret = [];
     tBody.querySelectorAll("tr").forEach((tr, i) => {
-     // console.log(`Row ${i} selected: ${tr.selected}`);
+      // console.log(`Row ${i} selected: ${tr.selected}`);
       if (tr.selected) ret.push({ index: i, data: data[dataInd[i]] });
     });
     console.log("Selection result:", ret);
@@ -484,7 +484,7 @@ export function createTable(data, columns, changed) {
 
     let sortKeys = Object.keys(compoundSorting);
 
-    if (sel.length == 0){
+    if (sel.length == 0) {
       return null;
     }
 
@@ -761,7 +761,6 @@ export function createTable(data, columns, changed) {
   }
 
   function sortChanged(controller) {
-
     history.push({ type: "sort", data: [...dataInd] });
     //single sorting for now
     compoundSorting = new Object();
@@ -844,7 +843,6 @@ export function createTable(data, columns, changed) {
     //so, first, we have to add indeces to each table element
     dataInd.map((v, i) => (data[v].tabindex = i));
 
-
     dataInd.sort((a, b) => {
       let scoreA = 0;
       Object.keys(sorts).map(
@@ -865,12 +863,11 @@ export function createTable(data, columns, changed) {
     //update the actual table
     createTable();
 
-
     changed({ type: "sort", sort: compoundSorting, indeces: dataInd });
   }
 
   let container = document.createElement("div");
-  container.style.maxHeight = "300px"; // Set max height for vertical scroll
+  container.style.maxHeight = "400px"; // Set max height for vertical scroll
   container.style.overflowY = "auto"; // Enable vertical scrolling
   container.style.width = "100%"; // Full width of container
 
