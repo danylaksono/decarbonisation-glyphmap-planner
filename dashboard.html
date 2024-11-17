@@ -18,6 +18,7 @@
 <link rel="modulepreload" href="./_import/components/budgetAllocator.46c04ac3.js">
 <link rel="modulepreload" href="./_import/components/miniDecarbModel.d0583510.js">
 <link rel="modulepreload" href="./_import/components/sorterTable.02180658.js">
+<link rel="modulepreload" href="./_import/components/helpers.e38ff765.js">
 <link rel="modulepreload" href="./_npm/d3@7.9.0/_esm.js">
 <link rel="modulepreload" href="./_observablehq/stdlib/duckdb.js">
 <link rel="modulepreload" href="./_npm/htl@0.3.1/_esm.js">
@@ -66,20 +67,23 @@ import {define} from "./_observablehq/client.js";
 import {registerFile, FileAttachment} from "./_observablehq/stdlib.js";
 import {registerTable} from "./_observablehq/stdlib/duckdb.js";
 
-registerFile("./data/oxford_decarbonisation_data.parquet", {"name":"./data/oxford_decarbonisation_data.parquet","path":"./_file/data/oxford_decarbonisation_data.28ee7510.parquet","lastModified":1731794591395});
+registerFile("./data/oxford_decarbonisation_data.parquet", {"name":"./data/oxford_decarbonisation_data.parquet","path":"./_file/data/oxford_decarbonisation_data.28ee7510.parquet","lastModified":1731830699689});
 registerTable("oxford", FileAttachment("./data/oxford_decarbonisation_data.parquet"));
 
-define({id: "91188f07", outputs: ["TimeGlyph","GlyphCollection","Model","maplibregl","Mutable","BudgetAllocator","MiniDecarbModel","createTable"], body: async () => {
-const [{TimeGlyph, GlyphCollection}, {Model}, {default: maplibregl}, {Mutable}, {BudgetAllocator}, {MiniDecarbModel}, {createTable}] = await Promise.all([import("./_import/components/glyph-designs/timeGlyph.30b74103.js"), import("./_import/components/model.0139f19a.js"), import("./_npm/maplibre-gl@2.0.0/_esm.js"), import("./_observablehq/stdlib.js"), import("./_import/components/budgetAllocator.46c04ac3.js"), import("./_import/components/miniDecarbModel.d0583510.js"), import("./_import/components/sorterTable.02180658.js")]);
+define({id: "b675a7c8", outputs: ["TimeGlyph","GlyphCollection","Model","maplibregl","Mutable","BudgetAllocator","MiniDecarbModel","createTable","inferTypes"], body: async () => {
+const [{TimeGlyph, GlyphCollection}, {Model}, {default: maplibregl}, {Mutable}, {BudgetAllocator}, {MiniDecarbModel}, {createTable}, {inferTypes}] = await Promise.all([import("./_import/components/glyph-designs/timeGlyph.30b74103.js"), import("./_import/components/model.0139f19a.js"), import("./_npm/maplibre-gl@2.0.0/_esm.js"), import("./_observablehq/stdlib.js"), import("./_import/components/budgetAllocator.46c04ac3.js"), import("./_import/components/miniDecarbModel.d0583510.js"), import("./_import/components/sorterTable.02180658.js"), import("./_import/components/helpers.e38ff765.js")]);
 
 
-return {TimeGlyph,GlyphCollection,Model,maplibregl,Mutable,BudgetAllocator,MiniDecarbModel,createTable};
+return {TimeGlyph,GlyphCollection,Model,maplibregl,Mutable,BudgetAllocator,MiniDecarbModel,createTable,inferTypes};
 }});
 
-define({id: "6949098a", inputs: ["sql"], outputs: ["oxford_data"], body: async (sql) => {
+define({id: "d4d16302", inputs: ["sql"], outputs: ["oxford_data"], body: async (sql) => {
 const oxford_data = await sql`  SELECT DISTINCT
+    "UPRN" AS id,
     "LSOA code" AS lsoa,
     "MSOA code" AS msoa,
+    "xcoord" AS x,
+    "ycoord" AS y,
     "Air Source Heat Pump Potential_Building Size (m^2)" AS building_area,
     "Air Source Heat Pump Potential_Garden Area (m^2)" AS garden_area,
     "Air Source Heat Pump Potential_Overall Suitability Rating" AS ashp_suitability,
@@ -202,16 +206,13 @@ html`<button class="create-btn" type="button" onclick=${addNewIntervention}>
 ))
 }});
 
-define({id: "7388e6e9", mode: "inline", inputs: ["Inputs","selectedIntervention","display"], body: async (Inputs,selectedIntervention,display) => {
+define({id: "27617c0d", mode: "inline", inputs: ["table","display"], body: async (table,display) => {
 display(await(
-Inputs.table(selectedIntervention.allBuildings.map((building) => ({
-        ...building.properties,
-      }))
-      )
+table.getNode()
 ))
 }});
 
-define({id: "fdc077a6", mode: "inline", inputs: ["html","interventions","selectIntervention","removeIntervention","display"], body: async (html,interventions,selectIntervention,removeIntervention,display) => {
+define({id: "4d279db6", mode: "inline", inputs: ["html","interventions","selectIntervention","removeIntervention","display"], body: async (html,interventions,selectIntervention,removeIntervention,display) => {
 display(await(
 html`${interventions.map(
               (config, index) =>
@@ -222,12 +223,19 @@ html`${interventions.map(
                   <span>${config.tech.name} (Start Year: ${config.initial_year})</span>
                   <button
                     onclick=${(e) => {
+                      e.stopPropagation();
+                    }}
+                    style="border:none; background:none; cursor:pointer; margin-left: 8px;"
+                  >
+                    <i class="fas fa-edit" style="color:green;"></i>
+                  </button>
+                  <button
+                    onclick=${(e) => {
                       e.stopPropagation(); // Prevent the click event on the list item
                       removeIntervention(index);
                     }}
                     style="border:none; background:none; cursor:pointer; margin-left: 8px;"
                   >
-                    <i class="fas fa-edit" style="color:green;"></i>
                     <i class="fas fa-trash" style="color:red;"></i>
                   </button>
                 </li>`
@@ -530,20 +538,66 @@ function runModel(config, buildings) {
 return {config,listOfTech,addTechConfig,addPriority,runModel};
 }});
 
-define({id: "273872e3", body: () => {
-// let temp = selectedIntervention.allBuildings.map((building) => ({
-//   ...building.properties,
-// }));
-// console.log("trying to flatten Interventions", temp);
+define({id: "7f87db41", inputs: ["selectedIntervention"], body: (selectedIntervention) => {
+console.log("selectedIntervention", selectedIntervention);
+}});
+
+define({id: "3a1a615e", outputs: ["cols"], body: () => {
+// columns to show in the table
+const cols = [
+  { column: "lsoa", nominals: null },
+  {
+    column: "insulation_rating",
+    ordinals: ["Unknown", "A", "B", "C", "D", "E", "F", "G"],
+  },
+  {
+    column: "insulation_ewall",
+    // ordinals: null,
+    nominals: null,
+    // ordinals: ["Unknown", "A", "B", "C", "D", "E", "F", "G"],
+  },
+  {
+    column: "pv_generation",
+    thresholds: [
+      0, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 20000,
+      30000, 40000, 50000,
+    ],
+  },
+  {
+    column: "ashp_size",
+    thresholds: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30, 40, 50],
+  },
+  {
+    column: "intervention",
+    nominals: null,
+  },
+];
+return {cols};
+}});
+
+define({id: "c8b09421", inputs: ["selectedIntervention","createTable","cols","setSelected"], outputs: ["tableData","table"], body: (selectedIntervention,createTable,cols,setSelected) => {
+const tableData = selectedIntervention.allBuildings.map((building) => ({
+  ...building.properties,
+  intervention: building.isIntervened,
+}));
+const table = new createTable(tableData, cols, (changes) => {
+  console.log("Table changed:", changes);
+  setSelected(changes.selection);
+});
+return {tableData,table};
+}});
+
+define({id: "929663a0", inputs: ["inferTypes","tableData"], body: (inferTypes,tableData) => {
+console.log("Test inferring data types", inferTypes(tableData));
 }});
 
 </script>
 <div id="observablehq-center">
 <main id="observablehq-main" class="observablehq">
 <!-- ------------ Imports ------------ -->
-<div class="observablehq observablehq--block"><!--:91188f07:--></div>
+<div class="observablehq observablehq--block"><!--:b675a7c8:--></div>
 <!-- ---------------- Data ---------------- -->
-<div class="observablehq observablehq--block"><!--:6949098a:--></div>
+<div class="observablehq observablehq--block"><!--:d4d16302:--></div>
 <div class="observablehq observablehq--block"><!--:28c25a2a:--></div>
 <!-- ------------ Getter-Setter ------------ -->
 <div class="observablehq observablehq--block"><!--:d47e63b1:--></div>
@@ -651,6 +705,22 @@ body, html {
   border-left: 4px solid #00bcd4; /* Accent border */
 }
 
+.buttons {
+      margin-left: auto;
+    }
+
+.buttons button {
+  margin-left: 5px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: #007bff;
+}
+
+.buttons button:hover {
+  color: #0056b3;
+}
+
 </style>
 <!-- ---------------- HTML Layout ---------------- -->
 <div class="grid-container" style="padding:8px; height:92vh;">
@@ -696,7 +766,11 @@ body, html {
     <div class="main-top">
       <div class="card" style="overflow-x:hidden">
       Sortable Table
-      <observablehq-loading></observablehq-loading><!--:7388e6e9:-->
+      <observablehq-loading></observablehq-loading><!--:27617c0d:-->
+      <!-- ${Inputs.table(selectedIntervention.allBuildings.map((building) => ({
+        ...building.properties, intervention: building.isIntervened,
+      }))
+      )} -->
       </div>
       <div class="card">Map View</div>
     </div>
@@ -707,7 +781,7 @@ body, html {
       <div id="graph-container">
       <!-- List generated here -->
           <ul id="interventions-list">
-            <observablehq-loading></observablehq-loading><!--:fdc077a6:-->
+            <observablehq-loading></observablehq-loading><!--:4d279db6:-->
           </ul>
       </div>
     </div>
@@ -724,6 +798,11 @@ body, html {
 <!-- ---------------- Functions ---------------- -->
 <div class="observablehq observablehq--block"><!--:7b8b3e59:--></div>
 <div class="observablehq observablehq--block"><!--:79e5d210:--></div>
-<div class="observablehq observablehq--block"><!--:273872e3:--></div>
+<div class="observablehq observablehq--block"><!--:7f87db41:--></div>
+<!-- ---------------- Sortable Table ---------------- -->
+<div class="observablehq observablehq--block"><!--:3a1a615e:--></div>
+<div class="observablehq observablehq--block"><!--:c8b09421:--></div>
+<div class="observablehq observablehq--block"><!--:929663a0:--></div>
+<!-- ---------------- Glyph Maps ---------------- -->
 </div></main>
 </div>
