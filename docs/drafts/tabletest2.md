@@ -79,6 +79,12 @@ const cols = [
     ordinals: ["Unknown", "A", "B", "C", "D", "E", "F", "G"],
   },
   {
+    column: "insulation_ewall",
+    // ordinals: null,
+    nominals: null,
+    // ordinals: ["Unknown", "A", "B", "C", "D", "E", "F", "G"],
+  },
+  {
     column: "pv_generation",
     thresholds: [
       0, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 20000,

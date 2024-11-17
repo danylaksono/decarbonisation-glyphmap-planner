@@ -21,14 +21,18 @@ import { Mutable } from "npm:@observablehq/stdlib";
 import { BudgetAllocator } from "./components/budgetAllocator.js";
 import { MiniDecarbModel } from "./components/miniDecarbModel.js";
 import { createTable } from "./components/sorterTable.js";
+import { inferTypes } from "./components/helpers.js";
 ```
 
 <!-- ---------------- Data ---------------- -->
 
 ```sql id=oxford_data
   SELECT DISTINCT
+    "UPRN" AS id,
     "LSOA code" AS lsoa,
     "MSOA code" AS msoa,
+    "xcoord" AS x,
+    "ycoord" AS y,
     "Air Source Heat Pump Potential_Building Size (m^2)" AS building_area,
     "Air Source Heat Pump Potential_Garden Area (m^2)" AS garden_area,
     "Air Source Heat Pump Potential_Overall Suitability Rating" AS ashp_suitability,
@@ -209,6 +213,22 @@ body, html {
   border-left: 4px solid #00bcd4; /* Accent border */
 }
 
+.buttons {
+      margin-left: auto;
+    }
+
+.buttons button {
+  margin-left: 5px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: #007bff;
+}
+
+.buttons button:hover {
+  color: #0056b3;
+}
+
 </style>
 
 <!-- ---------------- HTML Layout ---------------- -->
@@ -258,10 +278,11 @@ body, html {
     <div class="main-top">
       <div class="card" style="overflow-x:hidden">
       Sortable Table
-      ${Inputs.table(selectedIntervention.allBuildings.map((building) => ({
-        ...building.properties,
+      ${table.getNode()}
+      <!-- ${Inputs.table(selectedIntervention.allBuildings.map((building) => ({
+        ...building.properties, intervention: building.isIntervened,
       }))
-      )}
+      )} -->
       </div>
       <div class="card">Map View</div>
     </div>
@@ -281,12 +302,19 @@ body, html {
                   <span>${config.tech.name} (Start Year: ${config.initial_year})</span>
                   <button
                     onclick=${(e) => {
+                      e.stopPropagation();
+                    }}
+                    style="border:none; background:none; cursor:pointer; margin-left: 8px;"
+                  >
+                    <i class="fas fa-edit" style="color:green;"></i>
+                  </button>
+                  <button
+                    onclick=${(e) => {
                       e.stopPropagation(); // Prevent the click event on the list item
                       removeIntervention(index);
                     }}
                     style="border:none; background:none; cursor:pointer; margin-left: 8px;"
                   >
-                    <i class="fas fa-edit" style="color:green;"></i>
                     <i class="fas fa-trash" style="color:red;"></i>
                   </button>
                 </li>`
@@ -590,8 +618,56 @@ function runModel(config, buildings) {
 ```
 
 ```js
-// let temp = selectedIntervention.allBuildings.map((building) => ({
-//   ...building.properties,
-// }));
-// console.log("trying to flatten Interventions", temp);
+console.log("selectedIntervention", selectedIntervention);
 ```
+
+<!-- ---------------- Sortable Table ---------------- -->
+
+```js
+// columns to show in the table
+const cols = [
+  { column: "lsoa", nominals: null },
+  {
+    column: "insulation_rating",
+    ordinals: ["Unknown", "A", "B", "C", "D", "E", "F", "G"],
+  },
+  {
+    column: "insulation_ewall",
+    // ordinals: null,
+    nominals: null,
+    // ordinals: ["Unknown", "A", "B", "C", "D", "E", "F", "G"],
+  },
+  {
+    column: "pv_generation",
+    thresholds: [
+      0, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 20000,
+      30000, 40000, 50000,
+    ],
+  },
+  {
+    column: "ashp_size",
+    thresholds: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30, 40, 50],
+  },
+  {
+    column: "intervention",
+    nominals: null,
+  },
+];
+```
+
+```js
+const tableData = selectedIntervention.allBuildings.map((building) => ({
+  ...building.properties,
+  intervention: building.isIntervened,
+}));
+const table = new createTable(tableData, cols, (changes) => {
+  console.log("Table changed:", changes);
+  setSelected(changes.selection);
+});
+```
+
+```js
+console.log("Test inferring data types", inferTypes(tableData));
+```
+
+<!-- ---------------- Glyph Maps ---------------- -->
