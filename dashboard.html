@@ -205,7 +205,8 @@ import {define} from "./_observablehq/client.js";
 import {registerFile, FileAttachment} from "./_observablehq/stdlib.js";
 import {registerTable} from "./_observablehq/stdlib/duckdb.js";
 
-registerFile("./data/oxford_decarbonisation_data.parquet", {"name":"./data/oxford_decarbonisation_data.parquet","path":"./_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1731875870742});
+registerFile("./data/oxford_decarbonisation_data.parquet", {"name":"./data/oxford_decarbonisation_data.parquet","path":"./_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1731879500325});
+registerFile("./data/oxford_lsoa_boundary.geojson", {"name":"./data/oxford_lsoa_boundary.geojson","mimeType":"application/geo+json","path":"./_file/data/oxford_lsoa_boundary.50c731e8.geojson","lastModified":1731879500337});
 registerTable("oxford", FileAttachment("./data/oxford_decarbonisation_data.parquet"));
 
 define({id: "1fe10fe6", outputs: ["d3","flubber","require","Mutable","TimeGlyph","GlyphCollection","turf","RadialGlyph","glyphMap","createDiscretiserValue","_drawCellBackground","OSGB","Model","BudgetAllocator","MiniDecarbModel","createTable","inferTypes","downloadBoundaries","joinCensusDataToGeoJSON","convertGridCsvToGeoJson","context2d"], body: async () => {
@@ -223,7 +224,7 @@ const proj = new OSGB();
 return {proj};
 }});
 
-define({id: "07bc4aef", inputs: ["sql"], outputs: ["oxford_data"], body: async (sql) => {
+define({id: "ab885abd", inputs: ["sql"], outputs: ["oxford_data"], body: async (sql) => {
 const oxford_data = await sql`  SELECT DISTINCT
     "UPRN" AS id,
     "LSOA code" AS lsoa,
@@ -273,8 +274,8 @@ const oxford_data = await sql`  SELECT DISTINCT
     "Substation - % headroom" AS substation_headroom_pct,
     "Substation - Demand_rag" AS substation_demand,
     "index of multiple deprivation (imd) score" AS deprivation_score,
-    "index of multiple deprivation (imd) rank" AS deprivation_rank,
-    "index of multiple deprivation (imd) decile" AS deprivation_decile,
+    "index of multiple deprivation (imd) rank " AS deprivation_rank,
+    "index of multiple deprivation (imd) decile " AS deprivation_decile,
     "Number of households in fuel poverty" AS fuel_poverty_households,
     "Proportion of households fuel poor (%)" AS fuel_poverty_proportion
 FROM oxford b;`;
@@ -286,6 +287,15 @@ const buildingsData = [...oxford_data];
 const flatData = buildingsData.map((p) => ({ ...p }));
 const allColumns = Object.keys(buildingsData[0]);
 return {buildingsData,flatData,allColumns};
+}});
+
+define({id: "7bbc139f", inputs: ["FileAttachment"], outputs: ["lsoa_boundary"], body: (FileAttachment) => {
+// oxford boundary data
+const lsoa_boundary = FileAttachment(
+  "./data/oxford_lsoa_boundary.geojson"
+).json();
+// display(lsoa_boundary);
+return {lsoa_boundary};
 }});
 
 define({id: "d47e63b1", inputs: ["Mutable"], outputs: ["useState","selected","setSelected","getIntervention","setIntervention","getResults","setResults","selectedIntervention","setSelectedIntervention"], body: (Mutable) => {
@@ -366,6 +376,12 @@ table.getNode()
 define({id: "c0e452dc", mode: "inline", inputs: ["glyphmapTypeInput","display"], body: async (glyphmapTypeInput,display) => {
 display(await(
 glyphmapTypeInput
+))
+}});
+
+define({id: "af5ac603", mode: "inline", inputs: ["resize","glyphMap","glyphMapSpec","display"], body: async (resize,glyphMap,glyphMapSpec,display) => {
+display(await(
+resize((width, height) => glyphMap(glyphMapSpec(width, height)))
 ))
 }});
 
@@ -739,7 +755,7 @@ const cols = [
 return {cols};
 }});
 
-define({id: "7eacfe4e", inputs: ["selectedIntervention","flatData","createTable","cols","setSelected"], outputs: ["tableData","table"], body: (selectedIntervention,flatData,createTable,cols,setSelected) => {
+define({id: "ab9f8eb4", inputs: ["selectedIntervention","flatData","createTable","cols","setSelected"], outputs: ["tableData","table"], body: (selectedIntervention,flatData,createTable,cols,setSelected) => {
 const tableData = selectedIntervention
   ? selectedIntervention.allBuildings.map((building) => ({
       ...building.properties,
@@ -747,14 +763,10 @@ const tableData = selectedIntervention
     }))
   : flatData;
 
-const table = new createTable(
-  selectedIntervention ? tableData : flatData,
-  cols,
-  (changes) => {
-    console.log("Table changed:", changes);
-    setSelected(changes.selection);
-  }
-);
+const table = new createTable(tableData, cols, (changes) => {
+  console.log("Table changed:", changes);
+  setSelected(changes.selection);
+});
 return {tableData,table};
 }});
 
@@ -762,112 +774,158 @@ define({id: "929663a0", inputs: ["inferTypes","tableData"], body: (inferTypes,ta
 console.log("Test inferring data types", inferTypes(tableData));
 }});
 
-define({id: "359b4962", inputs: ["flatData","d3","turf"], outputs: ["glyphMapSpec"], body: (flatData,d3,turf) => {
+define({id: "676e91f9", inputs: ["turf","lsoa_boundary","flatData","d3","drawRadialMultivariateGlyph"], outputs: ["glyphMapSpec"], body: (turf,lsoa_boundary,flatData,d3,drawRadialMultivariateGlyph) => {
 // glyphmap basic specs
-// function glyphMapSpec(width = 800, height = 600) {
-// console.log("in glyphmapspec", width, height);
-const glyphMapSpec = {
-  // coordType: "notmercator",
-  initialBB: [],
-  data: flatData,
-  getLocationFn: (row) => row,
-  discretisationShape: "grid",
-  mapType: "CartoPositron",
-  interactiveCellSize: true,
-  cellSize: 30,
+function glyphMapSpec(width = 800, height = 600) {
+  return {
+    // coordType: "notmercator",
+    initialBB: turf.bbox(lsoa_boundary),
+    data: flatData,
+    getLocationFn: (row) => [row.x, row.y],
+    discretisationShape: "grid",
+    mapType: "CartoPositron",
+    interactiveCellSize: true,
+    cellSize: 30,
 
-  width: 800,
-  height: 600,
-  // width: width,
-  // height: height,
+    // width: 800,
+    // height: 600,
+    width: width,
+    height: height,
 
-  customMap: {
-    scaleParams: [],
+    customMap: {
+      scaleParams: [],
 
-    // discretiserFn: valueDiscretiser(regularGeodataLookup),
+      initFn: (cells, cellSize, global, panel) => {
+        // console.log("initFn", cells, cellSize, global, panel);
+      },
 
-    initFn: (cells, cellSize, global, panel) => {
-      // console.log("initFn", cells, cellSize, global, panel);
+      preAggrFn: (cells, cellSize, global, panel) => {
+        // console.log("global", global);
+      },
+
+      aggrFn: (cell, row, weight, global, panel) => {
+        if (cell.building_area) {
+          cell.building_area += row.building_area;
+        } else {
+          cell.building_area = row.building_area;
+        }
+      },
+
+      postAggrFn: (cells, cellSize, global, panel) => {
+        //add cell interaction
+        let canvas = d3.select(panel).select("canvas").node();
+      },
+
+      preDrawFn: (cells, cellSize, ctx, global, panel) => {
+        if (!cells || cells.length === 0) {
+          console.error("No cells data available");
+          return;
+        }
+
+        global.pathGenerator = d3.geoPath().context(ctx);
+        global.colourScalePop = d3
+          .scaleSequential(d3.interpolateBlues)
+          .domain([0, d3.max(cells.map((row) => row.population))]);
+      },
+
+      drawFn: (cell, x, y, cellSize, ctx, global, panel) => {
+        const boundary = cell.getBoundary(0);
+        if (boundary[0] != boundary[boundary.length - 1]) {
+          boundary.push(boundary[0]);
+        }
+        const boundaryFeat = turf.polygon([boundary]);
+
+        ctx.beginPath();
+        global.pathGenerator(boundaryFeat);
+        ctx.fillStyle = global.colourScalePop(cell.population);
+        ctx.fill();
+
+        //add contour to clicked cells
+        if (global.clickedCell == cell) {
+          ctx.lineWidth = 4;
+          ctx.strokeStyle = "rgb(250,250,250)";
+          ctx.stroke();
+          ctx.lineWidth = 2;
+          ctx.strokeStyle = "rgb(50,50,50)";
+          ctx.stroke();
+        }
+
+        //draw a radial glyph -> change the array to real data (between 0 and 1)
+        drawRadialMultivariateGlyph([0.5, 0.1, 0.9, 0.3], x, y, cellSize, ctx);
+
+        // console.log("boundary", boundary);
+      },
+
+      postDrawFn: (cells, cellSize, ctx, global, panel) => {},
+
+      tooltipTextFn: (cell) => {},
     },
-
-    preAggrFn: (cells, cellSize, global, panel) => {
-      // console.log("global", global);
-    },
-
-    aggrFn: (cell, row, weight, global, panel) => {
-      if (cell.population) {
-        cell.population += row.population;
-        cell.deprivation += row.deprivation;
-        cell.vehicle += row.vehicle;
-        cell.heating += row.heating;
-        cell.health += row.health;
-      } else {
-        cell.population = row.population;
-        cell.deprivation = row.deprivation;
-        cell.vehicle = row.vehicle;
-        cell.heating = row.heating;
-        cell.health = row.health;
-      }
-    },
-
-    postAggrFn: (cells, cellSize, global, panel) => {
-      //add cell interaction
-      let canvas = d3.select(panel).select("canvas").node();
-    },
-
-    preDrawFn: (cells, cellSize, ctx, global, panel) => {
-      if (!cells || cells.length === 0) {
-        console.error("No cells data available");
-        return;
-      }
-      global.pathGenerator = d3.geoPath().context(ctx);
-      global.colourScalePop = d3
-        .scaleSequential(d3.interpolateBlues)
-        .domain([0, d3.max(cells.map((row) => row.population))]);
-    },
-
-    drawFn: (cell, x, y, cellSize, ctx, global, panel) => {
-      const boundary = cell.getBoundary(0);
-
-      // console.log("boundary", boundary);
-
-      if (boundary[0] != boundary[boundary.length - 1]) {
-        boundary.push(boundary[0]);
-      }
-      const boundaryFeat = turf.polygon([boundary]);
-
-      ctx.beginPath();
-      global.pathGenerator(boundaryFeat);
-      ctx.fillStyle = global.colourScalePop(cell.population);
-      ctx.fill();
-
-      //add contour to clicked cells
-      if (global.clickedCell == cell) {
-        ctx.lineWidth = 4;
-        ctx.strokeStyle = "rgb(250,250,250)";
-        ctx.stroke();
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = "rgb(50,50,50)";
-        ctx.stroke();
-      }
-    },
-
-    postDrawFn: (cells, cellSize, ctx, global, panel) => {},
-
-    tooltipTextFn: (cell) => {},
-  },
-};
+  };
+}
 return {glyphMapSpec};
 }});
 
-define({id: "a6aec54a", inputs: ["glyphMapSpec"], outputs: ["glyphMapSpecWgs84"], body: (glyphMapSpec) => {
+define({id: "fc05c05a", inputs: ["glyphMapSpec"], outputs: ["glyphMapSpecWgs84"], body: (glyphMapSpec) => {
 const glyphMapSpecWgs84 = {
   ...glyphMapSpec,
-  // coordType: "mercator", //project from lat/lon rather then using local Cartesian coordinates
+  // coordType: "mercator",
   initialBB: {}, //use the WGS84 extent
-  getLocationFn: (row) => {}, //use the WGS84 location (needed for the gridded glyphmaps)
+  getLocationFn: (row) => {},
 };
 return {glyphMapSpecWgs84};
+}});
+
+define({id: "af9179d4", body: () => {
+// display(glyphMap(glyphMapSpec(800, 600)));
+}});
+
+define({id: "246c80d3", inputs: ["d3","drawPieSlice"], outputs: ["drawRadialMultivariateGlyph"], body: (d3,drawPieSlice) => {
+function drawRadialMultivariateGlyph(normalisedData, x, y, size, ctx) {
+  let angle = (2 * Math.PI) / normalisedData.length;
+  let centerX = x;
+  let centerY = y;
+  let radius = size / 2;
+  // console.log(radius);
+
+  //get a colour palette
+  let colors = d3
+    .scaleOrdinal(d3.schemeTableau10)
+    .domain(d3.range(normalisedData.length));
+
+  normalisedData.map((d, i) => {
+    drawPieSlice(
+      ctx,
+      centerX,
+      centerY,
+      radius * 0.9,
+      angle * (i + 0.1),
+      angle * (i + 0.9),
+      "rgba(0,0,0,0.05)"
+    );
+    drawPieSlice(
+      ctx,
+      centerX,
+      centerY,
+      radius * Math.sqrt(d) * 0.95,
+      angle * (i + 0.1),
+      angle * (i + 0.9),
+      colors(i)
+    );
+  });
+}
+return {drawRadialMultivariateGlyph};
+}});
+
+define({id: "9d040433", outputs: ["drawPieSlice"], body: () => {
+function drawPieSlice(ctx, cx, cy, r, angleStart, angleEnd, color) {
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.arc(cx, cy, r, angleStart, angleEnd);
+  ctx.lineTo(cx, cy);
+  ctx.fillStyle = color;
+  ctx.fill();
+}
+return {drawPieSlice};
 }});
 
 </script>
@@ -877,8 +935,9 @@ return {glyphMapSpecWgs84};
 <div class="observablehq observablehq--block"><!--:1fe10fe6:--></div>
 <div class="observablehq observablehq--block"><!--:5dd85f8f:--></div>
 <!-- ---------------- Data ---------------- -->
-<div class="observablehq observablehq--block"><!--:07bc4aef:--></div>
+<div class="observablehq observablehq--block"><!--:ab885abd:--></div>
 <div class="observablehq observablehq--block"><!--:28c25a2a:--></div>
+<div class="observablehq observablehq--block"><!--:7bbc139f:--></div>
 <!-- ------------ Getter-Setter ------------ -->
 <div class="observablehq observablehq--block"><!--:d47e63b1:--></div>
 <!-------- Stylesheets -------->
@@ -1047,6 +1106,7 @@ body, html {
       <div class="card" style="overflow-x:hidden; min-width: 400px;">
       Map View
       <observablehq-loading></observablehq-loading><!--:c0e452dc:-->
+      <observablehq-loading></observablehq-loading><!--:af5ac603:-->
       </div>
     </div>
     <div class="main-bottom">
@@ -1076,10 +1136,13 @@ body, html {
 <div class="observablehq observablehq--block"><!--:7f87db41:--></div>
 <!-- ---------------- Sortable Table ---------------- -->
 <div class="observablehq observablehq--block"><!--:3a1a615e:--></div>
-<div class="observablehq observablehq--block"><!--:7eacfe4e:--></div>
+<div class="observablehq observablehq--block"><!--:ab9f8eb4:--></div>
 <div class="observablehq observablehq--block"><!--:929663a0:--></div>
 <!-- ---------------- Glyph Maps ---------------- -->
-<div class="observablehq observablehq--block"><!--:359b4962:--></div>
-<div class="observablehq observablehq--block"><!--:a6aec54a:--></div>
+<div class="observablehq observablehq--block"><!--:676e91f9:--></div>
+<div class="observablehq observablehq--block"><!--:fc05c05a:--></div>
+<div class="observablehq observablehq--block"><!--:af9179d4:--></div>
+<div class="observablehq observablehq--block"><!--:246c80d3:--></div>
+<div class="observablehq observablehq--block"><!--:9d040433:--></div>
 </div></main>
 </div>
