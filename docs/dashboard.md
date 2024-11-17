@@ -97,8 +97,8 @@ const proj = new OSGB();
     "Substation - % headroom" AS substation_headroom_pct,
     "Substation - Demand_rag" AS substation_demand,
     "index of multiple deprivation (imd) score" AS deprivation_score,
-    "index of multiple deprivation (imd) rank" AS deprivation_rank,
-    "index of multiple deprivation (imd) decile" AS deprivation_decile,
+    "index of multiple deprivation (imd) rank " AS deprivation_rank,
+    "index of multiple deprivation (imd) decile " AS deprivation_decile,
     "Number of households in fuel poverty" AS fuel_poverty_households,
     "Proportion of households fuel poor (%)" AS fuel_poverty_proportion
 FROM oxford b;
@@ -108,6 +108,14 @@ FROM oxford b;
 const buildingsData = [...oxford_data];
 const flatData = buildingsData.map((p) => ({ ...p }));
 const allColumns = Object.keys(buildingsData[0]);
+```
+
+```js
+// oxford boundary data
+const lsoa_boundary = FileAttachment(
+  "./data/oxford_lsoa_boundary.geojson"
+).json();
+// display(lsoa_boundary);
 ```
 
 <!-- ------------ Getter-Setter ------------ -->
@@ -303,6 +311,7 @@ body, html {
       <div class="card" style="overflow-x:hidden; min-width: 400px;">
       Map View
       ${glyphmapTypeInput}
+      ${resize((width, height) => glyphMap(glyphMapSpec(width, height)))}
       </div>
     </div>
     <div class="main-bottom">
@@ -689,14 +698,10 @@ const tableData = selectedIntervention
     }))
   : flatData;
 
-const table = new createTable(
-  selectedIntervention ? tableData : flatData,
-  cols,
-  (changes) => {
-    console.log("Table changed:", changes);
-    setSelected(changes.selection);
-  }
-);
+const table = new createTable(tableData, cols, (changes) => {
+  console.log("Table changed:", changes);
+  setSelected(changes.selection);
+});
 ```
 
 ```js
@@ -707,106 +712,150 @@ console.log("Test inferring data types", inferTypes(tableData));
 
 ```js
 // glyphmap basic specs
-// function glyphMapSpec(width = 800, height = 600) {
-// console.log("in glyphmapspec", width, height);
-const glyphMapSpec = {
-  // coordType: "notmercator",
-  initialBB: [],
-  data: flatData,
-  getLocationFn: (row) => row,
-  discretisationShape: "grid",
-  mapType: "CartoPositron",
-  interactiveCellSize: true,
-  cellSize: 30,
+function glyphMapSpec(width = 800, height = 600) {
+  return {
+    // coordType: "notmercator",
+    initialBB: turf.bbox(lsoa_boundary),
+    data: flatData,
+    getLocationFn: (row) => [row.x, row.y],
+    discretisationShape: "grid",
+    mapType: "CartoPositron",
+    interactiveCellSize: true,
+    cellSize: 30,
 
-  width: 800,
-  height: 600,
-  // width: width,
-  // height: height,
+    // width: 800,
+    // height: 600,
+    width: width,
+    height: height,
 
-  customMap: {
-    scaleParams: [],
+    customMap: {
+      scaleParams: [],
 
-    // discretiserFn: valueDiscretiser(regularGeodataLookup),
+      initFn: (cells, cellSize, global, panel) => {
+        // console.log("initFn", cells, cellSize, global, panel);
+      },
 
-    initFn: (cells, cellSize, global, panel) => {
-      // console.log("initFn", cells, cellSize, global, panel);
+      preAggrFn: (cells, cellSize, global, panel) => {
+        // console.log("global", global);
+      },
+
+      aggrFn: (cell, row, weight, global, panel) => {
+        if (cell.building_area) {
+          cell.building_area += row.building_area;
+        } else {
+          cell.building_area = row.building_area;
+        }
+      },
+
+      postAggrFn: (cells, cellSize, global, panel) => {
+        //add cell interaction
+        let canvas = d3.select(panel).select("canvas").node();
+      },
+
+      preDrawFn: (cells, cellSize, ctx, global, panel) => {
+        if (!cells || cells.length === 0) {
+          console.error("No cells data available");
+          return;
+        }
+
+        global.pathGenerator = d3.geoPath().context(ctx);
+        global.colourScalePop = d3
+          .scaleSequential(d3.interpolateBlues)
+          .domain([0, d3.max(cells.map((row) => row.population))]);
+      },
+
+      drawFn: (cell, x, y, cellSize, ctx, global, panel) => {
+        const boundary = cell.getBoundary(0);
+        if (boundary[0] != boundary[boundary.length - 1]) {
+          boundary.push(boundary[0]);
+        }
+        const boundaryFeat = turf.polygon([boundary]);
+
+        ctx.beginPath();
+        global.pathGenerator(boundaryFeat);
+        ctx.fillStyle = global.colourScalePop(cell.population);
+        ctx.fill();
+
+        //add contour to clicked cells
+        if (global.clickedCell == cell) {
+          ctx.lineWidth = 4;
+          ctx.strokeStyle = "rgb(250,250,250)";
+          ctx.stroke();
+          ctx.lineWidth = 2;
+          ctx.strokeStyle = "rgb(50,50,50)";
+          ctx.stroke();
+        }
+
+        //draw a radial glyph -> change the array to real data (between 0 and 1)
+        drawRadialMultivariateGlyph([0.5, 0.1, 0.9, 0.3], x, y, cellSize, ctx);
+
+        // console.log("boundary", boundary);
+      },
+
+      postDrawFn: (cells, cellSize, ctx, global, panel) => {},
+
+      tooltipTextFn: (cell) => {},
     },
-
-    preAggrFn: (cells, cellSize, global, panel) => {
-      // console.log("global", global);
-    },
-
-    aggrFn: (cell, row, weight, global, panel) => {
-      if (cell.population) {
-        cell.population += row.population;
-        cell.deprivation += row.deprivation;
-        cell.vehicle += row.vehicle;
-        cell.heating += row.heating;
-        cell.health += row.health;
-      } else {
-        cell.population = row.population;
-        cell.deprivation = row.deprivation;
-        cell.vehicle = row.vehicle;
-        cell.heating = row.heating;
-        cell.health = row.health;
-      }
-    },
-
-    postAggrFn: (cells, cellSize, global, panel) => {
-      //add cell interaction
-      let canvas = d3.select(panel).select("canvas").node();
-    },
-
-    preDrawFn: (cells, cellSize, ctx, global, panel) => {
-      if (!cells || cells.length === 0) {
-        console.error("No cells data available");
-        return;
-      }
-      global.pathGenerator = d3.geoPath().context(ctx);
-      global.colourScalePop = d3
-        .scaleSequential(d3.interpolateBlues)
-        .domain([0, d3.max(cells.map((row) => row.population))]);
-    },
-
-    drawFn: (cell, x, y, cellSize, ctx, global, panel) => {
-      const boundary = cell.getBoundary(0);
-
-      // console.log("boundary", boundary);
-
-      if (boundary[0] != boundary[boundary.length - 1]) {
-        boundary.push(boundary[0]);
-      }
-      const boundaryFeat = turf.polygon([boundary]);
-
-      ctx.beginPath();
-      global.pathGenerator(boundaryFeat);
-      ctx.fillStyle = global.colourScalePop(cell.population);
-      ctx.fill();
-
-      //add contour to clicked cells
-      if (global.clickedCell == cell) {
-        ctx.lineWidth = 4;
-        ctx.strokeStyle = "rgb(250,250,250)";
-        ctx.stroke();
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = "rgb(50,50,50)";
-        ctx.stroke();
-      }
-    },
-
-    postDrawFn: (cells, cellSize, ctx, global, panel) => {},
-
-    tooltipTextFn: (cell) => {},
-  },
-};
+  };
+}
 ```
 
 ```js
 const glyphMapSpecWgs84 = {
   ...glyphMapSpec,
-  // coordType: "mercator", //project from lat/lon rather then using local Cartesian coordinates
+  // coordType: "mercator",
   initialBB: {}, //use the WGS84 extent
-  getLocationFn: (row) => {}, //use the WGS84 location (needed for the gridded glyphmaps)
+  getLocationFn: (row) => {},
 };
+```
+
+```js
+// display(glyphMap(glyphMapSpec(800, 600)));
+```
+
+```js
+function drawRadialMultivariateGlyph(normalisedData, x, y, size, ctx) {
+  let angle = (2 * Math.PI) / normalisedData.length;
+  let centerX = x;
+  let centerY = y;
+  let radius = size / 2;
+  // console.log(radius);
+
+  //get a colour palette
+  let colors = d3
+    .scaleOrdinal(d3.schemeTableau10)
+    .domain(d3.range(normalisedData.length));
+
+  normalisedData.map((d, i) => {
+    drawPieSlice(
+      ctx,
+      centerX,
+      centerY,
+      radius * 0.9,
+      angle * (i + 0.1),
+      angle * (i + 0.9),
+      "rgba(0,0,0,0.05)"
+    );
+    drawPieSlice(
+      ctx,
+      centerX,
+      centerY,
+      radius * Math.sqrt(d) * 0.95,
+      angle * (i + 0.1),
+      angle * (i + 0.9),
+      colors(i)
+    );
+  });
+}
+```
+
+```js
+function drawPieSlice(ctx, cx, cy, r, angleStart, angleEnd, color) {
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.arc(cx, cy, r, angleStart, angleEnd);
+  ctx.lineTo(cx, cy);
+  ctx.fillStyle = color;
+  ctx.fill();
+}
 ```

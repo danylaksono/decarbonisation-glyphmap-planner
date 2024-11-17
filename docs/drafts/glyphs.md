@@ -6,7 +6,7 @@ footer: false
 ---
 
 ```js
-import { RadialGlyph } from "./components/radialglyph.js";
+import { RadialGlyph } from "./../components/radialglyph.js";
 ```
 
 <!-------- Stylesheets -------->
