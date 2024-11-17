@@ -21,7 +21,7 @@
 <link rel="modulepreload" href="./_import/components/model.0139f19a.js">
 <link rel="modulepreload" href="./_import/components/budgetAllocator.46c04ac3.js">
 <link rel="modulepreload" href="./_import/components/miniDecarbModel.d0583510.js">
-<link rel="modulepreload" href="./_import/components/sorterTable.02180658.js">
+<link rel="modulepreload" href="./_import/components/sorterTable.19c221b2.js">
 <link rel="modulepreload" href="./_import/components/helpers.e38ff765.js">
 <link rel="modulepreload" href="./_import/components/utils.ec49f1d6.js">
 <link rel="modulepreload" href="./_npm/d3@7.9.0/_esm.js">
@@ -205,11 +205,11 @@ import {define} from "./_observablehq/client.js";
 import {registerFile, FileAttachment} from "./_observablehq/stdlib.js";
 import {registerTable} from "./_observablehq/stdlib/duckdb.js";
 
-registerFile("./data/oxford_decarbonisation_data.parquet", {"name":"./data/oxford_decarbonisation_data.parquet","path":"./_file/data/oxford_decarbonisation_data.28ee7510.parquet","lastModified":1731838050831});
+registerFile("./data/oxford_decarbonisation_data.parquet", {"name":"./data/oxford_decarbonisation_data.parquet","path":"./_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1731875559163});
 registerTable("oxford", FileAttachment("./data/oxford_decarbonisation_data.parquet"));
 
 define({id: "1fe10fe6", outputs: ["d3","flubber","require","Mutable","TimeGlyph","GlyphCollection","turf","RadialGlyph","glyphMap","createDiscretiserValue","_drawCellBackground","OSGB","Model","BudgetAllocator","MiniDecarbModel","createTable","inferTypes","downloadBoundaries","joinCensusDataToGeoJSON","convertGridCsvToGeoJson","context2d"], body: async () => {
-const [{require}, {Mutable}, {TimeGlyph, GlyphCollection}, turf, {RadialGlyph}, {glyphMap, createDiscretiserValue, _drawCellBackground}, {OSGB}, {Model}, {BudgetAllocator}, {MiniDecarbModel}, {createTable}, {inferTypes}, {downloadBoundaries, joinCensusDataToGeoJSON, convertGridCsvToGeoJson, context2d}] = await Promise.all([import("./_npm/d3-require@1.3.0/_esm.js"), import("./_observablehq/stdlib.js"), import("./_import/components/glyph-designs/timeGlyph.30b74103.js"), import("./_node/@turf/turf@7.1.0/index.js"), import("./_import/components/radialglyph.e10c9304.js"), import("./_import/components/gridded-glyphmaps/index.min.e22a1d11.js"), import("./_import/components/osgb/index.1d2476df.js"), import("./_import/components/model.0139f19a.js"), import("./_import/components/budgetAllocator.46c04ac3.js"), import("./_import/components/miniDecarbModel.d0583510.js"), import("./_import/components/sorterTable.02180658.js"), import("./_import/components/helpers.e38ff765.js"), import("./_import/components/utils.ec49f1d6.js")]);
+const [{require}, {Mutable}, {TimeGlyph, GlyphCollection}, turf, {RadialGlyph}, {glyphMap, createDiscretiserValue, _drawCellBackground}, {OSGB}, {Model}, {BudgetAllocator}, {MiniDecarbModel}, {createTable}, {inferTypes}, {downloadBoundaries, joinCensusDataToGeoJSON, convertGridCsvToGeoJson, context2d}] = await Promise.all([import("./_npm/d3-require@1.3.0/_esm.js"), import("./_observablehq/stdlib.js"), import("./_import/components/glyph-designs/timeGlyph.30b74103.js"), import("./_node/@turf/turf@7.1.0/index.js"), import("./_import/components/radialglyph.e10c9304.js"), import("./_import/components/gridded-glyphmaps/index.min.e22a1d11.js"), import("./_import/components/osgb/index.1d2476df.js"), import("./_import/components/model.0139f19a.js"), import("./_import/components/budgetAllocator.46c04ac3.js"), import("./_import/components/miniDecarbModel.d0583510.js"), import("./_import/components/sorterTable.19c221b2.js"), import("./_import/components/helpers.e38ff765.js"), import("./_import/components/utils.ec49f1d6.js")]);
 const d3 = require("d3", "d3-geo-projection");
 const flubber = require("flubber@0.4");
 
@@ -358,6 +358,12 @@ table.getNode()
 ))
 }});
 
+define({id: "c0e452dc", mode: "inline", inputs: ["glyphmapTypeInput","display"], body: async (glyphmapTypeInput,display) => {
+display(await(
+glyphmapTypeInput
+))
+}});
+
 define({id: "4d279db6", mode: "inline", inputs: ["html","interventions","selectIntervention","removeIntervention","display"], body: async (html,interventions,selectIntervention,removeIntervention,display) => {
 display(await(
 html`${interventions.map(
@@ -414,7 +420,7 @@ function selectIntervention(index) {
 return {selectedInterventionIndex,selectIntervention};
 }});
 
-define({id: "143f3770", inputs: ["Inputs","html","Generators","Event","allColumns"], outputs: ["techsInput","technology","totalBudgetInput","total_budget","startYearInput","start_year","projectLengthInput","project_length","allocationTypeInput","allocation_type","priorityInput","priority_input","filterInput","filter_input"], body: (Inputs,html,Generators,Event,allColumns) => {
+define({id: "3d1d5e27", inputs: ["Inputs","html","Generators","Event","allColumns"], outputs: ["techsInput","technology","totalBudgetInput","total_budget","startYearInput","start_year","projectLengthInput","project_length","allocationTypeInput","allocation_type","priorityInput","priority_input","filterInput","filter_input","glyphmapTypeInput","glyphmapType"], body: (Inputs,html,Generators,Event,allColumns) => {
 // list of decarb technologies
 const techsInput = Inputs.select(
   [
@@ -431,6 +437,7 @@ const techsInput = Inputs.select(
     value: "ASHP",
   }
 );
+techsInput.style["max-width"] = "300px";
 const technology = Generators.input(techsInput);
 // display(techsInput);
 
@@ -498,7 +505,13 @@ const filterInput = Inputs.form([
   }),
 ]);
 const filter_input = Generators.input(filterInput);
-return {techsInput,technology,totalBudgetInput,total_budget,startYearInput,start_year,projectLengthInput,project_length,allocationTypeInput,allocation_type,priorityInput,priority_input,filterInput,filter_input};
+
+const glyphmapTypeInput = Inputs.radio(["Polygons", "Gridmap", "Gridded"], {
+  label: "Type of map",
+  value: "Polygons",
+});
+const glyphmapType = Generators.input(glyphmapTypeInput);
+return {techsInput,technology,totalBudgetInput,total_budget,startYearInput,start_year,projectLengthInput,project_length,allocationTypeInput,allocation_type,priorityInput,priority_input,filterInput,filter_input,glyphmapTypeInput,glyphmapType};
 }});
 
 define({id: "fbf1b5a3", inputs: ["BudgetAllocator","total_budget","start_year","project_length","allocation_type"], outputs: ["allocator","initialAllocations"], body: (BudgetAllocator,total_budget,start_year,project_length,allocation_type) => {
@@ -721,20 +734,135 @@ const cols = [
 return {cols};
 }});
 
-define({id: "c8b09421", inputs: ["selectedIntervention","createTable","cols","setSelected"], outputs: ["tableData","table"], body: (selectedIntervention,createTable,cols,setSelected) => {
-const tableData = selectedIntervention.allBuildings.map((building) => ({
-  ...building.properties,
-  intervention: building.isIntervened,
-}));
-const table = new createTable(tableData, cols, (changes) => {
-  console.log("Table changed:", changes);
-  setSelected(changes.selection);
-});
+define({id: "7eacfe4e", inputs: ["selectedIntervention","flatData","createTable","cols","setSelected"], outputs: ["tableData","table"], body: (selectedIntervention,flatData,createTable,cols,setSelected) => {
+const tableData = selectedIntervention
+  ? selectedIntervention.allBuildings.map((building) => ({
+      ...building.properties,
+      intervention: building.isIntervened,
+    }))
+  : flatData;
+
+const table = new createTable(
+  selectedIntervention ? tableData : flatData,
+  cols,
+  (changes) => {
+    console.log("Table changed:", changes);
+    setSelected(changes.selection);
+  }
+);
 return {tableData,table};
 }});
 
 define({id: "929663a0", inputs: ["inferTypes","tableData"], body: (inferTypes,tableData) => {
 console.log("Test inferring data types", inferTypes(tableData));
+}});
+
+define({id: "359b4962", inputs: ["flatData","d3","turf"], outputs: ["glyphMapSpec"], body: (flatData,d3,turf) => {
+// glyphmap basic specs
+// function glyphMapSpec(width = 800, height = 600) {
+// console.log("in glyphmapspec", width, height);
+const glyphMapSpec = {
+  // coordType: "notmercator",
+  initialBB: [],
+  data: flatData,
+  getLocationFn: (row) => row,
+  discretisationShape: "grid",
+  mapType: "CartoPositron",
+  interactiveCellSize: true,
+  cellSize: 30,
+
+  width: 800,
+  height: 600,
+  // width: width,
+  // height: height,
+
+  customMap: {
+    scaleParams: [],
+
+    // discretiserFn: valueDiscretiser(regularGeodataLookup),
+
+    initFn: (cells, cellSize, global, panel) => {
+      // console.log("initFn", cells, cellSize, global, panel);
+    },
+
+    preAggrFn: (cells, cellSize, global, panel) => {
+      // console.log("global", global);
+    },
+
+    aggrFn: (cell, row, weight, global, panel) => {
+      if (cell.population) {
+        cell.population += row.population;
+        cell.deprivation += row.deprivation;
+        cell.vehicle += row.vehicle;
+        cell.heating += row.heating;
+        cell.health += row.health;
+      } else {
+        cell.population = row.population;
+        cell.deprivation = row.deprivation;
+        cell.vehicle = row.vehicle;
+        cell.heating = row.heating;
+        cell.health = row.health;
+      }
+    },
+
+    postAggrFn: (cells, cellSize, global, panel) => {
+      //add cell interaction
+      let canvas = d3.select(panel).select("canvas").node();
+    },
+
+    preDrawFn: (cells, cellSize, ctx, global, panel) => {
+      if (!cells || cells.length === 0) {
+        console.error("No cells data available");
+        return;
+      }
+      global.pathGenerator = d3.geoPath().context(ctx);
+      global.colourScalePop = d3
+        .scaleSequential(d3.interpolateBlues)
+        .domain([0, d3.max(cells.map((row) => row.population))]);
+    },
+
+    drawFn: (cell, x, y, cellSize, ctx, global, panel) => {
+      const boundary = cell.getBoundary(0);
+
+      // console.log("boundary", boundary);
+
+      if (boundary[0] != boundary[boundary.length - 1]) {
+        boundary.push(boundary[0]);
+      }
+      const boundaryFeat = turf.polygon([boundary]);
+
+      ctx.beginPath();
+      global.pathGenerator(boundaryFeat);
+      ctx.fillStyle = global.colourScalePop(cell.population);
+      ctx.fill();
+
+      //add contour to clicked cells
+      if (global.clickedCell == cell) {
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = "rgb(250,250,250)";
+        ctx.stroke();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = "rgb(50,50,50)";
+        ctx.stroke();
+      }
+    },
+
+    postDrawFn: (cells, cellSize, ctx, global, panel) => {},
+
+    tooltipTextFn: (cell) => {},
+  },
+};
+return {glyphMapSpec};
+}});
+
+define({id: "a6aec54a", inputs: ["glyphMapSpec"], outputs: ["glyphMapSpecWgs84"], body: (glyphMapSpec) => {
+const glyphMapSpecWgs84 = {
+  ...glyphMapSpec,
+  // coordType: "mercator", //project from lat/lon rather then using local Cartesian coordinates
+  initialBB: {}, //use the WGS84 extent
+  getLocationFn: (row) => {}, //use the WGS84 location (needed for the gridded glyphmaps)
+};
+return {glyphMapSpecWgs84};
 }});
 
 </script>
@@ -750,8 +878,6 @@ console.log("Test inferring data types", inferTypes(tableData));
 <div class="observablehq observablehq--block"><!--:d47e63b1:--></div>
 <!-------- Stylesheets -------->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.0/css/bulma.min.css">
-<!-- 
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css"> -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 <link rel="stylesheet" href="./_file/styles/dashboard.2badc1f5.css">
 <style>
@@ -880,11 +1006,9 @@ body, html {
         <observablehq-loading></observablehq-loading><!--:437e2ff2:-->
       </div>
       <div class="form-group">
-        <!-- <label for="total-budget">Total Budget:</label> -->
         <observablehq-loading></observablehq-loading><!--:a4ca7b63:-->
       </div>
       <div class="form-group">
-        <!--label for="total-budget">Start Year:</label-->
         <observablehq-loading></observablehq-loading><!--:c73bfedc:-->
       </div>
       <div class="form-group">
@@ -917,6 +1041,7 @@ body, html {
       </div>
       <div class="card" style="overflow-x:hidden; min-width: 400px;">
       Map View
+      <observablehq-loading></observablehq-loading><!--:c0e452dc:-->
       </div>
     </div>
     <div class="main-bottom">
@@ -935,7 +1060,7 @@ body, html {
 </div>
 <div class="observablehq observablehq--block"><!--:1947ba21:--></div>
 <!-- ---------------- Input form declarations ---------------- -->
-<div class="observablehq observablehq--block"><!--:143f3770:--></div>
+<div class="observablehq observablehq--block"><!--:3d1d5e27:--></div>
 <div class="observablehq observablehq--block"><!--:fbf1b5a3:--></div>
 <div class="observablehq observablehq--block"><!--:39e29da4:--></div>
 <div class="observablehq observablehq--block"><!--:30ef2d9c:--></div>
@@ -946,8 +1071,10 @@ body, html {
 <div class="observablehq observablehq--block"><!--:7f87db41:--></div>
 <!-- ---------------- Sortable Table ---------------- -->
 <div class="observablehq observablehq--block"><!--:3a1a615e:--></div>
-<div class="observablehq observablehq--block"><!--:c8b09421:--></div>
+<div class="observablehq observablehq--block"><!--:7eacfe4e:--></div>
 <div class="observablehq observablehq--block"><!--:929663a0:--></div>
 <!-- ---------------- Glyph Maps ---------------- -->
+<div class="observablehq observablehq--block"><!--:359b4962:--></div>
+<div class="observablehq observablehq--block"><!--:a6aec54a:--></div>
 </div></main>
 </div>
