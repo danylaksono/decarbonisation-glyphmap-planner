@@ -205,8 +205,8 @@ import {define} from "./_observablehq/client.js";
 import {registerFile, FileAttachment} from "./_observablehq/stdlib.js";
 import {registerTable} from "./_observablehq/stdlib/duckdb.js";
 
-registerFile("./data/oxford_decarbonisation_data.parquet", {"name":"./data/oxford_decarbonisation_data.parquet","path":"./_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1731882744984});
-registerFile("./data/oxford_lsoa_boundary.geojson", {"name":"./data/oxford_lsoa_boundary.geojson","mimeType":"application/geo+json","path":"./_file/data/oxford_lsoa_boundary.50c731e8.geojson","lastModified":1731882744996});
+registerFile("./data/oxford_decarbonisation_data.parquet", {"name":"./data/oxford_decarbonisation_data.parquet","path":"./_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1731883409840});
+registerFile("./data/oxford_lsoa_boundary.geojson", {"name":"./data/oxford_lsoa_boundary.geojson","mimeType":"application/geo+json","path":"./_file/data/oxford_lsoa_boundary.50c731e8.geojson","lastModified":1731883409848});
 registerTable("oxford", FileAttachment("./data/oxford_decarbonisation_data.parquet"));
 
 define({id: "56c2d8e4", outputs: ["d3","flubber","require","Mutable","TimeGlyph","GlyphCollection","turf","RadialGlyph","glyphMap","createDiscretiserValue","_drawCellBackground","OSGB","Model","BudgetAllocator","MiniDecarbModel","createTable","inferTypes","normaliseData","downloadBoundaries","joinCensusDataToGeoJSON","convertGridCsvToGeoJson","context2d"], body: async () => {
@@ -374,6 +374,12 @@ table.getNode()
 ))
 }});
 
+define({id: "2c706b74", mode: "inline", inputs: ["selected","html","display"], body: async (selected,html,display) => {
+display(await(
+selected ? html`<div>Selected Data: ${JSON.stringify(selected.map(item => item.data.id))}</div>` : ""
+))
+}});
+
 define({id: "c0e452dc", mode: "inline", inputs: ["glyphmapTypeInput","display"], body: async (glyphmapTypeInput,display) => {
 display(await(
 glyphmapTypeInput
@@ -454,7 +460,7 @@ function selectIntervention(index) {
 return {selectedInterventionIndex,selectIntervention};
 }});
 
-define({id: "fe015fba", inputs: ["Inputs","html","Generators","Event","allColumns"], outputs: ["techsInput","technology","totalBudgetInput","total_budget","startYearInput","start_year","projectLengthInput","project_length","allocationTypeInput","allocation_type","priorityInput","priority_input","filterInput","filter_input","glyphmapTypeInput","glyphmapType","morphFactorInput","morph_factor"], body: (Inputs,html,Generators,Event,allColumns) => {
+define({id: "d9d5aeec", inputs: ["Inputs","html","Generators","Event","allColumns"], outputs: ["techsInput","technology","totalBudgetInput","total_budget","startYearInput","start_year","projectLengthInput","project_length","allocationTypeInput","allocation_type","priorityInput","priority_input","filterInput","filter_input","glyphmapTypeInput","glyphmapType","morphFactorInput","morph_factor"], body: (Inputs,html,Generators,Event,allColumns) => {
 // list of decarb technologies
 const techsInput = Inputs.select(
   [
@@ -520,10 +526,12 @@ const priorityInput = Inputs.form([
   Inputs.select([...allColumns, "None"], {
     label: html`<b>Sorting Priority</b>`,
     value: "None",
+    disabled: true,
   }),
   Inputs.radio(["asc", "desc"], {
     label: "Order",
     value: "asc",
+    disabled: true,
   }),
 ]);
 const priority_input = Generators.input(priorityInput);
@@ -532,10 +540,12 @@ const filterInput = Inputs.form([
   Inputs.select([...allColumns, "None"], {
     label: html`<b>Filter Column</b>`,
     value: "None",
+    disabled: true,
   }),
   Inputs.text({
     label: "Filter Value",
-    placeholder: "Enter filter value",
+    placeholder: "e.g., '> 1000'",
+    disabled: true,
   }),
 ]);
 const filter_input = Generators.input(filterInput);
@@ -767,9 +777,10 @@ define({id: "7f87db41", inputs: ["selectedIntervention"], body: (selectedInterve
 console.log("selectedIntervention", selectedIntervention);
 }});
 
-define({id: "3a1a615e", outputs: ["cols"], body: () => {
+define({id: "20a53822", outputs: ["cols"], body: () => {
 // columns to show in the table
 const cols = [
+  { column: "id", nominals: null },
   { column: "lsoa", nominals: null },
   {
     column: "insulation_rating",
@@ -1229,6 +1240,7 @@ body, html {
       <div class="card" style="overflow-x:hidden; min-width: 400px;">
       Sortable Table
       <observablehq-loading></observablehq-loading><!--:27617c0d:-->
+      <observablehq-loading></observablehq-loading><!--:2c706b74:-->
       </div>
       <div class="card" style="overflow-x:hidden; min-width: 400px;">
       Map View
@@ -1256,7 +1268,7 @@ body, html {
 </div>
 <div class="observablehq observablehq--block"><!--:1947ba21:--></div>
 <!-- ---------------- Input form declarations ---------------- -->
-<div class="observablehq observablehq--block"><!--:fe015fba:--></div>
+<div class="observablehq observablehq--block"><!--:d9d5aeec:--></div>
 <div class="observablehq observablehq--block"><!--:fbf1b5a3:--></div>
 <div class="observablehq observablehq--block"><!--:39e29da4:--></div>
 <div class="observablehq observablehq--block"><!--:30ef2d9c:--></div>
@@ -1266,7 +1278,7 @@ body, html {
 <div class="observablehq observablehq--block"><!--:a84f1691:--></div>
 <div class="observablehq observablehq--block"><!--:7f87db41:--></div>
 <!-- ---------------- Sortable Table ---------------- -->
-<div class="observablehq observablehq--block"><!--:3a1a615e:--></div>
+<div class="observablehq observablehq--block"><!--:20a53822:--></div>
 <div class="observablehq observablehq--block"><!--:ab9f8eb4:--></div>
 <div class="observablehq observablehq--block"><!--:929663a0:--></div>
 <!-- ---------------- Glyph Maps ---------------- -->
