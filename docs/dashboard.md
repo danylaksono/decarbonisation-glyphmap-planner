@@ -95,7 +95,12 @@ const proj = new OSGB();
     "Substation - Peakload" AS substation_peakload,
     "Substation - Headroom" AS substation_headroom,
     "Substation - % headroom" AS substation_headroom_pct,
-    "Substation - Demand_rag" AS substation_demand
+    "Substation - Demand_rag" AS substation_demand,
+    "index of multiple deprivation (imd) score" AS deprivation_score,
+    "index of multiple deprivation (imd) rank" AS deprivation_rank,
+    "index of multiple deprivation (imd) decile" AS deprivation_decile,
+    "Number of households in fuel poverty" AS fuel_poverty_households,
+    "Proportion of households fuel poor (%)" AS fuel_poverty_proportion
 FROM oxford b;
 ```
 
