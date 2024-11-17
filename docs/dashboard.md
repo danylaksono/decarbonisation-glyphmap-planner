@@ -308,6 +308,7 @@ body, html {
       <div class="card" style="overflow-x:hidden; min-width: 400px;">
       Sortable Table
       ${table.getNode()}
+      ${selected ? html`<div>Selected Data: ${JSON.stringify(selected.map(item => item.data.id))}</div>` : ""}
       </div>
       <div class="card" style="overflow-x:hidden; min-width: 400px;">
       Map View
@@ -451,10 +452,12 @@ const priorityInput = Inputs.form([
   Inputs.select([...allColumns, "None"], {
     label: html`<b>Sorting Priority</b>`,
     value: "None",
+    disabled: true,
   }),
   Inputs.radio(["asc", "desc"], {
     label: "Order",
     value: "asc",
+    disabled: true,
   }),
 ]);
 const priority_input = Generators.input(priorityInput);
@@ -463,10 +466,12 @@ const filterInput = Inputs.form([
   Inputs.select([...allColumns, "None"], {
     label: html`<b>Filter Column</b>`,
     value: "None",
+    disabled: true,
   }),
   Inputs.text({
     label: "Filter Value",
-    placeholder: "Enter filter value",
+    placeholder: "e.g., '> 1000'",
+    disabled: true,
   }),
 ]);
 const filter_input = Generators.input(filterInput);
@@ -698,6 +703,7 @@ console.log("selectedIntervention", selectedIntervention);
 ```js
 // columns to show in the table
 const cols = [
+  { column: "id", nominals: null },
   { column: "lsoa", nominals: null },
   {
     column: "insulation_rating",
