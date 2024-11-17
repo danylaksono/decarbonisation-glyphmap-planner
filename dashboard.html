@@ -205,7 +205,7 @@ import {define} from "./_observablehq/client.js";
 import {registerFile, FileAttachment} from "./_observablehq/stdlib.js";
 import {registerTable} from "./_observablehq/stdlib/duckdb.js";
 
-registerFile("./data/oxford_decarbonisation_data.parquet", {"name":"./data/oxford_decarbonisation_data.parquet","path":"./_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1731875559163});
+registerFile("./data/oxford_decarbonisation_data.parquet", {"name":"./data/oxford_decarbonisation_data.parquet","path":"./_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1731875870742});
 registerTable("oxford", FileAttachment("./data/oxford_decarbonisation_data.parquet"));
 
 define({id: "1fe10fe6", outputs: ["d3","flubber","require","Mutable","TimeGlyph","GlyphCollection","turf","RadialGlyph","glyphMap","createDiscretiserValue","_drawCellBackground","OSGB","Model","BudgetAllocator","MiniDecarbModel","createTable","inferTypes","downloadBoundaries","joinCensusDataToGeoJSON","convertGridCsvToGeoJson","context2d"], body: async () => {
@@ -223,7 +223,7 @@ const proj = new OSGB();
 return {proj};
 }});
 
-define({id: "d4d16302", inputs: ["sql"], outputs: ["oxford_data"], body: async (sql) => {
+define({id: "07bc4aef", inputs: ["sql"], outputs: ["oxford_data"], body: async (sql) => {
 const oxford_data = await sql`  SELECT DISTINCT
     "UPRN" AS id,
     "LSOA code" AS lsoa,
@@ -271,7 +271,12 @@ const oxford_data = await sql`  SELECT DISTINCT
     "Substation - Peakload" AS substation_peakload,
     "Substation - Headroom" AS substation_headroom,
     "Substation - % headroom" AS substation_headroom_pct,
-    "Substation - Demand_rag" AS substation_demand
+    "Substation - Demand_rag" AS substation_demand,
+    "index of multiple deprivation (imd) score" AS deprivation_score,
+    "index of multiple deprivation (imd) rank" AS deprivation_rank,
+    "index of multiple deprivation (imd) decile" AS deprivation_decile,
+    "Number of households in fuel poverty" AS fuel_poverty_households,
+    "Proportion of households fuel poor (%)" AS fuel_poverty_proportion
 FROM oxford b;`;
 return {oxford_data};
 }});
@@ -872,7 +877,7 @@ return {glyphMapSpecWgs84};
 <div class="observablehq observablehq--block"><!--:1fe10fe6:--></div>
 <div class="observablehq observablehq--block"><!--:5dd85f8f:--></div>
 <!-- ---------------- Data ---------------- -->
-<div class="observablehq observablehq--block"><!--:d4d16302:--></div>
+<div class="observablehq observablehq--block"><!--:07bc4aef:--></div>
 <div class="observablehq observablehq--block"><!--:28c25a2a:--></div>
 <!-- ------------ Getter-Setter ------------ -->
 <div class="observablehq observablehq--block"><!--:d47e63b1:--></div>
