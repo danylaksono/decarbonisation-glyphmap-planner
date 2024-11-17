@@ -32,7 +32,7 @@ import { Model } from "./components/model.js";
 import { BudgetAllocator } from "./components/budgetAllocator.js";
 import { MiniDecarbModel } from "./components/miniDecarbModel.js";
 import { createTable } from "./components/sorterTable.js";
-import { inferTypes } from "./components/helpers.js";
+import { inferTypes, normaliseData } from "./components/helpers.js";
 import {
   downloadBoundaries,
   joinCensusDataToGeoJSON,
@@ -130,6 +130,7 @@ const [selected, setSelected] = useState({});
 const [getIntervention, setIntervention] = useState([]);
 const [getResults, setResults] = useState([]);
 const [selectedIntervention, setSelectedIntervention] = useState(null);
+const [detailOnDemand, setDetailOnDemand] = useState(null);
 ```
 
 <!-------- Stylesheets -------->
@@ -312,6 +313,7 @@ body, html {
       Map View
       ${glyphmapTypeInput}
       ${resize((width, height) => glyphMap(glyphMapSpec(width, height)))}
+      ${morphFactorInput}
       </div>
     </div>
     <div class="main-bottom">
@@ -350,7 +352,10 @@ body, html {
           </ul>
       </div>
     </div>
-    <div class="card">Sculptable Hierarchical Glyph/Details on demand</div>
+    <div class="card">
+    Details on demand
+    ${resize((width, height) => drawDetailOnDemand(width, height))}
+    </div>
   </div>
 </div>
 
@@ -466,11 +471,25 @@ const filterInput = Inputs.form([
 ]);
 const filter_input = Generators.input(filterInput);
 
-const glyphmapTypeInput = Inputs.radio(["Polygons", "Gridmap", "Gridded"], {
-  label: "Type of map",
-  value: "Polygons",
-});
+const glyphmapTypeInput = Inputs.radio(
+  ["Decarbonisation Time series", "Interventions"],
+  {
+    label: "Type of map",
+    value: "Polygons",
+  }
+);
 const glyphmapType = Generators.input(glyphmapTypeInput);
+
+const morphFactorInput = html`<input
+  style="width: 100%; max-width:450px;"
+  type="range"
+  value="1"
+  step="0.05"
+  min="0"
+  max="1"
+/>`;
+
+const morph_factor = Generators.input(morphFactorInput);
 ```
 
 ```js
@@ -623,6 +642,24 @@ const listOfTech = {
       savingsKey: "solar_generation",
     },
   },
+  GSHP: {
+    name: "GSHP",
+    config: {
+      suitabilityKey: "gshp_suitability",
+      labourKey: "gshp_labour",
+      materialKey: "gshp_material",
+      savingsKey: "gshp_size",
+    },
+  },
+  Insulation: {
+    name: "Insulation",
+    config: {
+      suitabilityKey: "insulation_rating",
+      labourKey: "insulation_cwall_labour",
+      materialKey: "insulation_cwall_materials",
+      savingsKey: "insulation_cwall",
+    },
+  },
 };
 
 function addTechConfig(techConfig) {
@@ -716,7 +753,7 @@ function glyphMapSpec(width = 800, height = 600) {
   return {
     // coordType: "notmercator",
     initialBB: turf.bbox(lsoa_boundary),
-    data: flatData,
+    data: tableData,
     getLocationFn: (row) => [row.x, row.y],
     discretisationShape: "grid",
     mapType: "CartoPositron",
@@ -726,7 +763,7 @@ function glyphMapSpec(width = 800, height = 600) {
     // width: 800,
     // height: 600,
     width: width,
-    height: height,
+    height: height - 40,
 
     customMap: {
       scaleParams: [],
@@ -742,9 +779,53 @@ function glyphMapSpec(width = 800, height = 600) {
       aggrFn: (cell, row, weight, global, panel) => {
         if (cell.building_area) {
           cell.building_area += row.building_area;
+          // Update existing values
+          cell.data.costs.ashp += row.ashp_labour + row.ashp_material;
+          cell.data.costs.pv += row.pv_labour + row.pv_material;
+          cell.data.costs.gshp += row.gshp_labour + row.gshp_material;
+          cell.data.carbon.ashp += row.heat_demand;
+          cell.data.carbon.pv += row.pv_generation;
+          cell.data.carbon.gshp += row.gshp_size;
         } else {
           cell.building_area = row.building_area;
+          // Initialize data structure
+          cell.data = {
+            costs: {
+              ashp: row.ashp_labour + row.ashp_material,
+              pv: row.pv_labour + row.pv_material,
+              gshp: row.gshp_labour + row.gshp_material,
+            },
+            carbon: {
+              ashp: row.heat_demand,
+              pv: row.pv_generation,
+              gshp: row.gshp_size,
+            },
+          };
         }
+
+        // --- Normalization ---
+        // Create arrays for costs and carbon for normalization
+        let costsData = Object.entries(cell.data.costs).map(([key, value]) => ({
+          key,
+          value,
+        }));
+        let carbonData = Object.entries(cell.data.carbon).map(
+          ([key, value]) => ({ key, value })
+        );
+
+        // Normalize costs and carbon data separately
+        costsData = normaliseData(costsData, ["value"]);
+        carbonData = normaliseData(carbonData, ["value"]);
+
+        // Update cell.data with normalized values
+        cell.data.costs = costsData.reduce((acc, { key, value }) => {
+          acc[key] = value;
+          return acc;
+        }, {});
+        cell.data.carbon = carbonData.reduce((acc, { key, value }) => {
+          acc[key] = value;
+          return acc;
+        }, {});
       },
 
       postAggrFn: (cells, cellSize, global, panel) => {
@@ -761,7 +842,7 @@ function glyphMapSpec(width = 800, height = 600) {
         global.pathGenerator = d3.geoPath().context(ctx);
         global.colourScalePop = d3
           .scaleSequential(d3.interpolateBlues)
-          .domain([0, d3.max(cells.map((row) => row.population))]);
+          .domain([0, d3.max(cells.map((row) => row.building_area))]);
       },
 
       drawFn: (cell, x, y, cellSize, ctx, global, panel) => {
@@ -773,7 +854,7 @@ function glyphMapSpec(width = 800, height = 600) {
 
         ctx.beginPath();
         global.pathGenerator(boundaryFeat);
-        ctx.fillStyle = global.colourScalePop(cell.population);
+        ctx.fillStyle = global.colourScalePop(cell.building_area);
         ctx.fill();
 
         //add contour to clicked cells
@@ -787,14 +868,28 @@ function glyphMapSpec(width = 800, height = 600) {
         }
 
         //draw a radial glyph -> change the array to real data (between 0 and 1)
-        drawRadialMultivariateGlyph([0.5, 0.1, 0.9, 0.3], x, y, cellSize, ctx);
+        // drawRadialMultivariateGlyph([0.5, 0.1, 0.9, 0.3], x, y, cellSize, ctx);
+        let rg = new RadialGlyph([
+          cell.data.carbon.ashp,
+          cell.data.carbon.pv,
+          cell.data.carbon.gshp,
+          cell.data.costs.ashp,
+          cell.data.costs.pv,
+          cell.data.costs.gshp,
+        ]);
+        rg.draw(ctx, x, y, cellSize / 2);
 
         // console.log("boundary", boundary);
       },
 
       postDrawFn: (cells, cellSize, ctx, global, panel) => {},
 
-      tooltipTextFn: (cell) => {},
+      tooltipTextFn: (cell) => {
+        if (cell) {
+          setDetailOnDemand(cell.data);
+          return `Total Building Area: ${cell.building_area.toFixed(2)} m^2`;
+        }
+      },
     },
   };
 }
@@ -810,7 +905,30 @@ const glyphMapSpecWgs84 = {
 ```
 
 ```js
-// display(glyphMap(glyphMapSpec(800, 600)));
+function drawDetailOnDemand(width, height) {
+  let canvas = document.createElement("canvas");
+  let ctx = canvas.getContext("2d");
+  canvas.width = width;
+  canvas.height = width;
+
+  if (!detailOnDemand) {
+    return canvas;
+  }
+
+  let data = detailOnDemand;
+
+  let rg = new RadialGlyph([
+    data.carbon.ashp,
+    data.carbon.pv,
+    data.carbon.gshp,
+    data.costs.ashp,
+    data.costs.pv,
+    data.costs.gshp,
+  ]);
+  rg.draw(ctx, width / 2, height / 2, Math.min(width / 2, height / 2));
+
+  return canvas;
+}
 ```
 
 ```js

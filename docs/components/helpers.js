@@ -53,3 +53,27 @@ export function inferTypes(data) {
     });
   }
 }
+
+export function normaliseData(data, keysToNormalise) {
+  // Create a D3 linear scale for each key to be normalized
+  const scales = keysToNormalise.map((key) =>
+    d3
+      .scaleLinear()
+      .domain(d3.extent(data, (d) => d[key])) // Set domain based on actual data range
+      .range([0, 1])
+  );
+
+  // Normalize the data using the scales
+  const normalisedData = data.map((d) => ({
+    ...d, // Keep original properties
+    ...keysToNormalise.reduce(
+      (acc, key) => ({
+        ...acc,
+        [key]: scales[keysToNormalise.indexOf(key)](d[key]),
+      }),
+      {}
+    ),
+  }));
+
+  return normalisedData;
+}
