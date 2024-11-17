@@ -10,18 +10,39 @@ sql:
 <!-- ------------ Imports ------------ -->
 
 ```js
+const d3 = require("d3", "d3-geo-projection");
+const flubber = require("flubber@0.4");
+
+import { require } from "npm:d3-require";
+import { Mutable } from "npm:@observablehq/stdlib";
+
 import {
   TimeGlyph,
   GlyphCollection,
 } from "./components/glyph-designs/timeGlyph.js";
+import * as turf from "@turf/turf";
+import { RadialGlyph } from "./components/radialglyph.js";
+import {
+  glyphMap,
+  createDiscretiserValue,
+  _drawCellBackground,
+} from "./components/gridded-glyphmaps/index.min.js";
+import { OSGB } from "./components/osgb/index.js";
 import { Model } from "./components/model.js";
-import maplibregl from "npm:maplibre-gl@2.0.0";
-import { Mutable } from "npm:@observablehq/stdlib";
-
 import { BudgetAllocator } from "./components/budgetAllocator.js";
 import { MiniDecarbModel } from "./components/miniDecarbModel.js";
 import { createTable } from "./components/sorterTable.js";
 import { inferTypes } from "./components/helpers.js";
+import {
+  downloadBoundaries,
+  joinCensusDataToGeoJSON,
+  convertGridCsvToGeoJson,
+  context2d,
+} from "./components/utils.js";
+```
+
+```js
+const proj = new OSGB();
 ```
 
 <!-- ---------------- Data ---------------- -->
@@ -103,17 +124,15 @@ const [selectedIntervention, setSelectedIntervention] = useState(null);
   rel="stylesheet"
   href="https://cdn.jsdelivr.net/npm/bulma@1.0.0/css/bulma.min.css"
 >
+<!-- 
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css"> -->
 
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css">
-
-<link href="https://unpkg.com/maplibre-gl@2.1.9/dist/maplibre-gl.css" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 
 <link
   rel="stylesheet"
   href="./styles/dashboard.css"
 >
-
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 
 <style>
 body, html {
@@ -150,7 +169,7 @@ body, html {
   #left-panel {
      /* Spans 2 rows */
     display: grid;
-    grid-template-rows: 1fr 1fr; /* Two equal rows */
+    /* grid-template-rows: 1fr 1fr; Two equal rows */
     gap: 8px;
   }
 
@@ -276,15 +295,13 @@ body, html {
   <div id="main-panel">
     <!-- <div class="card main-top">Map View</div> -->
     <div class="main-top">
-      <div class="card" style="overflow-x:hidden">
+      <div class="card" style="overflow-x:hidden; min-width: 400px;">
       Sortable Table
       ${table.getNode()}
-      <!-- ${Inputs.table(selectedIntervention.allBuildings.map((building) => ({
-        ...building.properties, intervention: building.isIntervened,
-      }))
-      )} -->
       </div>
-      <div class="card">Map View</div>
+      <div class="card" style="overflow-x:hidden; min-width: 400px;">
+      Map View
+      </div>
     </div>
     <div class="main-bottom">
       <div class="card">
