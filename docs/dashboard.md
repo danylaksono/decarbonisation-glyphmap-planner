@@ -365,7 +365,7 @@ body, html {
     </div>
     <div class="card">
     Details on demand
-    <!-- ${resize((width, height) => drawDetailOnDemand(width, height))} -->
+    ${resize((width, height) => drawDetailOnDemand(width, height))}
     </div>
   </div>
 </div>
@@ -914,7 +914,7 @@ function glyphMapSpecBasic(width = 800, height = 600) {
           setDetailOnDemand(cell.data);
           return `Total Building Area: ${cell.building_area.toFixed(2)} m^2`;
         } else {
-          return "";
+          return "no data";
         }
       },
     },
