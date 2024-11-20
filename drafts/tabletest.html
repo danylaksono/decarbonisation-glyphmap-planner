@@ -55,7 +55,7 @@ import {define} from "../_observablehq/client.js";
 import {registerFile, FileAttachment} from "../_observablehq/stdlib.js";
 import {registerTable} from "../_observablehq/stdlib/duckdb.js";
 
-registerFile("./../data/oxford_decarbonisation_data.parquet", {"name":"./../data/oxford_decarbonisation_data.parquet","path":"../_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1731883409840});
+registerFile("./../data/oxford_decarbonisation_data.parquet", {"name":"./../data/oxford_decarbonisation_data.parquet","path":"../_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1732088886158});
 registerTable("oxford", FileAttachment("../data/oxford_decarbonisation_data.parquet"));
 
 define({id: "0c6d6149", inputs: ["display"], body: (display) => {
@@ -496,7 +496,7 @@ function HistogramController(data, binrules) {
 return {HistogramController};
 }});
 
-define({id: "31125977", inputs: ["d3","HistogramController","ColShiftController","SortController","FilterController","UndoController"], outputs: ["createTable"], body: (d3,HistogramController,ColShiftController,SortController,FilterController,UndoController) => {
+define({id: "7118a754", inputs: ["d3","HistogramController","ColShiftController","SortController","FilterController","UndoController"], outputs: ["createTable"], body: (d3,HistogramController,ColShiftController,SortController,FilterController,UndoController) => {
 function createTable(data, columns, changed) {
   let thisObject = this;
 
@@ -1069,7 +1069,6 @@ function createTable(data, columns, changed) {
       console.log("add rows:");
       addTableRows(additionalLines);
       console.log("lastLineAdded:" + lastLineAdded);
-      // Add your desired logic here
     }
   });
 
@@ -1155,7 +1154,7 @@ const modelData = FileAttachment("./data/result_gdf_admin.geojson").json();
 <div class="observablehq observablehq--block"><!--:34a4c442:--></div>
 <div class="observablehq observablehq--block"><!--:190c8c57:--></div>
 <div class="observablehq observablehq--block"><!--:f7181075:--></div>
-<div class="observablehq observablehq--block"><!--:31125977:--></div>
+<div class="observablehq observablehq--block"><!--:7118a754:--></div>
 <div class="observablehq observablehq--block"><!--:caa5cc8f:--></div>
 <div class="observablehq observablehq--block"><!--:19721a50:--></div>
 <div class="observablehq observablehq--block"><!--:d262e820:--></div>

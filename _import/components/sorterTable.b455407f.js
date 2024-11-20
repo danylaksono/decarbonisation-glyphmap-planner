@@ -178,7 +178,7 @@ function HistogramController(data, binrules) {
   this.updateData = (d) => setData(d);
 
   function setData(dd) {
-    console.log("dd:", dd);
+    // console.log("dd:", dd);
 
     div.innerHTML = "";
 
@@ -262,7 +262,7 @@ function HistogramController(data, binrules) {
 
     //add the bin index to each bin
     bins.map((bin, i) => (bin.index = i));
-    console.log("bins: ", bins);
+    // console.log("bins: ", bins);
 
     // Define the y scale (based on bin counts)
     const y = d3
@@ -922,7 +922,6 @@ export function createTable(data, columns, changed) {
       console.log("add rows:");
       addTableRows(additionalLines);
       console.log("lastLineAdded:" + lastLineAdded);
-      // Add your desired logic here
     }
   });
 

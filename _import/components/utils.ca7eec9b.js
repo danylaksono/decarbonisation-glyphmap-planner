@@ -71,6 +71,74 @@ export const downloadBoundaries = function (geogName, permittedCodes) {
   });
 };
 
+export const enrichGeoData = function (
+  buildingData,
+  geoJSON,
+  joinColumn = "lsoa_code",
+  geoJSONJoinColumn = "code",
+  aggregations = {}
+) {
+  // 1. Group building data by LSOA code
+  const groupedData = buildingData.reduce((acc, item) => {
+    const code = item[joinColumn];
+    if (!acc[code]) {
+      acc[code] = [];
+    }
+    acc[code].push(item);
+    return acc;
+  }, {});
+
+  // 2. Aggregate building data for each LSOA
+  const aggregatedData = {};
+  for (const code in groupedData) {
+    aggregatedData[code] = {};
+    const buildingsInLSOA = groupedData[code];
+
+    for (const column in aggregations) {
+      const aggregationType = aggregations[column];
+      const values = buildingsInLSOA.map((building) => building[column]);
+
+      switch (aggregationType) {
+        case "sum":
+          aggregatedData[code][column] = values.reduce((a, b) => a + b, 0);
+          break;
+        case "mean":
+          aggregatedData[code][column] =
+            values.reduce((a, b) => a + b, 0) / values.length;
+          break;
+        // Add more aggregation types as needed (e.g., min, max, median, count)
+        case "count":
+          aggregatedData[code][column] = values.length;
+          break;
+        default:
+          console.warn(
+            `Unsupported aggregation type: ${aggregationType} for column: ${column}`
+          );
+      }
+    }
+  }
+
+  // 3. Create a deep copy of the original GeoJSON
+  const newGeoJSON = JSON.parse(JSON.stringify(geoJSON));
+
+  // 4. Iterate through features and add aggregated data
+  newGeoJSON.features = newGeoJSON.features.map((feature) => {
+    const code = feature.properties[geoJSONJoinColumn];
+    const aggregatedItem = aggregatedData[code];
+
+    if (aggregatedItem) {
+      feature.properties = {
+        ...feature.properties,
+        ...aggregatedItem,
+      };
+    }
+
+    return feature;
+  });
+
+  return newGeoJSON;
+};
+
 export const joinCensusDataToGeoJSON = function (censusData, geoJSON) {
   // Create a lookup object from census data
   const censusLookup = censusData.reduce((acc, item) => {

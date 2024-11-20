@@ -21,12 +21,13 @@
 <link rel="modulepreload" href="./_import/components/model.0139f19a.js">
 <link rel="modulepreload" href="./_import/components/budgetAllocator.46c04ac3.js">
 <link rel="modulepreload" href="./_import/components/miniDecarbModel.d0583510.js">
-<link rel="modulepreload" href="./_import/components/sorterTable.19c221b2.js">
-<link rel="modulepreload" href="./_import/components/helpers.0404e48e.js">
-<link rel="modulepreload" href="./_import/components/utils.ec49f1d6.js">
+<link rel="modulepreload" href="./_import/components/sorterTable.b455407f.js">
+<link rel="modulepreload" href="./_import/components/helpers.cfd3e683.js">
+<link rel="modulepreload" href="./_import/components/utils.ca7eec9b.js">
 <link rel="modulepreload" href="./_npm/d3@7.9.0/_esm.js">
 <link rel="modulepreload" href="./_import/components/osgb/ellipsoid.1ac4eba6.js">
 <link rel="modulepreload" href="./_npm/topojson-client@3.1.0/_esm.js">
+<link rel="modulepreload" href="./_npm/lodash@4.17.21/_esm.js">
 <link rel="modulepreload" href="./_observablehq/stdlib/duckdb.js">
 <link rel="modulepreload" href="./_npm/htl@0.3.1/_esm.js">
 <link rel="modulepreload" href="./_observablehq/stdlib/inputs.js">
@@ -205,18 +206,20 @@ import {define} from "./_observablehq/client.js";
 import {registerFile, FileAttachment} from "./_observablehq/stdlib.js";
 import {registerTable} from "./_observablehq/stdlib/duckdb.js";
 
-registerFile("./data/oxford_decarbonisation_data.parquet", {"name":"./data/oxford_decarbonisation_data.parquet","path":"./_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1731883409840});
-registerFile("./data/oxford_lsoa_boundary.geojson", {"name":"./data/oxford_lsoa_boundary.geojson","mimeType":"application/geo+json","path":"./_file/data/oxford_lsoa_boundary.50c731e8.geojson","lastModified":1731883409848});
+registerFile("./data/oxford_decarbonisation_data.parquet", {"name":"./data/oxford_decarbonisation_data.parquet","path":"./_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1732088886158});
+registerFile("./data/oxford_lsoa_boundary.geojson", {"name":"./data/oxford_lsoa_boundary.geojson","mimeType":"application/geo+json","path":"./_file/data/oxford_lsoa_boundary.50c731e8.geojson","lastModified":1732088886170});
+registerFile("./data/oxford_lsoas_cartogram.json", {"name":"./data/oxford_lsoas_cartogram.json","mimeType":"application/json","path":"./_file/data/oxford_lsoas_cartogram.a72fa2b8.json","lastModified":1732088886170});
+registerFile("./data/oxford_lsoas_regular.json", {"name":"./data/oxford_lsoas_regular.json","mimeType":"application/json","path":"./_file/data/oxford_lsoas_regular.e1c36e7e.json","lastModified":1732088886170});
 registerTable("oxford", FileAttachment("./data/oxford_decarbonisation_data.parquet"));
 
-define({id: "56c2d8e4", outputs: ["d3","flubber","require","Mutable","TimeGlyph","GlyphCollection","turf","RadialGlyph","glyphMap","createDiscretiserValue","_drawCellBackground","OSGB","Model","BudgetAllocator","MiniDecarbModel","createTable","inferTypes","normaliseData","downloadBoundaries","joinCensusDataToGeoJSON","convertGridCsvToGeoJson","context2d"], body: async () => {
-const [{require}, {Mutable}, {TimeGlyph, GlyphCollection}, turf, {RadialGlyph}, {glyphMap, createDiscretiserValue, _drawCellBackground}, {OSGB}, {Model}, {BudgetAllocator}, {MiniDecarbModel}, {createTable}, {inferTypes, normaliseData}, {downloadBoundaries, joinCensusDataToGeoJSON, convertGridCsvToGeoJson, context2d}] = await Promise.all([import("./_npm/d3-require@1.3.0/_esm.js"), import("./_observablehq/stdlib.js"), import("./_import/components/glyph-designs/timeGlyph.30b74103.js"), import("./_node/@turf/turf@7.1.0/index.js"), import("./_import/components/radialglyph.e10c9304.js"), import("./_import/components/gridded-glyphmaps/index.min.e22a1d11.js"), import("./_import/components/osgb/index.1d2476df.js"), import("./_import/components/model.0139f19a.js"), import("./_import/components/budgetAllocator.46c04ac3.js"), import("./_import/components/miniDecarbModel.d0583510.js"), import("./_import/components/sorterTable.19c221b2.js"), import("./_import/components/helpers.0404e48e.js"), import("./_import/components/utils.ec49f1d6.js")]);
+define({id: "bb70aa05", outputs: ["d3","flubber","require","Mutable","TimeGlyph","GlyphCollection","turf","RadialGlyph","glyphMap","createDiscretiserValue","_drawCellBackground","OSGB","Model","BudgetAllocator","MiniDecarbModel","createTable","inferTypes","enrichGeoData","normaliseData","downloadBoundaries","joinCensusDataToGeoJSON","convertGridCsvToGeoJson","context2d"], body: async () => {
+const [{require}, {Mutable}, {TimeGlyph, GlyphCollection}, turf, {RadialGlyph}, {glyphMap, createDiscretiserValue, _drawCellBackground}, {OSGB}, {Model}, {BudgetAllocator}, {MiniDecarbModel}, {createTable}, {inferTypes, enrichGeoData, normaliseData}, {downloadBoundaries, joinCensusDataToGeoJSON, convertGridCsvToGeoJson, context2d}] = await Promise.all([import("./_npm/d3-require@1.3.0/_esm.js"), import("./_observablehq/stdlib.js"), import("./_import/components/glyph-designs/timeGlyph.30b74103.js"), import("./_node/@turf/turf@7.1.0/index.js"), import("./_import/components/radialglyph.e10c9304.js"), import("./_import/components/gridded-glyphmaps/index.min.e22a1d11.js"), import("./_import/components/osgb/index.1d2476df.js"), import("./_import/components/model.0139f19a.js"), import("./_import/components/budgetAllocator.46c04ac3.js"), import("./_import/components/miniDecarbModel.d0583510.js"), import("./_import/components/sorterTable.b455407f.js"), import("./_import/components/helpers.cfd3e683.js"), import("./_import/components/utils.ca7eec9b.js")]);
 const d3 = require("d3", "d3-geo-projection");
 const flubber = require("flubber@0.4");
 
 
 
-return {d3,flubber,require,Mutable,TimeGlyph,GlyphCollection,turf,RadialGlyph,glyphMap,createDiscretiserValue,_drawCellBackground,OSGB,Model,BudgetAllocator,MiniDecarbModel,createTable,inferTypes,normaliseData,downloadBoundaries,joinCensusDataToGeoJSON,convertGridCsvToGeoJson,context2d};
+return {d3,flubber,require,Mutable,TimeGlyph,GlyphCollection,turf,RadialGlyph,glyphMap,createDiscretiserValue,_drawCellBackground,OSGB,Model,BudgetAllocator,MiniDecarbModel,createTable,inferTypes,enrichGeoData,normaliseData,downloadBoundaries,joinCensusDataToGeoJSON,convertGridCsvToGeoJson,context2d};
 }});
 
 define({id: "5dd85f8f", inputs: ["OSGB"], outputs: ["proj"], body: (OSGB) => {
@@ -289,13 +292,18 @@ const allColumns = Object.keys(buildingsData[0]);
 return {buildingsData,flatData,allColumns};
 }});
 
-define({id: "7bbc139f", inputs: ["FileAttachment"], outputs: ["lsoa_boundary"], body: (FileAttachment) => {
+define({id: "6fda268e", inputs: ["FileAttachment"], outputs: ["lsoa_boundary","regular_geodata","cartogram_geodata"], body: (FileAttachment) => {
 // oxford boundary data
 const lsoa_boundary = FileAttachment(
   "./data/oxford_lsoa_boundary.geojson"
 ).json();
-// display(lsoa_boundary);
-return {lsoa_boundary};
+const regular_geodata = FileAttachment(
+  "./data/oxford_lsoas_regular.json"
+).json();
+const cartogram_geodata = FileAttachment(
+  "./data/oxford_lsoas_cartogram.json"
+).json();
+return {lsoa_boundary,regular_geodata,cartogram_geodata};
 }});
 
 define({id: "4e76479e", inputs: ["Mutable"], outputs: ["useState","selected","setSelected","getIntervention","setIntervention","getResults","setResults","selectedIntervention","setSelectedIntervention","detailOnDemand","setDetailOnDemand"], body: (Mutable) => {
@@ -386,15 +394,15 @@ glyphmapTypeInput
 ))
 }});
 
-define({id: "af5ac603", mode: "inline", inputs: ["resize","glyphMap","glyphMapSpec","display"], body: async (resize,glyphMap,glyphMapSpec,display) => {
-display(await(
-resize((width, height) => glyphMap(glyphMapSpec(width, height)))
-))
-}});
-
 define({id: "a6dbfcfd", mode: "inline", inputs: ["morphFactorInput","display"], body: async (morphFactorInput,display) => {
 display(await(
 morphFactorInput
+))
+}});
+
+define({id: "d8aa3b70", mode: "inline", inputs: ["morphGlyphMap","display"], body: async (morphGlyphMap,display) => {
+display(await(
+morphGlyphMap
 ))
 }});
 
@@ -429,12 +437,6 @@ html`${interventions.map(
 ))
 }});
 
-define({id: "ec578e9e", mode: "inline", inputs: ["resize","drawDetailOnDemand","display"], body: async (resize,drawDetailOnDemand,display) => {
-display(await(
-resize((width, height) => drawDetailOnDemand(width, height))
-))
-}});
-
 define({id: "1947ba21", inputs: ["setSelectedIntervention","results"], outputs: ["selectedInterventionIndex","selectIntervention"], body: (setSelectedIntervention,results) => {
 // for dealing with selected list items
 let selectedInterventionIndex = null; // Track the selected intervention index
@@ -460,7 +462,7 @@ function selectIntervention(index) {
 return {selectedInterventionIndex,selectIntervention};
 }});
 
-define({id: "d9d5aeec", inputs: ["Inputs","html","Generators","Event","allColumns"], outputs: ["techsInput","technology","totalBudgetInput","total_budget","startYearInput","start_year","projectLengthInput","project_length","allocationTypeInput","allocation_type","priorityInput","priority_input","filterInput","filter_input","glyphmapTypeInput","glyphmapType","morphFactorInput","morph_factor"], body: (Inputs,html,Generators,Event,allColumns) => {
+define({id: "b3c8a1f7", inputs: ["Inputs","html","Generators","Event","allColumns"], outputs: ["techsInput","technology","totalBudgetInput","total_budget","startYearInput","start_year","projectLengthInput","project_length","allocationTypeInput","allocation_type","priorityInput","priority_input","filterInput","filter_input","glyphmapTypeInput","glyphmapType","morphFactorInput","morph_factor"], body: (Inputs,html,Generators,Event,allColumns) => {
 // list of decarb technologies
 const techsInput = Inputs.select(
   [
@@ -567,7 +569,6 @@ const morphFactorInput = html`<input
   min="0"
   max="1"
 />`;
-
 const morph_factor = Generators.input(morphFactorInput);
 return {techsInput,technology,totalBudgetInput,total_budget,startYearInput,start_year,projectLengthInput,project_length,allocationTypeInput,allocation_type,priorityInput,priority_input,filterInput,filter_input,glyphmapTypeInput,glyphmapType,morphFactorInput,morph_factor};
 }});
@@ -830,9 +831,9 @@ define({id: "929663a0", inputs: ["inferTypes","tableData"], body: (inferTypes,ta
 console.log("Test inferring data types", inferTypes(tableData));
 }});
 
-define({id: "8647aa34", inputs: ["turf","lsoa_boundary","tableData","normaliseData","d3","RadialGlyph","setDetailOnDemand"], outputs: ["glyphMapSpec"], body: (turf,lsoa_boundary,tableData,normaliseData,d3,RadialGlyph,setDetailOnDemand) => {
+define({id: "ca715da5", inputs: ["turf","lsoa_boundary","tableData","normaliseData","d3","RadialGlyph","setDetailOnDemand"], outputs: ["glyphMapSpecBasic"], body: (turf,lsoa_boundary,tableData,normaliseData,d3,RadialGlyph,setDetailOnDemand) => {
 // glyphmap basic specs
-function glyphMapSpec(width = 800, height = 600) {
+function glyphMapSpecBasic(width = 800, height = 600) {
   return {
     // coordType: "notmercator",
     initialBB: turf.bbox(lsoa_boundary),
@@ -976,17 +977,17 @@ function glyphMapSpec(width = 800, height = 600) {
     },
   };
 }
-return {glyphMapSpec};
+return {glyphMapSpecBasic};
 }});
 
-define({id: "fc05c05a", inputs: ["glyphMapSpec"], outputs: ["glyphMapSpecWgs84"], body: (glyphMapSpec) => {
-const glyphMapSpecWgs84 = {
-  ...glyphMapSpec,
+define({id: "44c9b4b4", inputs: ["glyphMapSpecBasic"], outputs: ["glyphMapSpecBasicWgs84"], body: (glyphMapSpecBasic) => {
+const glyphMapSpecBasicWgs84 = {
+  ...glyphMapSpecBasic,
   // coordType: "mercator",
   initialBB: {}, //use the WGS84 extent
   getLocationFn: (row) => {},
 };
-return {glyphMapSpecWgs84};
+return {glyphMapSpecBasicWgs84};
 }});
 
 define({id: "7b5e4a76", inputs: ["detailOnDemand","RadialGlyph"], outputs: ["drawDetailOnDemand"], body: (detailOnDemand,RadialGlyph) => {
@@ -1066,16 +1067,414 @@ function drawPieSlice(ctx, cx, cy, r, angleStart, angleEnd, color) {
 return {drawPieSlice};
 }});
 
+define({id: "77b24fab", inputs: ["joinCensusDataToGeoJSON","flatData","regular_geodata","cartogram_geodata"], outputs: ["regular_geodata_withproperties","cartogram_geodata_withproperties"], body: (joinCensusDataToGeoJSON,flatData,regular_geodata,cartogram_geodata) => {
+// joining attributes to geodata
+const regular_geodata_withproperties = joinCensusDataToGeoJSON(
+  [...flatData],
+  regular_geodata
+);
+const cartogram_geodata_withproperties = joinCensusDataToGeoJSON(
+  [...flatData],
+  cartogram_geodata
+);
+// console.log("regular_geodata_withproperties", regular_geodata_withproperties);
+return {regular_geodata_withproperties,cartogram_geodata_withproperties};
+}});
+
+define({id: "d5bdb4c8", body: () => {
+// console.log("Flat Data", flatData);
+}});
+
+define({id: "09b02b86", inputs: ["enrichGeoData","flatData","regular_geodata"], outputs: ["aggregations","enrichedGeoJSON"], body: (enrichGeoData,flatData,regular_geodata) => {
+// geo-enrichment - combine geodata with building level properties
+const aggregations = {
+  building_area: "sum",
+  ashp_labour: "sum",
+  ashp_material: "sum",
+  pv_labour: "sum",
+  pv_material: "sum",
+  gshp_labour: "sum",
+  gshp_material: "sum",
+  gshp_size: "sum",
+  heat_demand: "sum",
+  pv_generation: "sum",
+  ashp_suitability: "count",
+  pv_suitability: "count",
+  gshp_suitability: "count",
+};
+
+const enrichedGeoJSON = enrichGeoData(
+  flatData,
+  regular_geodata,
+  "lsoa",
+  "code",
+  aggregations
+);
+
+console.log("enrichedGeoJSONN: ", enrichedGeoJSON);
+return {aggregations,enrichedGeoJSON};
+}});
+
+define({id: "b84bdc21", inputs: ["OSGB","turf","regular_geodata"], outputs: ["osgb","clone","regularGeodataLsoaWgs84"], body: (OSGB,turf,regular_geodata) => {
+// Data processing functions
+
+const osgb = new OSGB();
+let clone = turf.clone(regular_geodata);
+turf.coordEach(clone, (currentCoord) => {
+  const newCoord = osgb.toGeo(currentCoord);
+  currentCoord[0] = newCoord[0];
+  currentCoord[1] = newCoord[1];
+});
+const regularGeodataLsoaWgs84 = clone;
+return {osgb,clone,regularGeodataLsoaWgs84};
+}});
+
+define({id: "eb4cc5c5", inputs: ["OSGB","turf","cartogram_geodata"], outputs: ["osgb","clone","cartogramGeodataLsoaWgs84"], body: (OSGB,turf,cartogram_geodata) => {
+const osgb = new OSGB();
+let clone = turf.clone(cartogram_geodata);
+turf.coordEach(clone, (currentCoord) => {
+  const newCoord = osgb.toGeo(currentCoord);
+  currentCoord[0] = newCoord[0];
+  currentCoord[1] = newCoord[1];
+});
+const cartogramGeodataLsoaWgs84 = clone;
+// display(cartogramLsoaWgs84());
+return {osgb,clone,cartogramGeodataLsoaWgs84};
+}});
+
+define({id: "bf7652a3", inputs: ["_","regular_geodata_withproperties","turf","cartogram_geodata_withproperties"], outputs: ["keydata","regularGeodataLookup","cartogramGeodataLsoaLookup"], body: (_,regular_geodata_withproperties,turf,cartogram_geodata_withproperties) => {
+// Create a lookup table for the key data - geography
+const keydata = _.keyBy(
+  regular_geodata_withproperties.features.map((feat) => {
+    return {
+      code: feat.properties.code,
+      population: +feat.properties.population,
+      data: feat,
+    };
+  }),
+  "code"
+);
+console.log("keydat", keydata);
+
+const regularGeodataLookup = _.keyBy(
+  regular_geodata_withproperties.features.map((feat) => {
+    return { ...feat, centroid: turf.getCoord(turf.centroid(feat.geometry)) };
+  }),
+  (feat) => feat.properties.code
+);
+
+const cartogramGeodataLsoaLookup = _.keyBy(
+  cartogram_geodata_withproperties.features.map((feat) => {
+    return { ...feat, centroid: turf.getCoord(turf.centroid(feat.geometry)) };
+  }),
+  (feat) => feat.properties.code
+);
+return {keydata,regularGeodataLookup,cartogramGeodataLsoaLookup};
+}});
+
+define({id: "f4f0b74a", inputs: ["_","regular_geodata_withproperties","transformGeometry","turf","cartogram_geodata_withproperties"], outputs: ["geographyLsoaWgs84Lookup","cartogramLsoaWgs84Lookup"], body: (_,regular_geodata_withproperties,transformGeometry,turf,cartogram_geodata_withproperties) => {
+const geographyLsoaWgs84Lookup = _.keyBy(
+  regular_geodata_withproperties.features.map((feat) => {
+    const transformedGeometry = transformGeometry(feat.geometry);
+    const centroid = turf.getCoord(turf.centroid(transformedGeometry));
+    return {
+      ...feat,
+      geometry: transformedGeometry,
+      centroid: centroid,
+    };
+  }),
+  (feat) => feat.properties.code
+);
+
+const cartogramLsoaWgs84Lookup = _.keyBy(
+  cartogram_geodata_withproperties.features.map((feat) => {
+    const transformedGeometry = transformGeometry(feat.geometry);
+    const centroid = turf.getCoord(turf.centroid(transformedGeometry));
+    return {
+      ...feat,
+      geometry: transformedGeometry,
+      centroid: centroid,
+    };
+  }),
+  (feat) => feat.properties.code
+);
+return {geographyLsoaWgs84Lookup,cartogramLsoaWgs84Lookup};
+}});
+
+define({id: "0e975078", inputs: ["cartogramLsoaWgs84Lookup","geographyLsoaWgs84Lookup","flubber","turf","_","morph_factor"], outputs: ["flubbers","tweenWGS84Lookup"], body: (cartogramLsoaWgs84Lookup,geographyLsoaWgs84Lookup,flubber,turf,_,morph_factor) => {
+const flubbers = {};
+for (const key of Object.keys(cartogramLsoaWgs84Lookup)) {
+  if (geographyLsoaWgs84Lookup[key] && cartogramLsoaWgs84Lookup[key]) {
+    flubbers[key] = flubber.interpolate(
+      turf.getCoords(geographyLsoaWgs84Lookup[key])[0],
+      turf.getCoords(cartogramLsoaWgs84Lookup[key])[0],
+      { string: false }
+    );
+  }
+}
+const tweenWGS84Lookup = _.mapValues(flubbers, (v, k) => {
+  const feat = turf.multiLineString([v(morph_factor)], { code: k });
+  feat.centroid = turf.getCoord(turf.centroid(feat.geometry));
+  return feat;
+});
+return {flubbers,tweenWGS84Lookup};
+}});
+
+define({id: "4965f46a", inputs: ["createDiscretiserValue"], outputs: ["valueDiscretiser"], body: (createDiscretiserValue) => {
+// discretiser
+function valueDiscretiser(geomLookup) {
+  return createDiscretiserValue({
+    valueFn: (row) => {
+      return row.code;
+    },
+    glyphLocationFn: (key) => geomLookup[key]?.centroid,
+    boundaryFn: (key) => geomLookup[key]?.geometry.coordinates[0],
+  });
+}
+return {valueDiscretiser};
+}});
+
+define({id: "f5a7b125", inputs: ["transformCoordinates","turf","regular_geodata","keydata","regularGeodataLookup","normaliseData","d3","RadialGlyph","setDetailOnDemand"], outputs: ["glyphMapSpec"], body: (transformCoordinates,turf,regular_geodata,keydata,regularGeodataLookup,normaliseData,d3,RadialGlyph,setDetailOnDemand) => {
+const glyphMapSpec = {
+  coordType: "notmercator",
+  initialBB: transformCoordinates(turf.bbox(regular_geodata)),
+  data: Object.values(keydata),
+  getLocationFn: (row) => regularGeodataLookup[row.code]?.centroid,
+  discretisationShape: "grid",
+  interactiveCellSize: true,
+  interactiveZoomPan: true,
+  // mapType: "StamenTonerLite",
+  cellSize: 30,
+
+  width: 500,
+  height: 500,
+
+  customMap: {
+    scaleParams: [],
+
+    initFn: (cells, cellSize, global, panel) => {
+      console.log("initFn", cells, cellSize, global, panel);
+    },
+
+    preAggrFn: (cells, cellSize, global, panel) => {
+      // console.log("global", global);
+    },
+
+    aggrFn: (cell, row, weight, global, panel) => {
+      if (cell.building_area) {
+        cell.building_area += row.building_area;
+        // Update existing values
+        cell.data.costs.ashp += row.ashp_labour + row.ashp_material;
+        cell.data.costs.pv += row.pv_labour + row.pv_material;
+        cell.data.costs.gshp += row.gshp_labour + row.gshp_material;
+        cell.data.carbon.ashp += row.heat_demand;
+        cell.data.carbon.pv += row.pv_generation;
+        cell.data.carbon.gshp += row.gshp_size;
+      } else {
+        cell.building_area = row.building_area;
+        // Initialize data structure
+        cell.data = {
+          costs: {
+            ashp: row.ashp_labour + row.ashp_material,
+            pv: row.pv_labour + row.pv_material,
+            gshp: row.gshp_labour + row.gshp_material,
+          },
+          carbon: {
+            ashp: row.heat_demand,
+            pv: row.pv_generation,
+            gshp: row.gshp_size,
+          },
+        };
+      }
+
+      // --- Normalization ---
+      // Create arrays for costs and carbon for normalization
+      let costsData = Object.entries(cell.data.costs).map(([key, value]) => ({
+        key,
+        value,
+      }));
+      let carbonData = Object.entries(cell.data.carbon).map(([key, value]) => ({
+        key,
+        value,
+      }));
+
+      // Normalize costs and carbon data separately
+      costsData = normaliseData(costsData, ["value"]);
+      carbonData = normaliseData(carbonData, ["value"]);
+
+      // Update cell.data with normalized values
+      cell.data.costs = costsData.reduce((acc, { key, value }) => {
+        acc[key] = value;
+        return acc;
+      }, {});
+      cell.data.carbon = carbonData.reduce((acc, { key, value }) => {
+        acc[key] = value;
+        return acc;
+      }, {});
+    },
+
+    postAggrFn: (cells, cellSize, global, panel) => {
+      //add cell interaction
+      let canvas = d3.select(panel).select("canvas").node();
+    },
+
+    preDrawFn: (cells, cellSize, ctx, global, panel) => {
+      if (!cells || cells.length === 0) {
+        console.error("No cells data available");
+        return;
+      }
+
+      global.pathGenerator = d3.geoPath().context(ctx);
+      global.colourScalePop = d3
+        .scaleSequential(d3.interpolateBlues)
+        .domain([0, d3.max(cells.map((row) => row.building_area))]);
+    },
+
+    drawFn: (cell, x, y, cellSize, ctx, global, panel) => {
+      const boundary = cell.getBoundary(0);
+      if (boundary[0] != boundary[boundary.length - 1]) {
+        boundary.push(boundary[0]);
+      }
+      const boundaryFeat = turf.polygon([boundary]);
+
+      ctx.beginPath();
+      global.pathGenerator(boundaryFeat);
+      ctx.fillStyle = global.colourScalePop(cell.building_area);
+      ctx.fill();
+
+      //add contour to clicked cells
+      if (global.clickedCell == cell) {
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = "rgb(250,250,250)";
+        ctx.stroke();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = "rgb(50,50,50)";
+        ctx.stroke();
+      }
+
+      //draw a radial glyph -> change the array to real data (between 0 and 1)
+      // drawRadialMultivariateGlyph([0.5, 0.1, 0.9, 0.3], x, y, cellSize, ctx);
+      let rg = new RadialGlyph([
+        cell.data.carbon.ashp,
+        cell.data.carbon.pv,
+        cell.data.carbon.gshp,
+        cell.data.costs.ashp,
+        cell.data.costs.pv,
+        cell.data.costs.gshp,
+      ]);
+      rg.draw(ctx, x, y, cellSize / 2);
+
+      // console.log("boundary", boundary);
+    },
+
+    postDrawFn: (cells, cellSize, ctx, global, panel) => {},
+
+    tooltipTextFn: (cell) => {
+      if (cell) {
+        setDetailOnDemand(cell.data);
+        return `Total Building Area: ${cell.building_area.toFixed(2)} m^2`;
+      }
+    },
+  },
+};
+// display([...glyphMapSpec2()]);
+return {glyphMapSpec};
+}});
+
+define({id: "875b3cfc", inputs: ["morph_factor","morphGlyphMap","valueDiscretiser","tweenWGS84Lookup"], body: (morph_factor,morphGlyphMap,valueDiscretiser,tweenWGS84Lookup) => {
+morph_factor; //causes code to run whenever the slider is moved
+morphGlyphMap.setGlyph({
+  discretiserFn: valueDiscretiser(tweenWGS84Lookup),
+});
+}});
+
+define({id: "bbe0b721", inputs: ["glyphMapSpec","turf","regularGeodataLsoaWgs84","geographyLsoaWgs84Lookup"], outputs: ["glyphMapSpecWgs84"], body: (glyphMapSpec,turf,regularGeodataLsoaWgs84,geographyLsoaWgs84Lookup) => {
+const glyphMapSpecWgs84 = {
+  ...glyphMapSpec,
+  coordType: "mercator",
+  initialBB: turf.bbox(regularGeodataLsoaWgs84),
+  getLocationFn: (row) => geographyLsoaWgs84Lookup[row.code]?.centroid,
+};
+// display(glyphMapSpecWgs84);
+return {glyphMapSpecWgs84};
+}});
+
+define({id: "2246d3ee", inputs: ["glyphMap","glyphMapSpecWgs84"], outputs: ["createMorphGlyphMap","morphGlyphMap"], body: (glyphMap,glyphMapSpecWgs84) => {
+//morphGlyphMap as a factory function returning an object with setGlyph
+function createMorphGlyphMap(width, height) {
+  // Create the glyph map instance with the WGS84 specifications
+  const glyphMapInstance = glyphMap({
+    ...glyphMapSpecWgs84, //takes the base spec...
+    width: width,
+    height: height,
+  });
+
+  return glyphMapInstance;
+}
+const morphGlyphMap = createMorphGlyphMap(600, 400);
+return {createMorphGlyphMap,morphGlyphMap};
+}});
+
+define({id: "e38f4f2a", inputs: ["proj"], outputs: ["transformCoordinates","transformGeometry","applyTransformationToShapes"], body: (proj) => {
+// Coordinate transformation utilities
+function transformCoordinates(coords) {
+  if (coords.length === 4 && !Array.isArray(coords[0])) {
+    // bounding box
+    return [
+      ...proj.toGeo([coords[0], coords[1]]),
+      ...proj.toGeo([coords[2], coords[3]]),
+    ];
+  } else if (Array.isArray(coords[0])) {
+    // arrays of coordinates
+    return coords.map(transformCoordinates);
+  } else {
+    // individual coordinate pairs
+    return proj.toGeo(coords);
+  }
+}
+
+function transformGeometry(geometry) {
+  if (geometry.type === "GeometryCollection") {
+    return {
+      ...geometry,
+      geometries: geometry.geometries.map(transformGeometry),
+    };
+  }
+
+  return {
+    ...geometry,
+    coordinates: transformCoordinates(geometry.coordinates),
+  };
+}
+
+// Function to apply transformation to geographicShapes
+function applyTransformationToShapes(geographicShapes) {
+  return Object.fromEntries(
+    Object.entries(geographicShapes).map(([code, feature]) => [
+      code,
+      {
+        ...feature,
+        geometry: transformGeometry(feature.geometry),
+      },
+    ])
+  );
+}
+
+// check to see if it works
+// display(transformCoordinates([547764, 180871]));
+return {transformCoordinates,transformGeometry,applyTransformationToShapes};
+}});
+
 </script>
 <div id="observablehq-center">
 <main id="observablehq-main" class="observablehq">
 <!-- ------------ Imports ------------ -->
-<div class="observablehq observablehq--block"><!--:56c2d8e4:--></div>
+<div class="observablehq observablehq--block"><!--:bb70aa05:--></div>
 <div class="observablehq observablehq--block"><!--:5dd85f8f:--></div>
 <!-- ---------------- Data ---------------- -->
 <div class="observablehq observablehq--block"><!--:ab885abd:--></div>
 <div class="observablehq observablehq--block"><!--:28c25a2a:--></div>
-<div class="observablehq observablehq--block"><!--:7bbc139f:--></div>
+<div class="observablehq observablehq--block"><!--:6fda268e:--></div>
 <!-- ------------ Getter-Setter ------------ -->
 <div class="observablehq observablehq--block"><!--:4e76479e:--></div>
 <!-------- Stylesheets -------->
@@ -1245,8 +1644,8 @@ body, html {
       <div class="card" style="overflow-x:hidden; min-width: 400px;">
       Map View
       <observablehq-loading></observablehq-loading><!--:c0e452dc:-->
-      <observablehq-loading></observablehq-loading><!--:af5ac603:-->
       <observablehq-loading></observablehq-loading><!--:a6dbfcfd:-->
+      <observablehq-loading></observablehq-loading><!--:d8aa3b70:-->
       </div>
     </div>
     <div class="main-bottom">
@@ -1262,13 +1661,13 @@ body, html {
     </div>
     <div class="card">
     Details on demand
-    <observablehq-loading></observablehq-loading><!--:ec578e9e:-->
+    <!-- ${resize((width, height) => drawDetailOnDemand(width, height))} -->
     </div>
   </div>
 </div>
 <div class="observablehq observablehq--block"><!--:1947ba21:--></div>
 <!-- ---------------- Input form declarations ---------------- -->
-<div class="observablehq observablehq--block"><!--:d9d5aeec:--></div>
+<div class="observablehq observablehq--block"><!--:b3c8a1f7:--></div>
 <div class="observablehq observablehq--block"><!--:fbf1b5a3:--></div>
 <div class="observablehq observablehq--block"><!--:39e29da4:--></div>
 <div class="observablehq observablehq--block"><!--:30ef2d9c:--></div>
@@ -1282,10 +1681,24 @@ body, html {
 <div class="observablehq observablehq--block"><!--:ab9f8eb4:--></div>
 <div class="observablehq observablehq--block"><!--:929663a0:--></div>
 <!-- ---------------- Glyph Maps ---------------- -->
-<div class="observablehq observablehq--block"><!--:8647aa34:--></div>
-<div class="observablehq observablehq--block"><!--:fc05c05a:--></div>
+<div class="observablehq observablehq--block"><!--:ca715da5:--></div>
+<div class="observablehq observablehq--block"><!--:44c9b4b4:--></div>
 <div class="observablehq observablehq--block"><!--:7b5e4a76:--></div>
 <div class="observablehq observablehq--block"><!--:246c80d3:--></div>
 <div class="observablehq observablehq--block"><!--:9d040433:--></div>
+<div class="observablehq observablehq--block"><!--:77b24fab:--></div>
+<div class="observablehq observablehq--block"><!--:d5bdb4c8:--></div>
+<div class="observablehq observablehq--block"><!--:09b02b86:--></div>
+<div class="observablehq observablehq--block"><!--:b84bdc21:--></div>
+<div class="observablehq observablehq--block"><!--:eb4cc5c5:--></div>
+<div class="observablehq observablehq--block"><!--:bf7652a3:--></div>
+<div class="observablehq observablehq--block"><!--:f4f0b74a:--></div>
+<div class="observablehq observablehq--block"><!--:0e975078:--></div>
+<div class="observablehq observablehq--block"><!--:4965f46a:--></div>
+<div class="observablehq observablehq--block"><!--:f5a7b125:--></div>
+<div class="observablehq observablehq--block"><!--:875b3cfc:--></div>
+<div class="observablehq observablehq--block"><!--:bbe0b721:--></div>
+<div class="observablehq observablehq--block"><!--:2246d3ee:--></div>
+<div class="observablehq observablehq--block"><!--:e38f4f2a:--></div>
 </div></main>
 </div>
