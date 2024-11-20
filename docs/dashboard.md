@@ -994,15 +994,19 @@ function drawPieSlice(ctx, cx, cy, r, angleStart, angleEnd, color) {
 
 ```js
 // joining attributes to geodata
-const regular_geodata_withproperties = joinCensusDataToGeoJSON(
-  [...flatData],
-  regular_geodata
-);
-const cartogram_geodata_withproperties = joinCensusDataToGeoJSON(
-  [...flatData],
-  cartogram_geodata
-);
+// const regular_geodata_withproperties = joinCensusDataToGeoJSON(
+//   [...flatData],
+//   regular_geodata
+// );
+// const cartogram_geodata_withproperties = joinCensusDataToGeoJSON(
+//   [...flatData],
+//   cartogram_geodata
+// );
 // console.log("regular_geodata_withproperties", regular_geodata_withproperties);
+// console.log(
+//   "cartogram_geodata_withproperties",
+//   cartogram_geodata_withproperties
+// );
 ```
 
 ```js
@@ -1027,7 +1031,7 @@ const aggregations = {
   gshp_suitability: "count",
 };
 
-const enrichedGeoJSON = enrichGeoData(
+const regular_geodata_withproperties = enrichGeoData(
   flatData,
   regular_geodata,
   "lsoa",
@@ -1035,7 +1039,22 @@ const enrichedGeoJSON = enrichGeoData(
   aggregations
 );
 
-console.log("enrichedGeoJSONN: ", enrichedGeoJSON);
+// console.log(
+//   "regular_geodata_withproperties_enriched",
+//   regular_geodata_withproperties_enriched
+// );
+
+const cartogram_geodata_withproperties = enrichGeoData(
+  flatData,
+  cartogram_geodata,
+  "lsoa",
+  "code",
+  aggregations
+);
+// console.log(
+//   "cartogram_geodata_withproperties_enriched",
+//   cartogram_geodata_withproperties_enriched
+// );
 ```
 
 ```js
@@ -1178,28 +1197,36 @@ const glyphMapSpec = {
     },
 
     aggrFn: (cell, row, weight, global, panel) => {
+      console.log("aggrFn", row);
       if (cell.building_area) {
-        cell.building_area += row.building_area;
+        cell.building_area += row.data.properties.building_area;
         // Update existing values
-        cell.data.costs.ashp += row.ashp_labour + row.ashp_material;
-        cell.data.costs.pv += row.pv_labour + row.pv_material;
-        cell.data.costs.gshp += row.gshp_labour + row.gshp_material;
-        cell.data.carbon.ashp += row.heat_demand;
-        cell.data.carbon.pv += row.pv_generation;
-        cell.data.carbon.gshp += row.gshp_size;
+        cell.data.costs.ashp +=
+          row.data.properties.ashp_labour + row.data.properties.ashp_material;
+        cell.data.costs.pv +=
+          row.data.properties.pv_labour + row.data.properties.pv_material;
+        cell.data.costs.gshp +=
+          row.data.properties.gshp_labour + row.data.properties.gshp_material;
+        cell.data.carbon.ashp += row.data.properties.heat_demand;
+        cell.data.carbon.pv += row.data.properties.pv_generation;
+        cell.data.carbon.gshp += row.data.properties.gshp_size;
       } else {
-        cell.building_area = row.building_area;
+        cell.building_area = row.data.properties.building_area;
         // Initialize data structure
         cell.data = {
           costs: {
-            ashp: row.ashp_labour + row.ashp_material,
-            pv: row.pv_labour + row.pv_material,
-            gshp: row.gshp_labour + row.gshp_material,
+            ashp:
+              row.data.properties.ashp_labour +
+              row.data.properties.ashp_material,
+            pv: row.data.properties.pv_labour + row.data.properties.pv_material,
+            gshp:
+              row.data.properties.gshp_labour +
+              row.data.properties.gshp_material,
           },
           carbon: {
-            ashp: row.heat_demand,
-            pv: row.pv_generation,
-            gshp: row.gshp_size,
+            ashp: row.data.properties.heat_demand,
+            pv: row.data.properties.pv_generation,
+            gshp: row.data.properties.gshp_size,
           },
         };
       }
