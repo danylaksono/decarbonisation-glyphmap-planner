@@ -322,8 +322,9 @@ body, html {
       <div class="card" style="overflow-x:hidden; min-width: 400px;">
       Map View
       ${glyphmapTypeInput}
+      ${mapAggregationInput}
       ${morphFactorInput}
-      ${morphGlyphMap}
+      ${resize((width, height) => createGlyphMap(map_aggregate, {width, height}))}
       </div>
     </div>
     <div class="main-bottom">
@@ -493,6 +494,15 @@ const glyphmapTypeInput = Inputs.radio(
   }
 );
 const glyphmapType = Generators.input(glyphmapTypeInput);
+
+const mapAggregationInput = Inputs.radio(
+  ["Aggregated at LSOA", "Not Aggregated"],
+  {
+    label: "Map Aggregation",
+    value: "Aggregated at LSOA",
+  }
+);
+const map_aggregate = Generators.input(mapAggregationInput);
 
 const morphFactorInput = html`<input
   style="width: 100%; max-width:450px;"
@@ -900,8 +910,11 @@ function glyphMapSpecBasic(width = 800, height = 600) {
 
       tooltipTextFn: (cell) => {
         if (cell) {
+          console.log("cell on tooltip", cell);
           setDetailOnDemand(cell.data);
           return `Total Building Area: ${cell.building_area.toFixed(2)} m^2`;
+        } else {
+          return "";
         }
       },
     },
@@ -1179,6 +1192,7 @@ const glyphMapSpec = {
   discretisationShape: "grid",
   interactiveCellSize: true,
   interactiveZoomPan: true,
+  mapType: "CartoPositron",
   // mapType: "StamenTonerLite",
   cellSize: 30,
 
@@ -1197,7 +1211,7 @@ const glyphMapSpec = {
     },
 
     aggrFn: (cell, row, weight, global, panel) => {
-      console.log("aggrFn", row);
+      // console.log("aggrFn", row);
       if (cell.building_area) {
         cell.building_area += row.data.properties.building_area;
         // Update existing values
@@ -1315,8 +1329,11 @@ const glyphMapSpec = {
 
     tooltipTextFn: (cell) => {
       if (cell) {
+        console.log("cell on tooltip", cell);
         setDetailOnDemand(cell.data);
         return `Total Building Area: ${cell.building_area.toFixed(2)} m^2`;
+      } else {
+        return "no data";
       }
     },
   },
@@ -1403,4 +1420,17 @@ function applyTransformationToShapes(geographicShapes) {
 
 // check to see if it works
 // display(transformCoordinates([547764, 180871]));
+```
+
+```js
+function createGlyphMap(map_aggregate, { width, height }) {
+  // console.log(width, height);
+  if (map_aggregate == "Not Aggregated") {
+    return glyphMap({
+      ...glyphMapSpecBasic(width, height),
+    });
+  } else if (map_aggregate == "Aggregated at LSOA") {
+    return morphGlyphMap;
+  }
+}
 ```
