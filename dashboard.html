@@ -206,10 +206,10 @@ import {define} from "./_observablehq/client.js";
 import {registerFile, FileAttachment} from "./_observablehq/stdlib.js";
 import {registerTable} from "./_observablehq/stdlib/duckdb.js";
 
-registerFile("./data/oxford_decarbonisation_data.parquet", {"name":"./data/oxford_decarbonisation_data.parquet","path":"./_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1732105550133});
-registerFile("./data/oxford_lsoa_boundary.geojson", {"name":"./data/oxford_lsoa_boundary.geojson","mimeType":"application/geo+json","path":"./_file/data/oxford_lsoa_boundary.50c731e8.geojson","lastModified":1732105550145});
-registerFile("./data/oxford_lsoas_cartogram.json", {"name":"./data/oxford_lsoas_cartogram.json","mimeType":"application/json","path":"./_file/data/oxford_lsoas_cartogram.a72fa2b8.json","lastModified":1732105550145});
-registerFile("./data/oxford_lsoas_regular.json", {"name":"./data/oxford_lsoas_regular.json","mimeType":"application/json","path":"./_file/data/oxford_lsoas_regular.e1c36e7e.json","lastModified":1732105550145});
+registerFile("./data/oxford_decarbonisation_data.parquet", {"name":"./data/oxford_decarbonisation_data.parquet","path":"./_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1732119742273});
+registerFile("./data/oxford_lsoa_boundary.geojson", {"name":"./data/oxford_lsoa_boundary.geojson","mimeType":"application/geo+json","path":"./_file/data/oxford_lsoa_boundary.50c731e8.geojson","lastModified":1732119742285});
+registerFile("./data/oxford_lsoas_cartogram.json", {"name":"./data/oxford_lsoas_cartogram.json","mimeType":"application/json","path":"./_file/data/oxford_lsoas_cartogram.a72fa2b8.json","lastModified":1732119742285});
+registerFile("./data/oxford_lsoas_regular.json", {"name":"./data/oxford_lsoas_regular.json","mimeType":"application/json","path":"./_file/data/oxford_lsoas_regular.e1c36e7e.json","lastModified":1732119742285});
 registerTable("oxford", FileAttachment("./data/oxford_decarbonisation_data.parquet"));
 
 define({id: "bb70aa05", outputs: ["d3","flubber","require","Mutable","TimeGlyph","GlyphCollection","turf","RadialGlyph","glyphMap","createDiscretiserValue","_drawCellBackground","OSGB","Model","BudgetAllocator","MiniDecarbModel","createTable","inferTypes","enrichGeoData","normaliseData","downloadBoundaries","joinCensusDataToGeoJSON","convertGridCsvToGeoJson","context2d"], body: async () => {
@@ -394,15 +394,21 @@ glyphmapTypeInput
 ))
 }});
 
+define({id: "3dea4862", mode: "inline", inputs: ["mapAggregationInput","display"], body: async (mapAggregationInput,display) => {
+display(await(
+mapAggregationInput
+))
+}});
+
 define({id: "a6dbfcfd", mode: "inline", inputs: ["morphFactorInput","display"], body: async (morphFactorInput,display) => {
 display(await(
 morphFactorInput
 ))
 }});
 
-define({id: "d8aa3b70", mode: "inline", inputs: ["morphGlyphMap","display"], body: async (morphGlyphMap,display) => {
+define({id: "b4672042", mode: "inline", inputs: ["resize","createGlyphMap","map_aggregate","display"], body: async (resize,createGlyphMap,map_aggregate,display) => {
 display(await(
-morphGlyphMap
+resize((width, height) => createGlyphMap(map_aggregate, {width, height}))
 ))
 }});
 
@@ -462,7 +468,7 @@ function selectIntervention(index) {
 return {selectedInterventionIndex,selectIntervention};
 }});
 
-define({id: "b3c8a1f7", inputs: ["Inputs","html","Generators","Event","allColumns"], outputs: ["techsInput","technology","totalBudgetInput","total_budget","startYearInput","start_year","projectLengthInput","project_length","allocationTypeInput","allocation_type","priorityInput","priority_input","filterInput","filter_input","glyphmapTypeInput","glyphmapType","morphFactorInput","morph_factor"], body: (Inputs,html,Generators,Event,allColumns) => {
+define({id: "79bf65d8", inputs: ["Inputs","html","Generators","Event","allColumns"], outputs: ["techsInput","technology","totalBudgetInput","total_budget","startYearInput","start_year","projectLengthInput","project_length","allocationTypeInput","allocation_type","priorityInput","priority_input","filterInput","filter_input","glyphmapTypeInput","glyphmapType","mapAggregationInput","map_aggregate","morphFactorInput","morph_factor"], body: (Inputs,html,Generators,Event,allColumns) => {
 // list of decarb technologies
 const techsInput = Inputs.select(
   [
@@ -561,6 +567,15 @@ const glyphmapTypeInput = Inputs.radio(
 );
 const glyphmapType = Generators.input(glyphmapTypeInput);
 
+const mapAggregationInput = Inputs.radio(
+  ["Aggregated at LSOA", "Not Aggregated"],
+  {
+    label: "Map Aggregation",
+    value: "Aggregated at LSOA",
+  }
+);
+const map_aggregate = Generators.input(mapAggregationInput);
+
 const morphFactorInput = html`<input
   style="width: 100%; max-width:450px;"
   type="range"
@@ -570,7 +585,7 @@ const morphFactorInput = html`<input
   max="1"
 />`;
 const morph_factor = Generators.input(morphFactorInput);
-return {techsInput,technology,totalBudgetInput,total_budget,startYearInput,start_year,projectLengthInput,project_length,allocationTypeInput,allocation_type,priorityInput,priority_input,filterInput,filter_input,glyphmapTypeInput,glyphmapType,morphFactorInput,morph_factor};
+return {techsInput,technology,totalBudgetInput,total_budget,startYearInput,start_year,projectLengthInput,project_length,allocationTypeInput,allocation_type,priorityInput,priority_input,filterInput,filter_input,glyphmapTypeInput,glyphmapType,mapAggregationInput,map_aggregate,morphFactorInput,morph_factor};
 }});
 
 define({id: "fbf1b5a3", inputs: ["BudgetAllocator","total_budget","start_year","project_length","allocation_type"], outputs: ["allocator","initialAllocations"], body: (BudgetAllocator,total_budget,start_year,project_length,allocation_type) => {
@@ -831,7 +846,7 @@ define({id: "929663a0", inputs: ["inferTypes","tableData"], body: (inferTypes,ta
 console.log("Test inferring data types", inferTypes(tableData));
 }});
 
-define({id: "ca715da5", inputs: ["turf","lsoa_boundary","tableData","normaliseData","d3","RadialGlyph","setDetailOnDemand"], outputs: ["glyphMapSpecBasic"], body: (turf,lsoa_boundary,tableData,normaliseData,d3,RadialGlyph,setDetailOnDemand) => {
+define({id: "5eb84393", inputs: ["turf","lsoa_boundary","tableData","normaliseData","d3","RadialGlyph","setDetailOnDemand"], outputs: ["glyphMapSpecBasic"], body: (turf,lsoa_boundary,tableData,normaliseData,d3,RadialGlyph,setDetailOnDemand) => {
 // glyphmap basic specs
 function glyphMapSpecBasic(width = 800, height = 600) {
   return {
@@ -970,8 +985,11 @@ function glyphMapSpecBasic(width = 800, height = 600) {
 
       tooltipTextFn: (cell) => {
         if (cell) {
+          console.log("cell on tooltip", cell);
           setDetailOnDemand(cell.data);
           return `Total Building Area: ${cell.building_area.toFixed(2)} m^2`;
+        } else {
+          return "";
         }
       },
     },
@@ -1252,7 +1270,7 @@ function valueDiscretiser(geomLookup) {
 return {valueDiscretiser};
 }});
 
-define({id: "4ad96b29", inputs: ["transformCoordinates","turf","regular_geodata","keydata","regularGeodataLookup","normaliseData","d3","RadialGlyph","setDetailOnDemand"], outputs: ["glyphMapSpec"], body: (transformCoordinates,turf,regular_geodata,keydata,regularGeodataLookup,normaliseData,d3,RadialGlyph,setDetailOnDemand) => {
+define({id: "42085756", inputs: ["transformCoordinates","turf","regular_geodata","keydata","regularGeodataLookup","normaliseData","d3","RadialGlyph","setDetailOnDemand"], outputs: ["glyphMapSpec"], body: (transformCoordinates,turf,regular_geodata,keydata,regularGeodataLookup,normaliseData,d3,RadialGlyph,setDetailOnDemand) => {
 const glyphMapSpec = {
   coordType: "notmercator",
   initialBB: transformCoordinates(turf.bbox(regular_geodata)),
@@ -1261,6 +1279,7 @@ const glyphMapSpec = {
   discretisationShape: "grid",
   interactiveCellSize: true,
   interactiveZoomPan: true,
+  mapType: "CartoPositron",
   // mapType: "StamenTonerLite",
   cellSize: 30,
 
@@ -1279,7 +1298,7 @@ const glyphMapSpec = {
     },
 
     aggrFn: (cell, row, weight, global, panel) => {
-      console.log("aggrFn", row);
+      // console.log("aggrFn", row);
       if (cell.building_area) {
         cell.building_area += row.data.properties.building_area;
         // Update existing values
@@ -1397,8 +1416,11 @@ const glyphMapSpec = {
 
     tooltipTextFn: (cell) => {
       if (cell) {
+        console.log("cell on tooltip", cell);
         setDetailOnDemand(cell.data);
         return `Total Building Area: ${cell.building_area.toFixed(2)} m^2`;
+      } else {
+        return "no data";
       }
     },
   },
@@ -1489,6 +1511,20 @@ function applyTransformationToShapes(geographicShapes) {
 // check to see if it works
 // display(transformCoordinates([547764, 180871]));
 return {transformCoordinates,transformGeometry,applyTransformationToShapes};
+}});
+
+define({id: "9f214aeb", inputs: ["glyphMap","glyphMapSpecBasic","morphGlyphMap"], outputs: ["createGlyphMap"], body: (glyphMap,glyphMapSpecBasic,morphGlyphMap) => {
+function createGlyphMap(map_aggregate, { width, height }) {
+  // console.log(width, height);
+  if (map_aggregate == "Not Aggregated") {
+    return glyphMap({
+      ...glyphMapSpecBasic(width, height),
+    });
+  } else if (map_aggregate == "Aggregated at LSOA") {
+    return morphGlyphMap;
+  }
+}
+return {createGlyphMap};
 }});
 
 </script>
@@ -1670,8 +1706,9 @@ body, html {
       <div class="card" style="overflow-x:hidden; min-width: 400px;">
       Map View
       <observablehq-loading></observablehq-loading><!--:c0e452dc:-->
+      <observablehq-loading></observablehq-loading><!--:3dea4862:-->
       <observablehq-loading></observablehq-loading><!--:a6dbfcfd:-->
-      <observablehq-loading></observablehq-loading><!--:d8aa3b70:-->
+      <observablehq-loading></observablehq-loading><!--:b4672042:-->
       </div>
     </div>
     <div class="main-bottom">
@@ -1693,7 +1730,7 @@ body, html {
 </div>
 <div class="observablehq observablehq--block"><!--:1947ba21:--></div>
 <!-- ---------------- Input form declarations ---------------- -->
-<div class="observablehq observablehq--block"><!--:b3c8a1f7:--></div>
+<div class="observablehq observablehq--block"><!--:79bf65d8:--></div>
 <div class="observablehq observablehq--block"><!--:fbf1b5a3:--></div>
 <div class="observablehq observablehq--block"><!--:39e29da4:--></div>
 <div class="observablehq observablehq--block"><!--:30ef2d9c:--></div>
@@ -1707,7 +1744,7 @@ body, html {
 <div class="observablehq observablehq--block"><!--:ab9f8eb4:--></div>
 <div class="observablehq observablehq--block"><!--:929663a0:--></div>
 <!-- ---------------- Glyph Maps ---------------- -->
-<div class="observablehq observablehq--block"><!--:ca715da5:--></div>
+<div class="observablehq observablehq--block"><!--:5eb84393:--></div>
 <div class="observablehq observablehq--block"><!--:44c9b4b4:--></div>
 <div class="observablehq observablehq--block"><!--:7b5e4a76:--></div>
 <div class="observablehq observablehq--block"><!--:246c80d3:--></div>
@@ -1721,10 +1758,11 @@ body, html {
 <div class="observablehq observablehq--block"><!--:f4f0b74a:--></div>
 <div class="observablehq observablehq--block"><!--:0e975078:--></div>
 <div class="observablehq observablehq--block"><!--:4965f46a:--></div>
-<div class="observablehq observablehq--block"><!--:4ad96b29:--></div>
+<div class="observablehq observablehq--block"><!--:42085756:--></div>
 <div class="observablehq observablehq--block"><!--:875b3cfc:--></div>
 <div class="observablehq observablehq--block"><!--:bbe0b721:--></div>
 <div class="observablehq observablehq--block"><!--:2246d3ee:--></div>
 <div class="observablehq observablehq--block"><!--:e38f4f2a:--></div>
+<div class="observablehq observablehq--block"><!--:9f214aeb:--></div>
 </div></main>
 </div>
