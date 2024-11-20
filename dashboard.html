@@ -206,10 +206,10 @@ import {define} from "./_observablehq/client.js";
 import {registerFile, FileAttachment} from "./_observablehq/stdlib.js";
 import {registerTable} from "./_observablehq/stdlib/duckdb.js";
 
-registerFile("./data/oxford_decarbonisation_data.parquet", {"name":"./data/oxford_decarbonisation_data.parquet","path":"./_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1732088886158});
-registerFile("./data/oxford_lsoa_boundary.geojson", {"name":"./data/oxford_lsoa_boundary.geojson","mimeType":"application/geo+json","path":"./_file/data/oxford_lsoa_boundary.50c731e8.geojson","lastModified":1732088886170});
-registerFile("./data/oxford_lsoas_cartogram.json", {"name":"./data/oxford_lsoas_cartogram.json","mimeType":"application/json","path":"./_file/data/oxford_lsoas_cartogram.a72fa2b8.json","lastModified":1732088886170});
-registerFile("./data/oxford_lsoas_regular.json", {"name":"./data/oxford_lsoas_regular.json","mimeType":"application/json","path":"./_file/data/oxford_lsoas_regular.e1c36e7e.json","lastModified":1732088886170});
+registerFile("./data/oxford_decarbonisation_data.parquet", {"name":"./data/oxford_decarbonisation_data.parquet","path":"./_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1732105550133});
+registerFile("./data/oxford_lsoa_boundary.geojson", {"name":"./data/oxford_lsoa_boundary.geojson","mimeType":"application/geo+json","path":"./_file/data/oxford_lsoa_boundary.50c731e8.geojson","lastModified":1732105550145});
+registerFile("./data/oxford_lsoas_cartogram.json", {"name":"./data/oxford_lsoas_cartogram.json","mimeType":"application/json","path":"./_file/data/oxford_lsoas_cartogram.a72fa2b8.json","lastModified":1732105550145});
+registerFile("./data/oxford_lsoas_regular.json", {"name":"./data/oxford_lsoas_regular.json","mimeType":"application/json","path":"./_file/data/oxford_lsoas_regular.e1c36e7e.json","lastModified":1732105550145});
 registerTable("oxford", FileAttachment("./data/oxford_decarbonisation_data.parquet"));
 
 define({id: "bb70aa05", outputs: ["d3","flubber","require","Mutable","TimeGlyph","GlyphCollection","turf","RadialGlyph","glyphMap","createDiscretiserValue","_drawCellBackground","OSGB","Model","BudgetAllocator","MiniDecarbModel","createTable","inferTypes","enrichGeoData","normaliseData","downloadBoundaries","joinCensusDataToGeoJSON","convertGridCsvToGeoJson","context2d"], body: async () => {
@@ -1067,25 +1067,28 @@ function drawPieSlice(ctx, cx, cy, r, angleStart, angleEnd, color) {
 return {drawPieSlice};
 }});
 
-define({id: "77b24fab", inputs: ["joinCensusDataToGeoJSON","flatData","regular_geodata","cartogram_geodata"], outputs: ["regular_geodata_withproperties","cartogram_geodata_withproperties"], body: (joinCensusDataToGeoJSON,flatData,regular_geodata,cartogram_geodata) => {
+define({id: "413407ea", body: () => {
 // joining attributes to geodata
-const regular_geodata_withproperties = joinCensusDataToGeoJSON(
-  [...flatData],
-  regular_geodata
-);
-const cartogram_geodata_withproperties = joinCensusDataToGeoJSON(
-  [...flatData],
-  cartogram_geodata
-);
+// const regular_geodata_withproperties = joinCensusDataToGeoJSON(
+//   [...flatData],
+//   regular_geodata
+// );
+// const cartogram_geodata_withproperties = joinCensusDataToGeoJSON(
+//   [...flatData],
+//   cartogram_geodata
+// );
 // console.log("regular_geodata_withproperties", regular_geodata_withproperties);
-return {regular_geodata_withproperties,cartogram_geodata_withproperties};
+// console.log(
+//   "cartogram_geodata_withproperties",
+//   cartogram_geodata_withproperties
+// );
 }});
 
 define({id: "d5bdb4c8", body: () => {
 // console.log("Flat Data", flatData);
 }});
 
-define({id: "09b02b86", inputs: ["enrichGeoData","flatData","regular_geodata"], outputs: ["aggregations","enrichedGeoJSON"], body: (enrichGeoData,flatData,regular_geodata) => {
+define({id: "d1d527dc", inputs: ["enrichGeoData","flatData","regular_geodata","cartogram_geodata"], outputs: ["aggregations","regular_geodata_withproperties","cartogram_geodata_withproperties"], body: (enrichGeoData,flatData,regular_geodata,cartogram_geodata) => {
 // geo-enrichment - combine geodata with building level properties
 const aggregations = {
   building_area: "sum",
@@ -1103,7 +1106,7 @@ const aggregations = {
   gshp_suitability: "count",
 };
 
-const enrichedGeoJSON = enrichGeoData(
+const regular_geodata_withproperties = enrichGeoData(
   flatData,
   regular_geodata,
   "lsoa",
@@ -1111,8 +1114,23 @@ const enrichedGeoJSON = enrichGeoData(
   aggregations
 );
 
-console.log("enrichedGeoJSONN: ", enrichedGeoJSON);
-return {aggregations,enrichedGeoJSON};
+// console.log(
+//   "regular_geodata_withproperties_enriched",
+//   regular_geodata_withproperties_enriched
+// );
+
+const cartogram_geodata_withproperties = enrichGeoData(
+  flatData,
+  cartogram_geodata,
+  "lsoa",
+  "code",
+  aggregations
+);
+// console.log(
+//   "cartogram_geodata_withproperties_enriched",
+//   cartogram_geodata_withproperties_enriched
+// );
+return {aggregations,regular_geodata_withproperties,cartogram_geodata_withproperties};
 }});
 
 define({id: "b84bdc21", inputs: ["OSGB","turf","regular_geodata"], outputs: ["osgb","clone","regularGeodataLsoaWgs84"], body: (OSGB,turf,regular_geodata) => {
@@ -1234,7 +1252,7 @@ function valueDiscretiser(geomLookup) {
 return {valueDiscretiser};
 }});
 
-define({id: "f5a7b125", inputs: ["transformCoordinates","turf","regular_geodata","keydata","regularGeodataLookup","normaliseData","d3","RadialGlyph","setDetailOnDemand"], outputs: ["glyphMapSpec"], body: (transformCoordinates,turf,regular_geodata,keydata,regularGeodataLookup,normaliseData,d3,RadialGlyph,setDetailOnDemand) => {
+define({id: "4ad96b29", inputs: ["transformCoordinates","turf","regular_geodata","keydata","regularGeodataLookup","normaliseData","d3","RadialGlyph","setDetailOnDemand"], outputs: ["glyphMapSpec"], body: (transformCoordinates,turf,regular_geodata,keydata,regularGeodataLookup,normaliseData,d3,RadialGlyph,setDetailOnDemand) => {
 const glyphMapSpec = {
   coordType: "notmercator",
   initialBB: transformCoordinates(turf.bbox(regular_geodata)),
@@ -1261,28 +1279,36 @@ const glyphMapSpec = {
     },
 
     aggrFn: (cell, row, weight, global, panel) => {
+      console.log("aggrFn", row);
       if (cell.building_area) {
-        cell.building_area += row.building_area;
+        cell.building_area += row.data.properties.building_area;
         // Update existing values
-        cell.data.costs.ashp += row.ashp_labour + row.ashp_material;
-        cell.data.costs.pv += row.pv_labour + row.pv_material;
-        cell.data.costs.gshp += row.gshp_labour + row.gshp_material;
-        cell.data.carbon.ashp += row.heat_demand;
-        cell.data.carbon.pv += row.pv_generation;
-        cell.data.carbon.gshp += row.gshp_size;
+        cell.data.costs.ashp +=
+          row.data.properties.ashp_labour + row.data.properties.ashp_material;
+        cell.data.costs.pv +=
+          row.data.properties.pv_labour + row.data.properties.pv_material;
+        cell.data.costs.gshp +=
+          row.data.properties.gshp_labour + row.data.properties.gshp_material;
+        cell.data.carbon.ashp += row.data.properties.heat_demand;
+        cell.data.carbon.pv += row.data.properties.pv_generation;
+        cell.data.carbon.gshp += row.data.properties.gshp_size;
       } else {
-        cell.building_area = row.building_area;
+        cell.building_area = row.data.properties.building_area;
         // Initialize data structure
         cell.data = {
           costs: {
-            ashp: row.ashp_labour + row.ashp_material,
-            pv: row.pv_labour + row.pv_material,
-            gshp: row.gshp_labour + row.gshp_material,
+            ashp:
+              row.data.properties.ashp_labour +
+              row.data.properties.ashp_material,
+            pv: row.data.properties.pv_labour + row.data.properties.pv_material,
+            gshp:
+              row.data.properties.gshp_labour +
+              row.data.properties.gshp_material,
           },
           carbon: {
-            ashp: row.heat_demand,
-            pv: row.pv_generation,
-            gshp: row.gshp_size,
+            ashp: row.data.properties.heat_demand,
+            pv: row.data.properties.pv_generation,
+            gshp: row.data.properties.gshp_size,
           },
         };
       }
@@ -1686,16 +1712,16 @@ body, html {
 <div class="observablehq observablehq--block"><!--:7b5e4a76:--></div>
 <div class="observablehq observablehq--block"><!--:246c80d3:--></div>
 <div class="observablehq observablehq--block"><!--:9d040433:--></div>
-<div class="observablehq observablehq--block"><!--:77b24fab:--></div>
+<div class="observablehq observablehq--block"><!--:413407ea:--></div>
 <div class="observablehq observablehq--block"><!--:d5bdb4c8:--></div>
-<div class="observablehq observablehq--block"><!--:09b02b86:--></div>
+<div class="observablehq observablehq--block"><!--:d1d527dc:--></div>
 <div class="observablehq observablehq--block"><!--:b84bdc21:--></div>
 <div class="observablehq observablehq--block"><!--:eb4cc5c5:--></div>
 <div class="observablehq observablehq--block"><!--:bf7652a3:--></div>
 <div class="observablehq observablehq--block"><!--:f4f0b74a:--></div>
 <div class="observablehq observablehq--block"><!--:0e975078:--></div>
 <div class="observablehq observablehq--block"><!--:4965f46a:--></div>
-<div class="observablehq observablehq--block"><!--:f5a7b125:--></div>
+<div class="observablehq observablehq--block"><!--:4ad96b29:--></div>
 <div class="observablehq observablehq--block"><!--:875b3cfc:--></div>
 <div class="observablehq observablehq--block"><!--:bbe0b721:--></div>
 <div class="observablehq observablehq--block"><!--:2246d3ee:--></div>
