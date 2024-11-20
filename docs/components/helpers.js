@@ -54,6 +54,106 @@ export function inferTypes(data) {
   }
 }
 
+export const enrichGeoData = function (
+  buildingData,
+  geoJSON,
+  joinColumn = "lsoa_code",
+  geoJSONJoinColumn = "code",
+  aggregations = {}
+) {
+  // 1. Group building data by LSOA code
+  const groupedData = buildingData.reduce((acc, item) => {
+    const code = item[joinColumn];
+    if (!acc[code]) {
+      acc[code] = [];
+    }
+    acc[code].push(item);
+    return acc;
+  }, {});
+
+  // 2. Infer data types using your inferTypes function
+  const dataTypes = inferTypes(buildingData);
+
+  // 3. Aggregate building data for each LSOA
+  const aggregatedData = {};
+  for (const code in groupedData) {
+    aggregatedData[code] = {};
+    const buildingsInLSOA = groupedData[code];
+
+    for (const column in aggregations) {
+      const aggregationType = aggregations[column];
+      const values = buildingsInLSOA.map((building) => building[column]);
+
+      if (dataTypes[column] === "Quantitative") {
+        // Handle numerical aggregations (sum, mean, etc.) as before
+        switch (aggregationType) {
+          case "sum":
+            aggregatedData[code][column] = values.reduce((a, b) => a + b, 0);
+            break;
+          case "mean":
+            aggregatedData[code][column] =
+              values.reduce((a, b) => a + b, 0) / values.length;
+            break;
+          // Add more numerical aggregations as needed (e.g., min, max, median)
+          case "count":
+            aggregatedData[code][column] = values.length;
+            break;
+          default:
+            console.warn(
+              `Unsupported aggregation type: ${aggregationType} for numerical column: ${column}`
+            );
+        }
+      } else {
+        // Handle categorical/ordinal aggregations
+        if (aggregationType === "count") {
+          // Count occurrences of each unique value
+          const counts = values.reduce((acc, val) => {
+            acc[val] = (acc[val] || 0) + 1;
+            return acc;
+          }, {});
+
+          // Store the counts for each unique value as separate properties
+          for (const [val, count] of Object.entries(counts)) {
+            aggregatedData[code][`${column}_${val}`] = count;
+          }
+        } else if (typeof aggregationType === "object") {
+          // Handle custom conditions like counting specific values
+          for (const [conditionName, conditionValue] of Object.entries(
+            aggregationType
+          )) {
+            const count = values.filter((val) => val === conditionValue).length;
+            aggregatedData[code][`${column}_${conditionName}`] = count;
+          }
+        } else {
+          console.warn(
+            `Unsupported aggregation type: ${aggregationType} for categorical column: ${column}`
+          );
+        }
+      }
+    }
+  }
+
+  // 4. Create a deep copy of the original GeoJSON
+  const newGeoJSON = JSON.parse(JSON.stringify(geoJSON));
+
+  // 5. Iterate through features and add aggregated data
+  newGeoJSON.features = newGeoJSON.features.map((feature) => {
+    const code = feature.properties[geoJSONJoinColumn];
+    const aggregatedItem = aggregatedData[code];
+
+    if (aggregatedItem) {
+      feature.properties = {
+        ...feature.properties,
+        ...aggregatedItem,
+      };
+    }
+
+    return feature;
+  });
+
+  return newGeoJSON;
+};
+
 export function normaliseData(data, keysToNormalise) {
   // Create a D3 linear scale for each key to be normalized
   const scales = keysToNormalise.map((key) =>

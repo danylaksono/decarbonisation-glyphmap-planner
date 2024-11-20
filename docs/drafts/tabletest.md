@@ -1060,7 +1060,6 @@ function createTable(data, columns, changed) {
       console.log("add rows:");
       addTableRows(additionalLines);
       console.log("lastLineAdded:" + lastLineAdded);
-      // Add your desired logic here
     }
   });
 
