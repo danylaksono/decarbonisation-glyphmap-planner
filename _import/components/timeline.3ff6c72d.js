@@ -3,6 +3,7 @@ import * as d3 from "../../_npm/d3@7.9.0/_esm.js";
 export function createTimelineInterface(
   interventions,
   onChange,
+  onClick,
   width = 800,
   height = 400
 ) {
@@ -65,7 +66,16 @@ export function createTimelineInterface(
       (d) => xScale(d.initial_year + d.duration) - xScale(d.initial_year)
     )
     .attr("height", yScale.bandwidth())
-    .attr("fill", "steelblue");
+    .attr("fill", "steelblue")
+    .on("click", function (event, d) {
+      g.selectAll(".block").classed("highlight", false);
+      // Highlight the clicked block
+      d3.select(this).classed("highlight", true);
+      // Trigger the click callback with the full object
+      if (onClick) {
+        onClick(d);
+      }
+    });
 
   // Add text labels to the intervention blocks
   blocks
@@ -174,6 +184,10 @@ export function createTimelineInterface(
     .block-label {
       font-family: sans-serif;
       user-select: none;
+    }
+    .highlight {
+      stroke: orange;
+      stroke-width: 3px;
     }
   `);
 
