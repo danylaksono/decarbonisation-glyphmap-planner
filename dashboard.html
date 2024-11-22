@@ -207,10 +207,10 @@ import {define} from "./_observablehq/client.js";
 import {registerFile, FileAttachment} from "./_observablehq/stdlib.js";
 import {registerTable} from "./_observablehq/stdlib/duckdb.js";
 
-registerFile("./data/oxford_decarbonisation_data.parquet", {"name":"./data/oxford_decarbonisation_data.parquet","path":"./_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1732240377121});
-registerFile("./data/oxford_lsoa_boundary.geojson", {"name":"./data/oxford_lsoa_boundary.geojson","mimeType":"application/geo+json","path":"./_file/data/oxford_lsoa_boundary.50c731e8.geojson","lastModified":1732240377133});
-registerFile("./data/oxford_lsoas_cartogram.json", {"name":"./data/oxford_lsoas_cartogram.json","mimeType":"application/json","path":"./_file/data/oxford_lsoas_cartogram.a72fa2b8.json","lastModified":1732240377133});
-registerFile("./data/oxford_lsoas_regular.json", {"name":"./data/oxford_lsoas_regular.json","mimeType":"application/json","path":"./_file/data/oxford_lsoas_regular.e1c36e7e.json","lastModified":1732240377133});
+registerFile("./data/oxford_decarbonisation_data.parquet", {"name":"./data/oxford_decarbonisation_data.parquet","path":"./_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1732261639541});
+registerFile("./data/oxford_lsoa_boundary.geojson", {"name":"./data/oxford_lsoa_boundary.geojson","mimeType":"application/geo+json","path":"./_file/data/oxford_lsoa_boundary.50c731e8.geojson","lastModified":1732261639549});
+registerFile("./data/oxford_lsoas_cartogram.json", {"name":"./data/oxford_lsoas_cartogram.json","mimeType":"application/json","path":"./_file/data/oxford_lsoas_cartogram.a72fa2b8.json","lastModified":1732261639549});
+registerFile("./data/oxford_lsoas_regular.json", {"name":"./data/oxford_lsoas_regular.json","mimeType":"application/json","path":"./_file/data/oxford_lsoas_regular.e1c36e7e.json","lastModified":1732261639553});
 registerTable("oxford", FileAttachment("./data/oxford_decarbonisation_data.parquet"));
 
 define({id: "06001a1f", outputs: ["d3","flubber","require","Mutable","TimeGlyph","GlyphCollection","turf","RadialGlyph","glyphMap","createDiscretiserValue","_drawCellBackground","OSGB","Model","BudgetAllocator","MiniDecarbModel","createTable","createTimelineInterface","inferTypes","enrichGeoData","normaliseData","downloadBoundaries","joinCensusDataToGeoJSON","convertGridCsvToGeoJson","context2d"], body: async () => {
@@ -413,15 +413,15 @@ resize((width, height) => createGlyphMap(map_aggregate, {width, height}))
 ))
 }});
 
-define({id: "5ab158b2", mode: "inline", inputs: ["createTimelineInterface","interventions","display"], body: async (createTimelineInterface,interventions,display) => {
+define({id: "69b1b79f", mode: "inline", inputs: ["createTimelineInterface","interventions","display"], body: async (createTimelineInterface,interventions,display) => {
 display(await(
 createTimelineInterface(
-        interventions, 
-        () => {},
-        (click) => {console.log("click", click)},
-        600,
-        200
-      )
+            interventions, 
+            () => {},
+            (click) => {console.log("click", click)},
+            600,
+            200
+          )
 ))
 }});
 
@@ -1696,6 +1696,62 @@ body, html {
   transition: opacity 0.3s ease;
 }
 
+#graph-container {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  width: 100%;
+  border: 1px solid #ddd;
+  padding: 10px;
+  box-sizing: border-box;
+}
+
+
+/* Panel styling */
+#timeline-panel {
+  flex: 1;
+  background-color: #f9f9f9;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+/* Buttons container styling */
+#timeline-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 10px; /* Margin on all sides */
+}
+
+/* Button styling */
+#timeline-buttons .btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px; /* Consistent button size */
+  font-size: 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: transform 0.2s ease, background-color 0.2s ease; /* Smooth background transition */
+  background-color: #f0f0f0; /* Subtle background */
+}
+
+/* Hover effect for buttons */
+#timeline-buttons .btn:hover {
+  transform: scale(1.1);
+  background-color: #e0e0e0; 
+}
+
+#timeline-buttons .btn i {
+  font-size: 18px;
+  vertical-align: middle;
+}
+
+#timeline-buttons .btn.edit i { color: #008000; } 
+#timeline-buttons .btn.delete i { color: #c80000; } 
+
 </style>
 <!-- ---------------- HTML Layout ---------------- -->
 <div class="grid-container" style="padding:8px; height:92vh;">
@@ -1755,7 +1811,23 @@ body, html {
       <h2> General overview graph </h2>
       <br>
       <div id="graph-container">
-       <observablehq-loading></observablehq-loading><!--:5ab158b2:-->
+        <div id="timeline-panel">
+          <observablehq-loading></observablehq-loading><!--:69b1b79f:-->
+        </div>
+        <nav id="timeline-buttons">
+          <button class="btn edit" aria-label="Edit">
+            <i class="fas fa-edit" style="color:green;"></i>
+          </button>
+          <button class="btn delete" aria-label="Delete">
+            <i class="fa-solid fa-trash" style="color:red;"></i>
+          </button>
+          <button class="btn move-up" aria-label="Move Up">
+            <i class="fas fa-arrow-up"></i>
+          </button>
+          <button class="btn move-down" aria-label="Move Down">
+            <i class="fas fa-arrow-down"></i>
+          </button>
+        </nav>
       </div>
     </div>
     <div class="card">
