@@ -335,9 +335,6 @@ body, html {
   vertical-align: middle;
 }
 
-#timeline-buttons .btn.edit i { color: #008000; } 
-#timeline-buttons .btn.delete i { color: #c80000; } 
-
 </style>
 
 <!-- ---------------- HTML Layout ---------------- -->
@@ -414,8 +411,8 @@ body, html {
           <button class="btn edit" aria-label="Edit">
             <i class="fas fa-edit" style="color:green;"></i>
           </button>
-          <button class="btn delete" aria-label="Delete">
-            <i class="fa-solid fa-trash" style="color:red;"></i>
+          <button class="btn erase" aria-label="Delete">
+            <i class="fas fa-trash" style="color:red;"></i>
           </button>
           <button class="btn move-up" aria-label="Move Up">
             <i class="fas fa-arrow-up"></i>
