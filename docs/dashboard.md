@@ -348,6 +348,7 @@ body, html {
        ${createTimelineInterface(
         interventions, 
         () => {},
+        (click) => {console.log("click", click)},
         600,
         200
       )}
