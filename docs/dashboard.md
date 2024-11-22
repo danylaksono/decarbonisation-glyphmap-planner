@@ -32,6 +32,7 @@ import { Model } from "./components/model.js";
 import { BudgetAllocator } from "./components/budgetAllocator.js";
 import { MiniDecarbModel } from "./components/miniDecarbModel.js";
 import { createTable } from "./components/sorterTable.js";
+import { createTimelineInterface } from "./components/timeline.js";
 import {
   inferTypes,
   enrichGeoData,
@@ -269,6 +270,18 @@ body, html {
   color: #0056b3;
 }
 
+
+.hidden {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none; /* Prevent clicks when hidden */
+}
+
+.visible {
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
 </style>
 
 <!-- ---------------- HTML Layout ---------------- -->
@@ -332,35 +345,12 @@ body, html {
       <h2> General overview graph </h2>
       <br>
       <div id="graph-container">
-      <!-- List generated here -->
-          <ul id="interventions-list">
-            ${html`${interventions.map(
-              (config, index) =>
-                html`<li
-                  onclick=${() => selectIntervention(index)} 
-                  style="cursor: pointer; padding: 8px; border-bottom: 1px solid #ddd;"
-                >
-                  <span>${config.tech.name} (Start Year: ${config.initial_year})</span>
-                  <button
-                    onclick=${(e) => {
-                      e.stopPropagation();
-                    }}
-                    style="border:none; background:none; cursor:pointer; margin-left: 8px;"
-                  >
-                    <i class="fas fa-edit" style="color:green;"></i>
-                  </button>
-                  <button
-                    onclick=${(e) => {
-                      e.stopPropagation(); // Prevent the click event on the list item
-                      removeIntervention(index);
-                    }}
-                    style="border:none; background:none; cursor:pointer; margin-left: 8px;"
-                  >
-                    <i class="fas fa-trash" style="color:red;"></i>
-                  </button>
-                </li>`
-            )}`}
-          </ul>
+       ${createTimelineInterface(
+        interventions, 
+        () => {},
+        600,
+        200
+      )}
       </div>
     </div>
     <div class="card">
@@ -392,6 +382,25 @@ function selectIntervention(index) {
   // setSelectedIntervention(selectedItem);
   if (selectedItem) selectedItem.classList.add("selected");
 }
+
+// if interventions is empty, setSelectedIntervention to null
+if (interventions.length === 0) {
+  setSelectedIntervention(null);
+}
+```
+
+```js
+// console.log("list of interventions", interventions[0].duration);
+// display(
+//   createTimelineInterface(
+//     interventions,
+//     (updatedIntervention) => {
+//       console.log("Intervention updated:", updatedIntervention);
+//     },
+//     800,
+//     300
+//   )
+// );
 ```
 
 <!-- ---------------- Input form declarations ---------------- -->
@@ -410,7 +419,8 @@ const techsInput = Inputs.select(
   ],
   {
     label: html`<b>Technology</b>`,
-    value: "ASHP",
+    value: selectedIntervention ? selectedIntervention.techName : "ASHP",
+    disabled: selectedIntervention ? true : false,
   }
 );
 techsInput.style["max-width"] = "300px";
@@ -421,7 +431,12 @@ const technology = Generators.input(techsInput);
 const totalBudgetInput = Inputs.text({
   label: html`<b>Total Budget</b>`,
   placeholder: "Available Budget in GBP",
-  value: 100_000_000,
+  disabled: selectedIntervention ? true : false,
+  value: selectedIntervention
+    ? Math.round(
+        (selectedIntervention.totalBudgetSpent + Number.EPSILON) * 100
+      ) / 100
+    : 100_000_000,
   // submit: html`<button class="create-btn" style="color:white;">Submit</button>`,
 });
 totalBudgetInput.style["max-width"] = "300px";
@@ -431,7 +446,10 @@ const total_budget = Generators.input(totalBudgetInput);
 const startYearInput = Inputs.text({
   label: html`<b>Start Year</b>`,
   placeholder: "Starting year?",
-  value: 2024,
+  disabled: selectedIntervention ? true : false,
+  value: selectedIntervention
+    ? Number(Object.keys(selectedIntervention.yearlyStats)[0])
+    : 2024,
   // submit: html`<button class="create-btn" style="color:white;">Submit</button>`,
 });
 startYearInput.style["max-width"] = "300px";
@@ -552,6 +570,10 @@ const allocations = selected ? getAllocations(selected) : initialAllocations;
 ```
 
 ```js
+// console.log("selected: ", selected);
+```
+
+```js
 // store intervention results
 let interventions = getIntervention;
 let results = getResults;
@@ -564,6 +586,7 @@ let results = getResults;
 function createConfigTemplate(start_year, allocations) {
   return {
     initial_year: Number(start_year),
+    duration: allocations.length,
     rolledover_budget: 0,
     yearly_budgets: allocations.map((item) => item.budget),
     tech: {},
@@ -624,8 +647,10 @@ function addNewIntervention() {
   // console.log("techConfig", techConfig);
 
   // Example filters and priorities
-  const filters = [(b) => b.properties["substation_headroom"] >= 500];
-  const priorities = [{ name: "substation_capacity_rating", order: "asc" }];
+  // const filters = [(b) => b.properties["substation_headroom"] >= 500];
+  // const priorities = [{ name: "substation_capacity_rating", order: "asc" }];
+  const filters = [];
+  const priorities = [];
 
   addIntervention(
     techConfig,
@@ -714,6 +739,10 @@ function runModel(config, buildings) {
 
 ```js
 console.log("selectedIntervention", selectedIntervention);
+// console.log(
+//   "selectedIntervention year",
+//   Object.keys(selectedIntervention.yearlyStats)[0]
+// );
 ```
 
 <!-- ---------------- Sortable Table ---------------- -->
