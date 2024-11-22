@@ -282,6 +282,62 @@ body, html {
   transition: opacity 0.3s ease;
 }
 
+#graph-container {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  width: 100%;
+  border: 1px solid #ddd;
+  padding: 10px;
+  box-sizing: border-box;
+}
+
+
+/* Panel styling */
+#timeline-panel {
+  flex: 1;
+  background-color: #f9f9f9;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+/* Buttons container styling */
+#timeline-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 10px; /* Margin on all sides */
+}
+
+/* Button styling */
+#timeline-buttons .btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px; /* Consistent button size */
+  font-size: 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: transform 0.2s ease, background-color 0.2s ease; /* Smooth background transition */
+  background-color: #f0f0f0; /* Subtle background */
+}
+
+/* Hover effect for buttons */
+#timeline-buttons .btn:hover {
+  transform: scale(1.1);
+  background-color: #e0e0e0; 
+}
+
+#timeline-buttons .btn i {
+  font-size: 18px;
+  vertical-align: middle;
+}
+
+#timeline-buttons .btn.edit i { color: #008000; } 
+#timeline-buttons .btn.delete i { color: #c80000; } 
+
 </style>
 
 <!-- ---------------- HTML Layout ---------------- -->
@@ -345,13 +401,29 @@ body, html {
       <h2> General overview graph </h2>
       <br>
       <div id="graph-container">
-       ${createTimelineInterface(
-        interventions, 
-        () => {},
-        (click) => {console.log("click", click)},
-        600,
-        200
-      )}
+        <div id="timeline-panel">
+          ${createTimelineInterface(
+            interventions, 
+            () => {},
+            (click) => {console.log("click", click)},
+            600,
+            200
+          )}
+        </div>
+        <nav id="timeline-buttons">
+          <button class="btn edit" aria-label="Edit">
+            <i class="fas fa-edit" style="color:green;"></i>
+          </button>
+          <button class="btn delete" aria-label="Delete">
+            <i class="fa-solid fa-trash" style="color:red;"></i>
+          </button>
+          <button class="btn move-up" aria-label="Move Up">
+            <i class="fas fa-arrow-up"></i>
+          </button>
+          <button class="btn move-down" aria-label="Move Down">
+            <i class="fas fa-arrow-down"></i>
+          </button>
+        </nav>
       </div>
     </div>
     <div class="card">
