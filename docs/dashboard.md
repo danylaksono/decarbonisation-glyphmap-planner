@@ -402,7 +402,10 @@ body, html {
           ${createTimelineInterface(
             interventions, 
             () => {},
-            (click) => {console.log("click", click)},
+            (click) => {
+              selectIntervention(click);
+              console.log("clicked block", click);
+              },
             600,
             200
           )}
@@ -411,9 +414,13 @@ body, html {
           <button class="btn edit" aria-label="Edit">
             <i class="fas fa-edit" style="color:green;"></i>
           </button>
-          <button class="btn erase" aria-label="Delete">
+          ${html`<button class="btn erase" aria-label="Delete" 
+          onclick=${(e) => {
+            e.stopPropagation();
+            console.log("clicked block", e);
+            }}>
             <i class="fas fa-trash" style="color:red;"></i>
-          </button>
+          </button>`}
           <button class="btn move-up" aria-label="Move Up">
             <i class="fas fa-arrow-up"></i>
           </button>
@@ -433,6 +440,7 @@ body, html {
 ```js
 // for dealing with selected list items
 let selectedInterventionIndex = null; // Track the selected intervention index
+console.log("selectedInterventionIndex: ", selectedInterventionIndex);
 
 function selectIntervention(index) {
   // Update the selected index
@@ -821,6 +829,10 @@ console.log("selectedIntervention", selectedIntervention);
 // columns to show in the table
 const cols = [
   { column: "id", nominals: null },
+  {
+    column: "intervention",
+    nominals: null,
+  },
   { column: "lsoa", nominals: null },
   {
     column: "insulation_rating",
@@ -842,10 +854,6 @@ const cols = [
   {
     column: "ashp_size",
     thresholds: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30, 40, 50],
-  },
-  {
-    column: "intervention",
-    nominals: null,
   },
 ];
 ```
