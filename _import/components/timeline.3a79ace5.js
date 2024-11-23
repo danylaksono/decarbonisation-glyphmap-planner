@@ -47,6 +47,18 @@ export function createTimelineInterface(
     .attr("transform", `translate(0,${innerHeight})`)
     .call(d3.axisBottom(xScale).tickFormat(d3.format("d")));
 
+  g.append("rect")
+    .attr("class", "background")
+    .attr("width", innerWidth)
+    .attr("height", innerHeight)
+    .attr("fill", "transparent")
+    .on("click", function () {
+      g.selectAll(".block").classed("highlight", false);
+      if (onClick) {
+        onClick(null); // Pass null to indicate deselection
+      }
+    });
+
   // Intervention blocks
   const blocks = g
     .selectAll(".block")
@@ -71,9 +83,11 @@ export function createTimelineInterface(
       g.selectAll(".block").classed("highlight", false);
       // Highlight the clicked block
       d3.select(this).classed("highlight", true);
-      // Trigger the click callback with the full object
+      // Trigger the click callback
       if (onClick) {
-        onClick(d);
+        // onClick(d);
+        const index = interventions.indexOf(d);
+        onClick(index);
       }
     });
 
@@ -194,20 +208,3 @@ export function createTimelineInterface(
   // Return
   return svg.node();
 }
-
-// import * as Plot from "npm:@observablehq/plot";
-
-// export function timeline(events, {width, height} = {}) {
-//   return Plot.plot({
-//     width,
-//     height,
-//     marginTop: 30,
-//     x: {nice: true, label: null, tickFormat: ""},
-//     y: {axis: null},
-//     marks: [
-//       Plot.ruleX(events, {x: "year", y: "y", markerEnd: "dot", strokeWidth: 2.5}),
-//       Plot.ruleY([0]),
-//       Plot.text(events, {x: "year", y: "y", text: "name", lineAnchor: "bottom", dy: -10, lineWidth: 10, fontSize: 12})
-//     ]
-//   });
-// }

@@ -15,8 +15,9 @@ class Building {
 export class MiniDecarbModel {
   constructor(modelConfig, buildings) {
     // Basic configuration
+    this.modelId = modelConfig.id;
     this.initialYear = modelConfig.initial_year;
-    this.rolledoverBudget = modelConfig.rolledover_budget;
+    this.rolledoverBudget = modelConfig.rolledover_budget; // from previous project
     this.yearlyBudgets = modelConfig.yearly_budgets; // Array of budgets per year
     this.numYears = this.yearlyBudgets.length;
 
@@ -159,6 +160,7 @@ export class MiniDecarbModel {
         const cost = this.getBuildingCost(building);
         if (spent + cost <= yearBudget) {
           building.isIntervened = true;
+          building.interventionTechs = this.tech.name;
           building.interventionYear = this.initialYear + year;
           building.interventionCost = cost;
           building.carbonSaved =
@@ -174,8 +176,8 @@ export class MiniDecarbModel {
       remainingBudget = yearBudget - spent;
       this.yearlyStats[this.initialYear + year] = {
         budgetSpent: spent,
-        buildingsIntervened,
-        remainingBudget: year === this.numYears - 1 ? remainingBudget : 0,
+        buildingsIntervened, // Number of buildings intervened in this year
+        remainingBudget: remainingBudget, //year === this.numYears - 1 ? remainingBudget : 0,
         intervenedBuildings: intervenedBuildings,
       };
     }
@@ -188,20 +190,88 @@ export class MiniDecarbModel {
       0
     );
 
+    // Get remaining budget from final year
+    const finalYear = Math.max(...Object.keys(this.yearlyStats).map(Number));
+    const remainingBudget = this.yearlyStats[finalYear].remainingBudget;
+
     return {
+      interventionId: this.modelId,
       techName: this.tech.name,
-      initialBudget: this.yearlyBudgets,
+      // initialBudget: d3.sum(this.yearlyBudgets),
+      initialBudget: this.yearlyBudgets.reduce((a, b) => a + b, 0),
+      yearlyBudgets: this.yearlyBudgets,
       totalBudgetSpent: totalAllocated,
+      remainingBudget: remainingBudget,
       yearlyStats: this.yearlyStats,
-      allBuildings: this.suitableBuildings,
       intervenedBuildings: this.suitableBuildings.filter((b) => b.isIntervened),
       untouchedBuildings: this.suitableBuildings.filter((b) => !b.isIntervened),
+      allBuildings: this.suitableBuildings,
       appliedFilters: this.appliedFilters,
       priorityRules: this.priorities.map((rule) => ({
         attribute: rule.attribute,
         hasCustomScore: !!rule.scoreFunction,
         weight: rule.weight || 1.0,
       })),
+    };
+  }
+
+  // stack results from getRecap() method
+  stackResults(results) {
+    const buildingMap = new Map();
+
+    // Process each result and building
+    results.forEach((result) => {
+      result.intervenedBuildings.forEach((building) => {
+        const existing = buildingMap.get(building.id);
+        const intervention = {
+          tech: result.techName,
+          year: building.interventionYear,
+          cost: building.interventionCost,
+          carbonSaved: building.carbonSaved,
+          interventionID: result.interventionID,
+        };
+
+        if (!existing) {
+          buildingMap.set(building.id, {
+            ...building,
+            totalCost: building.interventionCost,
+            totalCarbonSaved: building.carbonSaved,
+            interventionHistory: [intervention],
+            interventionYears: [building.interventionYear],
+            interventionTechs: [result.techName],
+          });
+        } else {
+          // Update existing building
+          existing.totalCost += building.interventionCost;
+          existing.totalCarbonSaved += building.carbonSaved;
+          existing.interventionHistory.push(intervention);
+          existing.interventionYears.push(building.interventionYear);
+          if (!existing.interventionTechs.includes(result.techName)) {
+            existing.interventionTechs.push(result.techName);
+          }
+        }
+      });
+    });
+
+    // Convert to array and calculate summary stats
+    const buildings = Array.from(buildingMap.values());
+    const summary = {
+      totalBuildings: buildings.length,
+      totalCost: buildings.reduce((sum, b) => sum + b.totalCost, 0),
+      totalCarbonSaved: buildings.reduce(
+        (sum, b) => sum + b.totalCarbonSaved,
+        0
+      ),
+      uniqueTechs: [...new Set(buildings.flatMap((b) => b.interventionTechs))],
+      interventionYearRange: [
+        Math.min(...buildings.flatMap((b) => b.interventionYears)),
+        Math.max(...buildings.flatMap((b) => b.interventionYears)),
+      ],
+    };
+
+    return {
+      buildings,
+      summary,
     };
   }
 }
