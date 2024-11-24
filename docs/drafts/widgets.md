@@ -238,8 +238,10 @@ function stackResults(results) {
   results.forEach((result) => {
     result.allBuildings.forEach((building) => {
       if (!buildingMap.has(building.id)) {
+        const { properties, ...rest } = building; // Destructure properties and other fields
         buildingMap.set(building.id, {
-          ...building,
+          ...rest,
+          ...properties, // flatten properties here
           isIntervened: false,
           totalCost: 0,
           totalCarbonSaved: 0,
@@ -457,10 +459,12 @@ display(interventionForm);
 ```
 
 ```js
-// display(interventions);
+display(html`<h4>Results</h4>`);
+display(results);
 ```
 
 ```js
+display(html`<h4>Stacked Results</h4>`);
 display(stackResults(results));
 ```
 

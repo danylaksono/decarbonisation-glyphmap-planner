@@ -334,7 +334,7 @@ body, html {
 /* Hover effect for buttons */
 #timeline-buttons .btn:hover {
   transform: scale(1.1);
-  background-color: #e0e0e0; 
+  background-color: #e0e0e0;
 }
 
 #timeline-buttons .btn i {
@@ -409,7 +409,7 @@ body, html {
       <div id="graph-container">
         <div id="timeline-panel">
           ${createTimelineInterface(
-            interventions, 
+            interventions,
             () => {},
             (click) => {
               selectIntervention(click);
@@ -423,7 +423,7 @@ body, html {
           <button class="btn edit" aria-label="Edit">
             <i class="fas fa-edit" style="color:green;"></i>
           </button>
-          ${html`<button class="btn erase" aria-label="Delete" 
+          ${html`<button class="btn erase" aria-label="Delete"
           onclick=${(e) => {
             e.stopPropagation();
             console.log("clicked block", e);
@@ -555,10 +555,10 @@ const startYearInput = html`<input
 const start_year = Generators.input(startYearInput);
 
 // Project Length
-const projectLengthInput = Inputs.range([0, 20], {
+const projectLengthInput = Inputs.range([0, 10], {
   // label: html`<b>Project length in years</b>`,
   step: 1,
-  value: 10,
+  value: 5,
 });
 projectLengthInput.number.style["max-width"] = "60px";
 Object.assign(projectLengthInput, {
@@ -739,6 +739,13 @@ function addNewIntervention() {
   const new_start_year = start_year;
   const new_tech = technology;
   const new_allocations = allocations;
+
+  // if result exist, take the remaining budget from the latest year
+  // and add it to this first year budget
+  if (results.length > 0) {
+    const latestResult = results[results.length - 1];
+    new_allocations[0].budget += latestResult.remainingBudget;
+  }
 
   // Retrieve techConfig from the selected technology
   const techConfig = listOfTech[new_tech];
