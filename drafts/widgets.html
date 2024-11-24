@@ -65,7 +65,7 @@ import {define} from "../_observablehq/client.js";
 import {registerFile, FileAttachment} from "../_observablehq/stdlib.js";
 import {registerTable} from "../_observablehq/stdlib/duckdb.js";
 
-registerFile("./../data/oxford_decarbonisation_data.parquet", {"name":"./../data/oxford_decarbonisation_data.parquet","path":"../_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1732426160754});
+registerFile("./../data/oxford_decarbonisation_data.parquet", {"name":"./../data/oxford_decarbonisation_data.parquet","path":"../_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1732462438084});
 registerTable("oxford", FileAttachment("../data/oxford_decarbonisation_data.parquet"));
 
 define({id: "bda9fba7", outputs: ["BudgetAllocator","MiniDecarbModel"], body: async () => {
@@ -262,7 +262,7 @@ let results = getResults;
 return {interventions,results};
 }});
 
-define({id: "49aba116", outputs: ["stackResults"], body: () => {
+define({id: "c8671395", outputs: ["stackResults"], body: () => {
 // stack results from getRecap() method
 function stackResults(results) {
   const buildingMap = new Map();
@@ -271,8 +271,10 @@ function stackResults(results) {
   results.forEach((result) => {
     result.allBuildings.forEach((building) => {
       if (!buildingMap.has(building.id)) {
+        const { properties, ...rest } = building; // Destructure properties and other fields
         buildingMap.set(building.id, {
-          ...building,
+          ...rest,
+          ...properties, // flatten properties here
           isIntervened: false,
           totalCost: 0,
           totalCarbonSaved: 0,
@@ -495,11 +497,13 @@ display(interventionForm);
 return {interventionForm};
 }});
 
-define({id: "8f076973", body: () => {
-// display(interventions);
+define({id: "7abedc71", inputs: ["display","html","results"], body: (display,html,results) => {
+display(html`<h4>Results</h4>`);
+display(results);
 }});
 
-define({id: "5fcf251f", inputs: ["display","stackResults","results"], body: (display,stackResults,results) => {
+define({id: "6d03b073", inputs: ["display","html","stackResults","results"], body: (display,html,stackResults,results) => {
+display(html`<h4>Stacked Results</h4>`);
 display(stackResults(results));
 }});
 
@@ -964,14 +968,14 @@ form .inputs-3a86ea-13 {
 <div class="observablehq observablehq--block"><!--:79b75dc9:--></div>
 <h2 id="test-new-model" tabindex="-1"><a class="observablehq-header-anchor" href="#test-new-model">Test New Model</a></h2>
 <div class="observablehq observablehq--block"><!--:2872498c:--></div>
-<div class="observablehq observablehq--block"><!--:49aba116:--></div>
+<div class="observablehq observablehq--block"><!--:c8671395:--></div>
 <div class="observablehq observablehq--block"><!--:29f6e155:--></div>
 <div class="observablehq observablehq--block"><!--:71d37e71:--></div>
 <div class="observablehq observablehq--block"><!--:350b4a24:--></div>
 <div class="observablehq observablehq--block"><!--:e479d6a9:--></div>
 <div class="observablehq observablehq--block"><!--:6832c15f:--></div>
-<div class="observablehq observablehq--block"><!--:8f076973:--></div>
-<div class="observablehq observablehq--block"><!--:5fcf251f:--></div>
+<div class="observablehq observablehq--block"><!--:7abedc71:--></div>
+<div class="observablehq observablehq--block"><!--:6d03b073:--></div>
 <h2 id="old-code" tabindex="-1"><a class="observablehq-header-anchor" href="#old-code">Old code</a></h2>
 <!-- --------------------------------------------------------- -->
 <div class="observablehq observablehq--block"><!--:0a36b6f0:--></div>
