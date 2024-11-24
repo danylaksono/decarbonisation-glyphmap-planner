@@ -25,6 +25,7 @@ function useState(value) {
 const [selected, setSelected] = useState({});
 const [getIntervention, setIntervention] = useState([]);
 const [getResults, setResults] = useState([]);
+const [spinValue, setSpinValue] = useState(null);
 ```
 
 <!-- ------------ Data ------------ -->
@@ -82,6 +83,59 @@ FROM oxford b;
 ```js
 const newBuildings = [...oxford_data];
 const columns = Object.keys(newBuildings[0]);
+```
+
+## Test UI
+
+<style>
+.form-group {
+    display: flex;
+    flex-direction: row; /* Align label and input in a row */
+    align-items: center; /* Vertically center the label and input */
+    margin-bottom: 15px;
+}
+
+form .inputs-3a86ea-13 {
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap; /* Prevent label and input from wrapping */
+    min-height: 25.5px;
+    margin: var(--length3) 0;
+}
+
+.inputs-3a86ea-input {
+    display: flex;
+    align-items: center;
+    flex-grow: 1; /* Allow input to take available space */
+}
+
+</style>
+
+<div class="form-group">
+    <form class="inputs-3a86ea-13" style="max-width: 300px;">
+    <label for="inputs-3a86ea-13"><b>Total Budget</b></label>
+    <div class="inputs-3a86ea-input">
+      <input type="text" name="text" placeholder="Available Budget in GBP" id="inputs-3a86ea-13" spellcheck="false">
+    </div>
+  </form>
+</div>
+
+<div style="display:flex; flex-direction: row; align-items: center; min-height: 25.5px; gap: 12px;">
+<span> <b>Start Year </b> </span> ${startYearInput}
+</div >
+${start_years}
+
+```js
+const startYearInput = html`<input
+  style="width: 100%; max-width:100px; max-height: 25.5px;"
+  type="number"
+  value="2024"
+  step="1"
+  min="2024"
+  max="2080"
+  label="Start Year"
+/>`;
+const start_years = Generators.input(startYearInput);
 ```
 
 ## Budget Allocator
@@ -173,6 +227,76 @@ const allocations = selected ? getAllocations(selected) : initialAllocations;
 ```js
 let interventions = getIntervention;
 let results = getResults;
+```
+
+```js
+// stack results from getRecap() method
+function stackResults(results) {
+  const buildingMap = new Map();
+
+  // Collect and merge all buildings from all results
+  results.forEach((result) => {
+    result.allBuildings.forEach((building) => {
+      if (!buildingMap.has(building.id)) {
+        buildingMap.set(building.id, {
+          ...building,
+          isIntervened: false,
+          totalCost: 0,
+          totalCarbonSaved: 0,
+          interventionHistory: [],
+          interventionYears: [],
+          interventionTechs: [],
+        });
+      }
+    });
+
+    // Process interventions
+    result.intervenedBuildings.forEach((building) => {
+      const target = buildingMap.get(building.id);
+      const intervention = {
+        tech: result.techName,
+        year: building.interventionYear,
+        cost: building.interventionCost,
+        carbonSaved: building.carbonSaved,
+        interventionID: result.interventionID,
+      };
+
+      target.isIntervened = true;
+      target.totalCost += building.interventionCost;
+      target.totalCarbonSaved += building.carbonSaved;
+      target.interventionHistory.push(intervention);
+      target.interventionYears.push(building.interventionYear);
+      if (!target.interventionTechs.includes(result.techName)) {
+        target.interventionTechs.push(result.techName);
+      }
+    });
+  });
+
+  const buildings = Array.from(buildingMap.values());
+  const summary = {
+    totalBuildings: buildings.length,
+    intervenedCount: buildings.filter((b) => b.isIntervened).length,
+    untouchedCount: buildings.filter((b) => !b.isIntervened).length,
+    totalCost: buildings.reduce((sum, b) => sum + b.totalCost, 0),
+    totalCarbonSaved: buildings.reduce((sum, b) => sum + b.totalCarbonSaved, 0),
+    uniqueTechs: [
+      ...new Set(buildings.flatMap((b) => b.interventionTechs).filter(Boolean)),
+    ],
+    interventionYearRange: buildings.some((b) => b.interventionYears.length)
+      ? [
+          Math.min(...buildings.flatMap((b) => b.interventionYears)),
+          Math.max(...buildings.flatMap((b) => b.interventionYears)),
+        ]
+      : null,
+  };
+
+  return {
+    buildings,
+    summary,
+    intervenedBuildings: buildings.filter((b) => b.isIntervened),
+    untouchedBuildings: buildings.filter((b) => !b.isIntervened),
+  };
+}
 ```
 
 ```js
@@ -333,11 +457,11 @@ display(interventionForm);
 ```
 
 ```js
-display(interventions);
+// display(interventions);
 ```
 
 ```js
-display(results);
+display(stackResults(results));
 ```
 
 ## Old code

@@ -33,6 +33,7 @@ import { BudgetAllocator } from "./components/budgetAllocator.js";
 import { MiniDecarbModel } from "./components/miniDecarbModel.js";
 import { createTable } from "./components/sorterTable.js";
 import { createTimelineInterface } from "./components/timeline.js";
+import { YearPicker } from "./components/yearpicker/yearpicker.js";
 import {
   inferTypes,
   enrichGeoData,
@@ -156,6 +157,11 @@ const [detailOnDemand, setDetailOnDemand] = useState(null);
   href="./styles/dashboard.css"
 >
 
+<link
+  rel="stylesheet"
+  href="./components/yearpicker/yearpicker.css"
+>
+
 <style>
 body, html {
   height: 100%;
@@ -182,8 +188,8 @@ body, html {
     display: grid;
     grid-template-columns: 1fr 4fr;
     grid-template-rows: repeat(2, 1fr) 1fr;
-    gap: 8px; /* gap between grid items */
-    padding: 8px;
+    gap: 4px; /* gap between grid items */
+    padding: 2px;
     height: 92vh;
   }
 
@@ -192,7 +198,7 @@ body, html {
      /* Spans 2 rows */
     display: grid;
     /* grid-template-rows: 1fr 1fr; Two equal rows */
-    gap: 8px;
+    gap: 4px;
   }
 
 
@@ -202,7 +208,7 @@ body, html {
     display: grid;
     grid-template-rows: 4fr 2fr;
     height: 92vh;
-    gap: 8px;
+    gap: 4px;
   }
 
   .main-top {
@@ -219,16 +225,17 @@ body, html {
     gap: 8px;
   }
 
-    .card {
-      /* display: flex; /* Use Flexbox */
-      /* justify-content: center; Horizontally center content */
-      /* align-items: center; Vertically center content */
-      /* text-align: center; Center text alignment for multiline */ */
-      border: 1px dark-grey solid;
-      padding: 8px;
-      margin: 0 !important;
-      box-sizing: border-box; /* Ensure padding is included in height calculations */
-    }
+  .card {
+    /* display: flex; /* Use Flexbox */
+    /* justify-content: center; Horizontally center content */
+    /* align-items: center; Vertically center content */
+    /* text-align: center; Center text alignment for multiline */ */
+    border: 1px dark-grey solid;
+    padding: 8px;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    box-sizing: border-box; /* Ensure padding is included in height calculations */
+  }
 
   .main-top,
   .main-bottom .card {
@@ -352,7 +359,9 @@ body, html {
         ${totalBudgetInput}
       </div>
       <div class="form-group">
-        ${startYearInput}
+        <div style="display:flex; flex-direction: row; align-items: center; min-height: 25.5px; gap: 60px;">
+        <span> <b>Start Year </b> </span> ${startYearInput}
+        </div >
       </div>
       <div class="form-group">
         <label for="total-budget">Project length (years):</label>
@@ -381,12 +390,12 @@ body, html {
     <!-- <div class="card main-top">Map View</div> -->
     <div class="main-top">
       <div class="card" style="overflow-x:hidden; min-width: 400px;">
-      Sortable Table
+      <!-- <h2> Sortable Table </h2> -->
       ${table.getNode()}
       ${selected ? html`<div>Selected Data: ${JSON.stringify(selected.map(item => item.data.id))}</div>` : ""}
       </div>
-      <div class="card" style="overflow-x:hidden; min-width: 400px;">
-      Map View
+      <div class="card" style="overflow-x:hidden;overflow-y:hidden; min-width: 400px;">
+      <!-- <h2>Map View</h2> -->
       ${glyphmapTypeInput}
       ${mapAggregationInput}
       ${morphFactorInput}
@@ -394,8 +403,8 @@ body, html {
       </div>
     </div>
     <div class="main-bottom">
-      <div class="card">
-      <h2> General overview graph </h2>
+      <div class="card" style="overflow-y: scroll;">
+      <!-- <h2> General overview graph </h2> -->
       <br>
       <div id="graph-container">
         <div id="timeline-panel">
@@ -431,7 +440,7 @@ body, html {
       </div>
     </div>
     <div class="card">
-    Details on demand
+    <!-- <h2>Details on demand </h2> -->
     ${resize((width, height) => drawDetailOnDemand(width, height))}
     </div>
   </div>
@@ -521,16 +530,27 @@ totalBudgetInput.style["max-width"] = "300px";
 const total_budget = Generators.input(totalBudgetInput);
 
 // Start Year
-const startYearInput = Inputs.text({
-  label: html`<b>Start Year</b>`,
-  placeholder: "Starting year?",
-  disabled: selectedIntervention ? true : false,
-  value: selectedIntervention
+// const startYearInput = Inputs.text({
+//   label: html`<b>Start Year</b>`,
+//   placeholder: "Starting year?",
+//   disabled: selectedIntervention ? true : false,
+//   value: selectedIntervention
+//     ? Number(Object.keys(selectedIntervention.yearlyStats)[0])
+//     : 2024,
+//   // submit: html`<button class="create-btn" style="color:white;">Submit</button>`,
+// });
+// startYearInput.style["max-width"] = "300px";
+const startYearInput = html`<input
+  style="width: 100%; max-width:100px; max-height: 25.5px;"
+  type="number"
+  value=${selectedIntervention
     ? Number(Object.keys(selectedIntervention.yearlyStats)[0])
-    : 2024,
-  // submit: html`<button class="create-btn" style="color:white;">Submit</button>`,
-});
-startYearInput.style["max-width"] = "300px";
+    : 2024}
+  step="1"
+  min="2024"
+  max="2080"
+  label="Start Year"
+/>`;
 // console.log("startYearInput.style", startYearInput.columns);
 const start_year = Generators.input(startYearInput);
 
