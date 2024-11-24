@@ -219,7 +219,20 @@ export class MiniDecarbModel {
   stackResults(results) {
     const buildingMap = new Map();
 
-    // Process each result and building
+    // Initialize with ALL buildings from first result
+    results[0].allBuildings.forEach((building) => {
+      buildingMap.set(building.id, {
+        ...building,
+        isIntervened: false,
+        totalCost: 0,
+        totalCarbonSaved: 0,
+        interventionHistory: [],
+        interventionYears: [],
+        interventionTechs: [],
+      });
+    });
+
+    // Process interventions
     results.forEach((result) => {
       result.intervenedBuildings.forEach((building) => {
         const existing = buildingMap.get(building.id);
@@ -231,47 +244,45 @@ export class MiniDecarbModel {
           interventionID: result.interventionID,
         };
 
-        if (!existing) {
-          buildingMap.set(building.id, {
-            ...building,
-            totalCost: building.interventionCost,
-            totalCarbonSaved: building.carbonSaved,
-            interventionHistory: [intervention],
-            interventionYears: [building.interventionYear],
-            interventionTechs: [result.techName],
-          });
-        } else {
-          // Update existing building
-          existing.totalCost += building.interventionCost;
-          existing.totalCarbonSaved += building.carbonSaved;
-          existing.interventionHistory.push(intervention);
-          existing.interventionYears.push(building.interventionYear);
-          if (!existing.interventionTechs.includes(result.techName)) {
-            existing.interventionTechs.push(result.techName);
-          }
+        existing.isIntervened = true;
+        existing.totalCost += building.interventionCost;
+        existing.totalCarbonSaved += building.carbonSaved;
+        existing.interventionHistory.push(intervention);
+        existing.interventionYears.push(building.interventionYear);
+        if (!existing.interventionTechs.includes(result.techName)) {
+          existing.interventionTechs.push(result.techName);
         }
       });
     });
 
-    // Convert to array and calculate summary stats
     const buildings = Array.from(buildingMap.values());
     const summary = {
       totalBuildings: buildings.length,
+      intervenedCount: buildings.filter((b) => b.isIntervened).length,
+      untouchedCount: buildings.filter((b) => !b.isIntervened).length,
       totalCost: buildings.reduce((sum, b) => sum + b.totalCost, 0),
       totalCarbonSaved: buildings.reduce(
         (sum, b) => sum + b.totalCarbonSaved,
         0
       ),
-      uniqueTechs: [...new Set(buildings.flatMap((b) => b.interventionTechs))],
-      interventionYearRange: [
-        Math.min(...buildings.flatMap((b) => b.interventionYears)),
-        Math.max(...buildings.flatMap((b) => b.interventionYears)),
+      uniqueTechs: [
+        ...new Set(
+          buildings.flatMap((b) => b.interventionTechs).filter(Boolean)
+        ),
       ],
+      interventionYearRange: buildings.some((b) => b.interventionYears.length)
+        ? [
+            Math.min(...buildings.flatMap((b) => b.interventionYears)),
+            Math.max(...buildings.flatMap((b) => b.interventionYears)),
+          ]
+        : null,
     };
 
     return {
       buildings,
       summary,
+      intervenedBuildings: buildings.filter((b) => b.isIntervened),
+      untouchedBuildings: buildings.filter((b) => !b.isIntervened),
     };
   }
 }

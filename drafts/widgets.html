@@ -13,7 +13,7 @@
 <link rel="modulepreload" href="../_observablehq/runtime.js">
 <link rel="modulepreload" href="../_observablehq/stdlib.js">
 <link rel="modulepreload" href="../_import/components/budgetAllocator.46c04ac3.js">
-<link rel="modulepreload" href="../_import/components/miniDecarbModel.896b53aa.js">
+<link rel="modulepreload" href="../_import/components/miniDecarbModel.ae719dd9.js">
 <link rel="modulepreload" href="../_npm/d3@7.9.0/_esm.js">
 <link rel="modulepreload" href="../_observablehq/stdlib/duckdb.js">
 <link rel="modulepreload" href="../_npm/htl@0.3.1/_esm.js">
@@ -65,16 +65,16 @@ import {define} from "../_observablehq/client.js";
 import {registerFile, FileAttachment} from "../_observablehq/stdlib.js";
 import {registerTable} from "../_observablehq/stdlib/duckdb.js";
 
-registerFile("./../data/oxford_decarbonisation_data.parquet", {"name":"./../data/oxford_decarbonisation_data.parquet","path":"../_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1732330954745});
+registerFile("./../data/oxford_decarbonisation_data.parquet", {"name":"./../data/oxford_decarbonisation_data.parquet","path":"../_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1732426160754});
 registerTable("oxford", FileAttachment("../data/oxford_decarbonisation_data.parquet"));
 
 define({id: "bda9fba7", outputs: ["BudgetAllocator","MiniDecarbModel"], body: async () => {
-const [{BudgetAllocator}, {MiniDecarbModel}] = await Promise.all([import("../_import/components/budgetAllocator.46c04ac3.js"), import("../_import/components/miniDecarbModel.896b53aa.js")]);
+const [{BudgetAllocator}, {MiniDecarbModel}] = await Promise.all([import("../_import/components/budgetAllocator.46c04ac3.js"), import("../_import/components/miniDecarbModel.ae719dd9.js")]);
 
 return {BudgetAllocator,MiniDecarbModel};
 }});
 
-define({id: "e9e6659e", inputs: ["Mutable"], outputs: ["useState","selected","setSelected","getIntervention","setIntervention","getResults","setResults"], body: (Mutable) => {
+define({id: "e055fc36", inputs: ["Mutable"], outputs: ["useState","selected","setSelected","getIntervention","setIntervention","getResults","setResults","spinValue","setSpinValue"], body: (Mutable) => {
 function useState(value) {
   const state = Mutable(value);
   const setState = (value) => (state.value = value);
@@ -83,7 +83,8 @@ function useState(value) {
 const [selected, setSelected] = useState({});
 const [getIntervention, setIntervention] = useState([]);
 const [getResults, setResults] = useState([]);
-return {useState,selected,setSelected,getIntervention,setIntervention,getResults,setResults};
+const [spinValue, setSpinValue] = useState(null);
+return {useState,selected,setSelected,getIntervention,setIntervention,getResults,setResults,spinValue,setSpinValue};
 }});
 
 define({id: "d22197ed", inputs: ["sql"], outputs: ["oxford_data"], body: async (sql) => {
@@ -141,6 +142,32 @@ define({id: "2adb250b", inputs: ["oxford_data"], outputs: ["newBuildings","colum
 const newBuildings = [...oxford_data];
 const columns = Object.keys(newBuildings[0]);
 return {newBuildings,columns};
+}});
+
+define({id: "c73bfedc", mode: "inline", inputs: ["startYearInput","display"], body: async (startYearInput,display) => {
+display(await(
+startYearInput
+))
+}});
+
+define({id: "96b31031", mode: "inline", inputs: ["start_years","display"], body: async (start_years,display) => {
+display(await(
+start_years
+))
+}});
+
+define({id: "1c1fbd1c", inputs: ["html","Generators"], outputs: ["startYearInput","start_years"], body: (html,Generators) => {
+const startYearInput = html`<input
+  style="width: 100%; max-width:100px; max-height: 25.5px;"
+  type="number"
+  value="2024"
+  step="1"
+  min="2024"
+  max="2080"
+  label="Start Year"
+/>`;
+const start_years = Generators.input(startYearInput);
+return {startYearInput,start_years};
 }});
 
 define({id: "5c004f34", inputs: ["view","Inputs","html","Event","Generators","display"], outputs: ["total_budget","start_year","projectLength","project_length","allocationType"], body: (view,Inputs,html,Event,Generators,display) => {
@@ -233,6 +260,77 @@ define({id: "2872498c", inputs: ["getIntervention","getResults"], outputs: ["int
 let interventions = getIntervention;
 let results = getResults;
 return {interventions,results};
+}});
+
+define({id: "49aba116", outputs: ["stackResults"], body: () => {
+// stack results from getRecap() method
+function stackResults(results) {
+  const buildingMap = new Map();
+
+  // Collect and merge all buildings from all results
+  results.forEach((result) => {
+    result.allBuildings.forEach((building) => {
+      if (!buildingMap.has(building.id)) {
+        buildingMap.set(building.id, {
+          ...building,
+          isIntervened: false,
+          totalCost: 0,
+          totalCarbonSaved: 0,
+          interventionHistory: [],
+          interventionYears: [],
+          interventionTechs: [],
+        });
+      }
+    });
+
+    // Process interventions
+    result.intervenedBuildings.forEach((building) => {
+      const target = buildingMap.get(building.id);
+      const intervention = {
+        tech: result.techName,
+        year: building.interventionYear,
+        cost: building.interventionCost,
+        carbonSaved: building.carbonSaved,
+        interventionID: result.interventionID,
+      };
+
+      target.isIntervened = true;
+      target.totalCost += building.interventionCost;
+      target.totalCarbonSaved += building.carbonSaved;
+      target.interventionHistory.push(intervention);
+      target.interventionYears.push(building.interventionYear);
+      if (!target.interventionTechs.includes(result.techName)) {
+        target.interventionTechs.push(result.techName);
+      }
+    });
+  });
+
+  const buildings = Array.from(buildingMap.values());
+  const summary = {
+    totalBuildings: buildings.length,
+    intervenedCount: buildings.filter((b) => b.isIntervened).length,
+    untouchedCount: buildings.filter((b) => !b.isIntervened).length,
+    totalCost: buildings.reduce((sum, b) => sum + b.totalCost, 0),
+    totalCarbonSaved: buildings.reduce((sum, b) => sum + b.totalCarbonSaved, 0),
+    uniqueTechs: [
+      ...new Set(buildings.flatMap((b) => b.interventionTechs).filter(Boolean)),
+    ],
+    interventionYearRange: buildings.some((b) => b.interventionYears.length)
+      ? [
+          Math.min(...buildings.flatMap((b) => b.interventionYears)),
+          Math.max(...buildings.flatMap((b) => b.interventionYears)),
+        ]
+      : null,
+  };
+
+  return {
+    buildings,
+    summary,
+    intervenedBuildings: buildings.filter((b) => b.isIntervened),
+    untouchedBuildings: buildings.filter((b) => !b.isIntervened),
+  };
+}
+return {stackResults};
 }});
 
 define({id: "29f6e155", inputs: ["setIntervention","interventions","runModel","newBuildings","setResults","results"], outputs: ["createConfigTemplate","addIntervention","removeIntervention"], body: (setIntervention,interventions,runModel,newBuildings,setResults,results) => {
@@ -397,12 +495,12 @@ display(interventionForm);
 return {interventionForm};
 }});
 
-define({id: "d6469914", inputs: ["display","interventions"], body: (display,interventions) => {
-display(interventions);
+define({id: "8f076973", body: () => {
+// display(interventions);
 }});
 
-define({id: "bda3ad04", inputs: ["display","results"], body: (display,results) => {
-display(results);
+define({id: "5fcf251f", inputs: ["display","stackResults","results"], body: (display,stackResults,results) => {
+display(stackResults(results));
 }});
 
 define({id: "0a36b6f0", inputs: ["start_year","allocations"], outputs: ["config","addTechConfig","addPriority","listOfTech"], body: (start_year,allocations) => {
@@ -818,10 +916,47 @@ return {renderSelectableList,handleSelected};
 <div class="observablehq observablehq--block"><!--:bda9fba7:--></div>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 <link rel="stylesheet" href="../_file/styles/custom.6c594bd1.css">
-<div class="observablehq observablehq--block"><!--:e9e6659e:--></div>
+<div class="observablehq observablehq--block"><!--:e055fc36:--></div>
 <!-- ------------ Data ------------ -->
 <div class="observablehq observablehq--block"><!--:d22197ed:--></div>
 <div class="observablehq observablehq--block"><!--:2adb250b:--></div>
+<h2 id="test-ui" tabindex="-1"><a class="observablehq-header-anchor" href="#test-ui">Test UI</a></h2>
+<style>
+.form-group {
+    display: flex;
+    flex-direction: row; /* Align label and input in a row */
+    align-items: center; /* Vertically center the label and input */
+    margin-bottom: 15px;
+}
+
+form .inputs-3a86ea-13 {
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap; /* Prevent label and input from wrapping */
+    min-height: 25.5px;
+    margin: var(--length3) 0;
+}
+
+.inputs-3a86ea-input {
+    display: flex;
+    align-items: center;
+    flex-grow: 1; /* Allow input to take available space */
+}
+
+</style>
+<div class="form-group">
+    <form class="inputs-3a86ea-13" style="max-width: 300px;">
+    <label for="inputs-3a86ea-13"><b>Total Budget</b></label>
+    <div class="inputs-3a86ea-input">
+      <input type="text" name="text" placeholder="Available Budget in GBP" id="inputs-3a86ea-13" spellcheck="false">
+    </div>
+  </form>
+</div>
+<div style="display:flex; flex-direction: row; align-items: center; min-height: 25.5px; gap: 12px;">
+<span> <b>Start Year </b> </span> <observablehq-loading></observablehq-loading><!--:c73bfedc:-->
+</div>
+<span><observablehq-loading></observablehq-loading><!--:96b31031:--></span>
+<div class="observablehq observablehq--block"><!--:1c1fbd1c:--></div>
 <h2 id="budget-allocator" tabindex="-1"><a class="observablehq-header-anchor" href="#budget-allocator">Budget Allocator</a></h2>
 <div class="observablehq observablehq--block"><!--:5c004f34:--></div>
 <div class="observablehq observablehq--block"><!--:cc54eba5:--></div>
@@ -829,13 +964,14 @@ return {renderSelectableList,handleSelected};
 <div class="observablehq observablehq--block"><!--:79b75dc9:--></div>
 <h2 id="test-new-model" tabindex="-1"><a class="observablehq-header-anchor" href="#test-new-model">Test New Model</a></h2>
 <div class="observablehq observablehq--block"><!--:2872498c:--></div>
+<div class="observablehq observablehq--block"><!--:49aba116:--></div>
 <div class="observablehq observablehq--block"><!--:29f6e155:--></div>
 <div class="observablehq observablehq--block"><!--:71d37e71:--></div>
 <div class="observablehq observablehq--block"><!--:350b4a24:--></div>
 <div class="observablehq observablehq--block"><!--:e479d6a9:--></div>
 <div class="observablehq observablehq--block"><!--:6832c15f:--></div>
-<div class="observablehq observablehq--block"><!--:d6469914:--></div>
-<div class="observablehq observablehq--block"><!--:bda3ad04:--></div>
+<div class="observablehq observablehq--block"><!--:8f076973:--></div>
+<div class="observablehq observablehq--block"><!--:5fcf251f:--></div>
 <h2 id="old-code" tabindex="-1"><a class="observablehq-header-anchor" href="#old-code">Old code</a></h2>
 <!-- --------------------------------------------------------- -->
 <div class="observablehq observablehq--block"><!--:0a36b6f0:--></div>
