@@ -208,10 +208,10 @@ import {define} from "./_observablehq/client.js";
 import {registerFile, FileAttachment} from "./_observablehq/stdlib.js";
 import {registerTable} from "./_observablehq/stdlib/duckdb.js";
 
-registerFile("./data/oxford_decarbonisation_data.parquet", {"name":"./data/oxford_decarbonisation_data.parquet","path":"./_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1732462438084});
-registerFile("./data/oxford_lsoa_boundary.geojson", {"name":"./data/oxford_lsoa_boundary.geojson","mimeType":"application/geo+json","path":"./_file/data/oxford_lsoa_boundary.50c731e8.geojson","lastModified":1732462438092});
-registerFile("./data/oxford_lsoas_cartogram.json", {"name":"./data/oxford_lsoas_cartogram.json","mimeType":"application/json","path":"./_file/data/oxford_lsoas_cartogram.a72fa2b8.json","lastModified":1732462438092});
-registerFile("./data/oxford_lsoas_regular.json", {"name":"./data/oxford_lsoas_regular.json","mimeType":"application/json","path":"./_file/data/oxford_lsoas_regular.e1c36e7e.json","lastModified":1732462438092});
+registerFile("./data/oxford_decarbonisation_data.parquet", {"name":"./data/oxford_decarbonisation_data.parquet","path":"./_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1732649368893});
+registerFile("./data/oxford_lsoa_boundary.geojson", {"name":"./data/oxford_lsoa_boundary.geojson","mimeType":"application/geo+json","path":"./_file/data/oxford_lsoa_boundary.50c731e8.geojson","lastModified":1732649368905});
+registerFile("./data/oxford_lsoas_cartogram.json", {"name":"./data/oxford_lsoas_cartogram.json","mimeType":"application/json","path":"./_file/data/oxford_lsoas_cartogram.a72fa2b8.json","lastModified":1732649368905});
+registerFile("./data/oxford_lsoas_regular.json", {"name":"./data/oxford_lsoas_regular.json","mimeType":"application/json","path":"./_file/data/oxford_lsoas_regular.e1c36e7e.json","lastModified":1732649368905});
 registerTable("oxford", FileAttachment("./data/oxford_decarbonisation_data.parquet"));
 
 define({id: "f286dfde", outputs: ["d3","flubber","require","Mutable","TimeGlyph","GlyphCollection","turf","RadialGlyph","glyphMap","createDiscretiserValue","_drawCellBackground","OSGB","Model","BudgetAllocator","MiniDecarbModel","createTable","createTimelineInterface","YearPicker","inferTypes","enrichGeoData","normaliseData","downloadBoundaries","joinCensusDataToGeoJSON","convertGridCsvToGeoJson","context2d"], body: async () => {
@@ -402,9 +402,9 @@ mapAggregationInput
 ))
 }});
 
-define({id: "a6dbfcfd", mode: "inline", inputs: ["morphFactorInput","display"], body: async (morphFactorInput,display) => {
+define({id: "74551feb", mode: "inline", inputs: ["map_aggregate","morphFactorInput","display"], body: async (map_aggregate,morphFactorInput,display) => {
 display(await(
-morphFactorInput
+(map_aggregate == "Building Level") ? "" : morphFactorInput
 ))
 }});
 
@@ -492,7 +492,7 @@ define({id: "09682a6e", body: () => {
 // );
 }});
 
-define({id: "e6d57427", inputs: ["Inputs","html","selectedIntervention","Generators","Event","allColumns"], outputs: ["techsInput","technology","totalBudgetInput","total_budget","startYearInput","start_year","projectLengthInput","project_length","allocationTypeInput","allocation_type","priorityInput","priority_input","filterInput","filter_input","glyphmapTypeInput","glyphmapType","mapAggregationInput","map_aggregate","morphFactorInput","morph_factor"], body: (Inputs,html,selectedIntervention,Generators,Event,allColumns) => {
+define({id: "89ac9894", inputs: ["Inputs","html","selectedIntervention","Generators","Event","allColumns"], outputs: ["techsInput","technology","totalBudgetInput","total_budget","startYearInput","start_year","projectLengthInput","project_length","allocationTypeInput","allocation_type","priorityInput","priority_input","filterInput","filter_input","glyphmapTypeInput","glyphmapType","mapAggregationInput","map_aggregate","morphFactorInput","morph_factor"], body: (Inputs,html,selectedIntervention,Generators,Event,allColumns) => {
 // list of decarb technologies
 const techsInput = Inputs.select(
   [
@@ -603,19 +603,19 @@ const filterInput = Inputs.form([
 const filter_input = Generators.input(filterInput);
 
 const glyphmapTypeInput = Inputs.radio(
-  ["Decarbonisation Time series", "Interventions"],
+  ["Interventions", "Decarbonisation Time series"],
   {
     label: "Type of map",
-    value: "Polygons",
+    value: "Interventions",
   }
 );
 const glyphmapType = Generators.input(glyphmapTypeInput);
 
 const mapAggregationInput = Inputs.radio(
-  ["Aggregated at LSOA", "Not Aggregated"],
+  ["LSOA Level", "Building Level"],
   {
-    label: "Map Aggregation",
-    value: "Aggregated at LSOA",
+    label: "Map Aggregated at",
+    value: "LSOA Level",
   }
 );
 const map_aggregate = Generators.input(mapAggregationInput);
@@ -623,7 +623,7 @@ const map_aggregate = Generators.input(mapAggregationInput);
 const morphFactorInput = html`<input
   style="width: 100%; max-width:450px;"
   type="range"
-  value="1"
+  value="0"
   step="0.05"
   min="0"
   max="1"
@@ -1575,14 +1575,14 @@ function applyTransformationToShapes(geographicShapes) {
 return {transformCoordinates,transformGeometry,applyTransformationToShapes};
 }});
 
-define({id: "9f214aeb", inputs: ["glyphMap","glyphMapSpecBasic","morphGlyphMap"], outputs: ["createGlyphMap"], body: (glyphMap,glyphMapSpecBasic,morphGlyphMap) => {
+define({id: "11a20a47", inputs: ["glyphMap","glyphMapSpecBasic","morphGlyphMap"], outputs: ["createGlyphMap"], body: (glyphMap,glyphMapSpecBasic,morphGlyphMap) => {
 function createGlyphMap(map_aggregate, { width, height }) {
   // console.log(width, height);
-  if (map_aggregate == "Not Aggregated") {
+  if (map_aggregate == "Building Level") {
     return glyphMap({
       ...glyphMapSpecBasic(width, height),
     });
-  } else if (map_aggregate == "Aggregated at LSOA") {
+  } else if (map_aggregate == "LSOA Level") {
     return morphGlyphMap;
   }
 }
@@ -1838,7 +1838,7 @@ body, html {
       <!-- <h2>Map View</h2> -->
       <observablehq-loading></observablehq-loading><!--:c0e452dc:-->
       <observablehq-loading></observablehq-loading><!--:3dea4862:-->
-      <observablehq-loading></observablehq-loading><!--:a6dbfcfd:-->
+      <observablehq-loading></observablehq-loading><!--:74551feb:-->
       <observablehq-loading></observablehq-loading><!--:b4672042:-->
       </div>
     </div>
@@ -1873,7 +1873,7 @@ body, html {
 <div class="observablehq observablehq--block"><!--:e78cdcee:--></div>
 <div class="observablehq observablehq--block"><!--:09682a6e:--></div>
 <!-- ---------------- Input form declarations ---------------- -->
-<div class="observablehq observablehq--block"><!--:e6d57427:--></div>
+<div class="observablehq observablehq--block"><!--:89ac9894:--></div>
 <div class="observablehq observablehq--block"><!--:fbf1b5a3:--></div>
 <div class="observablehq observablehq--block"><!--:39e29da4:--></div>
 <div class="observablehq observablehq--block"><!--:30ef2d9c:--></div>
@@ -1907,6 +1907,6 @@ body, html {
 <div class="observablehq observablehq--block"><!--:bbe0b721:--></div>
 <div class="observablehq observablehq--block"><!--:2246d3ee:--></div>
 <div class="observablehq observablehq--block"><!--:e38f4f2a:--></div>
-<div class="observablehq observablehq--block"><!--:9f214aeb:--></div>
+<div class="observablehq observablehq--block"><!--:11a20a47:--></div>
 </div></main>
 </div>
