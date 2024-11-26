@@ -111,6 +111,7 @@ FROM oxford b;
 ```
 
 ```js
+// >> declare data
 const buildingsData = [...oxford_data];
 const flatData = buildingsData.map((p) => ({ ...p }));
 const allColumns = Object.keys(buildingsData[0]);
@@ -137,11 +138,12 @@ function useState(value) {
   const setState = (value) => (state.value = value);
   return [state, setState];
 }
-const [selected, setSelected] = useState({});
-const [getIntervention, setIntervention] = useState([]);
-const [getResults, setResults] = useState([]);
-const [selectedIntervention, setSelectedIntervention] = useState(null);
-const [detailOnDemand, setDetailOnDemand] = useState(null);
+const [selected, setSelected] = useState({});  // selected data in table
+const [getIntervention, setIntervention] = useState([]); // list of interventions
+const [getResults, setResults] = useState([]); // list of results, from running model
+const [selectedIntervention, setSelectedIntervention] = useState(null); // selected intervention in timeline
+// const [selectedInterventionIndex, setSelectedInterventionIndex] = useState(null); // selected intervention index
+const [detailOnDemand, setDetailOnDemand] = useState(null); // detail on demand on map
 ```
 
 <!-------- Stylesheets -------->
@@ -277,7 +279,6 @@ body, html {
   color: #0056b3;
 }
 
-
 .hidden {
   opacity: 0;
   transition: opacity 0.3s ease;
@@ -342,6 +343,12 @@ body, html {
   vertical-align: middle;
 }
 
+#timeline-buttons button[disabled] {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background-color: #cccccc;
+  }
+
 </style>
 
 <!-- ---------------- HTML Layout ---------------- -->
@@ -379,7 +386,8 @@ body, html {
         ${filterInput}
       </div>
       <div class="form-group">
-        ${html`<button class="create-btn" type="button" onclick=${addNewIntervention}>
+        ${html`
+        <button class="create-btn" type="button" onclick=${addNewIntervention}>
           Add New Intervention
         </button>`}
       </div>
@@ -392,7 +400,9 @@ body, html {
       <div class="card" style="overflow-x:hidden; min-width: 400px;">
       <!-- <h2> Sortable Table </h2> -->
       ${table.getNode()}
-      ${selected ? html`<div>Selected Data: ${JSON.stringify(selected.map(item => item.data.id))}</div>` : ""}
+      ${selected ? html`
+        <div>No. of intervened buildings: ${JSON.stringify(stackedResults.summary.intervenedCount)}</div>` : ""
+        }
       </div>
       <div class="card" style="overflow-x:hidden;overflow-y:hidden; min-width: 400px;">
       <!-- <h2>Map View</h2> -->
@@ -413,7 +423,6 @@ body, html {
             () => {},
             (click) => {
               selectIntervention(click);
-              console.log("clicked block", click);
               },
             600,
             200
@@ -449,11 +458,12 @@ body, html {
 ```js
 // for dealing with selected list items
 let selectedInterventionIndex = null; // Track the selected intervention index
-console.log("selectedInterventionIndex: ", selectedInterventionIndex);
+// console.log("selectedInterventionIndex: ", selectedInterventionIndex);
 
 function selectIntervention(index) {
   // Update the selected index
   selectedInterventionIndex = index;
+  // setSelectedInterventionIndex(index);
 
   // Clear previous selection
   document
@@ -473,21 +483,17 @@ function selectIntervention(index) {
 // if interventions is empty, setSelectedIntervention to null
 if (interventions.length === 0) {
   setSelectedIntervention(null);
+  // setSelectedInterventionIndex(null); // this somehow crashes the code
 }
 ```
 
 ```js
-// console.log("list of interventions", interventions[0].duration);
-// display(
-//   createTimelineInterface(
-//     interventions,
-//     (updatedIntervention) => {
-//       console.log("Intervention updated:", updatedIntervention);
-//     },
-//     800,
-//     300
-//   )
-// );
+// Disable buttons when no intervention is selected
+document.querySelectorAll('#timeline-buttons button').forEach(button => {
+    button.disabled = !selectedIntervention;
+    // console.log("button status", button.disabled);
+    button.setAttribute('aria-disabled', !selectedIntervention);
+});
 ```
 
 <!-- ---------------- Input form declarations ---------------- -->
@@ -549,6 +555,7 @@ const startYearInput = html`<input
   step="1"
   min="2024"
   max="2080"
+  disabled=${selectedIntervention ? true : false}
   label="Start Year"
 />`;
 // console.log("startYearInput.style", startYearInput.columns);
@@ -558,7 +565,10 @@ const start_year = Generators.input(startYearInput);
 const projectLengthInput = Inputs.range([0, 10], {
   // label: html`<b>Project length in years</b>`,
   step: 1,
-  value: 5,
+  value: selectedIntervention
+    ? Object.keys(selectedIntervention.yearlyStats).length
+    : 5,
+  disabled: selectedIntervention ? true : false,
 });
 projectLengthInput.number.style["max-width"] = "60px";
 Object.assign(projectLengthInput, {
@@ -571,6 +581,7 @@ const project_length = Generators.input(projectLengthInput);
 const allocationTypeInput = Inputs.radio(["linear", "sqrt", "exp", "cubic"], {
   // label: html`<b>Allocation Type</b>`,
   value: "linear",
+  disabled: selectedIntervention ? true : false,
 });
 const allocation_type = Generators.input(allocationTypeInput);
 
@@ -680,6 +691,8 @@ let results = getResults;
 <!-- ---------------- Functions ---------------- -->
 
 ```js
+// >> Some functions related to creating and managing interventions
+
 // create config template
 function createConfigTemplate(start_year, allocations) {
   return {
@@ -721,7 +734,6 @@ function addIntervention(
   setResults([...results, modelResult]);
   console.log("Intervention added:", config);
 }
-
 // remove intervention
 function removeIntervention(index) {
   if (index >= 0 && index < interventions.length) {
@@ -734,7 +746,7 @@ function removeIntervention(index) {
   }
 }
 
-// handle form submission
+// handle form submission: add new intervention
 function addNewIntervention() {
   const new_start_year = start_year;
   const new_tech = technology;
@@ -765,6 +777,165 @@ function addNewIntervention() {
     priorities
   );
 }
+
+// Modify current intervention
+function modifyIntervention(
+  index,
+  newTechConfig = null,
+  newStartYear = null,
+  newAllocations = null,
+  newFilters = null,
+  newPriorities = null
+) {
+  // Validate index
+  if (index < 0 || index >= interventions.length) {
+    console.error("Invalid intervention index");
+    return;
+  }
+
+  // Get existing intervention
+  const intervention = {...interventions[index]};
+
+  // Update values if provided
+  if (newTechConfig) {
+    intervention.tech = {
+      name: newTechConfig.name,
+      config: newTechConfig.config
+    };
+  }
+
+  if (newStartYear) {
+    intervention.initial_year = Number(newStartYear);
+  }
+
+  if (newAllocations) {
+    intervention.yearly_budgets = newAllocations.map(item => item.budget);
+    intervention.duration = newAllocations.length;
+  }
+
+  if (newFilters) {
+    intervention.filters = [...newFilters];
+  }
+
+  if (newPriorities) {
+    intervention.priorities = [...newPriorities];
+  }
+
+  // Update interventions array
+  const updatedInterventions = [...interventions];
+  updatedInterventions[index] = intervention;
+  setIntervention(updatedInterventions);
+
+  // Re-run model and update results
+  const modelResult = runModel(intervention, buildingsData);
+  const updatedResults = [...results];
+  updatedResults[index] = modelResult;
+  setResults(updatedResults);
+
+  console.log("Intervention modified:", intervention);
+}
+
+// stack results from getRecap() method
+function stackResults(results) {
+  const buildingMap = new Map();
+  const yearlySummary = {}; // Object to store the overall yearly summary
+
+  // Collect and merge all buildings from all results
+  results.forEach((result) => {
+    // Process yearlyStats for overall summary
+    Object.entries(result.yearlyStats).forEach(([year, stats]) => {
+      if (!yearlySummary[year]) {
+        yearlySummary[year] = {
+          budgetSpent: 0,
+          buildingsIntervened: 0,
+          totalCarbonSaved: 0, // Initialize carbon saved
+          technologies: new Set(),
+        };
+      }
+
+      yearlySummary[year].budgetSpent += stats.budgetSpent;
+      yearlySummary[year].buildingsIntervened += stats.buildingsIntervened;
+      yearlySummary[year].technologies.add(result.techName); // Add the technology
+
+      // Accumulate total carbon saved from intervened buildings for this year
+      stats.intervenedBuildings.forEach((building) => {
+        yearlySummary[year].totalCarbonSaved += building.carbonSaved || 0;
+      });
+    });
+
+    result.allBuildings.forEach((building) => {
+      if (!buildingMap.has(building.id)) {
+        const { properties, ...rest } = building; // Destructure properties and other fields
+        buildingMap.set(building.id, {
+          ...rest,
+          ...properties, // Flatten properties here
+          isIntervened: false,
+          totalCost: 0,
+          totalCarbonSaved: 0,
+          interventionHistory: [],
+          interventionYears: [],
+          interventionTechs: [],
+        });
+      }
+    });
+
+    // Process interventions
+    result.intervenedBuildings.forEach((building) => {
+      const target = buildingMap.get(building.id);
+      const intervention = {
+        tech: result.techName,
+        year: building.interventionYear,
+        cost: building.interventionCost,
+        carbonSaved: building.carbonSaved,
+        interventionID: result.interventionId,
+      };
+
+      target.isIntervened = true;
+      target.totalCost += building.interventionCost;
+      target.totalCarbonSaved += building.carbonSaved;
+      target.interventionHistory.push(intervention);
+      target.interventionYears.push(building.interventionYear);
+      if (!target.interventionTechs.includes(result.techName)) {
+        target.interventionTechs.push(result.techName);
+      }
+    });
+  });
+
+  // Finalize the yearly summary
+  Object.values(yearlySummary).forEach((yearData) => {
+    yearData.technologies = Array.from(yearData.technologies); // Convert Set to Array
+  });
+
+  const buildings = Array.from(buildingMap.values());
+  const summary = {
+    totalBuildings: buildings.length,
+    intervenedCount: buildings.filter((b) => b.isIntervened).length,
+    untouchedCount: buildings.filter((b) => !b.isIntervened).length,
+    totalCost: buildings.reduce((sum, b) => sum + b.totalCost, 0),
+    totalCarbonSaved: buildings.reduce((sum, b) => sum + b.totalCarbonSaved, 0),
+    uniqueTechs: [
+      ...new Set(buildings.flatMap((b) => b.interventionTechs).filter(Boolean)),
+    ],
+    interventionYearRange: buildings.some((b) => b.interventionYears.length)
+      ? [
+          Math.min(...buildings.flatMap((b) => b.interventionYears)),
+          Math.max(...buildings.flatMap((b) => b.interventionYears)),
+        ]
+      : null,
+  };
+
+  return {
+    buildings,
+    summary,
+    yearlySummary, // Add the overall yearly summary
+    intervenedBuildings: buildings.filter((b) => b.isIntervened),
+    untouchedBuildings: buildings.filter((b) => !b.isIntervened),
+  };
+};
+
+const stackedResults = stackResults(results);
+
+// console.log("stackedResults", stackedResults);
 ```
 
 ```js
@@ -843,7 +1014,7 @@ function runModel(config, buildings) {
 ```
 
 ```js
-console.log("selectedIntervention", selectedIntervention);
+// console.log("selectedIntervention", selectedIntervention);
 // console.log(
 //   "selectedIntervention year",
 //   Object.keys(selectedIntervention.yearlyStats)[0]
@@ -857,7 +1028,7 @@ console.log("selectedIntervention", selectedIntervention);
 const cols = [
   { column: "id", nominals: null },
   {
-    column: "intervention",
+    column: "isIntervened",
     nominals: null,
   },
   { column: "lsoa", nominals: null },
@@ -889,9 +1060,11 @@ const cols = [
 const tableData = selectedIntervention
   ? selectedIntervention.allBuildings.map((building) => ({
       ...building.properties,
-      intervention: building.isIntervened,
+      isIntervened: building.isIntervened,
     }))
-  : flatData;
+  : (stackedResults ? stackedResults.buildings : flatData);
+
+  // (stackedResults ? stackedResults.buildings : flatData);
 
 const table = new createTable(tableData, cols, (changes) => {
   console.log("Table changed:", changes);
@@ -900,7 +1073,7 @@ const table = new createTable(tableData, cols, (changes) => {
 ```
 
 ```js
-console.log("Test inferring data types", inferTypes(tableData));
+// console.log("Test inferring data types", inferTypes(tableData));
 ```
 
 <!-- ---------------- Glyph Maps ---------------- -->
@@ -1171,8 +1344,8 @@ const aggregations = {
   gshp_labour: "sum",
   gshp_material: "sum",
   gshp_size: "sum",
-  heat_demand: "sum",
-  pv_generation: "sum",
+  heat_demand: "sum", // type inferrence need to deal with some nullish values
+  pv_generation: "sum", // type inferrence need to deal with some nullish values
   ashp_suitability: "count",
   pv_suitability: "count",
   gshp_suitability: "count",
@@ -1241,7 +1414,7 @@ const keydata = _.keyBy(
   }),
   "code"
 );
-console.log("keydat", keydata);
+// console.log("keydat", keydata);
 
 const regularGeodataLookup = _.keyBy(
   regular_geodata_withproperties.features.map((feat) => {
@@ -1337,7 +1510,7 @@ const glyphMapSpec = {
     scaleParams: [],
 
     initFn: (cells, cellSize, global, panel) => {
-      console.log("initFn", cells, cellSize, global, panel);
+      // console.log("initFn", cells, cellSize, global, panel);
     },
 
     preAggrFn: (cells, cellSize, global, panel) => {

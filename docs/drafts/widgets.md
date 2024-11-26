@@ -233,15 +233,37 @@ let results = getResults;
 // stack results from getRecap() method
 function stackResults(results) {
   const buildingMap = new Map();
+  const yearlySummary = {}; // Object to store the overall yearly summary
 
   // Collect and merge all buildings from all results
   results.forEach((result) => {
+    // Process yearlyStats for overall summary
+    Object.entries(result.yearlyStats).forEach(([year, stats]) => {
+      if (!yearlySummary[year]) {
+        yearlySummary[year] = {
+          budgetSpent: 0,
+          buildingsIntervened: 0,
+          totalCarbonSaved: 0, // Initialize carbon saved
+          technologies: new Set(),
+        };
+      }
+
+      yearlySummary[year].budgetSpent += stats.budgetSpent;
+      yearlySummary[year].buildingsIntervened += stats.buildingsIntervened;
+      yearlySummary[year].technologies.add(result.techName); // Add the technology
+
+      // Accumulate total carbon saved from intervened buildings for this year
+      stats.intervenedBuildings.forEach((building) => {
+        yearlySummary[year].totalCarbonSaved += building.carbonSaved || 0;
+      });
+    });
+
     result.allBuildings.forEach((building) => {
       if (!buildingMap.has(building.id)) {
         const { properties, ...rest } = building; // Destructure properties and other fields
         buildingMap.set(building.id, {
           ...rest,
-          ...properties, // flatten properties here
+          ...properties, // Flatten properties here
           isIntervened: false,
           totalCost: 0,
           totalCarbonSaved: 0,
@@ -260,7 +282,7 @@ function stackResults(results) {
         year: building.interventionYear,
         cost: building.interventionCost,
         carbonSaved: building.carbonSaved,
-        interventionID: result.interventionID,
+        interventionID: result.interventionId,
       };
 
       target.isIntervened = true;
@@ -272,6 +294,11 @@ function stackResults(results) {
         target.interventionTechs.push(result.techName);
       }
     });
+  });
+
+  // Finalize the yearly summary
+  Object.values(yearlySummary).forEach((yearData) => {
+    yearData.technologies = Array.from(yearData.technologies); // Convert Set to Array
   });
 
   const buildings = Array.from(buildingMap.values());
@@ -295,6 +322,7 @@ function stackResults(results) {
   return {
     buildings,
     summary,
+    yearlySummary, // Add the overall yearly summary
     intervenedBuildings: buildings.filter((b) => b.isIntervened),
     untouchedBuildings: buildings.filter((b) => !b.isIntervened),
   };
@@ -466,6 +494,8 @@ display(results);
 ```js
 display(html`<h4>Stacked Results</h4>`);
 display(stackResults(results));
+display(html`<h4>No of Interventions</h4>`);
+display(stackResults(results).summary.intervenedCount);
 ```
 
 ## Old code
