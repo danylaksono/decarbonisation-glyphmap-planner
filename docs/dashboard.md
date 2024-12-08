@@ -408,7 +408,7 @@ body, html {
       <!-- <h2>Map View</h2> -->
       ${glyphmapTypeInput}
       ${mapAggregationInput}
-      ${morphFactorInput}
+      ${(map_aggregate == "Building Level") ? "" : morphFactorInput}
       ${resize((width, height) => createGlyphMap(map_aggregate, {width, height}))}
       </div>
     </div>
@@ -614,19 +614,19 @@ const filterInput = Inputs.form([
 const filter_input = Generators.input(filterInput);
 
 const glyphmapTypeInput = Inputs.radio(
-  ["Decarbonisation Time series", "Interventions"],
+  ["Interventions", "Decarbonisation Time series"],
   {
     label: "Type of map",
-    value: "Polygons",
+    value: "Interventions",
   }
 );
 const glyphmapType = Generators.input(glyphmapTypeInput);
 
 const mapAggregationInput = Inputs.radio(
-  ["Aggregated at LSOA", "Not Aggregated"],
+  ["LSOA Level", "Building Level"],
   {
-    label: "Map Aggregation",
-    value: "Aggregated at LSOA",
+    label: "Map Aggregated at",
+    value: "LSOA Level",
   }
 );
 const map_aggregate = Generators.input(mapAggregationInput);
@@ -634,7 +634,7 @@ const map_aggregate = Generators.input(mapAggregationInput);
 const morphFactorInput = html`<input
   style="width: 100%; max-width:450px;"
   type="range"
-  value="1"
+  value="0"
   step="0.05"
   min="0"
   max="1"
@@ -1732,11 +1732,11 @@ function applyTransformationToShapes(geographicShapes) {
 ```js
 function createGlyphMap(map_aggregate, { width, height }) {
   // console.log(width, height);
-  if (map_aggregate == "Not Aggregated") {
+  if (map_aggregate == "Building Level") {
     return glyphMap({
       ...glyphMapSpecBasic(width, height),
     });
-  } else if (map_aggregate == "Aggregated at LSOA") {
+  } else if (map_aggregate == "LSOA Level") {
     return morphGlyphMap;
   }
 }
