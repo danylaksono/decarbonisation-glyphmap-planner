@@ -138,7 +138,7 @@ function useState(value) {
   const setState = (value) => (state.value = value);
   return [state, setState];
 }
-const [selected, setSelected] = useState({}); // selected data in table
+const [selected, setSelected] = useState({});  // selected data in table
 const [getIntervention, setIntervention] = useState([]); // list of interventions
 const [getResults, setResults] = useState([]); // list of results, from running model
 const [selectedIntervention, setSelectedIntervention] = useState(null); // selected intervention in timeline
@@ -237,6 +237,8 @@ body, html {
     margin: 0 !important;
     border-radius: 0 !important;
     box-sizing: border-box; /* Ensure padding is included in height calculations */
+    position: relative;
+    z-index: 1000; /* Lower than toggle button */
   }
 
   .main-top,
@@ -349,56 +351,68 @@ body, html {
     background-color: #cccccc;
   }
 
-#left-panel {
-  transition: transform 0.3s ease-in-out;
+/* hide left panel as sidebar */
+
+.grid-container {
+  position: relative; /* For absolute positioning of toggle button */
+  transition: grid-template-columns 0.3s ease;
+}
+
+.grid-container.panel-hidden {
+  grid-template-columns: 0fr 4fr; /* Collapse left panel */
+}
+
+#project-properties {
   position: relative;
+  z-index: 100100;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+  transform-origin: left;
+  min-width: 0;
+  overflow: hidden;
+  padding-right: 12px; /* Add padding to prevent content overlap */
 }
 
-#left-panel.collapsed {
+.panel-hidden #project-properties {
   transform: translateX(-100%);
+  opacity: 0;
 }
 
-.toggle-panel-btn {
+#panel-toggle {
   position: absolute;
-  right: -40px;
-  top: 20px;
-  width: 40px;
-  height: 40px;
+  left: calc(100% - 1px); /* Adjust to align with panel edge */
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 100101; /* Increase z-index to stay above cards */
+  padding: 8px;
   background: #fff;
   border: 1px solid #ddd;
   border-left: none;
   border-radius: 0 4px 4px 0;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   box-shadow: 2px 0 4px rgba(0,0,0,0.1);
+  transition: left 0.3s ease;
+  width: 24px; /* Fixed width */
+  height: 32px; /* Fixed height */
 }
 
-.toggle-panel-btn i {
-  transition: transform 0.3s ease;
-  z-index: 5550000;
+#panel-toggle:hover {
+  background: #f5f5f5;
 }
 
-#left-panel.collapsed .toggle-panel-btn i {
-  transform: rotate(180deg);
+.panel-hidden #panel-toggle {
+  left: 0;
 }
-
 
 </style>
 
 <!-- ---------------- HTML Layout ---------------- -->
 
 <div class="grid-container" style="padding:8px; height:92vh;">
+
   <!-- Left panel (two boxes, stacked vertically) -->
   <div id="left-panel">
     <div id="project-properties" class="card">
-      <div class="card-title" style="display: flex; justify-content: space-between; align-items: center;">
-        <h1 style="margin: 0;">Decarbonisation Dashboard</h1>
-        <button>
-          <i class="fas fa-chevron-left"></i>
-        </button>
-      </div>
+      <h1>Decarbonisation Dashboard</h1>
       <br>
       <div class="form-group">
         ${techsInput}
@@ -408,18 +422,18 @@ body, html {
       </div>
       <div class="form-group">
         <div style="display:flex; flex-direction: row; align-items: center; min-height: 25.5px; gap: 60px;">
-          <span><b>Start Year</b></span> ${startYearInput}
-        </div>
+        <span> <b>Start Year </b> </span> ${startYearInput}
+        </div >
       </div>
       <div class="form-group">
         <label for="total-budget">Project length (years):</label>
         ${projectLengthInput}
       </div>
       <div class="form-group">
-        <label for="total-budget">Budget Allocation Type:</label>
+      <label for="total-budget">Budget Allocation Type:</label>
         ${allocationTypeInput}
       </div>
-      ${svg}
+        ${svg}
       <div class="form-group">
         ${priorityInput}
       </div>
@@ -428,15 +442,17 @@ body, html {
       </div>
       <div class="form-group">
         ${html`
-          <button class="create-btn" type="button" onclick=${addNewIntervention}>
-            Add New Intervention
-          </button>
-        `}
+        <button class="create-btn" type="button" onclick=${addNewIntervention}>
+          Add New Intervention
+        </button>`}
       </div>
     </div>
   </div>
   <!-- Main panel (right side) -->
   <div id="main-panel">
+      <button class="create-btn" type="button" id="panel-toggle" onclick=${togglePanel}>
+      <i class="fas fa-chevron-left">Toggle</i>
+    </button>
     <!-- <div class="card main-top">Map View</div> -->
     <div class="main-top">
       <div class="card" style="overflow-x:hidden; min-width: 400px;">
@@ -450,7 +466,7 @@ body, html {
       <!-- <h2>Map View</h2> -->
       ${glyphmapTypeInput}
       ${mapAggregationInput}
-      ${(map_aggregate == "Building Level") ? "" : morphFactorInput}
+      ${morphFactorInput}
       ${resize((width, height) => createGlyphMap(map_aggregate, {width, height}))}
       </div>
     </div>
@@ -498,13 +514,6 @@ body, html {
 </div>
 
 ```js
-function togglePanel() {
-  const panel = document.getElementById("left-panel");
-  panel.classList.toggle("collapsed");
-}
-```
-
-```js
 // for dealing with selected list items
 let selectedInterventionIndex = null; // Track the selected intervention index
 // console.log("selectedInterventionIndex: ", selectedInterventionIndex);
@@ -537,11 +546,26 @@ if (interventions.length === 0) {
 ```
 
 ```js
+function togglePanel() {
+  const container = document.querySelector('.grid-container');
+  const icon = document.querySelector('#panel-toggle i');
+
+  container.classList.toggle('panel-hidden');
+
+  if (container.classList.contains('panel-hidden')) {
+    icon.classList.replace('fa-chevron-left', 'fa-chevron-right');
+  } else {
+    icon.classList.replace('fa-chevron-right', 'fa-chevron-left');
+  }
+}
+```
+
+```js
 // Disable buttons when no intervention is selected
-document.querySelectorAll("#timeline-buttons button").forEach((button) => {
-  button.disabled = !selectedIntervention;
-  // console.log("button status", button.disabled);
-  button.setAttribute("aria-disabled", !selectedIntervention);
+document.querySelectorAll('#timeline-buttons button').forEach(button => {
+    button.disabled = !selectedIntervention;
+    // console.log("button status", button.disabled);
+    button.setAttribute('aria-disabled', !selectedIntervention);
 });
 ```
 
@@ -565,7 +589,7 @@ const techsInput = Inputs.select(
     disabled: selectedIntervention ? true : false,
   }
 );
-techsInput.style["max-width"] = "300px";
+techsInput.style["max-width"] = "250px";
 const technology = Generators.input(techsInput);
 // display(techsInput);
 
@@ -581,7 +605,7 @@ const totalBudgetInput = Inputs.text({
     : 100_000_000,
   // submit: html`<button class="create-btn" style="color:white;">Submit</button>`,
 });
-totalBudgetInput.style["max-width"] = "300px";
+totalBudgetInput.style["max-width"] = "250px";
 const total_budget = Generators.input(totalBudgetInput);
 
 // Start Year
@@ -663,24 +687,27 @@ const filterInput = Inputs.form([
 const filter_input = Generators.input(filterInput);
 
 const glyphmapTypeInput = Inputs.radio(
-  ["Interventions", "Decarbonisation Time series"],
+  ["Decarbonisation Time series", "Interventions"],
   {
     label: "Type of map",
-    value: "Interventions",
+    value: "Polygons",
   }
 );
 const glyphmapType = Generators.input(glyphmapTypeInput);
 
-const mapAggregationInput = Inputs.radio(["LSOA Level", "Building Level"], {
-  label: "Map Aggregated at",
-  value: "LSOA Level",
-});
+const mapAggregationInput = Inputs.radio(
+  ["Aggregated at LSOA", "Not Aggregated"],
+  {
+    label: "Map Aggregation",
+    value: "Aggregated at LSOA",
+  }
+);
 const map_aggregate = Generators.input(mapAggregationInput);
 
 const morphFactorInput = html`<input
   style="width: 100%; max-width:450px;"
   type="range"
-  value="0"
+  value="1"
   step="0.05"
   min="0"
   max="1"
@@ -840,13 +867,13 @@ function modifyIntervention(
   }
 
   // Get existing intervention
-  const intervention = { ...interventions[index] };
+  const intervention = {...interventions[index]};
 
   // Update values if provided
   if (newTechConfig) {
     intervention.tech = {
       name: newTechConfig.name,
-      config: newTechConfig.config,
+      config: newTechConfig.config
     };
   }
 
@@ -855,7 +882,7 @@ function modifyIntervention(
   }
 
   if (newAllocations) {
-    intervention.yearly_budgets = newAllocations.map((item) => item.budget);
+    intervention.yearly_budgets = newAllocations.map(item => item.budget);
     intervention.duration = newAllocations.length;
   }
 
@@ -977,7 +1004,7 @@ function stackResults(results) {
     intervenedBuildings: buildings.filter((b) => b.isIntervened),
     untouchedBuildings: buildings.filter((b) => !b.isIntervened),
   };
-}
+};
 
 const stackedResults = stackResults(results);
 
@@ -1108,11 +1135,9 @@ const tableData = selectedIntervention
       ...building.properties,
       isIntervened: building.isIntervened,
     }))
-  : stackedResults
-  ? stackedResults.buildings
-  : flatData;
+  : (stackedResults ? stackedResults.buildings : flatData);
 
-// (stackedResults ? stackedResults.buildings : flatData);
+  // (stackedResults ? stackedResults.buildings : flatData);
 
 const table = new createTable(tableData, cols, (changes) => {
   console.log("Table changed:", changes);
@@ -1136,7 +1161,7 @@ function glyphMapSpecBasic(width = 800, height = 600) {
     getLocationFn: (row) => [row.x, row.y],
     discretisationShape: "grid",
     mapType: "CartoPositron",
-    // interactiveCellSize: true,
+    interactiveCellSize: true,
     cellSize: 30,
 
     // width: 800,
@@ -1780,11 +1805,11 @@ function applyTransformationToShapes(geographicShapes) {
 ```js
 function createGlyphMap(map_aggregate, { width, height }) {
   // console.log(width, height);
-  if (map_aggregate == "Building Level") {
+  if (map_aggregate == "Not Aggregated") {
     return glyphMap({
       ...glyphMapSpecBasic(width, height),
     });
-  } else if (map_aggregate == "LSOA Level") {
+  } else if (map_aggregate == "Aggregated at LSOA") {
     return morphGlyphMap;
   }
 }

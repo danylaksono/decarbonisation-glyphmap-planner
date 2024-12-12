@@ -38,6 +38,15 @@ export class MiniDecarbModel {
 
     this.appliedFilters = [];
 
+    // Add optimization strategy
+    this.optimizationStrategy =
+      modelConfig.optimizationStrategy || "tech-first"; // or 'carbon-first'
+
+    // For carbon-first optimization, we can include multiple technologies
+    if (this.optimizationStrategy === "carbon-first") {
+      this.availableTechs = modelConfig.technologies || [this.tech];
+    }
+
     // Initialize the model
     this.filterSuitableBuildings();
     this.calculateBuildingScores();
@@ -137,15 +146,88 @@ export class MiniDecarbModel {
   //   }
 
   // Get intervention cost for a building
-  getBuildingCost(building) {
-    const labour = building.properties[this.tech.config.labourKey] || 0;
-    const material = building.properties[this.tech.config.materialKey] || 0;
+  getBuildingCost(building, technology = this.tech) {
+    const labour = building.properties[technology.config.labourKey] || 0;
+    const material = building.properties[technology.config.materialKey] || 0;
     return labour + material;
+  }
+
+  // New method to calculate carbon savings per cost ratio
+  calculateCarbonEfficiency(building, technology) {
+    const cost = this.getBuildingCost(building, technology);
+    const carbonSaved = building.properties[technology.config.savingsKey];
+    return cost > 0 ? carbonSaved / cost : 0;
   }
 
   // Run the model year by year with budget rollover
   runModel() {
-    // let remainingBudget = 0;
+    if (this.optimizationStrategy === "carbon-first") {
+      this.runCarbonFirstModel();
+    } else {
+      this.runTechFirstModel(); // existing implementation
+    }
+  }
+
+  // New carbon-first optimization implementation
+  runCarbonFirstModel() {
+    let remainingBudget = this.rolledoverBudget || 0;
+
+    for (let year = 0; year < this.numYears; year++) {
+      const yearBudget = this.yearlyBudgets[year] + remainingBudget;
+      let spent = 0;
+      let buildingsIntervened = [];
+
+      // Create pool of all possible interventions
+      const potentialInterventions = [];
+
+      for (const building of this.suitableBuildings) {
+        if (building.isIntervened) continue;
+
+        for (const tech of this.availableTechs) {
+          if (building.properties[tech.config.suitabilityKey]) {
+            potentialInterventions.push({
+              building,
+              tech,
+              carbonEfficiency: this.calculateCarbonEfficiency(building, tech),
+              cost: this.getBuildingCost(building, tech),
+            });
+          }
+        }
+      }
+
+      // Sort by carbon efficiency
+      potentialInterventions.sort(
+        (a, b) => b.carbonEfficiency - a.carbonEfficiency
+      );
+
+      // Apply interventions within budget
+      for (const intervention of potentialInterventions) {
+        if (spent + intervention.cost <= yearBudget) {
+          const { building, tech, cost } = intervention;
+
+          building.isIntervened = true;
+          building.interventionTechs = tech.name;
+          building.interventionYear = this.initialYear + year;
+          building.interventionCost = cost;
+          building.carbonSaved = building.properties[tech.config.savingsKey];
+
+          spent += cost;
+          buildingsIntervened.push(building);
+        }
+      }
+
+      // Track stats
+      remainingBudget = yearBudget - spent;
+      this.yearlyStats[this.initialYear + year] = {
+        budgetSpent: spent,
+        buildingsIntervened: buildingsIntervened.length,
+        remainingBudget,
+        intervenedBuildings: buildingsIntervened,
+      };
+    }
+  }
+
+  runTechFirstModel() {
     let remainingBudget = this.rolledoverBudget || 0; // Rollover budget from previous projects
 
     for (let year = 0; year < this.numYears; year++) {
@@ -214,75 +296,16 @@ export class MiniDecarbModel {
       })),
     };
   }
-
-  // stack results from getRecap() method
-  stackResults(results) {
-    const buildingMap = new Map();
-
-    // Initialize with ALL buildings from first result
-    results[0].allBuildings.forEach((building) => {
-      buildingMap.set(building.id, {
-        ...building,
-        isIntervened: false,
-        totalCost: 0,
-        totalCarbonSaved: 0,
-        interventionHistory: [],
-        interventionYears: [],
-        interventionTechs: [],
-      });
-    });
-
-    // Process interventions
-    results.forEach((result) => {
-      result.intervenedBuildings.forEach((building) => {
-        const existing = buildingMap.get(building.id);
-        const intervention = {
-          tech: result.techName,
-          year: building.interventionYear,
-          cost: building.interventionCost,
-          carbonSaved: building.carbonSaved,
-          interventionID: result.interventionID,
-        };
-
-        existing.isIntervened = true;
-        existing.totalCost += building.interventionCost;
-        existing.totalCarbonSaved += building.carbonSaved;
-        existing.interventionHistory.push(intervention);
-        existing.interventionYears.push(building.interventionYear);
-        if (!existing.interventionTechs.includes(result.techName)) {
-          existing.interventionTechs.push(result.techName);
-        }
-      });
-    });
-
-    const buildings = Array.from(buildingMap.values());
-    const summary = {
-      totalBuildings: buildings.length,
-      intervenedCount: buildings.filter((b) => b.isIntervened).length,
-      untouchedCount: buildings.filter((b) => !b.isIntervened).length,
-      totalCost: buildings.reduce((sum, b) => sum + b.totalCost, 0),
-      totalCarbonSaved: buildings.reduce(
-        (sum, b) => sum + b.totalCarbonSaved,
-        0
-      ),
-      uniqueTechs: [
-        ...new Set(
-          buildings.flatMap((b) => b.interventionTechs).filter(Boolean)
-        ),
-      ],
-      interventionYearRange: buildings.some((b) => b.interventionYears.length)
-        ? [
-            Math.min(...buildings.flatMap((b) => b.interventionYears)),
-            Math.max(...buildings.flatMap((b) => b.interventionYears)),
-          ]
-        : null,
-    };
-
-    return {
-      buildings,
-      summary,
-      intervenedBuildings: buildings.filter((b) => b.isIntervened),
-      untouchedBuildings: buildings.filter((b) => !b.isIntervened),
-    };
-  }
 }
+
+// const modelConfig = {
+//   optimizationStrategy: 'carbon-first',
+//   technologies: [
+//     {name: 'PV', config: {...}},
+//     {name: 'ASHP', config: {...}},
+//     // ... other technologies
+//   ],
+//   // ... other config options
+// };
+
+// const model = new MiniDecarbModel(modelConfig, buildings);

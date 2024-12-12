@@ -85,59 +85,6 @@ const newBuildings = [...oxford_data];
 const columns = Object.keys(newBuildings[0]);
 ```
 
-## Test UI
-
-<style>
-.form-group {
-    display: flex;
-    flex-direction: row; /* Align label and input in a row */
-    align-items: center; /* Vertically center the label and input */
-    margin-bottom: 15px;
-}
-
-form .inputs-3a86ea-13 {
-    display: flex;
-    align-items: center;
-    flex-wrap: nowrap; /* Prevent label and input from wrapping */
-    min-height: 25.5px;
-    margin: var(--length3) 0;
-}
-
-.inputs-3a86ea-input {
-    display: flex;
-    align-items: center;
-    flex-grow: 1; /* Allow input to take available space */
-}
-
-</style>
-
-<div class="form-group">
-    <form class="inputs-3a86ea-13" style="max-width: 300px;">
-    <label for="inputs-3a86ea-13"><b>Total Budget</b></label>
-    <div class="inputs-3a86ea-input">
-      <input type="text" name="text" placeholder="Available Budget in GBP" id="inputs-3a86ea-13" spellcheck="false">
-    </div>
-  </form>
-</div>
-
-<div style="display:flex; flex-direction: row; align-items: center; min-height: 25.5px; gap: 12px;">
-<span> <b>Start Year </b> </span> ${startYearInput}
-</div >
-${start_years}
-
-```js
-const startYearInput = html`<input
-  style="width: 100%; max-width:100px; max-height: 25.5px;"
-  type="number"
-  value="2024"
-  step="1"
-  min="2024"
-  max="2080"
-  label="Start Year"
-/>`;
-const start_years = Generators.input(startYearInput);
-```
-
 ## Budget Allocator
 
 ```js
@@ -497,6 +444,8 @@ display(stackResults(results));
 display(html`<h4>No of Interventions</h4>`);
 display(stackResults(results).summary.intervenedCount);
 ```
+
+---
 
 ## Old code
 
