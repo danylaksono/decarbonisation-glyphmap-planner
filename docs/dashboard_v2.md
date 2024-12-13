@@ -447,7 +447,7 @@ body, html {
       ${svg}
       <div class="form-group">
         ${html`
-          <button id="confirmBtn" class="create-btn" type="button" onclick=${addNewIntervention}>
+          <button class="create-btn" type="button" onclick=${addNewIntervention}>
             Add New Intervention
           </button>
         `}
@@ -458,7 +458,7 @@ body, html {
 
 ```js
 // Modal script
-const confirmBtn = document.getElementById("confirmBtn");
+// const confirmBtn = document.getElementById("confirmBtn");
 const modal = document.getElementById("simpleModal");
 
 // Open modal
@@ -467,11 +467,11 @@ openModalBtn.addEventListener("click", () => {
   modal.style.display = "flex";
 });
 
-// Confirm action
-confirmBtn.addEventListener("click", () => {
-  console.log("Action confirmed!");
-  modal.style.display = "none";
-});
+// // Confirm action
+// confirmBtn.addEventListener("click", () => {
+//   console.log("Action confirmed!");
+//   modal.style.display = "none";
+// });
 
 // Close modal if clicking outside modal content
 window.addEventListener("click", (e) => {
@@ -1084,14 +1084,16 @@ const cols = [
 ```
 
 ```js
-const tableData = selectedIntervention
-  ? selectedIntervention.allBuildings.map((building) => ({
-      ...building.properties,
-      isIntervened: building.isIntervened,
-    }))
-  : stackedResults
-  ? stackedResults.buildings
-  : flatData;
+const tableData = selectedIntervention ? stackedResults.buildings : flatData;
+
+// const tableData = selectedIntervention
+//   ? selectedIntervention.allBuildings.map((building) => ({
+//       ...building.properties,
+//       isIntervened: building.isIntervened,
+//     }))
+// : stackedResults
+// ? stackedResults.buildings
+//   : regular_geodata_withproperties;
 
 // (stackedResults ? stackedResults.buildings : flatData);
 
@@ -1102,7 +1104,7 @@ const table = new createTable(tableData, cols, (changes) => {
 ```
 
 ```js
-// console.log("Test inferring data types", inferTypes(tableData));
+console.log("Test inferring data types", inferTypes(tableData));
 ```
 
 <!-- ---------------- Glyph Maps ---------------- -->
