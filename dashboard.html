@@ -208,10 +208,10 @@ import {define} from "./_observablehq/client.js";
 import {registerFile, FileAttachment} from "./_observablehq/stdlib.js";
 import {registerTable} from "./_observablehq/stdlib/duckdb.js";
 
-registerFile("./data/oxford_decarbonisation_data.parquet", {"name":"./data/oxford_decarbonisation_data.parquet","path":"./_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1734060457689});
-registerFile("./data/oxford_lsoa_boundary.geojson", {"name":"./data/oxford_lsoa_boundary.geojson","mimeType":"application/geo+json","path":"./_file/data/oxford_lsoa_boundary.50c731e8.geojson","lastModified":1734060457697});
-registerFile("./data/oxford_lsoas_cartogram.json", {"name":"./data/oxford_lsoas_cartogram.json","mimeType":"application/json","path":"./_file/data/oxford_lsoas_cartogram.a72fa2b8.json","lastModified":1734060457697});
-registerFile("./data/oxford_lsoas_regular.json", {"name":"./data/oxford_lsoas_regular.json","mimeType":"application/json","path":"./_file/data/oxford_lsoas_regular.e1c36e7e.json","lastModified":1734060457697});
+registerFile("./data/oxford_decarbonisation_data.parquet", {"name":"./data/oxford_decarbonisation_data.parquet","path":"./_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1734060580234});
+registerFile("./data/oxford_lsoa_boundary.geojson", {"name":"./data/oxford_lsoa_boundary.geojson","mimeType":"application/geo+json","path":"./_file/data/oxford_lsoa_boundary.50c731e8.geojson","lastModified":1734060580246});
+registerFile("./data/oxford_lsoas_cartogram.json", {"name":"./data/oxford_lsoas_cartogram.json","mimeType":"application/json","path":"./_file/data/oxford_lsoas_cartogram.a72fa2b8.json","lastModified":1734060580246});
+registerFile("./data/oxford_lsoas_regular.json", {"name":"./data/oxford_lsoas_regular.json","mimeType":"application/json","path":"./_file/data/oxford_lsoas_regular.e1c36e7e.json","lastModified":1734060580246});
 registerTable("oxford", FileAttachment("./data/oxford_decarbonisation_data.parquet"));
 
 define({id: "f286dfde", outputs: ["d3","flubber","require","Mutable","TimeGlyph","GlyphCollection","turf","RadialGlyph","glyphMap","createDiscretiserValue","_drawCellBackground","OSGB","Model","BudgetAllocator","MiniDecarbModel","createTable","createTimelineInterface","YearPicker","inferTypes","enrichGeoData","normaliseData","downloadBoundaries","joinCensusDataToGeoJSON","convertGridCsvToGeoJson","context2d"], body: async () => {
@@ -379,6 +379,12 @@ html`
             Add New Intervention
           </button>
         `
+))
+}});
+
+define({id: "27617c0d", mode: "inline", inputs: ["table","display"], body: async (table,display) => {
+display(await(
+table.getNode()
 ))
 }});
 
@@ -2046,7 +2052,7 @@ body, html {
     <div class="main-top">
       <div class="card" style="overflow-x:hidden; min-width: 400px;">
       <!-- <h2> Sortable Table </h2> -->
-      <!-- ${table.getNode()} -->
+      <observablehq-loading></observablehq-loading><!--:27617c0d:-->
         <div>No. of intervened buildings: <observablehq-loading></observablehq-loading><!--:740517ab:--></div>
       </div>
       <div class="card" style="overflow-x:hidden;overflow-y:hidden; min-width: 400px;">
