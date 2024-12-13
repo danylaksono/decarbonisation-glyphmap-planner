@@ -379,6 +379,9 @@ body, html {
           )}
           </div> <!-- timeline panel -->
           <nav id="timeline-buttons">
+            <button id="openModalBtn" class="btn" aria-label="Add">
+              <i class="fas fa-plus"></i>
+            </button>
             <button class="btn edit" aria-label="Edit">
               <i class="fas fa-edit" style="color:green;"></i>
             </button>
@@ -402,7 +405,8 @@ body, html {
     <div class="left-bottom">
         <div class="card" style="overflow-x:hidden;">
           <!-- <h2> Sortable Table </h2> -->
-          <button id="openModalBtn">Open Modal</button>
+            ${table.getNode()}
+            <div>No. of intervened buildings: ${JSON.stringify(stackedResults.summary.intervenedCount)}</div>
         </div>
     </div> <!-- left bottom -->
     </div> <!-- left panel -->
@@ -459,6 +463,7 @@ const modal = document.getElementById("simpleModal");
 
 // Open modal
 openModalBtn.addEventListener("click", () => {
+  console.log("clicked");
   modal.style.display = "flex";
 });
 
@@ -510,11 +515,13 @@ if (interventions.length === 0) {
 
 ```js
 // Disable buttons when no intervention is selected
-document.querySelectorAll("#timeline-buttons button").forEach((button) => {
-  button.disabled = !selectedIntervention;
-  // console.log("button status", button.disabled);
-  button.setAttribute("aria-disabled", !selectedIntervention);
-});
+document
+  .querySelectorAll("#timeline-buttons button:not(#openModalBtn)")
+  .forEach((button) => {
+    button.disabled = !selectedIntervention;
+    // console.log("button status", button.disabled);
+    button.setAttribute("aria-disabled", !selectedIntervention);
+  });
 ```
 
 <!-- ---------------- Input form declarations ---------------- -->
