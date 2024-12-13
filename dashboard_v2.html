@@ -16,7 +16,7 @@
 <link rel="modulepreload" href="./_import/components/glyph-designs/timeGlyph.30b74103.js">
 <link rel="modulepreload" href="./_node/@turf/turf@7.1.0/index.js">
 <link rel="modulepreload" href="./_import/components/radialglyph.e10c9304.js">
-<link rel="modulepreload" href="./_import/components/gridded-glyphmaps/index.min.e22a1d11.js">
+<link rel="modulepreload" href="./_import/components/gridded-glyphmaps/index.min.f034b425.js">
 <link rel="modulepreload" href="./_import/components/osgb/index.1d2476df.js">
 <link rel="modulepreload" href="./_import/components/model.0139f19a.js">
 <link rel="modulepreload" href="./_import/components/budgetAllocator.46c04ac3.js">
@@ -208,14 +208,14 @@ import {define} from "./_observablehq/client.js";
 import {registerFile, FileAttachment} from "./_observablehq/stdlib.js";
 import {registerTable} from "./_observablehq/stdlib/duckdb.js";
 
-registerFile("./data/oxford_decarbonisation_data.parquet", {"name":"./data/oxford_decarbonisation_data.parquet","path":"./_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1734086054880});
-registerFile("./data/oxford_lsoa_boundary.geojson", {"name":"./data/oxford_lsoa_boundary.geojson","mimeType":"application/geo+json","path":"./_file/data/oxford_lsoa_boundary.50c731e8.geojson","lastModified":1734086054892});
-registerFile("./data/oxford_lsoas_cartogram.json", {"name":"./data/oxford_lsoas_cartogram.json","mimeType":"application/json","path":"./_file/data/oxford_lsoas_cartogram.a72fa2b8.json","lastModified":1734086054892});
-registerFile("./data/oxford_lsoas_regular.json", {"name":"./data/oxford_lsoas_regular.json","mimeType":"application/json","path":"./_file/data/oxford_lsoas_regular.e1c36e7e.json","lastModified":1734086054892});
+registerFile("./data/oxford_decarbonisation_data.parquet", {"name":"./data/oxford_decarbonisation_data.parquet","path":"./_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1734086723629});
+registerFile("./data/oxford_lsoa_boundary.geojson", {"name":"./data/oxford_lsoa_boundary.geojson","mimeType":"application/geo+json","path":"./_file/data/oxford_lsoa_boundary.50c731e8.geojson","lastModified":1734086723641});
+registerFile("./data/oxford_lsoas_cartogram.json", {"name":"./data/oxford_lsoas_cartogram.json","mimeType":"application/json","path":"./_file/data/oxford_lsoas_cartogram.a72fa2b8.json","lastModified":1734086723641});
+registerFile("./data/oxford_lsoas_regular.json", {"name":"./data/oxford_lsoas_regular.json","mimeType":"application/json","path":"./_file/data/oxford_lsoas_regular.e1c36e7e.json","lastModified":1734086723641});
 registerTable("oxford", FileAttachment("./data/oxford_decarbonisation_data.parquet"));
 
 define({id: "f286dfde", outputs: ["d3","flubber","require","Mutable","TimeGlyph","GlyphCollection","turf","RadialGlyph","glyphMap","createDiscretiserValue","_drawCellBackground","OSGB","Model","BudgetAllocator","MiniDecarbModel","createTable","createTimelineInterface","YearPicker","inferTypes","enrichGeoData","normaliseData","downloadBoundaries","joinCensusDataToGeoJSON","convertGridCsvToGeoJson","context2d"], body: async () => {
-const [{require}, {Mutable}, {TimeGlyph, GlyphCollection}, turf, {RadialGlyph}, {glyphMap, createDiscretiserValue, _drawCellBackground}, {OSGB}, {Model}, {BudgetAllocator}, {MiniDecarbModel}, {createTable}, {createTimelineInterface}, {YearPicker}, {inferTypes, enrichGeoData, normaliseData}, {downloadBoundaries, joinCensusDataToGeoJSON, convertGridCsvToGeoJson, context2d}] = await Promise.all([import("./_npm/d3-require@1.3.0/_esm.js"), import("./_observablehq/stdlib.js"), import("./_import/components/glyph-designs/timeGlyph.30b74103.js"), import("./_node/@turf/turf@7.1.0/index.js"), import("./_import/components/radialglyph.e10c9304.js"), import("./_import/components/gridded-glyphmaps/index.min.e22a1d11.js"), import("./_import/components/osgb/index.1d2476df.js"), import("./_import/components/model.0139f19a.js"), import("./_import/components/budgetAllocator.46c04ac3.js"), import("./_import/components/miniDecarbModel.f54b29e1.js"), import("./_import/components/sorterTable.b455407f.js"), import("./_import/components/timeline.b5ebcaf3.js"), import("./_import/components/yearpicker/yearpicker.84e70975.js"), import("./_import/components/helpers.ff512595.js"), import("./_import/components/utils.ca7eec9b.js")]);
+const [{require}, {Mutable}, {TimeGlyph, GlyphCollection}, turf, {RadialGlyph}, {glyphMap, createDiscretiserValue, _drawCellBackground}, {OSGB}, {Model}, {BudgetAllocator}, {MiniDecarbModel}, {createTable}, {createTimelineInterface}, {YearPicker}, {inferTypes, enrichGeoData, normaliseData}, {downloadBoundaries, joinCensusDataToGeoJSON, convertGridCsvToGeoJson, context2d}] = await Promise.all([import("./_npm/d3-require@1.3.0/_esm.js"), import("./_observablehq/stdlib.js"), import("./_import/components/glyph-designs/timeGlyph.30b74103.js"), import("./_node/@turf/turf@7.1.0/index.js"), import("./_import/components/radialglyph.e10c9304.js"), import("./_import/components/gridded-glyphmaps/index.min.f034b425.js"), import("./_import/components/osgb/index.1d2476df.js"), import("./_import/components/model.0139f19a.js"), import("./_import/components/budgetAllocator.46c04ac3.js"), import("./_import/components/miniDecarbModel.f54b29e1.js"), import("./_import/components/sorterTable.b455407f.js"), import("./_import/components/timeline.b5ebcaf3.js"), import("./_import/components/yearpicker/yearpicker.84e70975.js"), import("./_import/components/helpers.ff512595.js"), import("./_import/components/utils.ca7eec9b.js")]);
 const d3 = require("d3", "d3-geo-projection");
 const flubber = require("flubber@0.4");
 
