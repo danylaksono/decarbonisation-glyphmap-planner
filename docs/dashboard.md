@@ -441,7 +441,7 @@ body, html {
     <div class="main-top">
       <div class="card" style="overflow-x:hidden; min-width: 400px;">
       <!-- <h2> Sortable Table </h2> -->
-      <!-- ${table.getNode()} -->
+      ${table.getNode()}
         <div>No. of intervened buildings: ${JSON.stringify(stackedResults.summary.intervenedCount)}</div>
       </div>
       <div class="card" style="overflow-x:hidden;overflow-y:hidden; min-width: 400px;">
