@@ -138,7 +138,7 @@ function useState(value) {
   const setState = (value) => (state.value = value);
   return [state, setState];
 }
-const [selected, setSelected] = useState({});  // selected data in table
+const [selected, setSelected] = useState({}); // selected data in table
 const [getIntervention, setIntervention] = useState([]); // list of interventions
 const [getResults, setResults] = useState([]); // list of results, from running model
 const [selectedIntervention, setSelectedIntervention] = useState(null); // selected intervention in timeline
@@ -168,7 +168,7 @@ const [detailOnDemand, setDetailOnDemand] = useState(null); // detail on demand 
 body, html {
   height: 100%;
   margin: 0 !important;
-  /* overflow: hidden; */
+  overflow: hidden;
   padding: 0;
 }
 
@@ -188,43 +188,47 @@ body, html {
 
 .grid-container {
     display: grid;
-    grid-template-columns: 1fr 4fr;
-    grid-template-rows: repeat(2, 1fr) 1fr;
-    gap: 4px; /* gap between grid items */
+    grid-template-columns: 2fr 3fr;
+    /* grid-template-rows: 2fr 4fr; */
+    /* grid-template-rows: repeat(2, 1fr) 1fr; */
+    gap: 2px; /* gap between grid items */
     padding: 2px;
-    height: 92vh;
+    height: 100vh;
   }
 
   /* Left panel boxes */
   #left-panel {
      /* Spans 2 rows */
     display: grid;
+    grid-column: 1;
+    grid-template-rows: 2fr 3fr; /* Sets the row proportions */
     /* grid-template-rows: 1fr 1fr; Two equal rows */
+    height: 100%;
     gap: 4px;
   }
 
-
-  /* Right panel boxes */
-  #main-panel {
-    /*grid-row: span 2;  Spans 2 rows */
+  .left-top {
     display: grid;
-    grid-template-rows: 4fr 2fr;
-    height: 92vh;
+    grid-row: 1;
+    /* grid-template-columns: 1fr 1fr; Split into two equal columns */
     gap: 4px;
-  }
-
-  .main-top {
-    display: grid;
-    grid-template-columns: 1fr 1fr; /* Split into two equal columns */
-    gap: 8px;
   }
 
   /* Main panel bottom, split into two sections */
-  .main-bottom {
-    /* grid-row: 2 / 3; Takes the second row */
+  .left-bottom {
+    grid-row: 2;
     display: grid;
-    grid-template-columns: 3fr 1fr; /* Split bottom row into 1/3 ratio */
-    gap: 8px;
+    /* grid-template-columns: 3fr 1fr; Split bottom row into 1/3 ratio */
+    gap: 4px;
+  }
+
+  /* Right panel boxes */
+  #main-panel {
+    grid-column: 2;
+    display: grid;
+    grid-template-rows: 4fr 2fr;
+    height: 98vh;
+    gap: 4px;
   }
 
   .card {
@@ -237,12 +241,9 @@ body, html {
     margin: 0 !important;
     border-radius: 0 !important;
     box-sizing: border-box; /* Ensure padding is included in height calculations */
-    position: relative;
-    z-index: 1000; /* Lower than toggle button */
   }
 
-  .main-top,
-  .main-bottom .card {
+  .left-top .left-bottom .card {
       height: 100%; /* Let the grid layout define height naturally */
   }
 
@@ -309,6 +310,7 @@ body, html {
   background-color: #f9f9f9;
   padding: 10px;
   border-right: 1px solid #ddd;
+  height: 100%;
 }
 
 /* Buttons container styling */
@@ -351,69 +353,78 @@ body, html {
     background-color: #cccccc;
   }
 
-/* hide left panel as sidebar */
 
-.grid-container {
-  position: relative; /* For absolute positioning of toggle button */
-  transition: grid-template-columns 0.3s ease;
-}
-
-.grid-container.panel-hidden {
-  grid-template-columns: 0fr 4fr; /* Collapse left panel */
-}
-
-#project-properties {
-  position: relative;
-  z-index: 100100;
-  transition: transform 0.3s ease, opacity 0.3s ease;
-  transform-origin: left;
-  min-width: 0;
-  overflow: hidden;
-  padding-right: 12px; /* Add padding to prevent content overlap */
-}
-
-.panel-hidden #project-properties {
-  transform: translateX(-100%);
-  opacity: 0;
-}
-
-#panel-toggle {
-  position: absolute;
-  left: calc(100% - 1px); /* Adjust to align with panel edge */
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 100101; /* Increase z-index to stay above cards */
-  padding: 8px;
-  background: #fff;
-  border: 1px solid #ddd;
-  border-left: none;
-  border-radius: 0 4px 4px 0;
-  cursor: pointer;
-  box-shadow: 2px 0 4px rgba(0,0,0,0.1);
-  transition: left 0.3s ease;
-  width: 24px; /* Fixed width */
-  height: 32px; /* Fixed height */
-}
-
-#panel-toggle:hover {
-  background: #f5f5f5;
-}
-
-.panel-hidden #panel-toggle {
-  left: 0;
-}
 
 </style>
 
 <!-- ---------------- HTML Layout ---------------- -->
 
-<div class="grid-container" style="padding:8px; height:92vh;">
+<div class="grid-container" style="padding:2px; height:100vh;">
+  <div id="left-panel" style="overflow-x:hidden; height:96vh;">
+    <div class="left-top">
+      <div class="card" style="overflow-y: scroll;">
+        <!-- <h2> Decarbonisation Planner </h2> -->
+        <br>
+         <div id="graph-container">
+          <div id="timeline-panel">
+            ${createTimelineInterface(
+            interventions,
+            () => {},
+            (click) => {
+              selectIntervention(click);
+              console.log("clicked block", interventions[click]);
+              },
+            450,
+            200
+          )}
+          </div> <!-- timeline panel -->
+          <nav id="timeline-buttons">
+            <button id="openModalBtn" class="btn" aria-label="Add">
+              <i class="fas fa-plus"></i>
+            </button>
+            <button class="btn edit" aria-label="Edit">
+              <i class="fas fa-edit" style="color:green;"></i>
+            </button>
+            ${html`<button class="btn erase" aria-label="Delete"
+              onclick=${(e) => {
+                e.stopPropagation();
+                console.log("clicked block", e);
+            }}>
+            <i class="fas fa-trash" style="color:red;"></i>
+          </button>`}
+            <button class="btn move-up" aria-label="Move Up">
+              <i class="fas fa-arrow-up"></i>
+            </button>
+            <button class="btn move-down" aria-label="Move Down">
+              <i class="fas fa-arrow-down"></i>
+            </button>
+          </nav>
+        </div> <!-- graph container -->
+      </div> <!-- card -->
+    </div> <!-- left top -->
+    <div class="left-bottom">
+        <div class="card" style="overflow-x:hidden;">
+          <!-- <h2> Sortable Table </h2> -->
+            ${table.getNode()}
+            <div>No. of intervened buildings: ${JSON.stringify(stackedResults.summary.intervenedCount)}</div>
+        </div>
+    </div> <!-- left bottom -->
+    </div> <!-- left panel -->
+  <div id="main-panel">
+    <div class="card" style="overflow-x:hidden; overflow-y:hidden; height:96vh;">
+      <!-- <h2> Main Panel </h2> -->
+      ${glyphmapTypeInput}
+      ${mapAggregationInput}
+      ${(map_aggregate == "Building Level") ? "" : morphFactorInput}
+      ${resize((width, height) => createGlyphMap(map_aggregate, {width, height}))}
+    </div>
+  </div>
+</div>
 
-  <!-- Left panel (two boxes, stacked vertically) -->
-  <div id="left-panel">
+<!-------- MODAL -------->
+<div class="modal" id="simpleModal">
+  <div class="modal-content">
     <div id="project-properties" class="card">
-      <h1>Decarbonisation Dashboard</h1>
-      <br>
       <div class="form-group">
         ${techsInput}
       </div>
@@ -422,96 +433,53 @@ body, html {
       </div>
       <div class="form-group">
         <div style="display:flex; flex-direction: row; align-items: center; min-height: 25.5px; gap: 60px;">
-        <span> <b>Start Year </b> </span> ${startYearInput}
-        </div >
+          <span><b>Start Year</b></span> ${startYearInput}
+        </div>
       </div>
       <div class="form-group">
         <label for="total-budget">Project length (years):</label>
         ${projectLengthInput}
       </div>
       <div class="form-group">
-      <label for="total-budget">Budget Allocation Type:</label>
+        <label for="total-budget">Budget Allocation Type:</label>
         ${allocationTypeInput}
       </div>
-        ${svg}
-      <div class="form-group">
-        ${priorityInput}
-      </div>
-      <div class="form-group">
-        ${filterInput}
-      </div>
+      ${svg}
       <div class="form-group">
         ${html`
-        <button class="create-btn" type="button" onclick=${addNewIntervention}>
-          Add New Intervention
-        </button>`}
-      </div>
-    </div>
-  </div>
-  <!-- Main panel (right side) -->
-  <div id="main-panel">
-      <button class="create-btn" type="button" id="panel-toggle" onclick=${togglePanel}>
-      <i class="fas fa-chevron-left">Toggle</i>
-    </button>
-    <!-- <div class="card main-top">Map View</div> -->
-    <div class="main-top">
-      <div class="card" style="overflow-x:hidden; min-width: 400px;">
-      <!-- <h2> Sortable Table </h2> -->
-      ${table.getNode()}
-      ${selected ? html`
-        <div>No. of intervened buildings: ${JSON.stringify(stackedResults.summary.intervenedCount)}</div>` : ""
-        }
-      </div>
-      <div class="card" style="overflow-x:hidden;overflow-y:hidden; min-width: 400px;">
-      <!-- <h2>Map View</h2> -->
-      ${glyphmapTypeInput}
-      ${mapAggregationInput}
-      ${morphFactorInput}
-      ${resize((width, height) => createGlyphMap(map_aggregate, {width, height}))}
-      </div>
-    </div>
-    <div class="main-bottom">
-      <div class="card" style="overflow-y: scroll;">
-      <!-- <h2> General overview graph </h2> -->
-      <br>
-      <div id="graph-container">
-        <div id="timeline-panel">
-          ${createTimelineInterface(
-            interventions,
-            () => {},
-            (click) => {
-              selectIntervention(click);
-              },
-            600,
-            200
-          )}
-        </div>
-        <nav id="timeline-buttons">
-          <button class="btn edit" aria-label="Edit">
-            <i class="fas fa-edit" style="color:green;"></i>
+          <button id="confirmBtn" class="create-btn" type="button" onclick=${addNewIntervention}>
+            Add New Intervention
           </button>
-          ${html`<button class="btn erase" aria-label="Delete"
-          onclick=${(e) => {
-            e.stopPropagation();
-            console.log("clicked block", e);
-            }}>
-            <i class="fas fa-trash" style="color:red;"></i>
-          </button>`}
-          <button class="btn move-up" aria-label="Move Up">
-            <i class="fas fa-arrow-up"></i>
-          </button>
-          <button class="btn move-down" aria-label="Move Down">
-            <i class="fas fa-arrow-down"></i>
-          </button>
-        </nav>
+        `}
       </div>
-    </div>
-    <div class="card">
-    <!-- <h2>Details on demand </h2> -->
-    ${resize((width, height) => drawDetailOnDemand(width, height))}
     </div>
   </div>
 </div>
+
+```js
+// Modal script
+const confirmBtn = document.getElementById("confirmBtn");
+const modal = document.getElementById("simpleModal");
+
+// Open modal
+openModalBtn.addEventListener("click", () => {
+  console.log("clicked");
+  modal.style.display = "flex";
+});
+
+// Confirm action
+confirmBtn.addEventListener("click", () => {
+  console.log("Action confirmed!");
+  modal.style.display = "none";
+});
+
+// Close modal if clicking outside modal content
+window.addEventListener("click", (e) => {
+  if (e.target === modal) {
+    modal.style.display = "none";
+  }
+});
+```
 
 ```js
 // for dealing with selected list items
@@ -546,27 +514,14 @@ if (interventions.length === 0) {
 ```
 
 ```js
-function togglePanel() {
-  const container = document.querySelector('.grid-container');
-  const icon = document.querySelector('#panel-toggle i');
-
-  container.classList.toggle('panel-hidden');
-
-  if (container.classList.contains('panel-hidden')) {
-    icon.classList.replace('fa-chevron-left', 'fa-chevron-right');
-  } else {
-    icon.classList.replace('fa-chevron-right', 'fa-chevron-left');
-  }
-}
-```
-
-```js
 // Disable buttons when no intervention is selected
-document.querySelectorAll('#timeline-buttons button').forEach(button => {
+document
+  .querySelectorAll("#timeline-buttons button:not(#openModalBtn)")
+  .forEach((button) => {
     button.disabled = !selectedIntervention;
     // console.log("button status", button.disabled);
-    button.setAttribute('aria-disabled', !selectedIntervention);
-});
+    button.setAttribute("aria-disabled", !selectedIntervention);
+  });
 ```
 
 <!-- ---------------- Input form declarations ---------------- -->
@@ -589,7 +544,7 @@ const techsInput = Inputs.select(
     disabled: selectedIntervention ? true : false,
   }
 );
-techsInput.style["max-width"] = "250px";
+techsInput.style["max-width"] = "300px";
 const technology = Generators.input(techsInput);
 // display(techsInput);
 
@@ -605,7 +560,7 @@ const totalBudgetInput = Inputs.text({
     : 100_000_000,
   // submit: html`<button class="create-btn" style="color:white;">Submit</button>`,
 });
-totalBudgetInput.style["max-width"] = "250px";
+totalBudgetInput.style["max-width"] = "300px";
 const total_budget = Generators.input(totalBudgetInput);
 
 // Start Year
@@ -687,27 +642,24 @@ const filterInput = Inputs.form([
 const filter_input = Generators.input(filterInput);
 
 const glyphmapTypeInput = Inputs.radio(
-  ["Decarbonisation Time series", "Interventions"],
+  ["Interventions", "Decarbonisation Time series"],
   {
     label: "Type of map",
-    value: "Polygons",
+    value: "Interventions",
   }
 );
 const glyphmapType = Generators.input(glyphmapTypeInput);
 
-const mapAggregationInput = Inputs.radio(
-  ["Aggregated at LSOA", "Not Aggregated"],
-  {
-    label: "Map Aggregation",
-    value: "Aggregated at LSOA",
-  }
-);
+const mapAggregationInput = Inputs.radio(["LSOA Level", "Building Level"], {
+  label: "Map Aggregated at",
+  value: "LSOA Level",
+});
 const map_aggregate = Generators.input(mapAggregationInput);
 
 const morphFactorInput = html`<input
   style="width: 100%; max-width:450px;"
   type="range"
-  value="1"
+  value="0"
   step="0.05"
   min="0"
   max="1"
@@ -806,6 +758,8 @@ function addIntervention(
   const modelResult = runModel(newIntervention, buildingsData);
   setResults([...results, modelResult]);
   console.log("Intervention added:", config);
+  // close the modal
+  document.getElementById("simpleModal").style.display = "none";
 }
 // remove intervention
 function removeIntervention(index) {
@@ -867,13 +821,13 @@ function modifyIntervention(
   }
 
   // Get existing intervention
-  const intervention = {...interventions[index]};
+  const intervention = { ...interventions[index] };
 
   // Update values if provided
   if (newTechConfig) {
     intervention.tech = {
       name: newTechConfig.name,
-      config: newTechConfig.config
+      config: newTechConfig.config,
     };
   }
 
@@ -882,7 +836,7 @@ function modifyIntervention(
   }
 
   if (newAllocations) {
-    intervention.yearly_budgets = newAllocations.map(item => item.budget);
+    intervention.yearly_budgets = newAllocations.map((item) => item.budget);
     intervention.duration = newAllocations.length;
   }
 
@@ -1004,7 +958,7 @@ function stackResults(results) {
     intervenedBuildings: buildings.filter((b) => b.isIntervened),
     untouchedBuildings: buildings.filter((b) => !b.isIntervened),
   };
-};
+}
 
 const stackedResults = stackResults(results);
 
@@ -1135,9 +1089,11 @@ const tableData = selectedIntervention
       ...building.properties,
       isIntervened: building.isIntervened,
     }))
-  : (stackedResults ? stackedResults.buildings : flatData);
+  : stackedResults
+  ? stackedResults.buildings
+  : flatData;
 
-  // (stackedResults ? stackedResults.buildings : flatData);
+// (stackedResults ? stackedResults.buildings : flatData);
 
 const table = new createTable(tableData, cols, (changes) => {
   console.log("Table changed:", changes);
@@ -1153,7 +1109,7 @@ const table = new createTable(tableData, cols, (changes) => {
 
 ```js
 // glyphmap basic specs
-function glyphMapSpecBasic(width = 800, height = 600) {
+function glyphMapSpecBasic(width = 1000, height = 600) {
   return {
     // coordType: "notmercator",
     initialBB: turf.bbox(lsoa_boundary),
@@ -1161,7 +1117,7 @@ function glyphMapSpecBasic(width = 800, height = 600) {
     getLocationFn: (row) => [row.x, row.y],
     discretisationShape: "grid",
     mapType: "CartoPositron",
-    interactiveCellSize: true,
+    // interactiveCellSize: true,
     cellSize: 30,
 
     // width: 800,
@@ -1750,7 +1706,7 @@ function createMorphGlyphMap(width, height) {
 
   return glyphMapInstance;
 }
-const morphGlyphMap = createMorphGlyphMap(600, 400);
+const morphGlyphMap = createMorphGlyphMap(1000, 600);
 ```
 
 ```js
@@ -1805,11 +1761,11 @@ function applyTransformationToShapes(geographicShapes) {
 ```js
 function createGlyphMap(map_aggregate, { width, height }) {
   // console.log(width, height);
-  if (map_aggregate == "Not Aggregated") {
+  if (map_aggregate == "Building Level") {
     return glyphMap({
       ...glyphMapSpecBasic(width, height),
     });
-  } else if (map_aggregate == "Aggregated at LSOA") {
+  } else if (map_aggregate == "LSOA Level") {
     return morphGlyphMap;
   }
 }
