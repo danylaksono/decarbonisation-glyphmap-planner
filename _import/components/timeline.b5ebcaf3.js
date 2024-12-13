@@ -91,6 +91,7 @@ export function createTimelineInterface(
       (d) => xScale(d.initial_year + d.duration) - xScale(d.initial_year)
     )
     .attr("height", yScale.bandwidth())
+    // .attr("height", 30)
     .attr("fill", "steelblue")
     .on("click", function (event, d) {
       g.selectAll(".block").classed("highlight", false);
