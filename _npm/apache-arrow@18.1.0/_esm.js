@@ -1,6 +1,6 @@
 /**
  * Bundled by jsDelivr using Rollup v2.79.1 and Terser v5.19.2.
- * Original file: /npm/apache-arrow@18.0.0/Arrow.dom.mjs
+ * Original file: /npm/apache-arrow@18.1.0/Arrow.dom.mjs
  *
  * Do NOT use SRI with dynamically generated files! More information: https://www.jsdelivr.com/using-sri-with-dynamic-files
  */

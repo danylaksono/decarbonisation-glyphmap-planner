@@ -13,7 +13,7 @@
 <link rel="modulepreload" href="../_observablehq/runtime.js">
 <link rel="modulepreload" href="../_observablehq/stdlib.js">
 <link rel="modulepreload" href="../_import/components/budgetAllocator.46c04ac3.js">
-<link rel="modulepreload" href="../_import/components/miniDecarbModel.ae719dd9.js">
+<link rel="modulepreload" href="../_import/components/miniDecarbModel.f54b29e1.js">
 <link rel="modulepreload" href="../_npm/d3@7.9.0/_esm.js">
 <link rel="modulepreload" href="../_observablehq/stdlib/duckdb.js">
 <link rel="modulepreload" href="../_npm/htl@0.3.1/_esm.js">
@@ -52,7 +52,7 @@
 <link rel="modulepreload" href="../_npm/d3-transition@3.0.1/_esm.js">
 <link rel="modulepreload" href="../_npm/d3-zoom@3.0.0/_esm.js">
 <link rel="modulepreload" href="../_npm/interval-tree-1d@1.0.4/_esm.js">
-<link rel="modulepreload" href="../_npm/apache-arrow@18.0.0/_esm.js">
+<link rel="modulepreload" href="../_npm/apache-arrow@18.1.0/_esm.js">
 <link rel="modulepreload" href="../_npm/internmap@2.0.3/_esm.js">
 <link rel="modulepreload" href="../_npm/delaunator@5.0.1/_esm.js">
 <link rel="modulepreload" href="../_npm/binary-search-bounds@2.0.5/_esm.js">
@@ -65,11 +65,11 @@ import {define} from "../_observablehq/client.js";
 import {registerFile, FileAttachment} from "../_observablehq/stdlib.js";
 import {registerTable} from "../_observablehq/stdlib/duckdb.js";
 
-registerFile("./../data/oxford_decarbonisation_data.parquet", {"name":"./../data/oxford_decarbonisation_data.parquet","path":"../_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1732649368893});
+registerFile("./../data/oxford_decarbonisation_data.parquet", {"name":"./../data/oxford_decarbonisation_data.parquet","path":"../_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1734060457689});
 registerTable("oxford", FileAttachment("../data/oxford_decarbonisation_data.parquet"));
 
 define({id: "bda9fba7", outputs: ["BudgetAllocator","MiniDecarbModel"], body: async () => {
-const [{BudgetAllocator}, {MiniDecarbModel}] = await Promise.all([import("../_import/components/budgetAllocator.46c04ac3.js"), import("../_import/components/miniDecarbModel.ae719dd9.js")]);
+const [{BudgetAllocator}, {MiniDecarbModel}] = await Promise.all([import("../_import/components/budgetAllocator.46c04ac3.js"), import("../_import/components/miniDecarbModel.f54b29e1.js")]);
 
 return {BudgetAllocator,MiniDecarbModel};
 }});
@@ -142,32 +142,6 @@ define({id: "2adb250b", inputs: ["oxford_data"], outputs: ["newBuildings","colum
 const newBuildings = [...oxford_data];
 const columns = Object.keys(newBuildings[0]);
 return {newBuildings,columns};
-}});
-
-define({id: "c73bfedc", mode: "inline", inputs: ["startYearInput","display"], body: async (startYearInput,display) => {
-display(await(
-startYearInput
-))
-}});
-
-define({id: "96b31031", mode: "inline", inputs: ["start_years","display"], body: async (start_years,display) => {
-display(await(
-start_years
-))
-}});
-
-define({id: "1c1fbd1c", inputs: ["html","Generators"], outputs: ["startYearInput","start_years"], body: (html,Generators) => {
-const startYearInput = html`<input
-  style="width: 100%; max-width:100px; max-height: 25.5px;"
-  type="number"
-  value="2024"
-  step="1"
-  min="2024"
-  max="2080"
-  label="Start Year"
-/>`;
-const start_years = Generators.input(startYearInput);
-return {startYearInput,start_years};
 }});
 
 define({id: "5c004f34", inputs: ["view","Inputs","html","Event","Generators","display"], outputs: ["total_budget","start_year","projectLength","project_length","allocationType"], body: (view,Inputs,html,Event,Generators,display) => {
@@ -262,19 +236,41 @@ let results = getResults;
 return {interventions,results};
 }});
 
-define({id: "c8671395", outputs: ["stackResults"], body: () => {
+define({id: "8c301406", outputs: ["stackResults"], body: () => {
 // stack results from getRecap() method
 function stackResults(results) {
   const buildingMap = new Map();
+  const yearlySummary = {}; // Object to store the overall yearly summary
 
   // Collect and merge all buildings from all results
   results.forEach((result) => {
+    // Process yearlyStats for overall summary
+    Object.entries(result.yearlyStats).forEach(([year, stats]) => {
+      if (!yearlySummary[year]) {
+        yearlySummary[year] = {
+          budgetSpent: 0,
+          buildingsIntervened: 0,
+          totalCarbonSaved: 0, // Initialize carbon saved
+          technologies: new Set(),
+        };
+      }
+
+      yearlySummary[year].budgetSpent += stats.budgetSpent;
+      yearlySummary[year].buildingsIntervened += stats.buildingsIntervened;
+      yearlySummary[year].technologies.add(result.techName); // Add the technology
+
+      // Accumulate total carbon saved from intervened buildings for this year
+      stats.intervenedBuildings.forEach((building) => {
+        yearlySummary[year].totalCarbonSaved += building.carbonSaved || 0;
+      });
+    });
+
     result.allBuildings.forEach((building) => {
       if (!buildingMap.has(building.id)) {
         const { properties, ...rest } = building; // Destructure properties and other fields
         buildingMap.set(building.id, {
           ...rest,
-          ...properties, // flatten properties here
+          ...properties, // Flatten properties here
           isIntervened: false,
           totalCost: 0,
           totalCarbonSaved: 0,
@@ -293,7 +289,7 @@ function stackResults(results) {
         year: building.interventionYear,
         cost: building.interventionCost,
         carbonSaved: building.carbonSaved,
-        interventionID: result.interventionID,
+        interventionID: result.interventionId,
       };
 
       target.isIntervened = true;
@@ -305,6 +301,11 @@ function stackResults(results) {
         target.interventionTechs.push(result.techName);
       }
     });
+  });
+
+  // Finalize the yearly summary
+  Object.values(yearlySummary).forEach((yearData) => {
+    yearData.technologies = Array.from(yearData.technologies); // Convert Set to Array
   });
 
   const buildings = Array.from(buildingMap.values());
@@ -328,6 +329,7 @@ function stackResults(results) {
   return {
     buildings,
     summary,
+    yearlySummary, // Add the overall yearly summary
     intervenedBuildings: buildings.filter((b) => b.isIntervened),
     untouchedBuildings: buildings.filter((b) => !b.isIntervened),
   };
@@ -502,9 +504,11 @@ display(html`<h4>Results</h4>`);
 display(results);
 }});
 
-define({id: "6d03b073", inputs: ["display","html","stackResults","results"], body: (display,html,stackResults,results) => {
+define({id: "26b1093c", inputs: ["display","html","stackResults","results"], body: (display,html,stackResults,results) => {
 display(html`<h4>Stacked Results</h4>`);
 display(stackResults(results));
+display(html`<h4>No of Interventions</h4>`);
+display(stackResults(results).summary.intervenedCount);
 }});
 
 define({id: "0a36b6f0", inputs: ["start_year","allocations"], outputs: ["config","addTechConfig","addPriority","listOfTech"], body: (start_year,allocations) => {
@@ -924,43 +928,6 @@ return {renderSelectableList,handleSelected};
 <!-- ------------ Data ------------ -->
 <div class="observablehq observablehq--block"><!--:d22197ed:--></div>
 <div class="observablehq observablehq--block"><!--:2adb250b:--></div>
-<h2 id="test-ui" tabindex="-1"><a class="observablehq-header-anchor" href="#test-ui">Test UI</a></h2>
-<style>
-.form-group {
-    display: flex;
-    flex-direction: row; /* Align label and input in a row */
-    align-items: center; /* Vertically center the label and input */
-    margin-bottom: 15px;
-}
-
-form .inputs-3a86ea-13 {
-    display: flex;
-    align-items: center;
-    flex-wrap: nowrap; /* Prevent label and input from wrapping */
-    min-height: 25.5px;
-    margin: var(--length3) 0;
-}
-
-.inputs-3a86ea-input {
-    display: flex;
-    align-items: center;
-    flex-grow: 1; /* Allow input to take available space */
-}
-
-</style>
-<div class="form-group">
-    <form class="inputs-3a86ea-13" style="max-width: 300px;">
-    <label for="inputs-3a86ea-13"><b>Total Budget</b></label>
-    <div class="inputs-3a86ea-input">
-      <input type="text" name="text" placeholder="Available Budget in GBP" id="inputs-3a86ea-13" spellcheck="false">
-    </div>
-  </form>
-</div>
-<div style="display:flex; flex-direction: row; align-items: center; min-height: 25.5px; gap: 12px;">
-<span> <b>Start Year </b> </span> <observablehq-loading></observablehq-loading><!--:c73bfedc:-->
-</div>
-<span><observablehq-loading></observablehq-loading><!--:96b31031:--></span>
-<div class="observablehq observablehq--block"><!--:1c1fbd1c:--></div>
 <h2 id="budget-allocator" tabindex="-1"><a class="observablehq-header-anchor" href="#budget-allocator">Budget Allocator</a></h2>
 <div class="observablehq observablehq--block"><!--:5c004f34:--></div>
 <div class="observablehq observablehq--block"><!--:cc54eba5:--></div>
@@ -968,14 +935,15 @@ form .inputs-3a86ea-13 {
 <div class="observablehq observablehq--block"><!--:79b75dc9:--></div>
 <h2 id="test-new-model" tabindex="-1"><a class="observablehq-header-anchor" href="#test-new-model">Test New Model</a></h2>
 <div class="observablehq observablehq--block"><!--:2872498c:--></div>
-<div class="observablehq observablehq--block"><!--:c8671395:--></div>
+<div class="observablehq observablehq--block"><!--:8c301406:--></div>
 <div class="observablehq observablehq--block"><!--:29f6e155:--></div>
 <div class="observablehq observablehq--block"><!--:71d37e71:--></div>
 <div class="observablehq observablehq--block"><!--:350b4a24:--></div>
 <div class="observablehq observablehq--block"><!--:e479d6a9:--></div>
 <div class="observablehq observablehq--block"><!--:6832c15f:--></div>
 <div class="observablehq observablehq--block"><!--:7abedc71:--></div>
-<div class="observablehq observablehq--block"><!--:6d03b073:--></div>
+<div class="observablehq observablehq--block"><!--:26b1093c:--></div>
+<hr>
 <h2 id="old-code" tabindex="-1"><a class="observablehq-header-anchor" href="#old-code">Old code</a></h2>
 <!-- --------------------------------------------------------- -->
 <div class="observablehq observablehq--block"><!--:0a36b6f0:--></div>

@@ -309,13 +309,13 @@ const cartogram_geodata = FileAttachment(
 return {lsoa_boundary,regular_geodata,cartogram_geodata};
 }});
 
-define({id: "c45fbde8", inputs: ["Mutable"], outputs: ["useState","selected","setSelected","getIntervention","setIntervention","getResults","setResults","selectedIntervention","setSelectedIntervention","detailOnDemand","setDetailOnDemand"], body: (Mutable) => {
+define({id: "cb5cca1f", inputs: ["Mutable"], outputs: ["useState","selected","setSelected","getIntervention","setIntervention","getResults","setResults","selectedIntervention","setSelectedIntervention","detailOnDemand","setDetailOnDemand"], body: (Mutable) => {
 function useState(value) {
   const state = Mutable(value);
   const setState = (value) => (state.value = value);
   return [state, setState];
 }
-const [selected, setSelected] = useState({}); // selected data in table
+const [selected, setSelected] = useState({});  // selected data in table
 const [getIntervention, setIntervention] = useState([]); // list of interventions
 const [getResults, setResults] = useState([]); // list of results, from running model
 const [selectedIntervention, setSelectedIntervention] = useState(null); // selected intervention in timeline
@@ -372,19 +372,26 @@ filterInput
 ))
 }});
 
-define({id: "30f103b3", mode: "inline", inputs: ["html","addNewIntervention","display"], body: async (html,addNewIntervention,display) => {
+define({id: "2001fed5", mode: "inline", inputs: ["html","addNewIntervention","display"], body: async (html,addNewIntervention,display) => {
 display(await(
 html`
-          <button class="create-btn" type="button" onclick=${addNewIntervention}>
-            Add New Intervention
-          </button>
-        `
+        <button class="create-btn" type="button" onclick=${addNewIntervention}>
+          Add New Intervention
+        </button>`
 ))
 }});
 
-define({id: "740517ab", mode: "inline", inputs: ["stackedResults","display"], body: async (stackedResults,display) => {
+define({id: "27617c0d", mode: "inline", inputs: ["table","display"], body: async (table,display) => {
 display(await(
-JSON.stringify(stackedResults.summary.intervenedCount)
+table.getNode()
+))
+}});
+
+define({id: "aa039745", mode: "inline", inputs: ["selected","html","stackedResults","display"], body: async (selected,html,stackedResults,display) => {
+display(await(
+selected ? html`
+        <div>No. of intervened buildings: ${JSON.stringify(stackedResults.summary.intervenedCount)}</div>` : ""
+        
 ))
 }});
 
@@ -400,9 +407,9 @@ mapAggregationInput
 ))
 }});
 
-define({id: "74551feb", mode: "inline", inputs: ["map_aggregate","morphFactorInput","display"], body: async (map_aggregate,morphFactorInput,display) => {
+define({id: "a6dbfcfd", mode: "inline", inputs: ["morphFactorInput","display"], body: async (morphFactorInput,display) => {
 display(await(
-(map_aggregate == "Building Level") ? "" : morphFactorInput
+morphFactorInput
 ))
 }});
 
@@ -412,14 +419,13 @@ resize((width, height) => createGlyphMap(map_aggregate, {width, height}))
 ))
 }});
 
-define({id: "e27c83a8", mode: "inline", inputs: ["createTimelineInterface","interventions","selectIntervention","display"], body: async (createTimelineInterface,interventions,selectIntervention,display) => {
+define({id: "75837436", mode: "inline", inputs: ["createTimelineInterface","interventions","selectIntervention","display"], body: async (createTimelineInterface,interventions,selectIntervention,display) => {
 display(await(
 createTimelineInterface(
             interventions,
             () => {},
             (click) => {
               selectIntervention(click);
-              console.log("clicked block", interventions[click]);
               },
             600,
             200
@@ -443,14 +449,6 @@ define({id: "ec578e9e", mode: "inline", inputs: ["resize","drawDetailOnDemand","
 display(await(
 resize((width, height) => drawDetailOnDemand(width, height))
 ))
-}});
-
-define({id: "5696435e", outputs: ["togglePanel"], body: () => {
-function togglePanel() {
-  const panel = document.getElementById("left-panel");
-  panel.classList.toggle("collapsed");
-}
-return {togglePanel};
 }});
 
 define({id: "a6305aae", inputs: ["setSelectedIntervention","results","interventions"], outputs: ["selectedInterventionIndex","selectIntervention"], body: (setSelectedIntervention,results,interventions) => {
@@ -486,16 +484,32 @@ if (interventions.length === 0) {
 return {selectedInterventionIndex,selectIntervention};
 }});
 
-define({id: "627a8daa", inputs: ["selectedIntervention"], body: (selectedIntervention) => {
+define({id: "e55ee535", outputs: ["togglePanel"], body: () => {
+function togglePanel() {
+  const container = document.querySelector('.grid-container');
+  const icon = document.querySelector('#panel-toggle i');
+
+  container.classList.toggle('panel-hidden');
+
+  if (container.classList.contains('panel-hidden')) {
+    icon.classList.replace('fa-chevron-left', 'fa-chevron-right');
+  } else {
+    icon.classList.replace('fa-chevron-right', 'fa-chevron-left');
+  }
+}
+return {togglePanel};
+}});
+
+define({id: "c7d81947", inputs: ["selectedIntervention"], body: (selectedIntervention) => {
 // Disable buttons when no intervention is selected
-document.querySelectorAll("#timeline-buttons button").forEach((button) => {
-  button.disabled = !selectedIntervention;
-  // console.log("button status", button.disabled);
-  button.setAttribute("aria-disabled", !selectedIntervention);
+document.querySelectorAll('#timeline-buttons button').forEach(button => {
+    button.disabled = !selectedIntervention;
+    // console.log("button status", button.disabled);
+    button.setAttribute('aria-disabled', !selectedIntervention);
 });
 }});
 
-define({id: "b95bc78e", inputs: ["Inputs","html","selectedIntervention","Generators","Event","allColumns"], outputs: ["techsInput","technology","totalBudgetInput","total_budget","startYearInput","start_year","projectLengthInput","project_length","allocationTypeInput","allocation_type","priorityInput","priority_input","filterInput","filter_input","glyphmapTypeInput","glyphmapType","mapAggregationInput","map_aggregate","morphFactorInput","morph_factor"], body: (Inputs,html,selectedIntervention,Generators,Event,allColumns) => {
+define({id: "97349b19", inputs: ["Inputs","html","selectedIntervention","Generators","Event","allColumns"], outputs: ["techsInput","technology","totalBudgetInput","total_budget","startYearInput","start_year","projectLengthInput","project_length","allocationTypeInput","allocation_type","priorityInput","priority_input","filterInput","filter_input","glyphmapTypeInput","glyphmapType","mapAggregationInput","map_aggregate","morphFactorInput","morph_factor"], body: (Inputs,html,selectedIntervention,Generators,Event,allColumns) => {
 // list of decarb technologies
 const techsInput = Inputs.select(
   [
@@ -513,7 +527,7 @@ const techsInput = Inputs.select(
     disabled: selectedIntervention ? true : false,
   }
 );
-techsInput.style["max-width"] = "300px";
+techsInput.style["max-width"] = "250px";
 const technology = Generators.input(techsInput);
 // display(techsInput);
 
@@ -529,7 +543,7 @@ const totalBudgetInput = Inputs.text({
     : 100_000_000,
   // submit: html`<button class="create-btn" style="color:white;">Submit</button>`,
 });
-totalBudgetInput.style["max-width"] = "300px";
+totalBudgetInput.style["max-width"] = "250px";
 const total_budget = Generators.input(totalBudgetInput);
 
 // Start Year
@@ -611,24 +625,27 @@ const filterInput = Inputs.form([
 const filter_input = Generators.input(filterInput);
 
 const glyphmapTypeInput = Inputs.radio(
-  ["Interventions", "Decarbonisation Time series"],
+  ["Decarbonisation Time series", "Interventions"],
   {
     label: "Type of map",
-    value: "Interventions",
+    value: "Polygons",
   }
 );
 const glyphmapType = Generators.input(glyphmapTypeInput);
 
-const mapAggregationInput = Inputs.radio(["LSOA Level", "Building Level"], {
-  label: "Map Aggregated at",
-  value: "LSOA Level",
-});
+const mapAggregationInput = Inputs.radio(
+  ["Aggregated at LSOA", "Not Aggregated"],
+  {
+    label: "Map Aggregation",
+    value: "Aggregated at LSOA",
+  }
+);
 const map_aggregate = Generators.input(mapAggregationInput);
 
 const morphFactorInput = html`<input
   style="width: 100%; max-width:450px;"
   type="range"
-  value="0"
+  value="1"
   step="0.05"
   min="0"
   max="1"
@@ -687,7 +704,7 @@ let results = getResults;
 return {interventions,results};
 }});
 
-define({id: "cdfd6b3a", inputs: ["setIntervention","interventions","runModel","buildingsData","setResults","results","start_year","technology","allocations","listOfTech"], outputs: ["createConfigTemplate","addIntervention","removeIntervention","addNewIntervention","modifyIntervention","stackResults","stackedResults"], body: (setIntervention,interventions,runModel,buildingsData,setResults,results,start_year,technology,allocations,listOfTech) => {
+define({id: "80ecc011", inputs: ["setIntervention","interventions","runModel","buildingsData","setResults","results","start_year","technology","allocations","listOfTech"], outputs: ["createConfigTemplate","addIntervention","removeIntervention","addNewIntervention","modifyIntervention","stackResults","stackedResults"], body: (setIntervention,interventions,runModel,buildingsData,setResults,results,start_year,technology,allocations,listOfTech) => {
 // >> Some functions related to creating and managing interventions
 
 // create config template
@@ -791,13 +808,13 @@ function modifyIntervention(
   }
 
   // Get existing intervention
-  const intervention = { ...interventions[index] };
+  const intervention = {...interventions[index]};
 
   // Update values if provided
   if (newTechConfig) {
     intervention.tech = {
       name: newTechConfig.name,
-      config: newTechConfig.config,
+      config: newTechConfig.config
     };
   }
 
@@ -806,7 +823,7 @@ function modifyIntervention(
   }
 
   if (newAllocations) {
-    intervention.yearly_budgets = newAllocations.map((item) => item.budget);
+    intervention.yearly_budgets = newAllocations.map(item => item.budget);
     intervention.duration = newAllocations.length;
   }
 
@@ -928,7 +945,7 @@ function stackResults(results) {
     intervenedBuildings: buildings.filter((b) => b.isIntervened),
     untouchedBuildings: buildings.filter((b) => !b.isIntervened),
   };
-}
+};
 
 const stackedResults = stackResults(results);
 
@@ -1054,17 +1071,15 @@ const cols = [
 return {cols};
 }});
 
-define({id: "71bffb66", inputs: ["selectedIntervention","stackedResults","flatData","createTable","cols","setSelected"], outputs: ["tableData","table"], body: (selectedIntervention,stackedResults,flatData,createTable,cols,setSelected) => {
+define({id: "8f837fef", inputs: ["selectedIntervention","stackedResults","flatData","createTable","cols","setSelected"], outputs: ["tableData","table"], body: (selectedIntervention,stackedResults,flatData,createTable,cols,setSelected) => {
 const tableData = selectedIntervention
   ? selectedIntervention.allBuildings.map((building) => ({
       ...building.properties,
       isIntervened: building.isIntervened,
     }))
-  : stackedResults
-  ? stackedResults.buildings
-  : flatData;
+  : (stackedResults ? stackedResults.buildings : flatData);
 
-// (stackedResults ? stackedResults.buildings : flatData);
+  // (stackedResults ? stackedResults.buildings : flatData);
 
 const table = new createTable(tableData, cols, (changes) => {
   console.log("Table changed:", changes);
@@ -1077,7 +1092,7 @@ define({id: "0b5c6465", body: () => {
 // console.log("Test inferring data types", inferTypes(tableData));
 }});
 
-define({id: "de0aee11", inputs: ["turf","lsoa_boundary","tableData","normaliseData","d3","RadialGlyph","setDetailOnDemand"], outputs: ["glyphMapSpecBasic"], body: (turf,lsoa_boundary,tableData,normaliseData,d3,RadialGlyph,setDetailOnDemand) => {
+define({id: "f1225155", inputs: ["turf","lsoa_boundary","tableData","normaliseData","d3","RadialGlyph","setDetailOnDemand"], outputs: ["glyphMapSpecBasic"], body: (turf,lsoa_boundary,tableData,normaliseData,d3,RadialGlyph,setDetailOnDemand) => {
 // glyphmap basic specs
 function glyphMapSpecBasic(width = 800, height = 600) {
   return {
@@ -1087,7 +1102,7 @@ function glyphMapSpecBasic(width = 800, height = 600) {
     getLocationFn: (row) => [row.x, row.y],
     discretisationShape: "grid",
     mapType: "CartoPositron",
-    // interactiveCellSize: true,
+    interactiveCellSize: true,
     cellSize: 30,
 
     // width: 800,
@@ -1744,14 +1759,14 @@ function applyTransformationToShapes(geographicShapes) {
 return {transformCoordinates,transformGeometry,applyTransformationToShapes};
 }});
 
-define({id: "11a20a47", inputs: ["glyphMap","glyphMapSpecBasic","morphGlyphMap"], outputs: ["createGlyphMap"], body: (glyphMap,glyphMapSpecBasic,morphGlyphMap) => {
+define({id: "9f214aeb", inputs: ["glyphMap","glyphMapSpecBasic","morphGlyphMap"], outputs: ["createGlyphMap"], body: (glyphMap,glyphMapSpecBasic,morphGlyphMap) => {
 function createGlyphMap(map_aggregate, { width, height }) {
   // console.log(width, height);
-  if (map_aggregate == "Building Level") {
+  if (map_aggregate == "Not Aggregated") {
     return glyphMap({
       ...glyphMapSpecBasic(width, height),
     });
-  } else if (map_aggregate == "LSOA Level") {
+  } else if (map_aggregate == "Aggregated at LSOA") {
     return morphGlyphMap;
   }
 }
@@ -1769,7 +1784,7 @@ return {createGlyphMap};
 <div class="observablehq observablehq--block"><!--:9bdaf219:--></div>
 <div class="observablehq observablehq--block"><!--:6fda268e:--></div>
 <!-- ------------ Getter-Setter ------------ -->
-<div class="observablehq observablehq--block"><!--:c45fbde8:--></div>
+<div class="observablehq observablehq--block"><!--:cb5cca1f:--></div>
 <!-------- Stylesheets -------->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.0/css/bulma.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -1848,6 +1863,8 @@ body, html {
     margin: 0 !important;
     border-radius: 0 !important;
     box-sizing: border-box; /* Ensure padding is included in height calculations */
+    position: relative;
+    z-index: 1000; /* Lower than toggle button */
   }
 
   .main-top,
@@ -1960,41 +1977,57 @@ body, html {
     background-color: #cccccc;
   }
 
-#left-panel {
-  transition: transform 0.3s ease-in-out;
+/* hide left panel as sidebar */
+
+.grid-container {
+  position: relative; /* For absolute positioning of toggle button */
+  transition: grid-template-columns 0.3s ease;
+}
+
+.grid-container.panel-hidden {
+  grid-template-columns: 0fr 4fr; /* Collapse left panel */
+}
+
+#project-properties {
   position: relative;
+  z-index: 100100;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+  transform-origin: left;
+  min-width: 0;
+  overflow: hidden;
+  padding-right: 12px; /* Add padding to prevent content overlap */
 }
 
-#left-panel.collapsed {
+.panel-hidden #project-properties {
   transform: translateX(-100%);
+  opacity: 0;
 }
 
-.toggle-panel-btn {
+#panel-toggle {
   position: absolute;
-  right: -40px;
-  top: 20px;
-  width: 40px;
-  height: 40px;
+  left: calc(100% - 1px); /* Adjust to align with panel edge */
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 100101; /* Increase z-index to stay above cards */
+  padding: 8px;
   background: #fff;
   border: 1px solid #ddd;
   border-left: none;
   border-radius: 0 4px 4px 0;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   box-shadow: 2px 0 4px rgba(0,0,0,0.1);
+  transition: left 0.3s ease;
+  width: 24px; /* Fixed width */
+  height: 32px; /* Fixed height */
 }
 
-.toggle-panel-btn i {
-  transition: transform 0.3s ease;
-  z-index: 5550000;
+#panel-toggle:hover {
+  background: #f5f5f5;
 }
 
-#left-panel.collapsed .toggle-panel-btn i {
-  transform: rotate(180deg);
+.panel-hidden #panel-toggle {
+  left: 0;
 }
-
 
 </style>
 <!-- ---------------- HTML Layout ---------------- -->
@@ -2002,12 +2035,7 @@ body, html {
   <!-- Left panel (two boxes, stacked vertically) -->
   <div id="left-panel">
     <div id="project-properties" class="card">
-      <div class="card-title" style="display: flex; justify-content: space-between; align-items: center;">
-        <h1 style="margin: 0;">Decarbonisation Dashboard</h1>
-        <button>
-          <i class="fas fa-chevron-left"></i>
-        </button>
-      </div>
+      <h1>Decarbonisation Dashboard</h1>
       <br>
       <div class="form-group">
         <observablehq-loading></observablehq-loading><!--:437e2ff2:-->
@@ -2017,7 +2045,7 @@ body, html {
       </div>
       <div class="form-group">
         <div style="display:flex; flex-direction: row; align-items: center; min-height: 25.5px; gap: 60px;">
-          <span><b>Start Year</b></span> <observablehq-loading></observablehq-loading><!--:c73bfedc:-->
+        <span> <b>Start Year </b> </span> <observablehq-loading></observablehq-loading><!--:c73bfedc:-->
         </div>
       </div>
       <div class="form-group">
@@ -2025,10 +2053,10 @@ body, html {
         <observablehq-loading></observablehq-loading><!--:580b039d:-->
       </div>
       <div class="form-group">
-        <label for="total-budget">Budget Allocation Type:</label>
+      <label for="total-budget">Budget Allocation Type:</label>
         <observablehq-loading></observablehq-loading><!--:92cf87a9:-->
       </div>
-      <observablehq-loading></observablehq-loading><!--:acdb1373:-->
+        <observablehq-loading></observablehq-loading><!--:acdb1373:-->
       <div class="form-group">
         <observablehq-loading></observablehq-loading><!--:bc6d8af2:-->
       </div>
@@ -2036,24 +2064,27 @@ body, html {
         <observablehq-loading></observablehq-loading><!--:d2a5955e:-->
       </div>
       <div class="form-group">
-        <observablehq-loading></observablehq-loading><!--:30f103b3:-->
+        <observablehq-loading></observablehq-loading><!--:2001fed5:-->
       </div>
     </div>
   </div>
   <!-- Main panel (right side) -->
   <div id="main-panel">
+      <button class="create-btn" type="button" id="panel-toggle" onclick="${togglePanel}">
+      <i class="fas fa-chevron-left">Toggle</i>
+    </button>
     <!-- <div class="card main-top">Map View</div> -->
     <div class="main-top">
       <div class="card" style="overflow-x:hidden; min-width: 400px;">
       <!-- <h2> Sortable Table </h2> -->
-      <!-- ${table.getNode()} -->
-        <div>No. of intervened buildings: <observablehq-loading></observablehq-loading><!--:740517ab:--></div>
+      <observablehq-loading></observablehq-loading><!--:27617c0d:-->
+      <observablehq-loading></observablehq-loading><!--:aa039745:-->
       </div>
       <div class="card" style="overflow-x:hidden;overflow-y:hidden; min-width: 400px;">
       <!-- <h2>Map View</h2> -->
       <observablehq-loading></observablehq-loading><!--:c0e452dc:-->
       <observablehq-loading></observablehq-loading><!--:3dea4862:-->
-      <observablehq-loading></observablehq-loading><!--:74551feb:-->
+      <observablehq-loading></observablehq-loading><!--:a6dbfcfd:-->
       <observablehq-loading></observablehq-loading><!--:b4672042:-->
       </div>
     </div>
@@ -2063,7 +2094,7 @@ body, html {
       <br>
       <div id="graph-container">
         <div id="timeline-panel">
-          <observablehq-loading></observablehq-loading><!--:e27c83a8:-->
+          <observablehq-loading></observablehq-loading><!--:75837436:-->
         </div>
         <nav id="timeline-buttons">
           <button class="btn edit" aria-label="Edit">
@@ -2085,26 +2116,26 @@ body, html {
     </div>
   </div>
 </div>
-<div class="observablehq observablehq--block"><!--:5696435e:--></div>
 <div class="observablehq observablehq--block"><!--:a6305aae:--></div>
-<div class="observablehq observablehq--block"><!--:627a8daa:--></div>
+<div class="observablehq observablehq--block"><!--:e55ee535:--></div>
+<div class="observablehq observablehq--block"><!--:c7d81947:--></div>
 <!-- ---------------- Input form declarations ---------------- -->
-<div class="observablehq observablehq--block"><!--:b95bc78e:--></div>
+<div class="observablehq observablehq--block"><!--:97349b19:--></div>
 <div class="observablehq observablehq--block"><!--:fbf1b5a3:--></div>
 <div class="observablehq observablehq--block"><!--:39e29da4:--></div>
 <div class="observablehq observablehq--block"><!--:30ef2d9c:--></div>
 <div class="observablehq observablehq--block"><!--:ef7c3c21:--></div>
 <div class="observablehq observablehq--block"><!--:def3b8eb:--></div>
 <!-- ---------------- Functions ---------------- -->
-<div class="observablehq observablehq--block"><!--:cdfd6b3a:--></div>
+<div class="observablehq observablehq--block"><!--:80ecc011:--></div>
 <div class="observablehq observablehq--block"><!--:a84f1691:--></div>
 <div class="observablehq observablehq--block"><!--:81c82f44:--></div>
 <!-- ---------------- Sortable Table ---------------- -->
 <div class="observablehq observablehq--block"><!--:e419fec7:--></div>
-<div class="observablehq observablehq--block"><!--:71bffb66:--></div>
+<div class="observablehq observablehq--block"><!--:8f837fef:--></div>
 <div class="observablehq observablehq--block"><!--:0b5c6465:--></div>
 <!-- ---------------- Glyph Maps ---------------- -->
-<div class="observablehq observablehq--block"><!--:de0aee11:--></div>
+<div class="observablehq observablehq--block"><!--:f1225155:--></div>
 <div class="observablehq observablehq--block"><!--:44c9b4b4:--></div>
 <div class="observablehq observablehq--block"><!--:7b5e4a76:--></div>
 <div class="observablehq observablehq--block"><!--:246c80d3:--></div>
@@ -2123,6 +2154,6 @@ body, html {
 <div class="observablehq observablehq--block"><!--:bbe0b721:--></div>
 <div class="observablehq observablehq--block"><!--:2246d3ee:--></div>
 <div class="observablehq observablehq--block"><!--:e38f4f2a:--></div>
-<div class="observablehq observablehq--block"><!--:11a20a47:--></div>
+<div class="observablehq observablehq--block"><!--:9f214aeb:--></div>
 </div></main>
 </div>
