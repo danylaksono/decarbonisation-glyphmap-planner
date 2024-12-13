@@ -208,10 +208,10 @@ import {define} from "./_observablehq/client.js";
 import {registerFile, FileAttachment} from "./_observablehq/stdlib.js";
 import {registerTable} from "./_observablehq/stdlib/duckdb.js";
 
-registerFile("./data/oxford_decarbonisation_data.parquet", {"name":"./data/oxford_decarbonisation_data.parquet","path":"./_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1734086723629});
-registerFile("./data/oxford_lsoa_boundary.geojson", {"name":"./data/oxford_lsoa_boundary.geojson","mimeType":"application/geo+json","path":"./_file/data/oxford_lsoa_boundary.50c731e8.geojson","lastModified":1734086723641});
-registerFile("./data/oxford_lsoas_cartogram.json", {"name":"./data/oxford_lsoas_cartogram.json","mimeType":"application/json","path":"./_file/data/oxford_lsoas_cartogram.a72fa2b8.json","lastModified":1734086723641});
-registerFile("./data/oxford_lsoas_regular.json", {"name":"./data/oxford_lsoas_regular.json","mimeType":"application/json","path":"./_file/data/oxford_lsoas_regular.e1c36e7e.json","lastModified":1734086723641});
+registerFile("./data/oxford_decarbonisation_data.parquet", {"name":"./data/oxford_decarbonisation_data.parquet","path":"./_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1734122656401});
+registerFile("./data/oxford_lsoa_boundary.geojson", {"name":"./data/oxford_lsoa_boundary.geojson","mimeType":"application/geo+json","path":"./_file/data/oxford_lsoa_boundary.50c731e8.geojson","lastModified":1734122656413});
+registerFile("./data/oxford_lsoas_cartogram.json", {"name":"./data/oxford_lsoas_cartogram.json","mimeType":"application/json","path":"./_file/data/oxford_lsoas_cartogram.a72fa2b8.json","lastModified":1734122656413});
+registerFile("./data/oxford_lsoas_regular.json", {"name":"./data/oxford_lsoas_regular.json","mimeType":"application/json","path":"./_file/data/oxford_lsoas_regular.e1c36e7e.json","lastModified":1734122656413});
 registerTable("oxford", FileAttachment("./data/oxford_decarbonisation_data.parquet"));
 
 define({id: "f286dfde", outputs: ["d3","flubber","require","Mutable","TimeGlyph","GlyphCollection","turf","RadialGlyph","glyphMap","createDiscretiserValue","_drawCellBackground","OSGB","Model","BudgetAllocator","MiniDecarbModel","createTable","createTimelineInterface","YearPicker","inferTypes","enrichGeoData","normaliseData","downloadBoundaries","joinCensusDataToGeoJSON","convertGridCsvToGeoJson","context2d"], body: async () => {
@@ -423,19 +423,19 @@ svg
 ))
 }});
 
-define({id: "292e0dcc", mode: "inline", inputs: ["html","addNewIntervention","display"], body: async (html,addNewIntervention,display) => {
+define({id: "30f103b3", mode: "inline", inputs: ["html","addNewIntervention","display"], body: async (html,addNewIntervention,display) => {
 display(await(
 html`
-          <button id="confirmBtn" class="create-btn" type="button" onclick=${addNewIntervention}>
+          <button class="create-btn" type="button" onclick=${addNewIntervention}>
             Add New Intervention
           </button>
         `
 ))
 }});
 
-define({id: "65b3a90f", inputs: ["openModalBtn"], outputs: ["confirmBtn","modal"], body: (openModalBtn) => {
+define({id: "e39efb46", inputs: ["openModalBtn"], outputs: ["modal"], body: (openModalBtn) => {
 // Modal script
-const confirmBtn = document.getElementById("confirmBtn");
+// const confirmBtn = document.getElementById("confirmBtn");
 const modal = document.getElementById("simpleModal");
 
 // Open modal
@@ -444,11 +444,11 @@ openModalBtn.addEventListener("click", () => {
   modal.style.display = "flex";
 });
 
-// Confirm action
-confirmBtn.addEventListener("click", () => {
-  console.log("Action confirmed!");
-  modal.style.display = "none";
-});
+// // Confirm action
+// confirmBtn.addEventListener("click", () => {
+//   console.log("Action confirmed!");
+//   modal.style.display = "none";
+// });
 
 // Close modal if clicking outside modal content
 window.addEventListener("click", (e) => {
@@ -456,7 +456,7 @@ window.addEventListener("click", (e) => {
     modal.style.display = "none";
   }
 });
-return {confirmBtn,modal};
+return {modal};
 }});
 
 define({id: "a6305aae", inputs: ["setSelectedIntervention","results","interventions"], outputs: ["selectedInterventionIndex","selectIntervention"], body: (setSelectedIntervention,results,interventions) => {
@@ -1064,15 +1064,17 @@ const cols = [
 return {cols};
 }});
 
-define({id: "71bffb66", inputs: ["selectedIntervention","stackedResults","flatData","createTable","cols","setSelected"], outputs: ["tableData","table"], body: (selectedIntervention,stackedResults,flatData,createTable,cols,setSelected) => {
-const tableData = selectedIntervention
-  ? selectedIntervention.allBuildings.map((building) => ({
-      ...building.properties,
-      isIntervened: building.isIntervened,
-    }))
-  : stackedResults
-  ? stackedResults.buildings
-  : flatData;
+define({id: "20dd7e95", inputs: ["selectedIntervention","stackedResults","flatData","createTable","cols","setSelected"], outputs: ["tableData","table"], body: (selectedIntervention,stackedResults,flatData,createTable,cols,setSelected) => {
+const tableData = selectedIntervention ? stackedResults.buildings : flatData;
+
+// const tableData = selectedIntervention
+//   ? selectedIntervention.allBuildings.map((building) => ({
+//       ...building.properties,
+//       isIntervened: building.isIntervened,
+//     }))
+// : stackedResults
+// ? stackedResults.buildings
+//   : regular_geodata_withproperties;
 
 // (stackedResults ? stackedResults.buildings : flatData);
 
@@ -1083,8 +1085,8 @@ const table = new createTable(tableData, cols, (changes) => {
 return {tableData,table};
 }});
 
-define({id: "0b5c6465", body: () => {
-// console.log("Test inferring data types", inferTypes(tableData));
+define({id: "929663a0", inputs: ["inferTypes","tableData"], body: (inferTypes,tableData) => {
+console.log("Test inferring data types", inferTypes(tableData));
 }});
 
 define({id: "0237730d", inputs: ["turf","lsoa_boundary","tableData","normaliseData","d3","RadialGlyph","setDetailOnDemand"], outputs: ["glyphMapSpecBasic"], body: (turf,lsoa_boundary,tableData,normaliseData,d3,RadialGlyph,setDetailOnDemand) => {
@@ -2049,12 +2051,12 @@ body, html {
       </div>
       <observablehq-loading></observablehq-loading><!--:acdb1373:-->
       <div class="form-group">
-        <observablehq-loading></observablehq-loading><!--:292e0dcc:-->
+        <observablehq-loading></observablehq-loading><!--:30f103b3:-->
       </div>
     </div>
   </div>
 </div>
-<div class="observablehq observablehq--block"><!--:65b3a90f:--></div>
+<div class="observablehq observablehq--block"><!--:e39efb46:--></div>
 <div class="observablehq observablehq--block"><!--:a6305aae:--></div>
 <div class="observablehq observablehq--block"><!--:a4b237c1:--></div>
 <!-- ---------------- Input form declarations ---------------- -->
@@ -2070,8 +2072,8 @@ body, html {
 <div class="observablehq observablehq--block"><!--:81c82f44:--></div>
 <!-- ---------------- Sortable Table ---------------- -->
 <div class="observablehq observablehq--block"><!--:e419fec7:--></div>
-<div class="observablehq observablehq--block"><!--:71bffb66:--></div>
-<div class="observablehq observablehq--block"><!--:0b5c6465:--></div>
+<div class="observablehq observablehq--block"><!--:20dd7e95:--></div>
+<div class="observablehq observablehq--block"><!--:929663a0:--></div>
 <!-- ---------------- Glyph Maps ---------------- -->
 <div class="observablehq observablehq--block"><!--:0237730d:--></div>
 <div class="observablehq observablehq--block"><!--:44c9b4b4:--></div>
