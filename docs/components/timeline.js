@@ -33,6 +33,19 @@ export function createTimelineInterface(
   // Create SVG container
   const svg = d3.create("svg").attr("width", width).attr("height", height);
 
+  const tooltip = d3
+    .select("body")
+    .append("div")
+    .attr("class", "tooltip")
+    .style("opacity", 0)
+    .style("position", "absolute")
+    .style("pointer-events", "none");
+
+  const tooltipSvg = tooltip
+    .append("svg")
+    .attr("width", 200)
+    .attr("height", 150);
+
   // Create main group element with margins
   const g = svg
     .append("g")
@@ -189,6 +202,129 @@ export function createTimelineInterface(
   blocks.selectAll(".block").call(blockDrag);
   blocks.selectAll(".resize-handle").call(resizeDrag);
 
+  // ---------------------- TOOLTIP ---------------------- //
+  function updateTooltip(d) {
+    tooltipSvg.selectAll("*").remove();
+
+    // Add title
+    tooltipSvg
+      .append("text")
+      .attr("x", 10)
+      .attr("y", 20)
+      .text(d.tech.name)
+      .style("font-weight", "bold");
+
+    // Add details
+    tooltipSvg
+      .append("text")
+      .attr("x", 10)
+      .attr("y", 40)
+      .text(`Start: ${d.initial_year}`);
+
+    tooltipSvg
+      .append("text")
+      .attr("x", 10)
+      .attr("y", 60)
+      .text(`Duration: ${d.duration} years`);
+
+    // Add mini budget graph if budget data exists
+    if (d.yearly_budgets) {
+      // Format function for large numbers
+      const formatBudget = (value) => {
+        if (value >= 1e9) return (value / 1e9).toFixed(1) + "B";
+        if (value >= 1e6) return (value / 1e6).toFixed(1) + "M";
+        if (value >= 1e3) return (value / 1e3).toFixed(1) + "k";
+        return value.toString();
+      };
+
+      const graphMargin = { top: 70, right: 10, bottom: 20, left: 40 };
+      const graphWidth = 180 - graphMargin.left - graphMargin.right;
+      const graphHeight = 40;
+
+      const graphG = tooltipSvg
+        .append("g")
+        .attr("transform", `translate(${graphMargin.left},${graphMargin.top})`);
+
+      const xScale = d3
+        .scaleLinear()
+        .domain([d.initial_year, d.initial_year + d.duration - 1])
+        .range([0, graphWidth]);
+
+      const yScale = d3
+        .scaleLinear()
+        .domain([0, d3.max(d.yearly_budgets)])
+        .range([graphHeight, 0]);
+
+      // Add budget line
+      const line = d3
+        .line()
+        .x((_, i) => xScale(d.initial_year + i))
+        .y((d) => yScale(d));
+
+      graphG
+        .append("path")
+        .datum(d.yearly_budgets)
+        .attr("fill", "none")
+        .attr("stroke", "steelblue")
+        .attr("stroke-width", 1.5)
+        .attr("d", line);
+
+      // Add x-axis with year labels
+      const tickCount = Math.min(d.duration, 5); // Max 5 ticks
+      const tickStep = Math.ceil(d.duration / tickCount);
+
+      graphG
+        .append("g")
+        .attr("transform", `translate(0,${graphHeight})`)
+        .call(
+          d3
+            .axisBottom(xScale)
+            .ticks(tickCount)
+            .tickValues(
+              d3.range(d.initial_year, d.initial_year + d.duration, tickStep)
+            )
+            .tickFormat(d3.format("d"))
+        )
+        .selectAll("text")
+        .style("text-anchor", "end")
+        .attr("dx", "-.8em")
+        .attr("dy", ".15em")
+        .attr("transform", "rotate(-45)");
+
+      // Add x-axis label
+      // graphG
+      //   .append("text")
+      //   .attr("x", graphWidth / 2)
+      //   .attr("y", graphHeight + 20)
+      //   .attr("text-anchor", "middle")
+      //   .attr("fill", "black")
+      //   .style("font-size", "10px")
+      //   .text("Year");
+
+      graphG
+        .append("g")
+        .call(d3.axisLeft(yScale).ticks(3).tickFormat(formatBudget));
+    }
+  }
+
+  // Apply tooltip behavior
+  blocks
+    .selectAll(".block")
+    .on("mouseover", function (event, d) {
+      tooltip.style("opacity", 1);
+      updateTooltip(d);
+    })
+    .on("mousemove", function (event) {
+      tooltip
+        .style("left", event.pageX + 10 + "px")
+        .style("top", event.pageY - 10 + "px");
+    })
+    .on("mouseout", function () {
+      tooltip.style("opacity", 0);
+    });
+
+  // ---------------------- STYLES ---------------------- //
+
   // Add CSS styles
   svg.append("style").text(`
     .resize-handle:hover {
@@ -202,6 +338,13 @@ export function createTimelineInterface(
     .highlight {
       stroke: orange;
       stroke-width: 3px;
+    }
+    .tooltip {
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 10px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
   `);
 

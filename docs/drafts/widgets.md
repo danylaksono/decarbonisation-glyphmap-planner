@@ -85,59 +85,6 @@ const newBuildings = [...oxford_data];
 const columns = Object.keys(newBuildings[0]);
 ```
 
-## Test UI
-
-<style>
-.form-group {
-    display: flex;
-    flex-direction: row; /* Align label and input in a row */
-    align-items: center; /* Vertically center the label and input */
-    margin-bottom: 15px;
-}
-
-form .inputs-3a86ea-13 {
-    display: flex;
-    align-items: center;
-    flex-wrap: nowrap; /* Prevent label and input from wrapping */
-    min-height: 25.5px;
-    margin: var(--length3) 0;
-}
-
-.inputs-3a86ea-input {
-    display: flex;
-    align-items: center;
-    flex-grow: 1; /* Allow input to take available space */
-}
-
-</style>
-
-<div class="form-group">
-    <form class="inputs-3a86ea-13" style="max-width: 300px;">
-    <label for="inputs-3a86ea-13"><b>Total Budget</b></label>
-    <div class="inputs-3a86ea-input">
-      <input type="text" name="text" placeholder="Available Budget in GBP" id="inputs-3a86ea-13" spellcheck="false">
-    </div>
-  </form>
-</div>
-
-<div style="display:flex; flex-direction: row; align-items: center; min-height: 25.5px; gap: 12px;">
-<span> <b>Start Year </b> </span> ${startYearInput}
-</div >
-${start_years}
-
-```js
-const startYearInput = html`<input
-  style="width: 100%; max-width:100px; max-height: 25.5px;"
-  type="number"
-  value="2024"
-  step="1"
-  min="2024"
-  max="2080"
-  label="Start Year"
-/>`;
-const start_years = Generators.input(startYearInput);
-```
-
 ## Budget Allocator
 
 ```js
@@ -233,15 +180,37 @@ let results = getResults;
 // stack results from getRecap() method
 function stackResults(results) {
   const buildingMap = new Map();
+  const yearlySummary = {}; // Object to store the overall yearly summary
 
   // Collect and merge all buildings from all results
   results.forEach((result) => {
+    // Process yearlyStats for overall summary
+    Object.entries(result.yearlyStats).forEach(([year, stats]) => {
+      if (!yearlySummary[year]) {
+        yearlySummary[year] = {
+          budgetSpent: 0,
+          buildingsIntervened: 0,
+          totalCarbonSaved: 0, // Initialize carbon saved
+          technologies: new Set(),
+        };
+      }
+
+      yearlySummary[year].budgetSpent += stats.budgetSpent;
+      yearlySummary[year].buildingsIntervened += stats.buildingsIntervened;
+      yearlySummary[year].technologies.add(result.techName); // Add the technology
+
+      // Accumulate total carbon saved from intervened buildings for this year
+      stats.intervenedBuildings.forEach((building) => {
+        yearlySummary[year].totalCarbonSaved += building.carbonSaved || 0;
+      });
+    });
+
     result.allBuildings.forEach((building) => {
       if (!buildingMap.has(building.id)) {
         const { properties, ...rest } = building; // Destructure properties and other fields
         buildingMap.set(building.id, {
           ...rest,
-          ...properties, // flatten properties here
+          ...properties, // Flatten properties here
           isIntervened: false,
           totalCost: 0,
           totalCarbonSaved: 0,
@@ -260,7 +229,7 @@ function stackResults(results) {
         year: building.interventionYear,
         cost: building.interventionCost,
         carbonSaved: building.carbonSaved,
-        interventionID: result.interventionID,
+        interventionID: result.interventionId,
       };
 
       target.isIntervened = true;
@@ -272,6 +241,11 @@ function stackResults(results) {
         target.interventionTechs.push(result.techName);
       }
     });
+  });
+
+  // Finalize the yearly summary
+  Object.values(yearlySummary).forEach((yearData) => {
+    yearData.technologies = Array.from(yearData.technologies); // Convert Set to Array
   });
 
   const buildings = Array.from(buildingMap.values());
@@ -295,6 +269,7 @@ function stackResults(results) {
   return {
     buildings,
     summary,
+    yearlySummary, // Add the overall yearly summary
     intervenedBuildings: buildings.filter((b) => b.isIntervened),
     untouchedBuildings: buildings.filter((b) => !b.isIntervened),
   };
@@ -466,7 +441,11 @@ display(results);
 ```js
 display(html`<h4>Stacked Results</h4>`);
 display(stackResults(results));
+display(html`<h4>No of Interventions</h4>`);
+display(stackResults(results).summary.intervenedCount);
 ```
+
+---
 
 ## Old code
 
