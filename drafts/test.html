@@ -62,7 +62,7 @@ import {define} from "../_observablehq/client.js";
 import {registerFile, FileAttachment} from "../_observablehq/stdlib.js";
 import {registerTable} from "../_observablehq/stdlib/duckdb.js";
 
-registerFile("./../data/oxford_decarbonisation_data.parquet", {"name":"./../data/oxford_decarbonisation_data.parquet","path":"../_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1734122656401});
+registerFile("./../data/oxford_decarbonisation_data.parquet", {"name":"./../data/oxford_decarbonisation_data.parquet","path":"../_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1734168039953});
 registerTable("oxford", FileAttachment("../data/oxford_decarbonisation_data.parquet"));
 
 define({id: "7cc7faba", outputs: ["TimeGlyph","GlyphCollection","DecarbonisationModel"], body: async () => {
@@ -360,6 +360,63 @@ display(addTechnologyButton);
 return {technologies,addTechnologyButton};
 }});
 
+define({id: "437e2ff2", mode: "inline", inputs: ["techsInput","display"], body: async (techsInput,display) => {
+display(await(
+techsInput
+))
+}});
+
+define({id: "a4ca7b63", mode: "inline", inputs: ["totalBudgetInput","display"], body: async (totalBudgetInput,display) => {
+display(await(
+totalBudgetInput
+))
+}});
+
+define({id: "c73bfedc", mode: "inline", inputs: ["startYearInput","display"], body: async (startYearInput,display) => {
+display(await(
+startYearInput
+))
+}});
+
+define({id: "580b039d", mode: "inline", inputs: ["projectLengthInput","display"], body: async (projectLengthInput,display) => {
+display(await(
+projectLengthInput
+))
+}});
+
+define({id: "92cf87a9", mode: "inline", inputs: ["allocationTypeInput","display"], body: async (allocationTypeInput,display) => {
+display(await(
+allocationTypeInput
+))
+}});
+
+define({id: "acdb1373", mode: "inline", inputs: ["svg","display"], body: async (svg,display) => {
+display(await(
+svg
+))
+}});
+
+define({id: "30f103b3", mode: "inline", inputs: ["html","addNewIntervention","display"], body: async (html,addNewIntervention,display) => {
+display(await(
+html`
+          <button class="create-btn" type="button" onclick=${addNewIntervention}>
+            Add New Intervention
+          </button>
+        `
+))
+}});
+
+define({id: "bf05c5ec", outputs: ["btn","modal"], body: () => {
+let btn = document.querySelector("[data-show-modal]");
+let modal = document.querySelector("dialog");
+
+// Show the modal
+btn.addEventListener("click", function () {
+  modal.showModal();
+});
+return {btn,modal};
+}});
+
 </script>
 <div id="observablehq-center">
 <main id="observablehq-main" class="observablehq">
@@ -493,5 +550,35 @@ function* modelSpecv2() {
   <label>Order: ${priorityOrderInput}</label><br>
 </div> -->
 <div class="observablehq observablehq--block"><!--:cbf84dd1:--></div>
+<!-------- MODAL -------->
+<dialog>
+    <div id="project-properties" class="card">
+      <div class="form-group">
+        <observablehq-loading></observablehq-loading><!--:437e2ff2:-->
+      </div>
+      <div class="form-group">
+        <observablehq-loading></observablehq-loading><!--:a4ca7b63:-->
+      </div>
+      <div class="form-group">
+        <div style="display:flex; flex-direction: row; align-items: center; min-height: 25.5px; gap: 60px;">
+          <span><b>Start Year</b></span> <observablehq-loading></observablehq-loading><!--:c73bfedc:-->
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="total-budget">Project length (years):</label>
+        <observablehq-loading></observablehq-loading><!--:580b039d:-->
+      </div>
+      <div class="form-group">
+        <label for="total-budget">Budget Allocation Type:</label>
+        <observablehq-loading></observablehq-loading><!--:92cf87a9:-->
+      </div>
+      <observablehq-loading></observablehq-loading><!--:acdb1373:-->
+      <div class="form-group">
+        <observablehq-loading></observablehq-loading><!--:30f103b3:-->
+      </div>
+    </div>
+</dialog>
+<p><button data-show-modal="">Show Modal</button></p>
+<div class="observablehq observablehq--block"><!--:bf05c5ec:--></div>
 </main>
 </div>

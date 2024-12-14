@@ -12,7 +12,7 @@
 <link rel="modulepreload" href="../_observablehq/client.js">
 <link rel="modulepreload" href="../_observablehq/runtime.js">
 <link rel="modulepreload" href="../_observablehq/stdlib.js">
-<link rel="modulepreload" href="../_import/components/budgetAllocator.46c04ac3.js">
+<link rel="modulepreload" href="../_import/components/budgetAllocator.d01f7a60.js">
 <link rel="modulepreload" href="../_import/components/miniDecarbModel.f54b29e1.js">
 <link rel="modulepreload" href="../_npm/d3@7.9.0/_esm.js">
 <link rel="modulepreload" href="../_observablehq/stdlib/duckdb.js">
@@ -65,11 +65,11 @@ import {define} from "../_observablehq/client.js";
 import {registerFile, FileAttachment} from "../_observablehq/stdlib.js";
 import {registerTable} from "../_observablehq/stdlib/duckdb.js";
 
-registerFile("./../data/oxford_decarbonisation_data.parquet", {"name":"./../data/oxford_decarbonisation_data.parquet","path":"../_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1734122656401});
+registerFile("./../data/oxford_decarbonisation_data.parquet", {"name":"./../data/oxford_decarbonisation_data.parquet","path":"../_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1734168039953});
 registerTable("oxford", FileAttachment("../data/oxford_decarbonisation_data.parquet"));
 
 define({id: "bda9fba7", outputs: ["BudgetAllocator","MiniDecarbModel"], body: async () => {
-const [{BudgetAllocator}, {MiniDecarbModel}] = await Promise.all([import("../_import/components/budgetAllocator.46c04ac3.js"), import("../_import/components/miniDecarbModel.f54b29e1.js")]);
+const [{BudgetAllocator}, {MiniDecarbModel}] = await Promise.all([import("../_import/components/budgetAllocator.d01f7a60.js"), import("../_import/components/miniDecarbModel.f54b29e1.js")]);
 
 return {BudgetAllocator,MiniDecarbModel};
 }});
@@ -198,12 +198,16 @@ const allocator = new BudgetAllocator(
 return {allocator};
 }});
 
-define({id: "03c3314a", inputs: ["allocationType","allocator","setSelected","display"], outputs: ["initialAllocations","svg","getAllocations"], body: (allocationType,allocator,setSelected,display) => {
+define({id: "758db784", inputs: ["allocationType","allocator","setSelected","display"], outputs: ["initialAllocations","svg","getAllocations"], body: (allocationType,allocator,setSelected,display) => {
 let initialAllocations;
 if (allocationType === "linear") {
   initialAllocations = allocator.allocateLinear();
 } else {
-  initialAllocations = allocator.allocateCustom(allocationType);
+  initialAllocations = allocator.allocateCustom(
+    allocationType,
+    { exponent: 2 },
+    true
+  );
 }
 
 // linear allocation
@@ -931,7 +935,7 @@ return {renderSelectableList,handleSelected};
 <h2 id="budget-allocator" tabindex="-1"><a class="observablehq-header-anchor" href="#budget-allocator">Budget Allocator</a></h2>
 <div class="observablehq observablehq--block"><!--:5c004f34:--></div>
 <div class="observablehq observablehq--block"><!--:cc54eba5:--></div>
-<div class="observablehq observablehq--block"><!--:03c3314a:--></div>
+<div class="observablehq observablehq--block"><!--:758db784:--></div>
 <div class="observablehq observablehq--block"><!--:79b75dc9:--></div>
 <h2 id="test-new-model" tabindex="-1"><a class="observablehq-header-anchor" href="#test-new-model">Test New Model</a></h2>
 <div class="observablehq observablehq--block"><!--:2872498c:--></div>
