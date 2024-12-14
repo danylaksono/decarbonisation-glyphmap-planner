@@ -66,39 +66,40 @@ export class BudgetAllocator {
    * allocate the budget using a custom curve function
    * @param {string} curveType - type of curve function ('linear', 'log', 'sqrt', 'exp', 'quad', etc.)
    * @param {object} options - parameters for the curve function (e.g., exponent for 'pow')
+   * @param {boolean} invert - whether to invert the allocation curve
    * @returns {Array} array of annual allocations
    */
-  allocateCustom(curveType, options = {}) {
+  allocateCustom(curveType, options = {}, invert = false) {
     let curveFunction;
     const { exponent = 2 } = options;
 
     // create a scale based on the selected curveType
     switch (curveType) {
       case "linear":
-        curveFunction = d3.scaleLinear().domain([0, 1]).range([10, 1]); // Flipped range
+        curveFunction = d3.scaleLinear().domain([0, 1]).range([1, 10]);
         break;
       case "log":
         curveFunction = d3
           .scaleLog()
           .domain([1, this.projectLength])
-          .range([10, 1]) // Flipped range
+          .range([1, 10])
           .clamp(true);
         break;
       case "sqrt":
-        curveFunction = d3.scaleSqrt().domain([0, 1]).range([10, 1]); // Flipped range
+        curveFunction = d3.scaleSqrt().domain([0, 1]).range([1, 10]);
         break;
       case "exp":
         curveFunction = d3
           .scalePow()
           .exponent(exponent)
           .domain([0, 1])
-          .range([10, 1]); // Flipped range
+          .range([1, 10]);
         break;
       case "quad":
-        curveFunction = d3.scalePow().exponent(2).domain([0, 1]).range([10, 1]); // Flipped range
+        curveFunction = d3.scalePow().exponent(2).domain([0, 1]).range([1, 10]);
         break;
       case "cubic":
-        curveFunction = d3.scalePow().exponent(3).domain([0, 1]).range([10, 1]); // Flipped range
+        curveFunction = d3.scalePow().exponent(3).domain([0, 1]).range([1, 10]);
         break;
       default:
         throw new Error(`Unsupported curve type: ${curveType}`);
@@ -121,6 +122,10 @@ export class BudgetAllocator {
       allocatedBudget += budget;
       return { year, budget };
     });
+
+    if (invert) {
+      allocations.reverse();
+    }
 
     return allocations;
   }

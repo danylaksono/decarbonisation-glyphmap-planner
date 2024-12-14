@@ -144,7 +144,11 @@ let initialAllocations;
 if (allocationType === "linear") {
   initialAllocations = allocator.allocateLinear();
 } else {
-  initialAllocations = allocator.allocateCustom(allocationType);
+  initialAllocations = allocator.allocateCustom(
+    allocationType,
+    { exponent: 2 },
+    true
+  );
 }
 
 // linear allocation

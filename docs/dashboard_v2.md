@@ -379,7 +379,7 @@ body, html {
           )}
           </div> <!-- timeline panel -->
           <nav id="timeline-buttons">
-            <button id="openModalBtn" class="btn" aria-label="Add">
+            <button id="openModalBtn" data-show-modal class="btn" aria-label="Add">
               <i class="fas fa-plus"></i>
             </button>
             <button class="btn edit" aria-label="Edit">
@@ -422,62 +422,48 @@ body, html {
 </div>
 
 <!-------- MODAL -------->
-<div class="modal" id="simpleModal">
-  <div class="modal-content">
-    <div id="project-properties" class="card">
-      <div class="form-group">
-        ${techsInput}
-      </div>
-      <div class="form-group">
-        ${totalBudgetInput}
-      </div>
-      <div class="form-group">
-        <div style="display:flex; flex-direction: row; align-items: center; min-height: 25.5px; gap: 60px;">
-          <span><b>Start Year</b></span> ${startYearInput}
-        </div>
-      </div>
-      <div class="form-group">
-        <label for="total-budget">Project length (years):</label>
-        ${projectLengthInput}
-      </div>
-      <div class="form-group">
-        <label for="total-budget">Budget Allocation Type:</label>
-        ${allocationTypeInput}
-      </div>
-      ${svg}
-      <div class="form-group">
-        ${html`
-          <button class="create-btn" type="button" onclick=${addNewIntervention}>
-            Add New Intervention
-          </button>
-        `}
+<dialog style="padding:0.2em; border-width:0px;">
+  <div id="project-properties" class="card">
+    <div class="form-group">
+      ${techsInput}
+    </div>
+    <div class="form-group">
+      ${totalBudgetInput}
+    </div>
+    <div class="form-group">
+      <div style="display:flex; flex-direction: row; align-items: center; min-height: 25.5px; gap: 60px;">
+        <span><b>Start Year</b></span> ${startYearInput}
       </div>
     </div>
+    <div class="form-group">
+      <label for="total-budget">Project length (years):</label>
+      ${projectLengthInput}
+    </div>
+    <div class="form-group">
+      <label for="total-budget">Budget Allocation Type:</label>
+      ${allocationTypeInput}
+    </div>
+    <!-- ${svg} -->
+    <div class="form-group">
+    <form method="dialog">
+      ${html`
+        <button class="create-btn" type="button" onclick=${addNewIntervention}>
+          Add New Intervention
+        </button>
+      `}
+      </form> 
+    </div>
   </div>
-</div>
+</dialog>
 
 ```js
 // Modal script
-// const confirmBtn = document.getElementById("confirmBtn");
-const modal = document.getElementById("simpleModal");
+let modalBtn = document.querySelector("[data-show-modal]");
+let modal = document.querySelector("dialog");
 
-// Open modal
-openModalBtn.addEventListener("click", () => {
-  console.log("clicked");
-  modal.style.display = "flex";
-});
-
-// // Confirm action
-// confirmBtn.addEventListener("click", () => {
-//   console.log("Action confirmed!");
-//   modal.style.display = "none";
-// });
-
-// Close modal if clicking outside modal content
-window.addEventListener("click", (e) => {
-  if (e.target === modal) {
-    modal.style.display = "none";
-  }
+// Show the modal
+modalBtn.addEventListener("click", function () {
+  modal.showModal();
 });
 ```
 
@@ -540,11 +526,16 @@ const techsInput = Inputs.select(
   ],
   {
     label: html`<b>Technology</b>`,
-    value: selectedIntervention ? selectedIntervention.techName : "ASHP",
-    disabled: selectedIntervention ? true : false,
+    value: "ASHP",
+    submit: true,
+    // disabled: selectedIntervention ? true : false,
   }
 );
 techsInput.style["max-width"] = "300px";
+Object.assign(techsInput, {
+  oninput: (event) => event.isTrusted && event.stopImmediatePropagation(),
+  onchange: (event) => event.currentTarget.dispatchEvent(new Event("input")),
+});
 const technology = Generators.input(techsInput);
 // display(techsInput);
 
@@ -552,15 +543,21 @@ const technology = Generators.input(techsInput);
 const totalBudgetInput = Inputs.text({
   label: html`<b>Total Budget</b>`,
   placeholder: "Available Budget in GBP",
-  disabled: selectedIntervention ? true : false,
-  value: selectedIntervention
-    ? Math.round(
-        (selectedIntervention.totalBudgetSpent + Number.EPSILON) * 100
-      ) / 100
-    : 100_000_000,
+  value: 100_000_000,
+  submit: true,
+  // disabled: selectedIntervention ? true : false,
+  // value: selectedIntervention
+  //   ? Math.round(
+  //       (selectedIntervention.totalBudgetSpent + Number.EPSILON) * 100
+  //     ) / 100
+  //   : 100_000_000,
   // submit: html`<button class="create-btn" style="color:white;">Submit</button>`,
 });
 totalBudgetInput.style["max-width"] = "300px";
+Object.assign(totalBudgetInput, {
+  oninput: (event) => event.isTrusted && event.stopImmediatePropagation(),
+  onchange: (event) => event.currentTarget.dispatchEvent(new Event("input")),
+});
 const total_budget = Generators.input(totalBudgetInput);
 
 // Start Year
@@ -577,15 +574,16 @@ const total_budget = Generators.input(totalBudgetInput);
 const startYearInput = html`<input
   style="width: 100%; max-width:100px; max-height: 25.5px;"
   type="number"
-  value=${selectedIntervention
-    ? Number(Object.keys(selectedIntervention.yearlyStats)[0])
-    : 2024}
+  value="2024"
   step="1"
   min="2024"
   max="2080"
-  disabled=${selectedIntervention ? true : false}
   label="Start Year"
 />`;
+Object.assign(startYearInput, {
+  oninput: (event) => event.isTrusted && event.stopImmediatePropagation(),
+  onchange: (event) => event.currentTarget.dispatchEvent(new Event("input")),
+});
 // console.log("startYearInput.style", startYearInput.columns);
 const start_year = Generators.input(startYearInput);
 
@@ -593,10 +591,7 @@ const start_year = Generators.input(startYearInput);
 const projectLengthInput = Inputs.range([0, 10], {
   // label: html`<b>Project length in years</b>`,
   step: 1,
-  value: selectedIntervention
-    ? Object.keys(selectedIntervention.yearlyStats).length
-    : 5,
-  disabled: selectedIntervention ? true : false,
+  value: 5,
 });
 projectLengthInput.number.style["max-width"] = "60px";
 Object.assign(projectLengthInput, {
@@ -609,7 +604,10 @@ const project_length = Generators.input(projectLengthInput);
 const allocationTypeInput = Inputs.radio(["linear", "sqrt", "exp", "cubic"], {
   // label: html`<b>Allocation Type</b>`,
   value: "linear",
-  disabled: selectedIntervention ? true : false,
+});
+Object.assign(allocationTypeInput, {
+  oninput: (event) => event.isTrusted && event.stopImmediatePropagation(),
+  onchange: (event) => event.currentTarget.dispatchEvent(new Event("input")),
 });
 const allocation_type = Generators.input(allocationTypeInput);
 
@@ -1085,17 +1083,6 @@ const cols = [
 
 ```js
 const tableData = selectedIntervention ? stackedResults.buildings : flatData;
-
-// const tableData = selectedIntervention
-//   ? selectedIntervention.allBuildings.map((building) => ({
-//       ...building.properties,
-//       isIntervened: building.isIntervened,
-//     }))
-// : stackedResults
-// ? stackedResults.buildings
-//   : regular_geodata_withproperties;
-
-// (stackedResults ? stackedResults.buildings : flatData);
 
 const table = new createTable(tableData, cols, (changes) => {
   console.log("Table changed:", changes);

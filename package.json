@@ -15,6 +15,7 @@
     "d3-time-format": "^4.1.0"
   },
   "devDependencies": {
+    "jest": "^29.7.0",
     "rimraf": "^5.0.5"
   },
   "engines": {

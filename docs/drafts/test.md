@@ -412,3 +412,48 @@ addTechnologyButton.onclick = () => {
 };
 display(addTechnologyButton);
 ```
+
+<!-------- MODAL -------->
+<dialog>
+    <div id="project-properties" class="card">
+      <div class="form-group">
+        ${techsInput}
+      </div>
+      <div class="form-group">
+        ${totalBudgetInput}
+      </div>
+      <div class="form-group">
+        <div style="display:flex; flex-direction: row; align-items: center; min-height: 25.5px; gap: 60px;">
+          <span><b>Start Year</b></span> ${startYearInput}
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="total-budget">Project length (years):</label>
+        ${projectLengthInput}
+      </div>
+      <div class="form-group">
+        <label for="total-budget">Budget Allocation Type:</label>
+        ${allocationTypeInput}
+      </div>
+      ${svg}
+      <div class="form-group">
+        ${html`
+          <button class="create-btn" type="button" onclick=${addNewIntervention}>
+            Add New Intervention
+          </button>
+        `}
+      </div>
+    </div>
+</dialog>
+
+<button data-show-modal>Show Modal</button>
+
+```js
+let btn = document.querySelector("[data-show-modal]");
+let modal = document.querySelector("dialog");
+
+// Show the modal
+btn.addEventListener("click", function () {
+  modal.showModal();
+});
+```
