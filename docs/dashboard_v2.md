@@ -1180,6 +1180,16 @@ function glyphMapSpecBasic(width = 1000, height = 600) {
       postAggrFn: (cells, cellSize, global, panel) => {
         //add cell interaction
         let canvas = d3.select(panel).select("canvas").node();
+
+        canvas.addEventListener("click", function (evt) {
+          //check which cell the click was in
+          const rect = canvas.getBoundingClientRect();
+          let x = evt.clientX - rect.left;
+          let y = evt.clientY - rect.top;
+          global.clickedCell = null;
+          for (let i = 0; i < cells.length; i++)
+            if (insideCell(cells[i], x, y)) global.clickedCell = cells[i];
+        });
       },
 
       preDrawFn: (cells, cellSize, ctx, global, panel) => {
@@ -1235,7 +1245,7 @@ function glyphMapSpecBasic(width = 1000, height = 600) {
 
       tooltipTextFn: (cell) => {
         if (cell) {
-          console.log("cell on tooltip", cell);
+          // console.log("cell on tooltip", cell);
           setDetailOnDemand(cell.data);
           return `Total Building Area: ${cell.building_area.toFixed(2)} m^2`;
         } else {
@@ -1599,6 +1609,16 @@ const glyphMapSpec = {
     postAggrFn: (cells, cellSize, global, panel) => {
       //add cell interaction
       let canvas = d3.select(panel).select("canvas").node();
+
+      canvas.addEventListener("click", function (evt) {
+        //check which cell the click was in
+        const rect = canvas.getBoundingClientRect();
+        let x = evt.clientX - rect.left;
+        let y = evt.clientY - rect.top;
+        global.clickedCell = null;
+        for (let i = 0; i < cells.length; i++)
+          if (insideCell(cells[i], x, y)) global.clickedCell = cells[i];
+      });
     },
 
     preDrawFn: (cells, cellSize, ctx, global, panel) => {
@@ -1624,6 +1644,10 @@ const glyphMapSpec = {
       global.pathGenerator(boundaryFeat);
       ctx.fillStyle = global.colourScalePop(cell.building_area);
       ctx.fill();
+
+      ctx.lineWidth = 0.2;
+      ctx.strokeStyle = "rgb(7, 77, 255)";
+      ctx.stroke();
 
       //add contour to clicked cells
       if (global.clickedCell == cell) {
@@ -1757,5 +1781,19 @@ function createGlyphMap(map_aggregate, { width, height }) {
   } else if (map_aggregate == "LSOA Level") {
     return morphGlyphMap;
   }
+}
+```
+
+```js
+function insideCell(c, x, y) {
+  // console.log(x + " " + y  + " " + c.getXCentre() + " " + c.getYCentre() + " " + c.getCellSize());
+  if (
+    x >= c.getXCentre() - c.getCellSize() &&
+    x <= c.getXCentre() + c.getCellSize() &&
+    y >= c.getYCentre() - c.getCellSize() &&
+    y <= c.getYCentre() + c.getCellSize()
+  )
+    return true;
+  return false;
 }
 ```
