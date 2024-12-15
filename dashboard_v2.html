@@ -208,10 +208,10 @@ import {define} from "./_observablehq/client.js";
 import {registerFile, FileAttachment} from "./_observablehq/stdlib.js";
 import {registerTable} from "./_observablehq/stdlib/duckdb.js";
 
-registerFile("./data/oxford_decarbonisation_data.parquet", {"name":"./data/oxford_decarbonisation_data.parquet","path":"./_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1734168039953});
-registerFile("./data/oxford_lsoa_boundary.geojson", {"name":"./data/oxford_lsoa_boundary.geojson","mimeType":"application/geo+json","path":"./_file/data/oxford_lsoa_boundary.50c731e8.geojson","lastModified":1734168039961});
-registerFile("./data/oxford_lsoas_cartogram.json", {"name":"./data/oxford_lsoas_cartogram.json","mimeType":"application/json","path":"./_file/data/oxford_lsoas_cartogram.a72fa2b8.json","lastModified":1734168039961});
-registerFile("./data/oxford_lsoas_regular.json", {"name":"./data/oxford_lsoas_regular.json","mimeType":"application/json","path":"./_file/data/oxford_lsoas_regular.e1c36e7e.json","lastModified":1734168039965});
+registerFile("./data/oxford_decarbonisation_data.parquet", {"name":"./data/oxford_decarbonisation_data.parquet","path":"./_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1734279563443});
+registerFile("./data/oxford_lsoa_boundary.geojson", {"name":"./data/oxford_lsoa_boundary.geojson","mimeType":"application/geo+json","path":"./_file/data/oxford_lsoa_boundary.50c731e8.geojson","lastModified":1734279563455});
+registerFile("./data/oxford_lsoas_cartogram.json", {"name":"./data/oxford_lsoas_cartogram.json","mimeType":"application/json","path":"./_file/data/oxford_lsoas_cartogram.a72fa2b8.json","lastModified":1734279563455});
+registerFile("./data/oxford_lsoas_regular.json", {"name":"./data/oxford_lsoas_regular.json","mimeType":"application/json","path":"./_file/data/oxford_lsoas_regular.e1c36e7e.json","lastModified":1734279563455});
 registerTable("oxford", FileAttachment("./data/oxford_decarbonisation_data.parquet"));
 
 define({id: "f286dfde", outputs: ["d3","flubber","require","Mutable","TimeGlyph","GlyphCollection","turf","RadialGlyph","glyphMap","createDiscretiserValue","_drawCellBackground","OSGB","Model","BudgetAllocator","MiniDecarbModel","createTable","createTimelineInterface","YearPicker","inferTypes","enrichGeoData","normaliseData","downloadBoundaries","joinCensusDataToGeoJSON","convertGridCsvToGeoJson","context2d"], body: async () => {
@@ -1070,7 +1070,7 @@ define({id: "929663a0", inputs: ["inferTypes","tableData"], body: (inferTypes,ta
 console.log("Test inferring data types", inferTypes(tableData));
 }});
 
-define({id: "0237730d", inputs: ["turf","lsoa_boundary","tableData","normaliseData","d3","RadialGlyph","setDetailOnDemand"], outputs: ["glyphMapSpecBasic"], body: (turf,lsoa_boundary,tableData,normaliseData,d3,RadialGlyph,setDetailOnDemand) => {
+define({id: "166bc259", inputs: ["turf","lsoa_boundary","tableData","normaliseData","d3","insideCell","RadialGlyph","setDetailOnDemand"], outputs: ["glyphMapSpecBasic"], body: (turf,lsoa_boundary,tableData,normaliseData,d3,insideCell,RadialGlyph,setDetailOnDemand) => {
 // glyphmap basic specs
 function glyphMapSpecBasic(width = 1000, height = 600) {
   return {
@@ -1154,6 +1154,16 @@ function glyphMapSpecBasic(width = 1000, height = 600) {
       postAggrFn: (cells, cellSize, global, panel) => {
         //add cell interaction
         let canvas = d3.select(panel).select("canvas").node();
+
+        canvas.addEventListener("click", function (evt) {
+          //check which cell the click was in
+          const rect = canvas.getBoundingClientRect();
+          let x = evt.clientX - rect.left;
+          let y = evt.clientY - rect.top;
+          global.clickedCell = null;
+          for (let i = 0; i < cells.length; i++)
+            if (insideCell(cells[i], x, y)) global.clickedCell = cells[i];
+        });
       },
 
       preDrawFn: (cells, cellSize, ctx, global, panel) => {
@@ -1209,7 +1219,7 @@ function glyphMapSpecBasic(width = 1000, height = 600) {
 
       tooltipTextFn: (cell) => {
         if (cell) {
-          console.log("cell on tooltip", cell);
+          // console.log("cell on tooltip", cell);
           setDetailOnDemand(cell.data);
           return `Total Building Area: ${cell.building_area.toFixed(2)} m^2`;
         } else {
@@ -1494,7 +1504,7 @@ function valueDiscretiser(geomLookup) {
 return {valueDiscretiser};
 }});
 
-define({id: "b9ec519d", inputs: ["transformCoordinates","turf","regular_geodata","keydata","regularGeodataLookup","normaliseData","d3","RadialGlyph","setDetailOnDemand"], outputs: ["glyphMapSpec"], body: (transformCoordinates,turf,regular_geodata,keydata,regularGeodataLookup,normaliseData,d3,RadialGlyph,setDetailOnDemand) => {
+define({id: "9c42b082", inputs: ["transformCoordinates","turf","regular_geodata","keydata","regularGeodataLookup","normaliseData","d3","insideCell","RadialGlyph","setDetailOnDemand"], outputs: ["glyphMapSpec"], body: (transformCoordinates,turf,regular_geodata,keydata,regularGeodataLookup,normaliseData,d3,insideCell,RadialGlyph,setDetailOnDemand) => {
 const glyphMapSpec = {
   coordType: "notmercator",
   initialBB: transformCoordinates(turf.bbox(regular_geodata)),
@@ -1585,6 +1595,16 @@ const glyphMapSpec = {
     postAggrFn: (cells, cellSize, global, panel) => {
       //add cell interaction
       let canvas = d3.select(panel).select("canvas").node();
+
+      canvas.addEventListener("click", function (evt) {
+        //check which cell the click was in
+        const rect = canvas.getBoundingClientRect();
+        let x = evt.clientX - rect.left;
+        let y = evt.clientY - rect.top;
+        global.clickedCell = null;
+        for (let i = 0; i < cells.length; i++)
+          if (insideCell(cells[i], x, y)) global.clickedCell = cells[i];
+      });
     },
 
     preDrawFn: (cells, cellSize, ctx, global, panel) => {
@@ -1610,6 +1630,10 @@ const glyphMapSpec = {
       global.pathGenerator(boundaryFeat);
       ctx.fillStyle = global.colourScalePop(cell.building_area);
       ctx.fill();
+
+      ctx.lineWidth = 0.2;
+      ctx.strokeStyle = "rgb(7, 77, 255)";
+      ctx.stroke();
 
       //add contour to clicked cells
       if (global.clickedCell == cell) {
@@ -1749,6 +1773,21 @@ function createGlyphMap(map_aggregate, { width, height }) {
   }
 }
 return {createGlyphMap};
+}});
+
+define({id: "520e6d60", outputs: ["insideCell"], body: () => {
+function insideCell(c, x, y) {
+  // console.log(x + " " + y  + " " + c.getXCentre() + " " + c.getYCentre() + " " + c.getCellSize());
+  if (
+    x >= c.getXCentre() - c.getCellSize() &&
+    x <= c.getXCentre() + c.getCellSize() &&
+    y >= c.getYCentre() - c.getCellSize() &&
+    y <= c.getYCentre() + c.getCellSize()
+  )
+    return true;
+  return false;
+}
+return {insideCell};
 }});
 
 </script>
@@ -2056,7 +2095,7 @@ body, html {
 <div class="observablehq observablehq--block"><!--:dbb36174:--></div>
 <div class="observablehq observablehq--block"><!--:929663a0:--></div>
 <!-- ---------------- Glyph Maps ---------------- -->
-<div class="observablehq observablehq--block"><!--:0237730d:--></div>
+<div class="observablehq observablehq--block"><!--:166bc259:--></div>
 <div class="observablehq observablehq--block"><!--:44c9b4b4:--></div>
 <div class="observablehq observablehq--block"><!--:7b5e4a76:--></div>
 <div class="observablehq observablehq--block"><!--:246c80d3:--></div>
@@ -2070,11 +2109,12 @@ body, html {
 <div class="observablehq observablehq--block"><!--:f4f0b74a:--></div>
 <div class="observablehq observablehq--block"><!--:0e975078:--></div>
 <div class="observablehq observablehq--block"><!--:4965f46a:--></div>
-<div class="observablehq observablehq--block"><!--:b9ec519d:--></div>
+<div class="observablehq observablehq--block"><!--:9c42b082:--></div>
 <div class="observablehq observablehq--block"><!--:875b3cfc:--></div>
 <div class="observablehq observablehq--block"><!--:bbe0b721:--></div>
 <div class="observablehq observablehq--block"><!--:0d35bbe4:--></div>
 <div class="observablehq observablehq--block"><!--:e38f4f2a:--></div>
 <div class="observablehq observablehq--block"><!--:11a20a47:--></div>
+<div class="observablehq observablehq--block"><!--:520e6d60:--></div>
 </main>
 </div>
