@@ -415,7 +415,8 @@ body, html {
       <!-- <h2> Main Panel </h2> -->
       ${glyphmapTypeInput}
       ${mapAggregationInput}
-      ${(map_aggregate == "Building Level") ? "" : morphFactorInput}
+      ${(map_aggregate == "Building Level") ? ""
+        : html`${playButton} ${morphFactorInput}`}
       ${resize((width, height) => createGlyphMap(map_aggregate, {width, height}))}
     </div>
   </div>
@@ -451,7 +452,7 @@ body, html {
           Add New Intervention
         </button>
       `}
-      </form> 
+      </form>
     </div>
   </div>
 </dialog>
@@ -662,7 +663,15 @@ const morphFactorInput = html`<input
   min="0"
   max="1"
 />`;
+Object.assign(morphFactorInput, {
+  oninput: (event) => event.isTrusted && event.stopImmediatePropagation(),
+  onchange: (event) => event.currentTarget.dispatchEvent(new Event("input")),
+});
 const morph_factor = Generators.input(morphFactorInput);
+```
+
+```js
+const playButton = html`<button style="margin-top: 10px;">Play</button>`;
 ```
 
 ```js
@@ -709,6 +718,57 @@ const allocations = selected ? getAllocations(selected) : initialAllocations;
 // store intervention results
 let interventions = getIntervention;
 let results = getResults;
+```
+
+```js
+// dealing with observable input reactivity
+// two ways Obs input
+function set(input, value) {
+  input.value = value;
+  input.dispatchEvent(new Event("input", { bubbles: true }));
+  // console.log("input value:", input.value);
+}
+```
+
+
+```js
+// morph animation logic
+let playing = false; // Track play/pause state
+let direction = 1; // Controls the animation direction (0 to 1 or 1 to 0)
+let animationFrame; // Stores the requestAnimationFrame ID
+
+
+function animate(currentValue) {
+  // Increment or decrement the value
+  let newValue = currentValue + 0.01 * direction;
+
+  // Reverse direction if boundaries are reached
+  if (newValue >= 1 || newValue <= 0) {
+    direction *= -1;
+    newValue = Math.max(0, Math.min(1, newValue)); // Clamp value between 0 and 1
+  }
+
+  // Update the slider and dispatch the "input" event for reactivity
+  set(morphFactorInput, newValue);
+
+  if (playing) {
+    animationFrame = requestAnimationFrame(() => animate(newValue)); // Pass the updated value
+  }
+}
+
+// Button click event listener
+playButton.addEventListener("click", () => {
+  playing = !playing; // Toggle play/pause state
+  playButton.textContent = playing ? "Pause" : "Play";
+
+  if (playing) {
+    // Start the animation with the current slider value
+    const currentValue = parseFloat(morphFactorInput.value);
+    requestAnimationFrame(() => animate(currentValue));
+  } else {
+    cancelAnimationFrame(animationFrame); // Stop the animation
+  }
+});
 ```
 
 <!-- ---------------- Functions ---------------- -->

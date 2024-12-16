@@ -462,11 +462,6 @@ btn.addEventListener("click", function () {
 ## Play button
 
 ```js
-// populate mutable slider using getter/setter
-// const sliderValue = 0.5;
-```
-
-```js
 // Create the slider input
 const morphFactorInput = html`<input
   style="width: 100%; max-width: 450px;"
@@ -476,15 +471,23 @@ const morphFactorInput = html`<input
   min="0"
   max="1"
 />`;
+Object.assign(morphFactorInput, {
+  oninput: (event) => event.isTrusted && event.stopImmediatePropagation(),
+  onchange: (event) => event.currentTarget.dispatchEvent(new Event("input")),
+});
+```
+```js
 const morph_factor = Generators.input(morphFactorInput);
+```
 
+```js
 // Create the play button
 const playButton = html`<button style="margin-top: 10px;">Play</button>`;
 ```
 
 ```js
 // Append the slider and button to the view
-display(html`${morphFactorInput} ${playButton}`);
+display(html`${playButton} ${morphFactorInput} `);
 ```
 
 ```js
@@ -493,8 +496,9 @@ let playing = false; // Track play/pause state
 let direction = 1; // Controls the animation direction (0 to 1 or 1 to 0)
 let animationFrame; // Stores the requestAnimationFrame ID
 
-function animate() {
-  const currentValue = parseFloat(morphFactorInput.value);
+
+function animate(currentValue) {
+  // Increment or decrement the value
   let newValue = currentValue + 0.01 * direction;
 
   // Reverse direction if boundaries are reached
@@ -503,11 +507,11 @@ function animate() {
     newValue = Math.max(0, Math.min(1, newValue)); // Clamp value between 0 and 1
   }
 
-  console.log("newValue:", newValue);
+  // Update the slider and dispatch the "input" event for reactivity
   set(morphFactorInput, newValue);
 
   if (playing) {
-    animationFrame = requestAnimationFrame(animate); // Continue the animation
+    animationFrame = requestAnimationFrame(() => animate(newValue)); // Pass the updated value
   }
 }
 
@@ -517,18 +521,16 @@ playButton.addEventListener("click", () => {
   playButton.textContent = playing ? "Pause" : "Play";
 
   if (playing) {
-    requestAnimationFrame(animate); // Start the animation
+    // Start the animation with the current slider value
+    const currentValue = parseFloat(morphFactorInput.value);
+    requestAnimationFrame(() => animate(currentValue));
   } else {
-    invalidation.then(() => cancelAnimationFrame(animationFrame));
     cancelAnimationFrame(animationFrame); // Stop the animation
   }
 });
 ```
 
-```js
-// Expose the `morph_factor` value
-const i = Inputs.input(42);
-```
+
 
 <h2>${morph_factor}</h2>
 
@@ -536,14 +538,21 @@ const i = Inputs.input(42);
 function set(input, value) {
   input.value = value;
   input.dispatchEvent(new Event("input", { bubbles: true }));
+  // console.log("input value:", input.value);
 }
 ```
+
+```js
+// set(morphFactorInput, 0.5);
+display(morph_factor);
+```
+
 
 ```js
 display(
   Inputs.button([
     ["Set to 0", () => set(morphFactorInput, 0)],
-    ["Set to 100", () => set(morphFactorInput, 100)],
+    ["Set to 100", () => set(morphFactorInput, 1)],
   ])
 );
 ```
