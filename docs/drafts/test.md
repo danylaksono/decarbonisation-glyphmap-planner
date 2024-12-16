@@ -202,6 +202,7 @@ function useState(value) {
   return [state, setState];
 }
 const [config, setConfig] = useState({});
+const [slider, setSlider] = useState(0);
 ```
 
 ```js
@@ -456,4 +457,93 @@ let modal = document.querySelector("dialog");
 btn.addEventListener("click", function () {
   modal.showModal();
 });
+```
+
+## Play button
+
+```js
+// populate mutable slider using getter/setter
+// const sliderValue = 0.5;
+```
+
+```js
+// Create the slider input
+const morphFactorInput = html`<input
+  style="width: 100%; max-width: 450px;"
+  type="range"
+  value="0"
+  step="0.05"
+  min="0"
+  max="1"
+/>`;
+const morph_factor = Generators.input(morphFactorInput);
+
+// Create the play button
+const playButton = html`<button style="margin-top: 10px;">Play</button>`;
+```
+
+```js
+// Append the slider and button to the view
+display(html`${morphFactorInput} ${playButton}`);
+```
+
+```js
+// Animation logic
+let playing = false; // Track play/pause state
+let direction = 1; // Controls the animation direction (0 to 1 or 1 to 0)
+let animationFrame; // Stores the requestAnimationFrame ID
+
+function animate() {
+  const currentValue = parseFloat(morphFactorInput.value);
+  let newValue = currentValue + 0.01 * direction;
+
+  // Reverse direction if boundaries are reached
+  if (newValue >= 1 || newValue <= 0) {
+    direction *= -1;
+    newValue = Math.max(0, Math.min(1, newValue)); // Clamp value between 0 and 1
+  }
+
+  console.log("newValue:", newValue);
+  set(morphFactorInput, newValue);
+
+  if (playing) {
+    animationFrame = requestAnimationFrame(animate); // Continue the animation
+  }
+}
+
+// Button click event listener
+playButton.addEventListener("click", () => {
+  playing = !playing; // Toggle play/pause state
+  playButton.textContent = playing ? "Pause" : "Play";
+
+  if (playing) {
+    requestAnimationFrame(animate); // Start the animation
+  } else {
+    invalidation.then(() => cancelAnimationFrame(animationFrame));
+    cancelAnimationFrame(animationFrame); // Stop the animation
+  }
+});
+```
+
+```js
+// Expose the `morph_factor` value
+const i = Inputs.input(42);
+```
+
+<h2>${morph_factor}</h2>
+
+```js
+function set(input, value) {
+  input.value = value;
+  input.dispatchEvent(new Event("input", { bubbles: true }));
+}
+```
+
+```js
+display(
+  Inputs.button([
+    ["Set to 0", () => set(morphFactorInput, 0)],
+    ["Set to 100", () => set(morphFactorInput, 100)],
+  ])
+);
 ```
