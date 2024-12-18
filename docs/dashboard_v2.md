@@ -10,6 +10,7 @@ sql:
 <!-- ------------ Imports ------------ -->
 
 ```js
+console.log(">> Importing libraries...");
 const d3 = require("d3", "d3-geo-projection");
 const flubber = require("flubber@0.4");
 
@@ -112,12 +113,14 @@ FROM oxford b;
 
 ```js
 // >> declare data
+console.log(">> Data declaration...");
 const buildingsData = [...oxford_data];
 const flatData = buildingsData.map((p) => ({ ...p }));
 const allColumns = Object.keys(buildingsData[0]);
 ```
 
 ```js
+console.log(">> Define and Load boundary data...");
 // oxford boundary data
 const lsoa_boundary = FileAttachment(
   "./data/oxford_lsoa_boundary.geojson"
@@ -469,6 +472,7 @@ modalBtn.addEventListener("click", function () {
 ```
 
 ```js
+console.log(">> Preparing Interventions...");
 // for dealing with selected list items
 let selectedInterventionIndex = null; // Track the selected intervention index
 // console.log("selectedInterventionIndex: ", selectedInterventionIndex);
@@ -514,6 +518,7 @@ document
 <!-- ---------------- Input form declarations ---------------- -->
 
 ```js
+console.log(">> Creating input forms...");
 // list of decarb technologies
 const techsInput = Inputs.select(
   [
@@ -664,17 +669,18 @@ const morphFactorInput = html`<input
   max="1"
 />`;
 Object.assign(morphFactorInput, {
-  oninput: (event) => event.isTrusted && event.stopImmediatePropagation(),
+  // oninput: (event) => event.isTrusted && event.stopImmediatePropagation(),
   onchange: (event) => event.currentTarget.dispatchEvent(new Event("input")),
 });
 const morph_factor = Generators.input(morphFactorInput);
 ```
 
 ```js
-const playButton = html`<button style="margin-top: 10px;">Play</button>`;
+const playButton = html`<button class="btn edit" style="margin-top: 10px;"><i class="fas fa-play"></i>&nbsp;</button>`;
 ```
 
 ```js
+console.log(">> Budget Allocator...");
 // Budget Allocator
 const allocator = new BudgetAllocator(
   total_budget,
@@ -732,6 +738,7 @@ function set(input, value) {
 
 
 ```js
+console.log(">> Morph animation logic...");
 // morph animation logic
 let playing = false; // Track play/pause state
 let direction = 1; // Controls the animation direction (0 to 1 or 1 to 0)
@@ -759,7 +766,7 @@ function animate(currentValue) {
 // Button click event listener
 playButton.addEventListener("click", () => {
   playing = !playing; // Toggle play/pause state
-  playButton.textContent = playing ? "Pause" : "Play";
+  playButton.innerHTML = playing ? '<i class="fas fa-pause"></i>' : '<i class="fas fa-play"></i>';
 
   if (playing) {
     // Start the animation with the current slider value
@@ -774,6 +781,7 @@ playButton.addEventListener("click", () => {
 <!-- ---------------- Functions ---------------- -->
 
 ```js
+console.log(">> Loading intervention functions...");
 // >> Some functions related to creating and managing interventions
 
 // create config template
@@ -1024,6 +1032,8 @@ const stackedResults = stackResults(results);
 ```
 
 ```js
+console.log(">> Loading model tech configuration...");
+
 let config = {
   initial_year: Number(start_year),
   rolledover_budget: 0,
@@ -1109,6 +1119,7 @@ function runModel(config, buildings) {
 <!-- ---------------- Sortable Table ---------------- -->
 
 ```js
+console.log(">> Define sortable table columns...");
 // columns to show in the table
 const cols = [
   { column: "id", nominals: null },
@@ -1142,6 +1153,7 @@ const cols = [
 ```
 
 ```js
+console.log(">> Create sortable table...");
 const tableData = selectedIntervention ? stackedResults.buildings : flatData;
 
 const table = new createTable(tableData, cols, (changes) => {
@@ -1151,12 +1163,13 @@ const table = new createTable(tableData, cols, (changes) => {
 ```
 
 ```js
-console.log("Test inferring data types", inferTypes(tableData));
+// console.log("Test inferring data types", inferTypes(tableData));
 ```
 
 <!-- ---------------- Glyph Maps ---------------- -->
 
 ```js
+console.log(">> Create glyph map...");
 // glyphmap basic specs
 function glyphMapSpecBasic(width = 1000, height = 600) {
   return {
@@ -1262,6 +1275,15 @@ function glyphMapSpecBasic(width = 1000, height = 600) {
         global.colourScalePop = d3
           .scaleSequential(d3.interpolateBlues)
           .domain([0, d3.max(cells.map((row) => row.building_area))]);
+
+        // //draw a coloured polygon
+        // ctx.beginPath();
+        // ctx.rect(0, 0, panel.getWidth(), panel.getHeight());
+        // const colour = d3.color("#fff");
+        // colour.opacity = morph_factor;
+        // ctx.fillStyle = colour;
+        // ctx.fill();
+
       },
 
       drawFn: (cell, x, y, cellSize, ctx, global, panel) => {
@@ -1318,6 +1340,7 @@ function glyphMapSpecBasic(width = 1000, height = 600) {
 ```
 
 ```js
+
 const glyphMapSpecBasicWgs84 = {
   ...glyphMapSpecBasic,
   // coordType: "mercator",
@@ -1327,6 +1350,7 @@ const glyphMapSpecBasicWgs84 = {
 ```
 
 ```js
+console.log(">> Glyphmap-related functions...");
 function drawDetailOnDemand(width, height) {
   let canvas = document.createElement("canvas");
   let ctx = canvas.getContext("2d");
@@ -1422,6 +1446,7 @@ function drawPieSlice(ctx, cx, cy, r, angleStart, angleEnd, color) {
 ```
 
 ```js
+console.log(">> Geo-enrichment...");
 // geo-enrichment - combine geodata with building level properties
 const aggregations = {
   building_area: "sum",
@@ -1467,7 +1492,7 @@ const cartogram_geodata_withproperties = enrichGeoData(
 
 ```js
 // Data processing functions
-
+console.log(">> Data processing functions...");
 const osgb = new OSGB();
 let clone = turf.clone(regular_geodata);
 turf.coordEach(clone, (currentCoord) => {
@@ -1492,6 +1517,7 @@ const cartogramGeodataLsoaWgs84 = clone;
 
 ```js
 // Create a lookup table for the key data - geography
+console.log(">> Create lookup tables...");
 const keydata = _.keyBy(
   regular_geodata_withproperties.features.map((feat) => {
     return {
@@ -1691,6 +1717,14 @@ const glyphMapSpec = {
       global.colourScalePop = d3
         .scaleSequential(d3.interpolateBlues)
         .domain([0, d3.max(cells.map((row) => row.building_area))]);
+
+      //draw a coloured polygon
+      // ctx.beginPath();
+      // ctx.rect(0, 0, panel.getWidth(), panel.getHeight());
+      // const colour = d3.color("#fff");
+      // colour.opacity = morph_factor;
+      // ctx.fillStyle = colour;
+      // ctx.fill();
     },
 
     drawFn: (cell, x, y, cellSize, ctx, global, panel) => {
@@ -1751,9 +1785,21 @@ const glyphMapSpec = {
 ```
 
 ```js
+console.log(">> Morphing...");
 morph_factor; //causes code to run whenever the slider is moved
 morphGlyphMap.setGlyph({
   discretiserFn: valueDiscretiser(tweenWGS84Lookup),
+//   preDrawFn: (cells, cellSize, ctx, global, panel) => {
+//   //unfortunately need to repeat what's in the base
+
+//   //draw a coloured polygon
+//   ctx.beginPath();
+//   ctx.rect(0, 0, panel.getWidth(), panel.getHeight());
+//   const colour = d3.color("#fff");
+//   colour.opacity = range;
+//   ctx.fillStyle = colour;
+//   ctx.fill();
+// }
 });
 ```
 
@@ -1856,4 +1902,9 @@ function insideCell(c, x, y) {
     return true;
   return false;
 }
+```
+
+
+```js
+console.log(">> Loaded All functions...");
 ```

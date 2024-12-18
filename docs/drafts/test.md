@@ -487,7 +487,7 @@ const playButton = html`<button style="margin-top: 10px;">Play</button>`;
 
 ```js
 // Append the slider and button to the view
-display(html`${playButton} ${morphFactorInput} `);
+display(html`${playButton} ${morphFactorInput}`);
 ```
 
 ```js
@@ -552,7 +552,7 @@ display(morph_factor);
 display(
   Inputs.button([
     ["Set to 0", () => set(morphFactorInput, 0)],
-    ["Set to 100", () => set(morphFactorInput, 1)],
+    ["Set to 1", () => set(morphFactorInput, 1)],
   ])
 );
 ```
