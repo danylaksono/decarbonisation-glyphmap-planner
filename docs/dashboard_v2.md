@@ -113,10 +113,16 @@ FROM oxford b;
 
 ```js
 // >> declare data
-console.log(">> Data declaration...");
+console.log(">> Loading Data...");
 const buildingsData = [...oxford_data];
-const flatData = buildingsData.map((p) => ({ ...p }));
+// const buildingsData = oxford_data.slice(); // copy data
+```
+
+```js
+// const flatData = buildingsData.map((p) => ({ ...p }));
+const flatData = buildingsData.map((p) => Object.assign({}, p));
 const allColumns = Object.keys(buildingsData[0]);
+console.log(">>  Loading Data Done");
 ```
 
 ```js
@@ -150,215 +156,12 @@ const [detailOnDemand, setDetailOnDemand] = useState(null); // detail on demand 
 ```
 
 <!-------- Stylesheets -------->
-<link
-  rel="stylesheet"
-  href="https://cdn.jsdelivr.net/npm/bulma@1.0.0/css/bulma.min.css"
->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css">
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 
-<link
-  rel="stylesheet"
-  href="./styles/dashboard.css"
->
+<link rel="stylesheet" href="./styles/dashboard.css">
 
-<link
-  rel="stylesheet"
-  href="./components/yearpicker/yearpicker.css"
->
-
-<style>
-body, html {
-  height: 100%;
-  margin: 0 !important;
-  overflow: hidden;
-  padding: 0;
-}
-
-#observablehq-main, #observablehq-header, #observablehq-footer {
-    margin: 0 !important;
-    /* width: 100% !important; */
-    max-width: 100% !important;
-}
-
-#observablehq-center {
-  margin: 0.5rem !important;
-}
-
-.grid {
-  margin: 0 !important;
-}
-
-.grid-container {
-    display: grid;
-    grid-template-columns: 2fr 3fr;
-    /* grid-template-rows: 2fr 4fr; */
-    /* grid-template-rows: repeat(2, 1fr) 1fr; */
-    gap: 2px; /* gap between grid items */
-    padding: 2px;
-    height: 100vh;
-  }
-
-  /* Left panel boxes */
-  #left-panel {
-     /* Spans 2 rows */
-    display: grid;
-    grid-column: 1;
-    grid-template-rows: 2fr 3fr; /* Sets the row proportions */
-    /* grid-template-rows: 1fr 1fr; Two equal rows */
-    height: 100%;
-    gap: 4px;
-  }
-
-  .left-top {
-    display: grid;
-    grid-row: 1;
-    /* grid-template-columns: 1fr 1fr; Split into two equal columns */
-    gap: 4px;
-  }
-
-  /* Main panel bottom, split into two sections */
-  .left-bottom {
-    grid-row: 2;
-    display: grid;
-    /* grid-template-columns: 3fr 1fr; Split bottom row into 1/3 ratio */
-    gap: 4px;
-  }
-
-  /* Right panel boxes */
-  #main-panel {
-    grid-column: 2;
-    display: grid;
-    grid-template-rows: 4fr 2fr;
-    height: 98vh;
-    gap: 4px;
-  }
-
-  .card {
-    /* display: flex; /* Use Flexbox */
-    /* justify-content: center; Horizontally center content */
-    /* align-items: center; Vertically center content */
-    /* text-align: center; Center text alignment for multiline */ */
-    border: 1px dark-grey solid;
-    padding: 8px;
-    margin: 0 !important;
-    border-radius: 0 !important;
-    box-sizing: border-box; /* Ensure padding is included in height calculations */
-  }
-
-  .left-top .left-bottom .card {
-      height: 100%; /* Let the grid layout define height naturally */
-  }
-
-.dragging {
-  opacity: 0.5;
-  cursor: grabbing;
-}
-
-#interventions-list li {
-  transition: background-color 0.3s;
-}
-
-#interventions-list li:hover {
-  background-color: #f9f9f9;
-}
-
-#interventions-list li.selected {
-  background-color: #e0f7fa; /* Light cyan for selection */
-  font-weight: bold;
-  border-left: 4px solid #00bcd4; /* Accent border */
-}
-
-.buttons {
-      margin-left: auto;
-    }
-
-.buttons button {
-  margin-left: 5px;
-  border: none;
-  background: none;
-  cursor: pointer;
-  color: #007bff;
-}
-
-.buttons button:hover {
-  color: #0056b3;
-}
-
-.hidden {
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  pointer-events: none; /* Prevent clicks when hidden */
-}
-
-.visible {
-  opacity: 1;
-  transition: opacity 0.3s ease;
-}
-
-#graph-container {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  width: 100%;
-  border: 1px solid #ddd;
-  padding: 10px;
-  box-sizing: border-box;
-}
-
-
-/* Panel styling */
-#timeline-panel {
-  flex: 1;
-  background-color: #f9f9f9;
-  padding: 10px;
-  border-right: 1px solid #ddd;
-  height: 100%;
-}
-
-/* Buttons container styling */
-#timeline-buttons {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin: 10px; /* Margin on all sides */
-}
-
-/* Button styling */
-#timeline-buttons .btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px; /* Consistent button size */
-  font-size: 16px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: transform 0.2s ease, background-color 0.2s ease; /* Smooth background transition */
-  background-color: #f0f0f0; /* Subtle background */
-}
-
-/* Hover effect for buttons */
-#timeline-buttons .btn:hover {
-  transform: scale(1.1);
-  background-color: #e0e0e0;
-}
-
-#timeline-buttons .btn i {
-  font-size: 18px;
-  vertical-align: middle;
-}
-
-#timeline-buttons button[disabled] {
-    opacity: 0.6;
-    cursor: not-allowed;
-    background-color: #cccccc;
-  }
-
-
-
-</style>
 
 <!-- ---------------- HTML Layout ---------------- -->
 
@@ -426,7 +229,7 @@ body, html {
 </div>
 
 <!-------- MODAL -------->
-<dialog style="padding:0.2em; border-width:0px;">
+<!-- <div id="interventionModal" style="padding:0.2em; border-width:0px;">
   <div id="project-properties" class="card">
     <div class="form-group">
       ${techsInput}
@@ -447,7 +250,6 @@ body, html {
       <label for="total-budget">Budget Allocation Type:</label>
       ${allocationTypeInput}
     </div>
-    <!-- ${svg} -->
     <div class="form-group">
     <form method="dialog">
       ${html`
@@ -458,16 +260,139 @@ body, html {
       </form>
     </div>
   </div>
-</dialog>
+</div> -->
+
+<!-- Modal -->
+<div class="modal" id="interventionModal">
+  <div class="modal-background"></div>
+  <div class="modal-card">
+    <header class="modal-card-head">
+      <p class="modal-card-title">Project Properties</p>
+      <button class="delete" aria-label="close" id="closeModalButton"></button>
+    </header>
+    <section class="modal-card-body">
+      <form id="projectForm">
+        <!-- Technology Selection -->
+        <div class="field">
+          <label class="label">Technology</label>
+          <div class="control">
+            <div class="select is-fullwidth">
+              <select id="technologySelect">
+                <option value="ASHP">ASHP</option>
+                <option value="PV">PV</option>
+                <option value="EV Chargers">EV Chargers</option>
+                <option value="GSHP">GSHP</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <!-- Total Budget -->
+        <div class="field">
+          <label class="label">Total Budget</label>
+          <div class="control">
+            <input id="totalBudgetInput" class="input" type="number" placeholder="Enter total budget" required>
+          </div>
+        </div>
+        <!-- Start Year -->
+        <div class="field">
+          <label class="label">Start Year</label>
+          <div class="control">
+            <input id="startYearInput" class="input" type="number" placeholder="e.g., 2024" required>
+          </div>
+        </div>
+        <!-- Project Length -->
+        <div class="field">
+          <label class="label">Project length (years)</label>
+          <div class="control">
+            <input id="projectLengthInput" class="slider is-fullwidth" type="range" min="1" max="10" step="1" value="5">
+            <span id="projectLengthValue">5</span> years
+          </div>
+        </div>
+        <!-- Budget Allocation Type -->
+        <div class="field">
+          <label class="label">Budget Allocation Type</label>
+          <div class="control">
+            <label class="radio">
+              <input type="radio" name="allocationType" value="linear" checked>
+              Linear
+            </label>
+            <label class="radio">
+              <input type="radio" name="allocationType" value="sqrt">
+              Sqrt
+            </label>
+            <label class="radio">
+              <input type="radio" name="allocationType" value="exp">
+              Exp
+            </label>
+            <label class="radio">
+              <input type="radio" name="allocationType" value="cubic">
+              Cubic
+            </label>
+          </div>
+        </div>
+      </form>
+    </section>
+    <footer class="modal-card-foot">
+      <button class="button is-success" id="addInterventionBtn">Add New Intervention</button>
+      <button class="button" id="cancelButton">Cancel</button>
+    </footer>
+  </div>
+</div>
 
 ```js
-// Modal script
-let modalBtn = document.querySelector("[data-show-modal]");
-let modal = document.querySelector("dialog");
+// // Modal script
+// let modalBtn = document.querySelector("[data-show-modal]");
+// let modal = document.querySelector("dialog");
 
-// Show the modal
-modalBtn.addEventListener("click", function () {
-  modal.showModal();
+// // Show the modal
+// modalBtn.addEventListener("click", function () {
+//   modal.showModal();
+// });
+// Modal controls
+const openModalButton = document.querySelector("[data-show-modal]"); //document.getElementById("openModalButton");
+const closeModalButton = document.getElementById("closeModalButton");
+const cancelButton = document.getElementById("cancelButton");
+const interventionModal = document.getElementById("interventionModal");
+
+openModalButton.addEventListener("click", () => {
+  interventionModal.classList.add("is-active");
+});
+
+closeModalButton.addEventListener("click", () => {
+  interventionModal.classList.remove("is-active");
+});
+
+cancelButton.addEventListener("click", () => {
+  interventionModal.classList.remove("is-active");
+});
+
+// Update project length dynamically
+const projectLengthInput = document.getElementById("projectLengthInput");
+const projectLengthValue = document.getElementById("projectLengthValue");
+
+projectLengthInput.addEventListener("input", (event) => {
+  projectLengthValue.textContent = event.target.value;
+});
+
+// Add New Intervention button logic
+const addInterventionBtn = document.getElementById("addInterventionBtn");
+addInterventionBtn.addEventListener("click", () => {
+  const technology = document.getElementById("technologySelect").value;
+  const totalBudget = document.getElementById("totalBudgetInput").value;
+  const startYear = document.getElementById("startYearInput").value;
+  const projectLength = projectLengthInput.value;
+  const allocationType = document.querySelector("input[name='allocationType']:checked").value;
+
+  console.log({
+    technology,
+    totalBudget,
+    startYear,
+    projectLength,
+    allocationType,
+  });
+
+  alert("Intervention Added!");
+  interventionModal.classList.remove("is-active"); // Close modal after submission
 });
 ```
 
@@ -825,7 +750,7 @@ function addIntervention(
   setResults([...results, modelResult]);
   console.log("Intervention added:", config);
   // close the modal
-  document.getElementById("simpleModal").style.display = "none";
+  document.getElementById("interventionModal").style.display = "none";
 }
 // remove intervention
 function removeIntervention(index) {

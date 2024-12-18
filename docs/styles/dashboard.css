@@ -1,56 +1,189 @@
-/* CSS Styling */
+body,
+html {
+  height: 100%;
+  margin: 0 !important;
+  overflow: hidden;
+  padding: 0;
+}
+
+#observablehq-main,
+#observablehq-header,
+#observablehq-footer {
+  margin: 0 !important;
+  /* width: 100% !important; */
+  max-width: 100% !important;
+}
+
+#observablehq-center {
+  margin: 0.5rem !important;
+}
+
+.grid {
+  margin: 0 !important;
+}
+
+.grid-container {
+  display: grid;
+  grid-template-columns: 2fr 3fr;
+  /* grid-template-rows: 2fr 4fr; */
+  /* grid-template-rows: repeat(2, 1fr) 1fr; */
+  gap: 2px; /* gap between grid items */
+  padding: 2px;
+  height: 100vh;
+}
+
+/* Left panel boxes */
+#left-panel {
+  /* Spans 2 rows */
+  display: grid;
+  grid-column: 1;
+  grid-template-rows: 2fr 3fr; /* Sets the row proportions */
+  /* grid-template-rows: 1fr 1fr; Two equal rows */
+  height: 100%;
+  gap: 4px;
+}
+
+.left-top {
+  display: grid;
+  grid-row: 1;
+  /* grid-template-columns: 1fr 1fr; Split into two equal columns */
+  gap: 4px;
+}
+
+/* Main panel bottom, split into two sections */
+.left-bottom {
+  grid-row: 2;
+  display: grid;
+  /* grid-template-columns: 3fr 1fr; Split bottom row into 1/3 ratio */
+  gap: 4px;
+}
+
+/* Right panel boxes */
+#main-panel {
+  grid-column: 2;
+  display: grid;
+  grid-template-rows: 4fr 2fr;
+  height: 98vh;
+  gap: 4px;
+}
+
 .card {
-  padding: 20px;
-  margin: 10px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
+  /* display: flex; /* Use Flexbox */
+  /* justify-content: center; Horizontally center content */
+  /* align-items: center; Vertically center content */
+  /* text-align: center; Center text alignment for multiline */
+  border: 1px darkgray solid;
+  padding: 8px;
+  margin: 0 !important;
+  border-radius: 0 !important;
+  box-sizing: border-box; /* Ensure padding is included in height calculations */
+}
+
+.left-top .left-bottom .card {
+  height: 100%; /* Let the grid layout define height naturally */
+}
+
+.dragging {
+  opacity: 0.5;
+  cursor: grabbing;
+}
+
+#interventions-list li {
+  transition: background-color 0.3s;
+}
+
+#interventions-list li:hover {
   background-color: #f9f9f9;
 }
 
-h1 {
-  font-size: 1.5em;
-  margin-bottom: 15px;
+#interventions-list li.selected {
+  background-color: #e0f7fa; /* Light cyan for selection */
+  font-weight: bold;
+  border-left: 4px solid #00bcd4; /* Accent border */
 }
 
-.form-group {
+.buttons {
+  margin-left: auto;
+}
+
+.buttons button {
+  margin-left: 5px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: #007bff;
+}
+
+.buttons button:hover {
+  color: #0056b3;
+}
+
+.hidden {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none; /* Prevent clicks when hidden */
+}
+
+.visible {
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+#graph-container {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  width: 100%;
+  border: 1px solid #ddd;
+  padding: 10px;
+  box-sizing: border-box;
+}
+
+/* Panel styling */
+#timeline-panel {
+  flex: 1;
+  background-color: #f9f9f9;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+  height: 100%;
+}
+
+/* Buttons container styling */
+#timeline-buttons {
   display: flex;
   flex-direction: column;
-  margin-bottom: 15px;
+  gap: 10px;
+  margin: 10px; /* Margin on all sides */
 }
 
-label {
-  margin-bottom: 5px;
-  font-weight: bold;
-}
-
-input[type="range"] {
-  width: 100%;
-  margin-top: 5px;
-}
-
-#years-value {
-  margin-top: 5px;
-  font-size: 0.9em;
-  color: #333;
-}
-
-input[type="text"] {
-  padding: 8px;
-  font-size: 1em;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-}
-
-.create-btn {
-  align-self: flex-end;
-  padding: 8px 16px;
-  background-color: #4caf50;
-  color: white;
+/* Button styling */
+#timeline-buttons .btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px; /* Consistent button size */
+  font-size: 16px;
   border: none;
   border-radius: 4px;
   cursor: pointer;
+  transition: transform 0.2s ease, background-color 0.2s ease; /* Smooth background transition */
+  background-color: #f0f0f0; /* Subtle background */
 }
 
-.create-btn:hover {
-  background-color: #45a049;
+/* Hover effect for buttons */
+#timeline-buttons .btn:hover {
+  transform: scale(1.1);
+  background-color: #e0e0e0;
+}
+
+#timeline-buttons .btn i {
+  font-size: 18px;
+  vertical-align: middle;
+}
+
+#timeline-buttons button[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background-color: #cccccc;
 }
