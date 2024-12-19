@@ -15,7 +15,7 @@ html {
 }
 
 #observablehq-center {
-  margin: 0.5rem !important;
+  margin: 0.2rem !important;
 }
 
 .grid {
@@ -27,7 +27,7 @@ html {
   grid-template-columns: 2fr 3fr;
   /* grid-template-rows: 2fr 4fr; */
   /* grid-template-rows: repeat(2, 1fr) 1fr; */
-  gap: 2px; /* gap between grid items */
+  gap: 5px; /* gap between grid items */
   padding: 2px;
   height: 100vh;
 }
@@ -72,11 +72,35 @@ html {
   /* justify-content: center; Horizontally center content */
   /* align-items: center; Vertically center content */
   /* text-align: center; Center text alignment for multiline */
-  border: 1px darkgray solid;
+  /* border: 1px darkgray solid; */
   padding: 8px;
   margin: 0 !important;
-  border-radius: 0 !important;
-  box-sizing: border-box; /* Ensure padding is included in height calculations */
+  border-radius: 0.5em !important;
+  box-sizing: border-box;
+}
+
+.card {
+  --bulma-card-color: var(--bulma-text);
+  --bulma-card-background-color: var(--bulma-scheme-main);
+  --bulma-card-shadow: var(--bulma-shadow);
+  --bulma-card-radius: 0.75rem;
+  --bulma-card-header-background-color: transparent;
+  --bulma-card-header-color: var(--bulma-text-strong);
+  --bulma-card-header-padding: 0.75rem 1rem;
+  --bulma-card-header-shadow: 0 0.125em 0.25em hsla(var(--bulma-scheme-h),var(--bulma-scheme-s),var(--bulma-scheme-invert-l),0.1);
+  --bulma-card-header-weight: var(--bulma-weight-bold);
+  --bulma-card-content-background-color: transparent;
+  --bulma-card-content-padding: 1.5rem;
+  --bulma-card-footer-background-color: transparent;
+  --bulma-card-footer-border-top: 1px solid var(--bulma-border-weak);
+  --bulma-card-footer-padding: 0.75rem;
+  --bulma-card-media-margin: var(--bulma-block-spacing);
+  background-color: var(--bulma-card-background-color);
+  border-radius: var(--bulma-card-radius);
+  box-shadow: var(--bulma-card-shadow);
+  color: var(--bulma-card-color);
+  max-width: 100%;
+  position: relative;
 }
 
 .left-top .left-bottom .card {
@@ -134,8 +158,8 @@ html {
   align-items: flex-start;
   justify-content: space-between;
   width: 100%;
-  border: 1px solid #ddd;
-  padding: 10px;
+  /* border: 1px solid #ddd; */
+  padding: 6px;
   box-sizing: border-box;
 }
 
@@ -186,4 +210,32 @@ html {
   opacity: 0.6;
   cursor: not-allowed;
   background-color: #cccccc;
+}
+
+
+.quickview {
+  max-width: 400px;
+  /* overflow-y: hidden; */
+}
+.quickview-body {
+  flex: 1 1 0%;
+  overflow-y: hidden;
+  padding: 2em;
+}
+
+.field {
+  margin-bottom: 1rem;
+}
+.input,
+.select select {
+  width: 100%;
+}
+#projectLengthValue {
+  font-weight: bold;
+  margin-left: 8px;
+}
+
+.card-content {
+  background-color: var(--bulma-card-content-background-color);
+  padding: 5px;
 }

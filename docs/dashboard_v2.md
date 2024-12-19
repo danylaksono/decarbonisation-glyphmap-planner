@@ -46,6 +46,8 @@ import {
   convertGridCsvToGeoJson,
   context2d,
 } from "./components/utils.js";
+import * as bulmaToast from "npm:bulma-toast";
+import * as bulmaQuickview from "npm:bulma-quickview@2.0.0/dist/js/bulma-quickview.js";
 ```
 
 ```js
@@ -157,132 +159,112 @@ const [detailOnDemand, setDetailOnDemand] = useState(null); // detail on demand 
 
 <!-------- Stylesheets -------->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css">
-
+<link rel="stylesheet" href="./styles/bulma-quickview.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-
 <link rel="stylesheet" href="./styles/dashboard.css">
-
 
 <!-- ---------------- HTML Layout ---------------- -->
 
 <div class="grid-container" style="padding:2px; height:100vh;">
-  <div id="left-panel" style="overflow-x:hidden; height:96vh;">
+  <div id="left-panel" style="overflow-x:hidden; overflow-y:hidden; height:96vh;">
     <div class="left-top">
-      <div class="card" style="overflow-y: scroll;">
-        <!-- <h2> Decarbonisation Planner </h2> -->
-        <br>
-         <div id="graph-container">
-          <div id="timeline-panel">
-            ${createTimelineInterface(
-            interventions,
-            () => {},
-            (click) => {
-              selectIntervention(click);
-              console.log("clicked block", interventions[click]);
-              },
-            450,
-            200
-          )}
-          </div> <!-- timeline panel -->
-          <nav id="timeline-buttons">
-            <button id="openModalBtn" data-show-modal class="btn" aria-label="Add">
-              <i class="fas fa-plus"></i>
-            </button>
-            <button class="btn edit" aria-label="Edit">
-              <i class="fas fa-edit" style="color:green;"></i>
-            </button>
-            ${html`<button class="btn erase" aria-label="Delete"
-              onclick=${(e) => {
-                e.stopPropagation();
-                console.log("clicked block", e);
-            }}>
-            <i class="fas fa-trash" style="color:red;"></i>
-          </button>`}
-            <button class="btn move-up" aria-label="Move Up">
-              <i class="fas fa-arrow-up"></i>
-            </button>
-            <button class="btn move-down" aria-label="Move Down">
-              <i class="fas fa-arrow-down"></i>
-            </button>
-          </nav>
-        </div> <!-- graph container -->
+      <div class="card" style="overflow-y: hidden;">
+        <header class="card-header">
+          <p class="card-header-title">Decarbonisation Timeline</p>
+        </header>
+        <div class="card-content">
+          <div class="content">
+            <div id="graph-container">
+              <div id="timeline-panel">
+                ${createTimelineInterface(
+                interventions,
+                () => {},
+                (click) => {
+                  selectIntervention(click);
+                  console.log("clicked block", interventions[click]);
+                },
+                450,
+                200
+              )}
+              </div> <!-- timeline panel -->
+              <nav id="timeline-buttons">
+                <button id="openQuickviewButton"  data-show="quickview" class="btn" aria-label="Add">
+                  <i class="fas fa-plus"></i>
+                </button>
+                <button class="btn edit" aria-label="Edit">
+                  <i class="fas fa-edit" style="color:green;"></i>
+                </button>
+                ${html`<button class="btn erase" aria-label="Delete"
+                  onclick=${(e) => {
+                    e.stopPropagation();
+                    console.log("clicked block", e);
+                }}>
+                <i class="fas fa-trash" style="color:red;"></i>
+              </button>`}
+                <button class="btn move-up" aria-label="Move Up">
+                  <i class="fas fa-arrow-up"></i>
+                </button>
+                <button class="btn move-down" aria-label="Move Down">
+                  <i class="fas fa-arrow-down"></i>
+                </button>
+              </nav>
+            </div> <!-- graph container -->
+          </div>
+        </div>
       </div> <!-- card -->
     </div> <!-- left top -->
     <div class="left-bottom">
         <div class="card" style="overflow-x:hidden;">
-          <!-- <h2> Sortable Table </h2> -->
-            ${table.getNode()}
-            <div>No. of intervened buildings: ${JSON.stringify(stackedResults.summary.intervenedCount)}</div>
+          <header class="card-header">
+            <p class="card-header-title">Table View</p>
+          </header>
+          <div class="card-content">
+            <div class="content">
+              ${table.getNode()}
+              <div>No. of intervened buildings: ${JSON.stringify(stackedResults.summary.intervenedCount)}</div>
+            </div>
+          </div>
         </div>
     </div> <!-- left bottom -->
     </div> <!-- left panel -->
   <div id="main-panel">
     <div class="card" style="overflow-x:hidden; overflow-y:hidden; height:96vh;">
-      <!-- <h2> Main Panel </h2> -->
-      ${glyphmapTypeInput}
-      ${mapAggregationInput}
-      ${(map_aggregate == "Building Level") ? ""
-        : html`${playButton} ${morphFactorInput}`}
-      ${resize((width, height) => createGlyphMap(map_aggregate, {width, height}))}
+      <header class="card-header">
+        <p class="card-header-title">Map View</p>
+      </header>
+      <div class="card-content">
+        <div class="content">
+          ${mapAggregationInput}
+          ${(map_aggregate == "Building Level") ? ""
+            : html`${playButton} ${morphFactorInput}`}
+          ${resize((width, height) => createGlyphMap(map_aggregate, {width, height}))}
+        </div>
+      </div>
     </div>
   </div>
 </div>
 
-<!-------- MODAL -------->
-<!-- <div id="interventionModal" style="padding:0.2em; border-width:0px;">
-  <div id="project-properties" class="card">
-    <div class="form-group">
-      ${techsInput}
-    </div>
-    <div class="form-group">
-      ${totalBudgetInput}
-    </div>
-    <div class="form-group">
-      <div style="display:flex; flex-direction: row; align-items: center; min-height: 25.5px; gap: 60px;">
-        <span><b>Start Year</b></span> ${startYearInput}
-      </div>
-    </div>
-    <div class="form-group">
-      <label for="total-budget">Project length (years):</label>
-      ${projectLengthInput}
-    </div>
-    <div class="form-group">
-      <label for="total-budget">Budget Allocation Type:</label>
-      ${allocationTypeInput}
-    </div>
-    <div class="form-group">
-    <form method="dialog">
-      ${html`
-        <button class="create-btn" type="button" onclick=${addNewIntervention}>
-          Add New Intervention
-        </button>
-      `}
-      </form>
-    </div>
-  </div>
-</div> -->
-
-<!-- Modal -->
-<div class="modal" id="interventionModal">
-  <div class="modal-background"></div>
-  <div class="modal-card">
-    <header class="modal-card-head">
-      <p class="modal-card-title">Project Properties</p>
-      <button class="delete" aria-label="close" id="closeModalButton"></button>
-    </header>
-    <section class="modal-card-body">
-      <form id="projectForm">
+<!-------- MODAL/QVIEW -------->
+<div id="quickviewDefault" class="quickview is-left">
+  <header class="quickview-header">
+    <p class="title">New Budget Allocation</p>
+    <span class="delete" data-dismiss="quickview" id="closeQuickviewButton"></span>
+  </header>
+  <div class="quickview-body">
+    <div class="quickview-block">
+      <form id="quickviewForm">
         <!-- Technology Selection -->
         <div class="field">
           <label class="label">Technology</label>
           <div class="control">
-            <div class="select is-fullwidth">
-              <select id="technologySelect">
+            <div class="select is-arrowless">
+            ${techsInput}
+              <!-- <select id="technologySelect">
                 <option value="ASHP">ASHP</option>
                 <option value="PV">PV</option>
                 <option value="EV Chargers">EV Chargers</option>
                 <option value="GSHP">GSHP</option>
-              </select>
+              </select> -->
             </div>
           </div>
         </div>
@@ -302,7 +284,7 @@ const [detailOnDemand, setDetailOnDemand] = useState(null); // detail on demand 
         </div>
         <!-- Project Length -->
         <div class="field">
-          <label class="label">Project length (years)</label>
+          <label class="label">Project Length (years)</label>
           <div class="control">
             <input id="projectLengthInput" class="slider is-fullwidth" type="range" min="1" max="10" step="1" value="5">
             <span id="projectLengthValue">5</span> years
@@ -328,42 +310,46 @@ const [detailOnDemand, setDetailOnDemand] = useState(null); // detail on demand 
               <input type="radio" name="allocationType" value="cubic">
               Cubic
             </label>
-          </div>
+            </div>
+          <div class="field">
+            <label class="checkbox">
+              <input type="checkbox" name="flipBudget">
+              Flip Budget
+            </label>
+          </div> <!-- control -->
+        </div>
+        <!-- visual budget allocator  -->
+        <div class="field">
+          ${svg}
         </div>
       </form>
-    </section>
-    <footer class="modal-card-foot">
-      <button class="button is-success" id="addInterventionBtn">Add New Intervention</button>
-      <button class="button" id="cancelButton">Cancel</button>
-    </footer>
+    </div>
   </div>
+  <footer class="quickview-footer">
+    <button class="button is-success" id="addInterventionBtn">Add New Intervention</button>
+    <button class="button is-light" id="cancelButton">Cancel</button>
+  </footer>
 </div>
 
+
+
+
 ```js
-// // Modal script
-// let modalBtn = document.querySelector("[data-show-modal]");
-// let modal = document.querySelector("dialog");
-
-// // Show the modal
-// modalBtn.addEventListener("click", function () {
-//   modal.showModal();
-// });
-// Modal controls
-const openModalButton = document.querySelector("[data-show-modal]"); //document.getElementById("openModalButton");
-const closeModalButton = document.getElementById("closeModalButton");
+const openQuickviewButton = document.getElementById("openQuickviewButton");
+const closeQuickviewButton = document.getElementById("closeQuickviewButton");
+const quickviewDefault = document.getElementById("quickviewDefault");
 const cancelButton = document.getElementById("cancelButton");
-const interventionModal = document.getElementById("interventionModal");
 
-openModalButton.addEventListener("click", () => {
-  interventionModal.classList.add("is-active");
+openQuickviewButton.addEventListener("click", () => {
+  quickviewDefault.classList.add("is-active");
 });
 
-closeModalButton.addEventListener("click", () => {
-  interventionModal.classList.remove("is-active");
+closeQuickviewButton.addEventListener("click", () => {
+  quickviewDefault.classList.remove("is-active");
 });
 
 cancelButton.addEventListener("click", () => {
-  interventionModal.classList.remove("is-active");
+  quickviewDefault.classList.remove("is-active");
 });
 
 // Update project length dynamically
@@ -391,9 +377,16 @@ addInterventionBtn.addEventListener("click", () => {
     allocationType,
   });
 
-  alert("Intervention Added!");
-  interventionModal.classList.remove("is-active"); // Close modal after submission
+  // addNewIntervention(startYear, technology, totalBudget, projectLength, allocationType);
+
+  // alert("Intervention Added!");
+  quickviewDefault.classList.remove("is-active"); // Close quickview after submission
 });
+```
+
+```js
+const techies = view(technologySelect)
+console.log(techies);
 ```
 
 ```js
@@ -429,16 +422,7 @@ if (interventions.length === 0) {
 }
 ```
 
-```js
-// Disable buttons when no intervention is selected
-document
-  .querySelectorAll("#timeline-buttons button:not(#openModalBtn)")
-  .forEach((button) => {
-    button.disabled = !selectedIntervention;
-    // console.log("button status", button.disabled);
-    button.setAttribute("aria-disabled", !selectedIntervention);
-  });
-```
+
 
 <!-- ---------------- Input form declarations ---------------- -->
 
@@ -456,13 +440,13 @@ const techsInput = Inputs.select(
     "Insulation - Under Floor",
   ],
   {
-    label: html`<b>Technology</b>`,
+    // label: html`<b>Technology</b>`,
     value: "ASHP",
-    submit: true,
+    // submit: true,
     // disabled: selectedIntervention ? true : false,
   }
 );
-techsInput.style["max-width"] = "300px";
+// techsInput.style["max-width"] = "300px";
 Object.assign(techsInput, {
   oninput: (event) => event.isTrusted && event.stopImmediatePropagation(),
   onchange: (event) => event.currentTarget.dispatchEvent(new Event("input")),
@@ -598,11 +582,24 @@ Object.assign(morphFactorInput, {
   onchange: (event) => event.currentTarget.dispatchEvent(new Event("input")),
 });
 const morph_factor = Generators.input(morphFactorInput);
+
+const playButton = html`<button class="btn edit" style="margin-top: 10px;">
+  <i class="fas fa-play"></i>&nbsp;
+</button>`;
 ```
 
 ```js
-const playButton = html`<button class="btn edit" style="margin-top: 10px;"><i class="fas fa-play"></i>&nbsp;</button>`;
+// Disable timeline buttons when no intervention is selected
+document
+  .querySelectorAll("#timeline-buttons button:not(#openQuickviewButton)")
+  .forEach((button) => {
+    button.disabled = !selectedIntervention;
+    // console.log("button status", button.disabled);
+    button.setAttribute("aria-disabled", !selectedIntervention);
+  });
 ```
+
+<!--------------- Budget Allocator ---------------->
 
 ```js
 console.log(">> Budget Allocator...");
@@ -636,13 +633,14 @@ const { svg, getAllocations } = allocator.visualise(
 
 ```js
 // set allocation based on custom graph
-allocation_type;
+// allocation_type;
 const allocations = selected ? getAllocations(selected) : initialAllocations;
 // display(interventions);
 ```
 
 ```js
-// console.log("selected: ", selected);
+console.log(">> What is Selected...");
+console.log("selected: ", selected);
 ```
 
 ```js
@@ -661,14 +659,12 @@ function set(input, value) {
 }
 ```
 
-
 ```js
 console.log(">> Morph animation logic...");
 // morph animation logic
 let playing = false; // Track play/pause state
 let direction = 1; // Controls the animation direction (0 to 1 or 1 to 0)
 let animationFrame; // Stores the requestAnimationFrame ID
-
 
 function animate(currentValue) {
   // Increment or decrement the value
@@ -691,7 +687,9 @@ function animate(currentValue) {
 // Button click event listener
 playButton.addEventListener("click", () => {
   playing = !playing; // Toggle play/pause state
-  playButton.innerHTML = playing ? '<i class="fas fa-pause"></i>' : '<i class="fas fa-play"></i>';
+  playButton.innerHTML = playing
+    ? '<i class="fas fa-pause"></i>'
+    : '<i class="fas fa-play"></i>';
 
   if (playing) {
     // Start the animation with the current slider value
@@ -752,6 +750,7 @@ function addIntervention(
   // close the modal
   document.getElementById("interventionModal").style.display = "none";
 }
+
 // remove intervention
 function removeIntervention(index) {
   if (index >= 0 && index < interventions.length) {
@@ -765,7 +764,7 @@ function removeIntervention(index) {
 }
 
 // handle form submission: add new intervention
-function addNewIntervention() {
+function addNewIntervention(start_year, technology, allocations) {
   const new_start_year = start_year;
   const new_tech = technology;
   const new_allocations = allocations;
@@ -1208,7 +1207,6 @@ function glyphMapSpecBasic(width = 1000, height = 600) {
         // colour.opacity = morph_factor;
         // ctx.fillStyle = colour;
         // ctx.fill();
-
       },
 
       drawFn: (cell, x, y, cellSize, ctx, global, panel) => {
@@ -1265,7 +1263,6 @@ function glyphMapSpecBasic(width = 1000, height = 600) {
 ```
 
 ```js
-
 const glyphMapSpecBasicWgs84 = {
   ...glyphMapSpecBasic,
   // coordType: "mercator",
@@ -1714,17 +1711,17 @@ console.log(">> Morphing...");
 morph_factor; //causes code to run whenever the slider is moved
 morphGlyphMap.setGlyph({
   discretiserFn: valueDiscretiser(tweenWGS84Lookup),
-//   preDrawFn: (cells, cellSize, ctx, global, panel) => {
-//   //unfortunately need to repeat what's in the base
+  //   preDrawFn: (cells, cellSize, ctx, global, panel) => {
+  //   //unfortunately need to repeat what's in the base
 
-//   //draw a coloured polygon
-//   ctx.beginPath();
-//   ctx.rect(0, 0, panel.getWidth(), panel.getHeight());
-//   const colour = d3.color("#fff");
-//   colour.opacity = range;
-//   ctx.fillStyle = colour;
-//   ctx.fill();
-// }
+  //   //draw a coloured polygon
+  //   ctx.beginPath();
+  //   ctx.rect(0, 0, panel.getWidth(), panel.getHeight());
+  //   const colour = d3.color("#fff");
+  //   colour.opacity = range;
+  //   ctx.fillStyle = colour;
+  //   ctx.fill();
+  // }
 });
 ```
 
@@ -1828,7 +1825,6 @@ function insideCell(c, x, y) {
   return false;
 }
 ```
-
 
 ```js
 console.log(">> Loaded All functions...");
