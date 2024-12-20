@@ -105,10 +105,12 @@ export class BudgetAllocator {
         throw new Error(`Unsupported curve type: ${curveType}`);
     }
 
-    // Rest of the method remains the same
-    const weights = this.years.map((_, i) =>
-      curveFunction(i / (this.projectLength - 1))
-    );
+    // weights
+    const weights = this.years.map((_, i) => {
+      // Use reversed index when inverted
+      const index = invert ? this.projectLength - 1 - i : i;
+      return curveFunction(index / (this.projectLength - 1));
+    });
     const weightSum = d3.sum(weights);
 
     let allocatedBudget = 0;
@@ -122,10 +124,6 @@ export class BudgetAllocator {
       allocatedBudget += budget;
       return { year, budget };
     });
-
-    if (invert) {
-      allocations.reverse();
-    }
 
     return allocations;
   }
@@ -200,11 +198,19 @@ export class BudgetAllocator {
       .attr("transform", `translate(0,${height - margin.bottom})`)
       .call(d3.axisBottom(xScale).tickFormat(d3.format("d")));
 
+    const formatYAxis = (value) => {
+      if (value >= 1e9) return d3.format(".1f")(value / 1e9) + "B";
+      if (value >= 1e6) return d3.format(".1f")(value / 1e6) + "M";
+      if (value >= 1e3) return d3.format(".1f")(value / 1e3) + "k";
+      return d3.format(".0f")(value);
+    };
+
     // Append y-axis to the SVG
     svg
       .append("g")
       .attr("transform", `translate(${margin.left},0)`)
-      .call(d3.axisLeft(yScale));
+      // .call(d3.axisLeft(yScale));
+      .call(d3.axisLeft(yScale).tickFormat(formatYAxis));
 
     // Draw the line representing the budget allocation curve
     svg
@@ -310,7 +316,7 @@ export class BudgetAllocator {
     svg
       .append("text")
       .attr("transform", "rotate(-90)")
-      .attr("y", margin.left - 70)
+      .attr("y", margin.left - 60)
       .attr("x", -height / 2)
       .attr("text-anchor", "middle")
       .text("Budget Allocation");

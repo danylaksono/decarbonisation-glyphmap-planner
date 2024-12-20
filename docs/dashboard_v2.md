@@ -10,6 +10,7 @@ sql:
 <!-- ------------ Imports ------------ -->
 
 ```js
+console.log(">> Importing libraries...");
 const d3 = require("d3", "d3-geo-projection");
 const flubber = require("flubber@0.4");
 
@@ -45,6 +46,8 @@ import {
   convertGridCsvToGeoJson,
   context2d,
 } from "./components/utils.js";
+import * as bulmaToast from "npm:bulma-toast";
+import * as bulmaQuickview from "npm:bulma-quickview@2.0.0/dist/js/bulma-quickview.js";
 ```
 
 ```js
@@ -112,12 +115,20 @@ FROM oxford b;
 
 ```js
 // >> declare data
+console.log(">> Loading Data...");
 const buildingsData = [...oxford_data];
-const flatData = buildingsData.map((p) => ({ ...p }));
-const allColumns = Object.keys(buildingsData[0]);
+// const buildingsData = oxford_data.slice(); // copy data
 ```
 
 ```js
+// const flatData = buildingsData.map((p) => ({ ...p }));
+const flatData = buildingsData.map((p) => Object.assign({}, p));
+const allColumns = Object.keys(buildingsData[0]);
+console.log(">>  Loading Data Done");
+```
+
+```js
+console.log(">> Define and Load boundary data...");
 // oxford boundary data
 const lsoa_boundary = FileAttachment(
   "./data/oxford_lsoa_boundary.geojson"
@@ -141,333 +152,228 @@ function useState(value) {
 const [selected, setSelected] = useState({}); // selected data in table
 const [getIntervention, setIntervention] = useState([]); // list of interventions
 const [getResults, setResults] = useState([]); // list of results, from running model
+const [allocations, setAllocations] = useState([]); // list of budget allocations
 const [selectedIntervention, setSelectedIntervention] = useState(null); // selected intervention in timeline
 // const [selectedInterventionIndex, setSelectedInterventionIndex] = useState(null); // selected intervention index
 const [detailOnDemand, setDetailOnDemand] = useState(null); // detail on demand on map
 ```
 
 <!-------- Stylesheets -------->
-<link
-  rel="stylesheet"
-  href="https://cdn.jsdelivr.net/npm/bulma@1.0.0/css/bulma.min.css"
->
-
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css">
+<link rel="stylesheet" href="./styles/bulma-quickview.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-
-<link
-  rel="stylesheet"
-  href="./styles/dashboard.css"
->
-
-<link
-  rel="stylesheet"
-  href="./components/yearpicker/yearpicker.css"
->
-
-<style>
-body, html {
-  height: 100%;
-  margin: 0 !important;
-  overflow: hidden;
-  padding: 0;
-}
-
-#observablehq-main, #observablehq-header, #observablehq-footer {
-    margin: 0 !important;
-    /* width: 100% !important; */
-    max-width: 100% !important;
-}
-
-#observablehq-center {
-  margin: 0.5rem !important;
-}
-
-.grid {
-  margin: 0 !important;
-}
-
-.grid-container {
-    display: grid;
-    grid-template-columns: 2fr 3fr;
-    /* grid-template-rows: 2fr 4fr; */
-    /* grid-template-rows: repeat(2, 1fr) 1fr; */
-    gap: 2px; /* gap between grid items */
-    padding: 2px;
-    height: 100vh;
-  }
-
-  /* Left panel boxes */
-  #left-panel {
-     /* Spans 2 rows */
-    display: grid;
-    grid-column: 1;
-    grid-template-rows: 2fr 3fr; /* Sets the row proportions */
-    /* grid-template-rows: 1fr 1fr; Two equal rows */
-    height: 100%;
-    gap: 4px;
-  }
-
-  .left-top {
-    display: grid;
-    grid-row: 1;
-    /* grid-template-columns: 1fr 1fr; Split into two equal columns */
-    gap: 4px;
-  }
-
-  /* Main panel bottom, split into two sections */
-  .left-bottom {
-    grid-row: 2;
-    display: grid;
-    /* grid-template-columns: 3fr 1fr; Split bottom row into 1/3 ratio */
-    gap: 4px;
-  }
-
-  /* Right panel boxes */
-  #main-panel {
-    grid-column: 2;
-    display: grid;
-    grid-template-rows: 4fr 2fr;
-    height: 98vh;
-    gap: 4px;
-  }
-
-  .card {
-    /* display: flex; /* Use Flexbox */
-    /* justify-content: center; Horizontally center content */
-    /* align-items: center; Vertically center content */
-    /* text-align: center; Center text alignment for multiline */ */
-    border: 1px dark-grey solid;
-    padding: 8px;
-    margin: 0 !important;
-    border-radius: 0 !important;
-    box-sizing: border-box; /* Ensure padding is included in height calculations */
-  }
-
-  .left-top .left-bottom .card {
-      height: 100%; /* Let the grid layout define height naturally */
-  }
-
-.dragging {
-  opacity: 0.5;
-  cursor: grabbing;
-}
-
-#interventions-list li {
-  transition: background-color 0.3s;
-}
-
-#interventions-list li:hover {
-  background-color: #f9f9f9;
-}
-
-#interventions-list li.selected {
-  background-color: #e0f7fa; /* Light cyan for selection */
-  font-weight: bold;
-  border-left: 4px solid #00bcd4; /* Accent border */
-}
-
-.buttons {
-      margin-left: auto;
-    }
-
-.buttons button {
-  margin-left: 5px;
-  border: none;
-  background: none;
-  cursor: pointer;
-  color: #007bff;
-}
-
-.buttons button:hover {
-  color: #0056b3;
-}
-
-.hidden {
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  pointer-events: none; /* Prevent clicks when hidden */
-}
-
-.visible {
-  opacity: 1;
-  transition: opacity 0.3s ease;
-}
-
-#graph-container {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  width: 100%;
-  border: 1px solid #ddd;
-  padding: 10px;
-  box-sizing: border-box;
-}
-
-
-/* Panel styling */
-#timeline-panel {
-  flex: 1;
-  background-color: #f9f9f9;
-  padding: 10px;
-  border-right: 1px solid #ddd;
-  height: 100%;
-}
-
-/* Buttons container styling */
-#timeline-buttons {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin: 10px; /* Margin on all sides */
-}
-
-/* Button styling */
-#timeline-buttons .btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px; /* Consistent button size */
-  font-size: 16px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: transform 0.2s ease, background-color 0.2s ease; /* Smooth background transition */
-  background-color: #f0f0f0; /* Subtle background */
-}
-
-/* Hover effect for buttons */
-#timeline-buttons .btn:hover {
-  transform: scale(1.1);
-  background-color: #e0e0e0;
-}
-
-#timeline-buttons .btn i {
-  font-size: 18px;
-  vertical-align: middle;
-}
-
-#timeline-buttons button[disabled] {
-    opacity: 0.6;
-    cursor: not-allowed;
-    background-color: #cccccc;
-  }
-
-
-
-</style>
+<link rel="stylesheet" href="./styles/dashboard.css">
 
 <!-- ---------------- HTML Layout ---------------- -->
 
 <div class="grid-container" style="padding:2px; height:100vh;">
-  <div id="left-panel" style="overflow-x:hidden; height:96vh;">
+  <div id="left-panel" style="overflow-x:hidden; overflow-y:hidden; height:96vh;">
     <div class="left-top">
-      <div class="card" style="overflow-y: scroll;">
-        <!-- <h2> Decarbonisation Planner </h2> -->
-        <br>
-         <div id="graph-container">
-          <div id="timeline-panel">
-            ${createTimelineInterface(
-            interventions,
-            () => {},
-            (click) => {
-              selectIntervention(click);
-              console.log("clicked block", interventions[click]);
-              },
-            450,
-            200
-          )}
-          </div> <!-- timeline panel -->
-          <nav id="timeline-buttons">
-            <button id="openModalBtn" data-show-modal class="btn" aria-label="Add">
-              <i class="fas fa-plus"></i>
-            </button>
-            <button class="btn edit" aria-label="Edit">
-              <i class="fas fa-edit" style="color:green;"></i>
-            </button>
-            ${html`<button class="btn erase" aria-label="Delete"
-              onclick=${(e) => {
-                e.stopPropagation();
-                console.log("clicked block", e);
-            }}>
-            <i class="fas fa-trash" style="color:red;"></i>
-          </button>`}
-            <button class="btn move-up" aria-label="Move Up">
-              <i class="fas fa-arrow-up"></i>
-            </button>
-            <button class="btn move-down" aria-label="Move Down">
-              <i class="fas fa-arrow-down"></i>
-            </button>
-          </nav>
-        </div> <!-- graph container -->
+      <div class="card" style="overflow-y: hidden;">
+        <header class="quickview-header">
+          <p class="title">Decarbonisation Timeline</p>
+        </header>
+        <div class="card-content">
+          <div class="content">
+            <div id="graph-container">
+              <div id="timeline-panel">
+                ${createTimelineInterface(
+                interventions,
+                () => {},
+                (click) => {
+                  selectIntervention(click);
+                  console.log("clicked block", interventions[click]);
+                },
+                450,
+                200
+              )}
+              </div> <!-- timeline panel -->
+              <nav id="timeline-buttons">
+                <button id="openQuickviewButton"  data-show="quickview" class="btn" aria-label="Add">
+                  <i class="fas fa-plus"></i>
+                </button>
+                <button class="btn edit" aria-label="Edit">
+                  <i class="fas fa-edit" style="color:green;"></i>
+                </button>
+                ${html`<button class="btn erase" aria-label="Delete"
+                  onclick=${(e) => {
+                    e.stopPropagation();
+                    console.log("clicked block", e);
+                }}>
+                <i class="fas fa-trash" style="color:red;"></i>
+              </button>`}
+                <button class="btn move-up" aria-label="Move Up">
+                  <i class="fas fa-arrow-up"></i>
+                </button>
+                <button class="btn move-down" aria-label="Move Down">
+                  <i class="fas fa-arrow-down"></i>
+                </button>
+              </nav>
+            </div> <!-- graph container -->
+          </div>
+        </div>
       </div> <!-- card -->
     </div> <!-- left top -->
     <div class="left-bottom">
         <div class="card" style="overflow-x:hidden;">
-          <!-- <h2> Sortable Table </h2> -->
-            ${table.getNode()}
-            <div>No. of intervened buildings: ${JSON.stringify(stackedResults.summary.intervenedCount)}</div>
+          <header class="quickview-header">
+            <p class="title">Table View </p>
+          </header>
+          <div class="card-content">
+            <div class="content">
+              ${table.getNode()}
+              <div>No. of intervened buildings: ${JSON.stringify(stackedResults.summary.intervenedCount)}</div>
+            </div>
+          </div>
         </div>
     </div> <!-- left bottom -->
     </div> <!-- left panel -->
   <div id="main-panel">
     <div class="card" style="overflow-x:hidden; overflow-y:hidden; height:96vh;">
-      <!-- <h2> Main Panel </h2> -->
-      ${glyphmapTypeInput}
-      ${mapAggregationInput}
-      ${(map_aggregate == "Building Level") ? "" : morphFactorInput}
-      ${resize((width, height) => createGlyphMap(map_aggregate, {width, height}))}
+      <header class="quickview-header">
+        <p class="title">Map View</p>
+      </header>
+      <div class="card-content">
+        <div class="content">
+          ${mapAggregationInput}
+          ${(map_aggregate == "Building Level") ? ""
+            : html`${playButton} ${morphFactorInput}`}
+          ${resize((width, height) => createGlyphMap(map_aggregate, {width, height}))}
+        </div>
+      </div>
     </div>
   </div>
 </div>
 
-<!-------- MODAL -------->
-<dialog style="padding:0.2em; border-width:0px;">
-  <div id="project-properties" class="card">
-    <div class="form-group">
-      ${techsInput}
-    </div>
-    <div class="form-group">
-      ${totalBudgetInput}
-    </div>
-    <div class="form-group">
-      <div style="display:flex; flex-direction: row; align-items: center; min-height: 25.5px; gap: 60px;">
-        <span><b>Start Year</b></span> ${startYearInput}
-      </div>
-    </div>
-    <div class="form-group">
-      <label for="total-budget">Project length (years):</label>
-      ${projectLengthInput}
-    </div>
-    <div class="form-group">
-      <label for="total-budget">Budget Allocation Type:</label>
-      ${allocationTypeInput}
-    </div>
-    <!-- ${svg} -->
-    <div class="form-group">
-    <form method="dialog">
-      ${html`
-        <button class="create-btn" type="button" onclick=${addNewIntervention}>
-          Add New Intervention
-        </button>
-      `}
-      </form> 
+<!-------- MODAL/QVIEW -------->
+<div id="quickviewDefault" class="quickview is-left">
+  <header class="quickview-header">
+    <p class="title">New Budget Allocation</p>
+    <span class="delete" data-dismiss="quickview" id="closeQuickviewButton"></span>
+  </header>
+  <div class="quickview-body">
+    <div class="quickview-block">
+      <form id="quickviewForm">
+        <!-- Technology Selection -->
+        <div class="field">
+          <label class="label">Technology</label>
+          <div class="control">
+            <div class="select is-arrowless">
+            ${techsInput}
+            </div>
+          </div>
+        </div>
+        <!-- Total Budget -->
+        <div class="field">
+          <label class="label">Total Budget</label>
+          <div class="control">
+            ${totalBudgetInput}
+            <!-- <input id="totalBudgetInput" class="input" type="number" placeholder="Enter total budget" required> -->
+          </div>
+        </div>
+        <!-- Start Year -->
+        <div class="field">
+          <label class="label">Start Year</label>
+          <div class="control">
+          ${startYearInput}
+            <!-- <input id="startYearInput" class="input" type="number" placeholder="e.g., 2024" required> -->
+          </div>
+        </div>
+        <!-- Project Length -->
+        <div class="field">
+          <label class="label">Project Length (years)</label>
+          <div class="control">
+            ${projectLengthInput}
+            <!-- <input id="projectLengthInput" class="slider is-fullwidth" type="range" min="1" max="10" step="1" value="5"> -->
+            <span id="projectLengthValue">${project_length}</span> years
+          </div>
+        </div>
+        <!-- Budget Allocation Type -->
+        <div class="field">
+          <label class="label">Budget Allocation Type</label>
+          <div class="control">
+            ${allocationTypeInput}
+            <!-- <label class="radio">
+              <input type="radio" name="allocationType" value="linear" checked>
+              Linear
+            </label>
+            <label class="radio">
+              <input type="radio" name="allocationType" value="sqrt">
+              Sqrt
+            </label>
+            <label class="radio">
+              <input type="radio" name="allocationType" value="exp">
+              Exp
+            </label>
+            <label class="radio">
+              <input type="radio" name="allocationType" value="cubic">
+              Cubic
+            </label> -->
+            </div>
+          <div class="field">
+            ${flipButtonInput}
+          </div> <!-- control -->
+        </div>
+        <!-- visual budget allocator  -->
+        <div class="field">
+          ${svg}
+        </div>
+      </form>
     </div>
   </div>
-</dialog>
+  <footer class="quickview-footer">
+    <button class="button is-success" id="addInterventionBtn">Add New Intervention</button>
+    <button class="button is-light" id="cancelButton">Cancel</button>
+  </footer>
+</div>
 
 ```js
-// Modal script
-let modalBtn = document.querySelector("[data-show-modal]");
-let modal = document.querySelector("dialog");
+const openQuickviewButton = document.getElementById("openQuickviewButton");
+const closeQuickviewButton = document.getElementById("closeQuickviewButton");
+const quickviewDefault = document.getElementById("quickviewDefault");
+const cancelButton = document.getElementById("cancelButton");
 
-// Show the modal
-modalBtn.addEventListener("click", function () {
-  modal.showModal();
+openQuickviewButton.addEventListener("click", () => {
+  quickviewDefault.classList.add("is-active");
+});
+
+closeQuickviewButton.addEventListener("click", () => {
+  quickviewDefault.classList.remove("is-active");
+});
+
+cancelButton.addEventListener("click", () => {
+  quickviewDefault.classList.remove("is-active");
+});
+
+// Add New Intervention button logic
+const addInterventionBtn = document.getElementById("addInterventionBtn");
+addInterventionBtn.addEventListener("click", () => {
+  // const technology = document.getElementById("technologySelect").value;
+  // const totalBudget = document.getElementById("totalBudgetInput").value;
+  // const startYear = document.getElementById("startYearInput").value;
+  // // const projectLength = projectLengthInput.value;
+  // const allocationType = document.querySelector(
+  //   "input[name='allocationType']:checked"
+  // ).value;
+
+  console.log("  total_budget ... ", getNumericBudget(total_budget));
+  console.log("  start_year ... ", start_year);
+  console.log("  project_length ... ", project_length);
+  console.log("  flip_budget ... ", flip_budget);
+
+  setAllocations(getAllocations());
+
+  console.log("  .. allocations", allocations);
+
+  addNewIntervention(start_year, technology, allocations);
+
+  // alert("Intervention Added!");
+  quickviewDefault.classList.remove("is-active"); // Close quickview after submission
 });
 ```
 
 ```js
+console.log(">> Preparing Interventions...");
 // for dealing with selected list items
 let selectedInterventionIndex = null; // Track the selected intervention index
 // console.log("selectedInterventionIndex: ", selectedInterventionIndex);
@@ -499,20 +405,10 @@ if (interventions.length === 0) {
 }
 ```
 
-```js
-// Disable buttons when no intervention is selected
-document
-  .querySelectorAll("#timeline-buttons button:not(#openModalBtn)")
-  .forEach((button) => {
-    button.disabled = !selectedIntervention;
-    // console.log("button status", button.disabled);
-    button.setAttribute("aria-disabled", !selectedIntervention);
-  });
-```
-
 <!-- ---------------- Input form declarations ---------------- -->
 
 ```js
+console.log(">> Creating input forms...");
 // list of decarb technologies
 const techsInput = Inputs.select(
   [
@@ -525,13 +421,13 @@ const techsInput = Inputs.select(
     "Insulation - Under Floor",
   ],
   {
-    label: html`<b>Technology</b>`,
+    // label: html`<b>Technology</b>`,
     value: "ASHP",
-    submit: true,
+    // submit: true,
     // disabled: selectedIntervention ? true : false,
   }
 );
-techsInput.style["max-width"] = "300px";
+// techsInput.style["max-width"] = "300px";
 Object.assign(techsInput, {
   oninput: (event) => event.isTrusted && event.stopImmediatePropagation(),
   onchange: (event) => event.currentTarget.dispatchEvent(new Event("input")),
@@ -540,25 +436,43 @@ const technology = Generators.input(techsInput);
 // display(techsInput);
 
 // Total Budget
-const totalBudgetInput = Inputs.text({
-  label: html`<b>Total Budget</b>`,
-  placeholder: "Available Budget in GBP",
-  value: 100_000_000,
-  submit: true,
-  // disabled: selectedIntervention ? true : false,
-  // value: selectedIntervention
-  //   ? Math.round(
-  //       (selectedIntervention.totalBudgetSpent + Number.EPSILON) * 100
-  //     ) / 100
-  //   : 100_000_000,
-  // submit: html`<button class="create-btn" style="color:white;">Submit</button>`,
-});
-totalBudgetInput.style["max-width"] = "300px";
+// const totalBudgetInput = Inputs.number({
+//   // label: html`<b>Total Budget</b>`,
+//   placeholder: "Available Budget in GBP",
+//   value: 100_000_000,
+// });
+const totalBudgetInput = html`<input
+  id="totalBudgetInput"
+  class="input"
+  value="10,000,000"
+  type="text"
+  placeholder="Enter total budget"
+/>`;
+// totalBudgetInput.style["max-width"] = "300px";
 Object.assign(totalBudgetInput, {
   oninput: (event) => event.isTrusted && event.stopImmediatePropagation(),
   onchange: (event) => event.currentTarget.dispatchEvent(new Event("input")),
 });
 const total_budget = Generators.input(totalBudgetInput);
+// console.log("totalBudgetInput total: ", total_budget);
+
+totalBudgetInput.addEventListener("input", (event) => {
+  // Remove existing formatting
+  const value = event.target.value.replace(/,/g, "").replace(/£/g, "");
+  // Format the number with commas and add the £ sign
+  event.target.value = "£" + value.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+});
+
+totalBudgetInput.addEventListener("blur", (event) => {
+  // Ensure proper formatting on blur
+  const value = event.target.value.replace(/,/g, "").replace(/£/g, "");
+  event.target.value = "£" + parseInt(value, 10).toLocaleString();
+});
+
+totalBudgetInput.addEventListener("focus", (event) => {
+  // Remove formatting to allow direct editing
+  event.target.value = event.target.value.replace(/,/g, "").replace(/£/g, "");
+});
 
 // Start Year
 // const startYearInput = Inputs.text({
@@ -572,7 +486,7 @@ const total_budget = Generators.input(totalBudgetInput);
 // });
 // startYearInput.style["max-width"] = "300px";
 const startYearInput = html`<input
-  style="width: 100%; max-width:100px; max-height: 25.5px;"
+  class="input"
   type="number"
   value="2024"
   step="1"
@@ -588,14 +502,24 @@ Object.assign(startYearInput, {
 const start_year = Generators.input(startYearInput);
 
 // Project Length
-const projectLengthInput = Inputs.range([0, 10], {
-  // label: html`<b>Project length in years</b>`,
-  step: 1,
-  value: 5,
-});
-projectLengthInput.number.style["max-width"] = "60px";
+// const projectLengthInput = Inputs.range([0, 10], {
+//   // label: html`<b>Project length in years</b>`,
+//   step: 1,
+//   value: 5,
+// });
+// projectLengthInput.number.style["max-width"] = "60px";
+const projectLengthInput = html`<input
+  id="projectLengthInput"
+  class="slider is-fullwidth"
+  type="range"
+  min="1"
+  max="10"
+  step="1"
+  value="5"
+/>`;
+
 Object.assign(projectLengthInput, {
-  oninput: (event) => event.isTrusted && event.stopImmediatePropagation(),
+  // oninput: (event) => event.isTrusted && event.stopImmediatePropagation(),
   onchange: (event) => event.currentTarget.dispatchEvent(new Event("input")),
 });
 const project_length = Generators.input(projectLengthInput);
@@ -662,30 +586,82 @@ const morphFactorInput = html`<input
   min="0"
   max="1"
 />`;
+Object.assign(morphFactorInput, {
+  // oninput: (event) => event.isTrusted && event.stopImmediatePropagation(),
+  onchange: (event) => event.currentTarget.dispatchEvent(new Event("input")),
+});
 const morph_factor = Generators.input(morphFactorInput);
+
+//  flip button
+const flipButtonInput = Inputs.toggle({ label: "Flip", value: true });
+Object.assign(flipButtonInput, {
+  // oninput: (event) => event.isTrusted && event.stopImmediatePropagation(),
+  onchange: (event) => event.currentTarget.dispatchEvent(new Event("input")),
+});
+const flip_budget = Generators.input(flipButtonInput);
+
+// play button
+const playButton = html`<button class="btn edit" style="margin-top: 10px;">
+  <i class="fas fa-play"></i>&nbsp;
+</button>`;
 ```
 
 ```js
+const getNumericBudget = (value) => {
+  // Remove commas and parse the value as a number
+  return parseFloat(value.replace(/,/g, "").replace(/£/g, ""));
+};
+```
+
+```js
+// Disable timeline buttons when no intervention is selected
+document
+  .querySelectorAll("#timeline-buttons button:not(#openQuickviewButton)")
+  .forEach((button) => {
+    button.disabled = !selectedIntervention;
+    // console.log("button status", button.disabled);
+    button.setAttribute("aria-disabled", !selectedIntervention);
+  });
+```
+
+<!--------------- Budget Allocator ---------------->
+
+```js
+console.log(">> Budget Allocator...");
+
+console.log("  .. total_budget", getNumericBudget(total_budget));
+console.log("  .. start_year", start_year);
+console.log("  .. project_length", project_length);
+console.log("  .. flip_budget", flip_budget);
+
 // Budget Allocator
 const allocator = new BudgetAllocator(
-  total_budget,
+  Number(getNumericBudget(total_budget)),
   Number(start_year),
   Number(project_length)
 );
+```
 
+```js
 let initialAllocations;
 if (allocation_type === "linear") {
   initialAllocations = allocator.allocateLinear();
 } else {
-  initialAllocations = allocator.allocateCustom(allocation_type);
+  initialAllocations = allocator.allocateCustom(
+    allocation_type,
+    { exponent: 2 },
+    flip_budget
+  );
 }
 ```
+
+<!-- get budget allocations -->
 
 ```js
 const { svg, getAllocations } = allocator.visualise(
   initialAllocations,
   (changes) => {
-    // console.log("data changed:", changes);
+    console.log("data changed:", changes);
     setSelected(changes);
   },
   400,
@@ -696,13 +672,8 @@ const { svg, getAllocations } = allocator.visualise(
 
 ```js
 // set allocation based on custom graph
-allocation_type;
-const allocations = selected ? getAllocations(selected) : initialAllocations;
-// display(interventions);
-```
-
-```js
-// console.log("selected: ", selected);
+// allocation_type;
+// const allocations = selected ? getAllocations(selected) : initialAllocations;
 ```
 
 ```js
@@ -711,9 +682,67 @@ let interventions = getIntervention;
 let results = getResults;
 ```
 
-<!-- ---------------- Functions ---------------- -->
+<!-- dealing with observable input reactivity -->
 
 ```js
+// dealing with observable input reactivity
+// two ways Obs input
+function set(input, value) {
+  input.value = value;
+  input.dispatchEvent(new Event("input", { bubbles: true }));
+  // console.log("input value:", input.value);
+}
+```
+
+<!-- morph animation logic -->
+
+```js
+console.log(">> Morph animation logic...");
+let playing = false; // Track play/pause state
+let direction = 1; // Controls the animation direction (0 to 1 or 1 to 0)
+let animationFrame; // Stores the requestAnimationFrame ID
+
+function animate(currentValue) {
+  // Increment or decrement the value
+  let newValue = currentValue + 0.01 * direction;
+
+  // Reverse direction if boundaries are reached
+  if (newValue >= 1 || newValue <= 0) {
+    direction *= -1;
+    newValue = Math.max(0, Math.min(1, newValue)); // Clamp value between 0 and 1
+  }
+
+  // Update the slider and dispatch the "input" event for reactivity
+  set(morphFactorInput, newValue);
+
+  if (playing) {
+    animationFrame = requestAnimationFrame(() => animate(newValue)); // Pass the updated value
+  }
+}
+
+// Button click event listener
+playButton.addEventListener("click", () => {
+  playing = !playing; // Toggle play/pause state
+  playButton.innerHTML = playing
+    ? '<i class="fas fa-pause"></i>'
+    : '<i class="fas fa-play"></i>';
+
+  if (playing) {
+    // Start the animation with the current slider value
+    const currentValue = parseFloat(morphFactorInput.value);
+    requestAnimationFrame(() => animate(currentValue));
+  } else {
+    cancelAnimationFrame(animationFrame); // Stop the animation
+  }
+});
+```
+
+<!-- ---------------- Functions ---------------- -->
+
+<!-- Intervention functions -->
+
+```js
+console.log(">> Loading intervention functions...");
 // >> Some functions related to creating and managing interventions
 
 // create config template
@@ -757,22 +786,11 @@ function addIntervention(
   setResults([...results, modelResult]);
   console.log("Intervention added:", config);
   // close the modal
-  document.getElementById("simpleModal").style.display = "none";
-}
-// remove intervention
-function removeIntervention(index) {
-  if (index >= 0 && index < interventions.length) {
-    setIntervention(interventions.filter((_, i) => i !== index));
-
-    // when intervention is removed, remove the corresponding results
-    setResults(results.filter((_, i) => i !== index));
-  } else {
-    console.log("Invalid index.");
-  }
+  document.getElementById("interventionModal").style.display = "none";
 }
 
 // handle form submission: add new intervention
-function addNewIntervention() {
+function addNewIntervention(start_year, technology, allocations) {
   const new_start_year = start_year;
   const new_tech = technology;
   const new_allocations = allocations;
@@ -801,6 +819,18 @@ function addNewIntervention() {
     filters,
     priorities
   );
+}
+
+// remove intervention
+function removeIntervention(index) {
+  if (index >= 0 && index < interventions.length) {
+    setIntervention(interventions.filter((_, i) => i !== index));
+
+    // when intervention is removed, remove the corresponding results
+    setResults(results.filter((_, i) => i !== index));
+  } else {
+    console.log("Invalid index.");
+  }
 }
 
 // Modify current intervention
@@ -964,8 +994,10 @@ const stackedResults = stackResults(results);
 ```
 
 ```js
+console.log(">> Loading model tech configuration...");
+
 let config = {
-  initial_year: Number(start_year),
+  initial_year: 0, // Number(start_year),
   rolledover_budget: 0,
   yearly_budgets: allocations.map((item) => item.budget),
   tech: {},
@@ -1049,6 +1081,7 @@ function runModel(config, buildings) {
 <!-- ---------------- Sortable Table ---------------- -->
 
 ```js
+console.log(">> Define sortable table columns...");
 // columns to show in the table
 const cols = [
   { column: "id", nominals: null },
@@ -1082,6 +1115,7 @@ const cols = [
 ```
 
 ```js
+console.log(">> Create sortable table...");
 const tableData = selectedIntervention ? stackedResults.buildings : flatData;
 
 const table = new createTable(tableData, cols, (changes) => {
@@ -1091,12 +1125,13 @@ const table = new createTable(tableData, cols, (changes) => {
 ```
 
 ```js
-console.log("Test inferring data types", inferTypes(tableData));
+// console.log("Test inferring data types", inferTypes(tableData));
 ```
 
 <!-- ---------------- Glyph Maps ---------------- -->
 
 ```js
+console.log(">> Create glyph map...");
 // glyphmap basic specs
 function glyphMapSpecBasic(width = 1000, height = 600) {
   return {
@@ -1202,6 +1237,14 @@ function glyphMapSpecBasic(width = 1000, height = 600) {
         global.colourScalePop = d3
           .scaleSequential(d3.interpolateBlues)
           .domain([0, d3.max(cells.map((row) => row.building_area))]);
+
+        // //draw a coloured polygon
+        // ctx.beginPath();
+        // ctx.rect(0, 0, panel.getWidth(), panel.getHeight());
+        // const colour = d3.color("#fff");
+        // colour.opacity = morph_factor;
+        // ctx.fillStyle = colour;
+        // ctx.fill();
       },
 
       drawFn: (cell, x, y, cellSize, ctx, global, panel) => {
@@ -1267,6 +1310,7 @@ const glyphMapSpecBasicWgs84 = {
 ```
 
 ```js
+console.log(">> Glyphmap-related functions...");
 function drawDetailOnDemand(width, height) {
   let canvas = document.createElement("canvas");
   let ctx = canvas.getContext("2d");
@@ -1362,6 +1406,7 @@ function drawPieSlice(ctx, cx, cy, r, angleStart, angleEnd, color) {
 ```
 
 ```js
+console.log(">> Geo-enrichment...");
 // geo-enrichment - combine geodata with building level properties
 const aggregations = {
   building_area: "sum",
@@ -1407,7 +1452,7 @@ const cartogram_geodata_withproperties = enrichGeoData(
 
 ```js
 // Data processing functions
-
+console.log(">> Data processing functions...");
 const osgb = new OSGB();
 let clone = turf.clone(regular_geodata);
 turf.coordEach(clone, (currentCoord) => {
@@ -1432,6 +1477,7 @@ const cartogramGeodataLsoaWgs84 = clone;
 
 ```js
 // Create a lookup table for the key data - geography
+console.log(">> Create lookup tables...");
 const keydata = _.keyBy(
   regular_geodata_withproperties.features.map((feat) => {
     return {
@@ -1631,6 +1677,14 @@ const glyphMapSpec = {
       global.colourScalePop = d3
         .scaleSequential(d3.interpolateBlues)
         .domain([0, d3.max(cells.map((row) => row.building_area))]);
+
+      //draw a coloured polygon
+      // ctx.beginPath();
+      // ctx.rect(0, 0, panel.getWidth(), panel.getHeight());
+      // const colour = d3.color("#fff");
+      // colour.opacity = morph_factor;
+      // ctx.fillStyle = colour;
+      // ctx.fill();
     },
 
     drawFn: (cell, x, y, cellSize, ctx, global, panel) => {
@@ -1691,9 +1745,21 @@ const glyphMapSpec = {
 ```
 
 ```js
+console.log(">> Morphing...");
 morph_factor; //causes code to run whenever the slider is moved
 morphGlyphMap.setGlyph({
   discretiserFn: valueDiscretiser(tweenWGS84Lookup),
+  //   preDrawFn: (cells, cellSize, ctx, global, panel) => {
+  //   //unfortunately need to repeat what's in the base
+
+  //   //draw a coloured polygon
+  //   ctx.beginPath();
+  //   ctx.rect(0, 0, panel.getWidth(), panel.getHeight());
+  //   const colour = d3.color("#fff");
+  //   colour.opacity = range;
+  //   ctx.fillStyle = colour;
+  //   ctx.fill();
+  // }
 });
 ```
 
@@ -1796,4 +1862,8 @@ function insideCell(c, x, y) {
     return true;
   return false;
 }
+```
+
+```js
+console.log(">> Loaded All functions...");
 ```
