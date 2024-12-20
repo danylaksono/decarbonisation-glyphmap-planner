@@ -217,7 +217,7 @@ const [detailOnDemand, setDetailOnDemand] = useState(null); // detail on demand 
     <div class="left-bottom">
         <div class="card" style="overflow-x:hidden;">
           <header class="quickview-header">
-            <p class="title">Table View</p>
+            <p class="title">Table View </p>
           </header>
           <div class="card-content">
             <div class="content">
@@ -348,25 +348,24 @@ cancelButton.addEventListener("click", () => {
 // Add New Intervention button logic
 const addInterventionBtn = document.getElementById("addInterventionBtn");
 addInterventionBtn.addEventListener("click", () => {
-  const technology = document.getElementById("technologySelect").value;
-  const totalBudget = document.getElementById("totalBudgetInput").value;
-  const startYear = document.getElementById("startYearInput").value;
-  // const projectLength = projectLengthInput.value;
-  const allocationType = document.querySelector(
-    "input[name='allocationType']:checked"
-  ).value;
+  // const technology = document.getElementById("technologySelect").value;
+  // const totalBudget = document.getElementById("totalBudgetInput").value;
+  // const startYear = document.getElementById("startYearInput").value;
+  // // const projectLength = projectLengthInput.value;
+  // const allocationType = document.querySelector(
+  //   "input[name='allocationType']:checked"
+  // ).value;
 
-  console.log({
-    technology,
-    totalBudget,
-    startYear,
-    // projectLength,
-    allocationType,
-  });
+  console.log("  total_budget ... ", getNumericBudget(total_budget));
+  console.log("  start_year ... ", start_year);
+  console.log("  project_length ... ", project_length);
+  console.log("  flip_budget ... ", flip_budget);
 
   setAllocations(getAllocations());
 
-  // addNewIntervention(startYear, technology, totalBudget, projectLength, allocationType);
+  console.log("  .. allocations", allocations);
+
+  addNewIntervention(start_year, technology, allocations);
 
   // alert("Intervention Added!");
   quickviewDefault.classList.remove("is-active"); // Close quickview after submission
