@@ -62,7 +62,7 @@ import {define} from "../_observablehq/client.js";
 import {registerFile, FileAttachment} from "../_observablehq/stdlib.js";
 import {registerTable} from "../_observablehq/stdlib/duckdb.js";
 
-registerFile("./../data/oxford_decarbonisation_data.parquet", {"name":"./../data/oxford_decarbonisation_data.parquet","path":"../_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1734279563443});
+registerFile("./../data/oxford_decarbonisation_data.parquet", {"name":"./../data/oxford_decarbonisation_data.parquet","path":"../_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1734690685506});
 registerTable("oxford", FileAttachment("../data/oxford_decarbonisation_data.parquet"));
 
 define({id: "7cc7faba", outputs: ["TimeGlyph","GlyphCollection","DecarbonisationModel"], body: async () => {
@@ -245,14 +245,15 @@ const uncappedModel = new DecarbonisationModel(
 return {uncappedModel};
 }});
 
-define({id: "b19955b4", inputs: ["Mutable"], outputs: ["useState","config","setConfig"], body: (Mutable) => {
+define({id: "19988ddf", inputs: ["Mutable"], outputs: ["useState","config","setConfig","slider","setSlider"], body: (Mutable) => {
 function useState(value) {
   const state = Mutable(value);
   const setState = (value) => (state.value = value);
   return [state, setState];
 }
 const [config, setConfig] = useState({});
-return {useState,config,setConfig};
+const [slider, setSlider] = useState(0);
+return {useState,config,setConfig,slider,setSlider};
 }});
 
 define({id: "a6fee4b8", inputs: ["Inputs","Event","display"], outputs: ["overallBudgetInput"], body: (Inputs,Event,display) => {
@@ -417,6 +418,109 @@ btn.addEventListener("click", function () {
 return {btn,modal};
 }});
 
+define({id: "f70388a6", inputs: ["html","Event"], outputs: ["morphFactorInput"], body: (html,Event) => {
+// Create the slider input
+const morphFactorInput = html`<input
+  style="width: 100%; max-width: 450px;"
+  type="range"
+  value="0"
+  step="0.05"
+  min="0"
+  max="1"
+/>`;
+Object.assign(morphFactorInput, {
+  oninput: (event) => event.isTrusted && event.stopImmediatePropagation(),
+  onchange: (event) => event.currentTarget.dispatchEvent(new Event("input")),
+});
+return {morphFactorInput};
+}});
+
+define({id: "5bc31a2d", inputs: ["Generators","morphFactorInput"], outputs: ["morph_factor"], body: (Generators,morphFactorInput) => {
+const morph_factor = Generators.input(morphFactorInput);
+return {morph_factor};
+}});
+
+define({id: "63ede662", inputs: ["html"], outputs: ["playButton"], body: (html) => {
+// Create the play button
+const playButton = html`<button style="margin-top: 10px;">Play</button>`;
+return {playButton};
+}});
+
+define({id: "a712ff69", inputs: ["display","html","playButton","morphFactorInput"], body: (display,html,playButton,morphFactorInput) => {
+// Append the slider and button to the view
+display(html`${playButton} ${morphFactorInput}`);
+}});
+
+define({id: "ec38bc6f", inputs: ["set","morphFactorInput","playButton"], outputs: ["playing","direction","animationFrame","animate"], body: (set,morphFactorInput,playButton) => {
+// Animation logic
+let playing = false; // Track play/pause state
+let direction = 1; // Controls the animation direction (0 to 1 or 1 to 0)
+let animationFrame; // Stores the requestAnimationFrame ID
+
+
+function animate(currentValue) {
+  // Increment or decrement the value
+  let newValue = currentValue + 0.01 * direction;
+
+  // Reverse direction if boundaries are reached
+  if (newValue >= 1 || newValue <= 0) {
+    direction *= -1;
+    newValue = Math.max(0, Math.min(1, newValue)); // Clamp value between 0 and 1
+  }
+
+  // Update the slider and dispatch the "input" event for reactivity
+  set(morphFactorInput, newValue);
+
+  if (playing) {
+    animationFrame = requestAnimationFrame(() => animate(newValue)); // Pass the updated value
+  }
+}
+
+// Button click event listener
+playButton.addEventListener("click", () => {
+  playing = !playing; // Toggle play/pause state
+  playButton.textContent = playing ? "Pause" : "Play";
+
+  if (playing) {
+    // Start the animation with the current slider value
+    const currentValue = parseFloat(morphFactorInput.value);
+    requestAnimationFrame(() => animate(currentValue));
+  } else {
+    cancelAnimationFrame(animationFrame); // Stop the animation
+  }
+});
+return {playing,direction,animationFrame,animate};
+}});
+
+define({id: "bdde2a3c", mode: "inline", inputs: ["morph_factor","display"], body: async (morph_factor,display) => {
+display(await(
+morph_factor
+))
+}});
+
+define({id: "c5974221", inputs: ["Event"], outputs: ["set"], body: (Event) => {
+function set(input, value) {
+  input.value = value;
+  input.dispatchEvent(new Event("input", { bubbles: true }));
+  // console.log("input value:", input.value);
+}
+return {set};
+}});
+
+define({id: "f1ee3146", inputs: ["display","morph_factor"], body: (display,morph_factor) => {
+// set(morphFactorInput, 0.5);
+display(morph_factor);
+}});
+
+define({id: "89ad0798", inputs: ["display","Inputs","set","morphFactorInput"], body: (display,Inputs,set,morphFactorInput) => {
+display(
+  Inputs.button([
+    ["Set to 0", () => set(morphFactorInput, 0)],
+    ["Set to 1", () => set(morphFactorInput, 1)],
+  ])
+);
+}});
+
 </script>
 <div id="observablehq-center">
 <main id="observablehq-main" class="observablehq">
@@ -434,7 +538,7 @@ return {btn,modal};
 <h2 id="uncapped-model" tabindex="-1"><a class="observablehq-header-anchor" href="#uncapped-model">Uncapped Model</a></h2>
 <div class="observablehq observablehq--block"><!--:97f07bba:--></div>
 <h2 id="test-ui" tabindex="-1"><a class="observablehq-header-anchor" href="#test-ui">Test UI</a></h2>
-<div class="observablehq observablehq--block"><!--:b19955b4:--></div>
+<div class="observablehq observablehq--block"><!--:19988ddf:--></div>
 <div class="observablehq observablehq--block"><!--:a6fee4b8:--></div>
 <div class="observablehq observablehq--block"><!--:65764c13:--></div>
 <p><observablehq-loading></observablehq-loading><!--:92440add:--></p>
@@ -580,5 +684,15 @@ function* modelSpecv2() {
 </dialog>
 <p><button data-show-modal="">Show Modal</button></p>
 <div class="observablehq observablehq--block"><!--:bf05c5ec:--></div>
+<h2 id="play-button" tabindex="-1"><a class="observablehq-header-anchor" href="#play-button">Play button</a></h2>
+<div class="observablehq observablehq--block"><!--:f70388a6:--></div>
+<div class="observablehq observablehq--block"><!--:5bc31a2d:--></div>
+<div class="observablehq observablehq--block"><!--:63ede662:--></div>
+<div class="observablehq observablehq--block"><!--:a712ff69:--></div>
+<div class="observablehq observablehq--block"><!--:ec38bc6f:--></div>
+<h2><observablehq-loading></observablehq-loading><!--:bdde2a3c:--></h2>
+<div class="observablehq observablehq--block"><!--:c5974221:--></div>
+<div class="observablehq observablehq--block"><!--:f1ee3146:--></div>
+<div class="observablehq observablehq--block"><!--:89ad0798:--></div>
 </main>
 </div>

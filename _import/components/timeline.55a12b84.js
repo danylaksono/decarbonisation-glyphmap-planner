@@ -324,6 +324,16 @@ export function createTimelineInterface(
       tooltip.style("opacity", 0);
     });
 
+  // Check if data is empty
+  if (interventions.length === 0) {
+    svg.append("text")
+      .attr("class", "no-data-message")
+      .attr("x", width / 2)
+      .attr("y", height / 2)
+      .attr("text-anchor", "middle")
+      .text("Add data to start");
+  }
+
   // ---------------------- STYLES ---------------------- //
 
   // Add CSS styles
@@ -346,6 +356,11 @@ export function createTimelineInterface(
       border-radius: 4px;
       padding: 10px;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .no-data-message {
+      font-family: sans-serif;
+      font-size: 16px;
+      fill: #999;
     }
   `);
 
