@@ -374,11 +374,6 @@ addInterventionBtn.addEventListener("click", () => {
 ```
 
 ```js
-const techies = view(technologySelect);
-console.log(techies);
-```
-
-```js
 console.log(">> Preparing Interventions...");
 // for dealing with selected list items
 let selectedInterventionIndex = null; // Track the selected intervention index
@@ -450,8 +445,8 @@ const technology = Generators.input(techsInput);
 const totalBudgetInput = html`<input
   id="totalBudgetInput"
   class="input"
-  value="100000000"
-  type="number"
+  value="10,000,000"
+  type="text"
   placeholder="Enter total budget"
 />`;
 // totalBudgetInput.style["max-width"] = "300px";
@@ -460,6 +455,25 @@ Object.assign(totalBudgetInput, {
   onchange: (event) => event.currentTarget.dispatchEvent(new Event("input")),
 });
 const total_budget = Generators.input(totalBudgetInput);
+// console.log("totalBudgetInput total: ", total_budget);
+
+totalBudgetInput.addEventListener("input", (event) => {
+  // Remove existing formatting
+  const value = event.target.value.replace(/,/g, "").replace(/£/g, "");
+  // Format the number with commas and add the £ sign
+  event.target.value = "£" + value.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+});
+
+totalBudgetInput.addEventListener("blur", (event) => {
+  // Ensure proper formatting on blur
+  const value = event.target.value.replace(/,/g, "").replace(/£/g, "");
+  event.target.value = "£" + parseInt(value, 10).toLocaleString();
+});
+
+totalBudgetInput.addEventListener("focus", (event) => {
+  // Remove formatting to allow direct editing
+  event.target.value = event.target.value.replace(/,/g, "").replace(/£/g, "");
+});
 
 // Start Year
 // const startYearInput = Inputs.text({
@@ -585,6 +599,13 @@ const playButton = html`<button class="btn edit" style="margin-top: 10px;">
 ```
 
 ```js
+const getNumericBudget = (value) => {
+  // Remove commas and parse the value as a number
+  return parseFloat(value.replace(/,/g, "").replace(/£/g, ""));
+};
+```
+
+```js
 // Disable timeline buttons when no intervention is selected
 document
   .querySelectorAll("#timeline-buttons button:not(#openQuickviewButton)")
@@ -599,9 +620,14 @@ document
 
 ```js
 console.log(">> Budget Allocator...");
+
+console.log("  .. total_budget", getNumericBudget(total_budget));
+console.log("  .. start_year", start_year);
+console.log("  .. project_length", project_length);
+
 // Budget Allocator
 const allocator = new BudgetAllocator(
-  total_budget,
+  Number(getNumericBudget(total_budget)),
   Number(start_year),
   Number(project_length)
 );
@@ -610,29 +636,34 @@ let initialAllocations;
 if (allocation_type === "linear") {
   initialAllocations = allocator.allocateLinear();
 } else {
-  initialAllocations = allocator.allocateCustom(allocation_type);
+  initialAllocations = allocator.allocateCustom(
+    allocation_type,
+    { exponent: 2 },
+    true
+  );
 }
 ```
 
 <!-- get budget allocations -->
 
 ```js
-//const { svg, getAllocations } = allocator.visualise(
-//  initialAllocations,
-//  (changes) => {
-// console.log("data changed:", changes);
-//    setSelected(changes);
-//  },
-//  400,
-//  200
-//);
+const { svg, getAllocations } = allocator.visualise(
+  initialAllocations,
+  (changes) => {
+    console.log("data changed:", changes);
+    setSelected(changes);
+  },
+  400,
+  200
+);
 // display(results);
 ```
 
 ```js
 // set allocation based on custom graph
 // allocation_type;
-const allocations = selected ? getAllocations(selected) : initialAllocations;
+
+// const allocations = selected ? getAllocations(selected) : initialAllocations;
 // display(interventions);
 ```
 
@@ -957,7 +988,7 @@ const stackedResults = stackResults(results);
 console.log(">> Loading model tech configuration...");
 
 let config = {
-  initial_year: Number(start_year),
+  initial_year: 0, // Number(start_year),
   rolledover_budget: 0,
   yearly_budgets: allocations.map((item) => item.budget),
   tech: {},

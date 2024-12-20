@@ -226,7 +226,7 @@ html {
 .quickview-body {
   flex: 1 1 0%;
   overflow-y: hidden;
-  padding: 2em;
+  padding: 1em;
 }
 
 .field {
