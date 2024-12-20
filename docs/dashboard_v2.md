@@ -169,8 +169,8 @@ const [detailOnDemand, setDetailOnDemand] = useState(null); // detail on demand 
   <div id="left-panel" style="overflow-x:hidden; overflow-y:hidden; height:96vh;">
     <div class="left-top">
       <div class="card" style="overflow-y: hidden;">
-        <header class="card-header">
-          <p class="card-header-title">Decarbonisation Timeline</p>
+        <header class="quickview-header">
+          <p class="title">Decarbonisation Timeline</p>
         </header>
         <div class="card-content">
           <div class="content">
@@ -215,8 +215,8 @@ const [detailOnDemand, setDetailOnDemand] = useState(null); // detail on demand 
     </div> <!-- left top -->
     <div class="left-bottom">
         <div class="card" style="overflow-x:hidden;">
-          <header class="card-header">
-            <p class="card-header-title">Table View</p>
+          <header class="quickview-header">
+            <p class="title">Table View</p>
           </header>
           <div class="card-content">
             <div class="content">
@@ -229,8 +229,8 @@ const [detailOnDemand, setDetailOnDemand] = useState(null); // detail on demand 
     </div> <!-- left panel -->
   <div id="main-panel">
     <div class="card" style="overflow-x:hidden; overflow-y:hidden; height:96vh;">
-      <header class="card-header">
-        <p class="card-header-title">Map View</p>
+      <header class="quickview-header">
+        <p class="title">Map View</p>
       </header>
       <div class="card-content">
         <div class="content">
@@ -259,12 +259,6 @@ const [detailOnDemand, setDetailOnDemand] = useState(null); // detail on demand 
           <div class="control">
             <div class="select is-arrowless">
             ${techsInput}
-              <!-- <select id="technologySelect">
-                <option value="ASHP">ASHP</option>
-                <option value="PV">PV</option>
-                <option value="EV Chargers">EV Chargers</option>
-                <option value="GSHP">GSHP</option>
-              </select> -->
             </div>
           </div>
         </div>
@@ -272,29 +266,33 @@ const [detailOnDemand, setDetailOnDemand] = useState(null); // detail on demand 
         <div class="field">
           <label class="label">Total Budget</label>
           <div class="control">
-            <input id="totalBudgetInput" class="input" type="number" placeholder="Enter total budget" required>
+            ${totalBudgetInput}
+            <!-- <input id="totalBudgetInput" class="input" type="number" placeholder="Enter total budget" required> -->
           </div>
         </div>
         <!-- Start Year -->
         <div class="field">
           <label class="label">Start Year</label>
           <div class="control">
-            <input id="startYearInput" class="input" type="number" placeholder="e.g., 2024" required>
+          ${startYearInput}
+            <!-- <input id="startYearInput" class="input" type="number" placeholder="e.g., 2024" required> -->
           </div>
         </div>
         <!-- Project Length -->
         <div class="field">
           <label class="label">Project Length (years)</label>
           <div class="control">
-            <input id="projectLengthInput" class="slider is-fullwidth" type="range" min="1" max="10" step="1" value="5">
-            <span id="projectLengthValue">5</span> years
+            ${projectLengthInput}
+            <!-- <input id="projectLengthInput" class="slider is-fullwidth" type="range" min="1" max="10" step="1" value="5"> -->
+            <span id="projectLengthValue">${project_length}</span> years
           </div>
         </div>
         <!-- Budget Allocation Type -->
         <div class="field">
           <label class="label">Budget Allocation Type</label>
           <div class="control">
-            <label class="radio">
+            ${allocationTypeInput}
+            <!-- <label class="radio">
               <input type="radio" name="allocationType" value="linear" checked>
               Linear
             </label>
@@ -309,7 +307,7 @@ const [detailOnDemand, setDetailOnDemand] = useState(null); // detail on demand 
             <label class="radio">
               <input type="radio" name="allocationType" value="cubic">
               Cubic
-            </label>
+            </label> -->
             </div>
           <div class="field">
             <label class="checkbox">
@@ -331,9 +329,6 @@ const [detailOnDemand, setDetailOnDemand] = useState(null); // detail on demand 
   </footer>
 </div>
 
-
-
-
 ```js
 const openQuickviewButton = document.getElementById("openQuickviewButton");
 const closeQuickviewButton = document.getElementById("closeQuickviewButton");
@@ -352,28 +347,22 @@ cancelButton.addEventListener("click", () => {
   quickviewDefault.classList.remove("is-active");
 });
 
-// Update project length dynamically
-const projectLengthInput = document.getElementById("projectLengthInput");
-const projectLengthValue = document.getElementById("projectLengthValue");
-
-projectLengthInput.addEventListener("input", (event) => {
-  projectLengthValue.textContent = event.target.value;
-});
-
 // Add New Intervention button logic
 const addInterventionBtn = document.getElementById("addInterventionBtn");
 addInterventionBtn.addEventListener("click", () => {
   const technology = document.getElementById("technologySelect").value;
   const totalBudget = document.getElementById("totalBudgetInput").value;
   const startYear = document.getElementById("startYearInput").value;
-  const projectLength = projectLengthInput.value;
-  const allocationType = document.querySelector("input[name='allocationType']:checked").value;
+  // const projectLength = projectLengthInput.value;
+  const allocationType = document.querySelector(
+    "input[name='allocationType']:checked"
+  ).value;
 
   console.log({
     technology,
     totalBudget,
     startYear,
-    projectLength,
+    // projectLength,
     allocationType,
   });
 
@@ -385,7 +374,7 @@ addInterventionBtn.addEventListener("click", () => {
 ```
 
 ```js
-const techies = view(technologySelect)
+const techies = view(technologySelect);
 console.log(techies);
 ```
 
@@ -422,8 +411,6 @@ if (interventions.length === 0) {
 }
 ```
 
-
-
 <!-- ---------------- Input form declarations ---------------- -->
 
 ```js
@@ -455,20 +442,19 @@ const technology = Generators.input(techsInput);
 // display(techsInput);
 
 // Total Budget
-const totalBudgetInput = Inputs.text({
-  label: html`<b>Total Budget</b>`,
-  placeholder: "Available Budget in GBP",
-  value: 100_000_000,
-  submit: true,
-  // disabled: selectedIntervention ? true : false,
-  // value: selectedIntervention
-  //   ? Math.round(
-  //       (selectedIntervention.totalBudgetSpent + Number.EPSILON) * 100
-  //     ) / 100
-  //   : 100_000_000,
-  // submit: html`<button class="create-btn" style="color:white;">Submit</button>`,
-});
-totalBudgetInput.style["max-width"] = "300px";
+// const totalBudgetInput = Inputs.number({
+//   // label: html`<b>Total Budget</b>`,
+//   placeholder: "Available Budget in GBP",
+//   value: 100_000_000,
+// });
+const totalBudgetInput = html`<input
+  id="totalBudgetInput"
+  class="input"
+  value="100000000"
+  type="number"
+  placeholder="Enter total budget"
+/>`;
+// totalBudgetInput.style["max-width"] = "300px";
 Object.assign(totalBudgetInput, {
   oninput: (event) => event.isTrusted && event.stopImmediatePropagation(),
   onchange: (event) => event.currentTarget.dispatchEvent(new Event("input")),
@@ -487,7 +473,7 @@ const total_budget = Generators.input(totalBudgetInput);
 // });
 // startYearInput.style["max-width"] = "300px";
 const startYearInput = html`<input
-  style="width: 100%; max-width:100px; max-height: 25.5px;"
+  class="input"
   type="number"
   value="2024"
   step="1"
@@ -503,14 +489,24 @@ Object.assign(startYearInput, {
 const start_year = Generators.input(startYearInput);
 
 // Project Length
-const projectLengthInput = Inputs.range([0, 10], {
-  // label: html`<b>Project length in years</b>`,
-  step: 1,
-  value: 5,
-});
-projectLengthInput.number.style["max-width"] = "60px";
+// const projectLengthInput = Inputs.range([0, 10], {
+//   // label: html`<b>Project length in years</b>`,
+//   step: 1,
+//   value: 5,
+// });
+// projectLengthInput.number.style["max-width"] = "60px";
+const projectLengthInput = html`<input
+  id="projectLengthInput"
+  class="slider is-fullwidth"
+  type="range"
+  min="1"
+  max="10"
+  step="1"
+  value="5"
+/>`;
+
 Object.assign(projectLengthInput, {
-  oninput: (event) => event.isTrusted && event.stopImmediatePropagation(),
+  // oninput: (event) => event.isTrusted && event.stopImmediatePropagation(),
   onchange: (event) => event.currentTarget.dispatchEvent(new Event("input")),
 });
 const project_length = Generators.input(projectLengthInput);
@@ -618,16 +614,18 @@ if (allocation_type === "linear") {
 }
 ```
 
+<!-- get budget allocations -->
+
 ```js
-const { svg, getAllocations } = allocator.visualise(
-  initialAllocations,
-  (changes) => {
-    // console.log("data changed:", changes);
-    setSelected(changes);
-  },
-  400,
-  200
-);
+//const { svg, getAllocations } = allocator.visualise(
+//  initialAllocations,
+//  (changes) => {
+// console.log("data changed:", changes);
+//    setSelected(changes);
+//  },
+//  400,
+//  200
+//);
 // display(results);
 ```
 
@@ -639,15 +637,12 @@ const allocations = selected ? getAllocations(selected) : initialAllocations;
 ```
 
 ```js
-console.log(">> What is Selected...");
-console.log("selected: ", selected);
-```
-
-```js
 // store intervention results
 let interventions = getIntervention;
 let results = getResults;
 ```
+
+<!-- dealing with observable input reactivity -->
 
 ```js
 // dealing with observable input reactivity
@@ -659,9 +654,10 @@ function set(input, value) {
 }
 ```
 
+<!-- morph animation logic -->
+
 ```js
 console.log(">> Morph animation logic...");
-// morph animation logic
 let playing = false; // Track play/pause state
 let direction = 1; // Controls the animation direction (0 to 1 or 1 to 0)
 let animationFrame; // Stores the requestAnimationFrame ID
@@ -702,6 +698,8 @@ playButton.addEventListener("click", () => {
 ```
 
 <!-- ---------------- Functions ---------------- -->
+
+<!-- Intervention functions -->
 
 ```js
 console.log(">> Loading intervention functions...");
@@ -751,18 +749,6 @@ function addIntervention(
   document.getElementById("interventionModal").style.display = "none";
 }
 
-// remove intervention
-function removeIntervention(index) {
-  if (index >= 0 && index < interventions.length) {
-    setIntervention(interventions.filter((_, i) => i !== index));
-
-    // when intervention is removed, remove the corresponding results
-    setResults(results.filter((_, i) => i !== index));
-  } else {
-    console.log("Invalid index.");
-  }
-}
-
 // handle form submission: add new intervention
 function addNewIntervention(start_year, technology, allocations) {
   const new_start_year = start_year;
@@ -793,6 +779,18 @@ function addNewIntervention(start_year, technology, allocations) {
     filters,
     priorities
   );
+}
+
+// remove intervention
+function removeIntervention(index) {
+  if (index >= 0 && index < interventions.length) {
+    setIntervention(interventions.filter((_, i) => i !== index));
+
+    // when intervention is removed, remove the corresponding results
+    setResults(results.filter((_, i) => i !== index));
+  } else {
+    console.log("Invalid index.");
+  }
 }
 
 // Modify current intervention

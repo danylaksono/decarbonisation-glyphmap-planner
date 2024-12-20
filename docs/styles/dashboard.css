@@ -4,6 +4,7 @@ html {
   margin: 0 !important;
   overflow: hidden;
   padding: 0;
+  font-family: var(--bulma-body-family);
 }
 
 #observablehq-main,
@@ -87,7 +88,13 @@ html {
   --bulma-card-header-background-color: transparent;
   --bulma-card-header-color: var(--bulma-text-strong);
   --bulma-card-header-padding: 0.75rem 1rem;
-  --bulma-card-header-shadow: 0 0.125em 0.25em hsla(var(--bulma-scheme-h),var(--bulma-scheme-s),var(--bulma-scheme-invert-l),0.1);
+  --bulma-card-header-shadow: 0 0.125em 0.25em
+    hsla(
+      var(--bulma-scheme-h),
+      var(--bulma-scheme-s),
+      var(--bulma-scheme-invert-l),
+      0.1
+    );
   --bulma-card-header-weight: var(--bulma-weight-bold);
   --bulma-card-content-background-color: transparent;
   --bulma-card-content-padding: 1.5rem;
@@ -211,7 +218,6 @@ html {
   cursor: not-allowed;
   background-color: #cccccc;
 }
-
 
 .quickview {
   max-width: 400px;
