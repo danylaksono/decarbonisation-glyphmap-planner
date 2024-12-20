@@ -152,6 +152,7 @@ function useState(value) {
 const [selected, setSelected] = useState({}); // selected data in table
 const [getIntervention, setIntervention] = useState([]); // list of interventions
 const [getResults, setResults] = useState([]); // list of results, from running model
+const [allocations, setAllocations] = useState([]); // list of budget allocations
 const [selectedIntervention, setSelectedIntervention] = useState(null); // selected intervention in timeline
 // const [selectedInterventionIndex, setSelectedInterventionIndex] = useState(null); // selected intervention index
 const [detailOnDemand, setDetailOnDemand] = useState(null); // detail on demand on map
@@ -310,10 +311,7 @@ const [detailOnDemand, setDetailOnDemand] = useState(null); // detail on demand 
             </label> -->
             </div>
           <div class="field">
-            <label class="checkbox">
-              <input type="checkbox" name="flipBudget">
-              Flip Budget
-            </label>
+            ${flipButtonInput}
           </div> <!-- control -->
         </div>
         <!-- visual budget allocator  -->
@@ -365,6 +363,8 @@ addInterventionBtn.addEventListener("click", () => {
     // projectLength,
     allocationType,
   });
+
+  setAllocations(getAllocations());
 
   // addNewIntervention(startYear, technology, totalBudget, projectLength, allocationType);
 
@@ -593,6 +593,15 @@ Object.assign(morphFactorInput, {
 });
 const morph_factor = Generators.input(morphFactorInput);
 
+//  flip button
+const flipButtonInput = Inputs.toggle({ label: "Flip", value: true });
+Object.assign(flipButtonInput, {
+  // oninput: (event) => event.isTrusted && event.stopImmediatePropagation(),
+  onchange: (event) => event.currentTarget.dispatchEvent(new Event("input")),
+});
+const flip_budget = Generators.input(flipButtonInput);
+
+// play button
 const playButton = html`<button class="btn edit" style="margin-top: 10px;">
   <i class="fas fa-play"></i>&nbsp;
 </button>`;
@@ -624,6 +633,7 @@ console.log(">> Budget Allocator...");
 console.log("  .. total_budget", getNumericBudget(total_budget));
 console.log("  .. start_year", start_year);
 console.log("  .. project_length", project_length);
+console.log("  .. flip_budget", flip_budget);
 
 // Budget Allocator
 const allocator = new BudgetAllocator(
@@ -631,7 +641,9 @@ const allocator = new BudgetAllocator(
   Number(start_year),
   Number(project_length)
 );
+```
 
+```js
 let initialAllocations;
 if (allocation_type === "linear") {
   initialAllocations = allocator.allocateLinear();
@@ -639,7 +651,7 @@ if (allocation_type === "linear") {
   initialAllocations = allocator.allocateCustom(
     allocation_type,
     { exponent: 2 },
-    true
+    flip_budget
   );
 }
 ```
@@ -662,9 +674,7 @@ const { svg, getAllocations } = allocator.visualise(
 ```js
 // set allocation based on custom graph
 // allocation_type;
-
 // const allocations = selected ? getAllocations(selected) : initialAllocations;
-// display(interventions);
 ```
 
 ```js

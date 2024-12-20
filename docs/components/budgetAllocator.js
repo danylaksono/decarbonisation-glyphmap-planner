@@ -105,10 +105,12 @@ export class BudgetAllocator {
         throw new Error(`Unsupported curve type: ${curveType}`);
     }
 
-    // Rest of the method remains the same
-    const weights = this.years.map((_, i) =>
-      curveFunction(i / (this.projectLength - 1))
-    );
+    // weights
+    const weights = this.years.map((_, i) => {
+      // Use reversed index when inverted
+      const index = invert ? this.projectLength - 1 - i : i;
+      return curveFunction(index / (this.projectLength - 1));
+    });
     const weightSum = d3.sum(weights);
 
     let allocatedBudget = 0;
@@ -122,10 +124,6 @@ export class BudgetAllocator {
       allocatedBudget += budget;
       return { year, budget };
     });
-
-    if (invert) {
-      allocations.reverse();
-    }
 
     return allocations;
   }
