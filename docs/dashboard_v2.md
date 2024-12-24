@@ -16,6 +16,7 @@ const flubber = require("flubber@0.4");
 
 import { require } from "npm:d3-require";
 import { Mutable } from "npm:@observablehq/stdlib";
+// import { supercluster } from "npm:supercluster";
 
 import {
   TimeGlyph,
@@ -46,6 +47,7 @@ import {
   convertGridCsvToGeoJson,
   context2d,
 } from "./components/utils.js";
+
 import * as bulmaToast from "npm:bulma-toast";
 import * as bulmaQuickview from "npm:bulma-quickview@2.0.0/dist/js/bulma-quickview.js";
 ```
@@ -53,6 +55,8 @@ import * as bulmaQuickview from "npm:bulma-quickview@2.0.0/dist/js/bulma-quickvi
 ```js
 const proj = new OSGB();
 ```
+
+<script src="https://unpkg.com/supercluster@8.0.0/dist/supercluster.min.js"></script>
 
 <!-- ---------------- Data ---------------- -->
 
@@ -122,7 +126,7 @@ const buildingsData = [...oxford_data];
 
 ```js
 // const flatData = buildingsData.map((p) => ({ ...p }));
-const flatData = buildingsData.map((p) => Object.assign({}, p));
+// const flatData = buildingsData.map((p) => Object.assign({}, p));
 const allColumns = Object.keys(buildingsData[0]);
 console.log(">>  Loading Data Done");
 ```
@@ -235,9 +239,10 @@ const [detailOnDemand, setDetailOnDemand] = useState(null); // detail on demand 
       </header>
       <div class="card-content">
         <div class="content">
-          ${mapAggregationInput}
+          <!-- ${mapAggregationInput} -->
           ${(map_aggregate == "Building Level") ? ""
             : html`${playButton} ${morphFactorInput}`}
+          <!-- ${html`${playButton} ${morphFactorInput}`} -->
           ${resize((width, height) => createGlyphMap(map_aggregate, {width, height}))}
         </div>
       </div>
@@ -348,26 +353,20 @@ cancelButton.addEventListener("click", () => {
 // Add New Intervention button logic
 const addInterventionBtn = document.getElementById("addInterventionBtn");
 addInterventionBtn.addEventListener("click", () => {
-  // const technology = document.getElementById("technologySelect").value;
-  // const totalBudget = document.getElementById("totalBudgetInput").value;
-  // const startYear = document.getElementById("startYearInput").value;
-  // // const projectLength = projectLengthInput.value;
-  // const allocationType = document.querySelector(
-  //   "input[name='allocationType']:checked"
-  // ).value;
-
   console.log("  total_budget ... ", getNumericBudget(total_budget));
   console.log("  start_year ... ", start_year);
   console.log("  project_length ... ", project_length);
   console.log("  flip_budget ... ", flip_budget);
 
-  setAllocations(getAllocations());
+  setAllocations(lastAllocation);
+  // console.log("  .. lastAllocation", lastAllocation);
 
-  console.log("  .. allocations", allocations);
+  // console.log("  .. allocations", allocations);
 
   addNewIntervention(start_year, technology, allocations);
 
   // alert("Intervention Added!");
+  console.log("  Allocations added: ", allocations);
   quickviewDefault.classList.remove("is-active"); // Close quickview after submission
 });
 ```
@@ -671,6 +670,7 @@ const { svg, getAllocations } = allocator.visualise(
 ```
 
 ```js
+const lastAllocation = selected ? getAllocations(selected) : initialAllocations;
 // set allocation based on custom graph
 // allocation_type;
 // const allocations = selected ? getAllocations(selected) : initialAllocations;
@@ -786,7 +786,7 @@ function addIntervention(
   setResults([...results, modelResult]);
   console.log("Intervention added:", config);
   // close the modal
-  document.getElementById("interventionModal").style.display = "none";
+  // document.getElementById("interventionModal").style.display = "none";
 }
 
 // handle form submission: add new intervention
@@ -1116,7 +1116,9 @@ const cols = [
 
 ```js
 console.log(">> Create sortable table...");
-const tableData = selectedIntervention ? stackedResults.buildings : flatData;
+const tableData = selectedIntervention
+  ? stackedResults.buildings
+  : buildingsData;
 
 const table = new createTable(tableData, cols, (changes) => {
   console.log("Table changed:", changes);
@@ -1125,7 +1127,7 @@ const table = new createTable(tableData, cols, (changes) => {
 ```
 
 ```js
-// console.log("Test inferring data types", inferTypes(tableData));
+// console.log("Test inferring data types", tableData);
 ```
 
 <!-- ---------------- Glyph Maps ---------------- -->
@@ -1425,7 +1427,7 @@ const aggregations = {
 };
 
 const regular_geodata_withproperties = enrichGeoData(
-  flatData,
+  buildingsData,
   regular_geodata,
   "lsoa",
   "code",
@@ -1438,7 +1440,7 @@ const regular_geodata_withproperties = enrichGeoData(
 // );
 
 const cartogram_geodata_withproperties = enrichGeoData(
-  flatData,
+  buildingsData,
   cartogram_geodata,
   "lsoa",
   "code",
@@ -1544,6 +1546,7 @@ for (const key of Object.keys(cartogramLsoaWgs84Lookup)) {
     );
   }
 }
+
 const tweenWGS84Lookup = _.mapValues(flubbers, (v, k) => {
   const feat = turf.multiLineString([v(morph_factor)], { code: k });
   feat.centroid = turf.getCoord(turf.centroid(feat.geometry));
@@ -1749,7 +1752,7 @@ console.log(">> Morphing...");
 morph_factor; //causes code to run whenever the slider is moved
 morphGlyphMap.setGlyph({
   discretiserFn: valueDiscretiser(tweenWGS84Lookup),
-  //   preDrawFn: (cells, cellSize, ctx, global, panel) => {
+  // preDrawFn: (cells, cellSize, ctx, global, panel) => {
   //   //unfortunately need to repeat what's in the base
 
   //   //draw a coloured polygon
@@ -1759,7 +1762,7 @@ morphGlyphMap.setGlyph({
   //   colour.opacity = range;
   //   ctx.fillStyle = colour;
   //   ctx.fill();
-  // }
+  // },
 });
 ```
 
@@ -1841,9 +1844,7 @@ function applyTransformationToShapes(geographicShapes) {
 function createGlyphMap(map_aggregate, { width, height }) {
   // console.log(width, height);
   if (map_aggregate == "Building Level") {
-    return glyphMap({
-      ...glyphMapSpecBasic(width, height),
-    });
+    return createLeafletMap(selected, width, height);
   } else if (map_aggregate == "LSOA Level") {
     return morphGlyphMap;
   }
@@ -1865,5 +1866,71 @@ function insideCell(c, x, y) {
 ```
 
 ```js
-console.log(">> Loaded All functions...");
+console.log(">> Convert to GeoJSON...");
+
+function convertToGeoJSON(objects) {
+  return {
+    type: "FeatureCollection",
+    features: objects.map((obj) => ({
+      type: "Feature",
+      geometry: {
+        type: "Point",
+        coordinates: [obj.data.x, obj.data.y],
+      },
+      properties: { ...obj.data },
+    })),
+  };
+}
+
+// const mapCluster = convertToGeoJSON(selected);
+// console.log("mapcluster", mapCluster);
+// console.log("selectedIntervention", selected);
 ```
+
+```js
+function createLeafletMap(data, width = 600, height = 400) {
+  // Create the map container div
+  const mapDiv = document.createElement("div");
+  mapDiv.style.width = `${width}px`;
+  mapDiv.style.height = `${height}px`;
+  mapDiv.id = "leafletMap"; // Unique ID for Leaflet to hook onto
+
+  // Append the mapDiv to the body or another container if desired
+  document.body.appendChild(mapDiv);
+
+  // Initialize the Leaflet map
+  const map = L.map(mapDiv.id).setView([0, 0], 2); // Default view (centered on the world)
+
+  // Add a tile layer (you can choose others like OpenStreetMap)
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: "© OpenStreetMap contributors",
+  }).addTo(map);
+
+  // Add markers for each data point
+  if (Array.isArray(data) && data.length > 0) {
+    const latLngs = [];
+    data.forEach(({ x, y }) => {
+      if (typeof x === "number" && typeof y === "number") {
+        const marker = L.marker([y, x]).addTo(map);
+        latLngs.push([y, x]);
+      }
+    });
+
+    // Adjust the map view to fit all markers
+    if (latLngs.length > 0) {
+      const bounds = L.latLngBounds(latLngs);
+      map.fitBounds(bounds);
+    }
+  } else {
+    console.warn("No valid data points to display on the map.");
+  }
+
+  return mapDiv;
+}
+```
+
+```js
+// createLeafletMap(selected);
+```
+
+<!-- <div id="mapContainer"></div> -->
