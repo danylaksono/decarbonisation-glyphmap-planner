@@ -353,26 +353,20 @@ cancelButton.addEventListener("click", () => {
 // Add New Intervention button logic
 const addInterventionBtn = document.getElementById("addInterventionBtn");
 addInterventionBtn.addEventListener("click", () => {
-  // const technology = document.getElementById("technologySelect").value;
-  // const totalBudget = document.getElementById("totalBudgetInput").value;
-  // const startYear = document.getElementById("startYearInput").value;
-  // // const projectLength = projectLengthInput.value;
-  // const allocationType = document.querySelector(
-  //   "input[name='allocationType']:checked"
-  // ).value;
-
   console.log("  total_budget ... ", getNumericBudget(total_budget));
   console.log("  start_year ... ", start_year);
   console.log("  project_length ... ", project_length);
   console.log("  flip_budget ... ", flip_budget);
 
-  setAllocations(getAllocations());
+  setAllocations(lastAllocation);
+  // console.log("  .. lastAllocation", lastAllocation);
 
-  console.log("  .. allocations", allocations);
+  // console.log("  .. allocations", allocations);
 
   addNewIntervention(start_year, technology, allocations);
 
   // alert("Intervention Added!");
+  console.log("  Allocations added: ", allocations);
   quickviewDefault.classList.remove("is-active"); // Close quickview after submission
 });
 ```
@@ -676,6 +670,7 @@ const { svg, getAllocations } = allocator.visualise(
 ```
 
 ```js
+const lastAllocation = selected ? getAllocations(selected) : initialAllocations;
 // set allocation based on custom graph
 // allocation_type;
 // const allocations = selected ? getAllocations(selected) : initialAllocations;
@@ -791,7 +786,7 @@ function addIntervention(
   setResults([...results, modelResult]);
   console.log("Intervention added:", config);
   // close the modal
-  document.getElementById("interventionModal").style.display = "none";
+  // document.getElementById("interventionModal").style.display = "none";
 }
 
 // handle form submission: add new intervention
