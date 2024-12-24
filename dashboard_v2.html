@@ -6,9 +6,11 @@
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Source+Serif+Pro:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&amp;display=swap" crossorigin>
 <link rel="preload" as="style" href="./_observablehq/theme-air,near-midnight.css">
 <link rel="preload" as="style" href="./_observablehq/stdlib/inputs.css">
+<link rel="preload" as="style" href="./_npm/leaflet@1.9.4/dist/leaflet.css">
 <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css2?family=Source+Serif+Pro:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&amp;display=swap" crossorigin>
 <link rel="stylesheet" type="text/css" href="./_observablehq/theme-air,near-midnight.css">
 <link rel="stylesheet" type="text/css" href="./_observablehq/stdlib/inputs.css">
+<link rel="stylesheet" type="text/css" href="./_npm/leaflet@1.9.4/dist/leaflet.css">
 <link rel="modulepreload" href="./_observablehq/client.js">
 <link rel="modulepreload" href="./_observablehq/runtime.js">
 <link rel="modulepreload" href="./_observablehq/stdlib.js">
@@ -35,6 +37,7 @@
 <link rel="modulepreload" href="./_observablehq/stdlib/duckdb.js">
 <link rel="modulepreload" href="./_npm/htl@0.3.1/_esm.js">
 <link rel="modulepreload" href="./_observablehq/stdlib/inputs.js">
+<link rel="modulepreload" href="./_npm/leaflet@1.9.4/_esm.js">
 <link rel="modulepreload" href="./_npm/@duckdb/duckdb-wasm@1.28.0/_esm.js">
 <link rel="modulepreload" href="./_npm/isoformat@0.2.1/_esm.js">
 <link rel="modulepreload" href="./_node/@turf/along@7.1.0/index.js">
@@ -198,7 +201,7 @@
 <link rel="modulepreload" href="./_npm/internmap@2.0.3/_esm.js">
 <link rel="modulepreload" href="./_npm/delaunator@5.0.1/_esm.js">
 <link rel="modulepreload" href="./_npm/tslib@2.8.1/_esm.js">
-<link rel="modulepreload" href="./_npm/flatbuffers@24.3.25/_esm.js">
+<link rel="modulepreload" href="./_npm/flatbuffers@24.12.23/_esm.js">
 <link rel="modulepreload" href="./_node/d3-array@1.2.4/index.js">
 <link rel="modulepreload" href="./_node/tinyqueue@2.0.3/index.js">
 <link rel="modulepreload" href="./_node/point-in-polygon@1.1.0/index.js">
@@ -210,17 +213,19 @@ import {define} from "./_observablehq/client.js";
 import {registerFile, FileAttachment} from "./_observablehq/stdlib.js";
 import {registerTable} from "./_observablehq/stdlib/duckdb.js";
 
-registerFile("./data/oxford_decarbonisation_data.parquet", {"name":"./data/oxford_decarbonisation_data.parquet","path":"./_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1734690685506});
-registerFile("./data/oxford_lsoa_boundary.geojson", {"name":"./data/oxford_lsoa_boundary.geojson","mimeType":"application/geo+json","path":"./_file/data/oxford_lsoa_boundary.50c731e8.geojson","lastModified":1734690685514});
-registerFile("./data/oxford_lsoas_cartogram.json", {"name":"./data/oxford_lsoas_cartogram.json","mimeType":"application/json","path":"./_file/data/oxford_lsoas_cartogram.a72fa2b8.json","lastModified":1734690685514});
-registerFile("./data/oxford_lsoas_regular.json", {"name":"./data/oxford_lsoas_regular.json","mimeType":"application/json","path":"./_file/data/oxford_lsoas_regular.e1c36e7e.json","lastModified":1734690685514});
+registerFile("./data/oxford_decarbonisation_data.parquet", {"name":"./data/oxford_decarbonisation_data.parquet","path":"./_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1735077472446});
+registerFile("./data/oxford_lsoa_boundary.geojson", {"name":"./data/oxford_lsoa_boundary.geojson","mimeType":"application/geo+json","path":"./_file/data/oxford_lsoa_boundary.50c731e8.geojson","lastModified":1735077472454});
+registerFile("./data/oxford_lsoas_cartogram.json", {"name":"./data/oxford_lsoas_cartogram.json","mimeType":"application/json","path":"./_file/data/oxford_lsoas_cartogram.a72fa2b8.json","lastModified":1735077472454});
+registerFile("./data/oxford_lsoas_regular.json", {"name":"./data/oxford_lsoas_regular.json","mimeType":"application/json","path":"./_file/data/oxford_lsoas_regular.e1c36e7e.json","lastModified":1735077472454});
 registerTable("oxford", FileAttachment("./data/oxford_decarbonisation_data.parquet"));
 
-define({id: "7ff10e61", outputs: ["d3","flubber","require","Mutable","TimeGlyph","GlyphCollection","turf","RadialGlyph","glyphMap","createDiscretiserValue","_drawCellBackground","OSGB","Model","BudgetAllocator","MiniDecarbModel","createTable","createTimelineInterface","YearPicker","inferTypes","enrichGeoData","normaliseData","downloadBoundaries","joinCensusDataToGeoJSON","convertGridCsvToGeoJson","context2d","bulmaToast","bulmaQuickview"], body: async () => {
+define({id: "cd8e6073", outputs: ["d3","flubber","require","Mutable","TimeGlyph","GlyphCollection","turf","RadialGlyph","glyphMap","createDiscretiserValue","_drawCellBackground","OSGB","Model","BudgetAllocator","MiniDecarbModel","createTable","createTimelineInterface","YearPicker","inferTypes","enrichGeoData","normaliseData","downloadBoundaries","joinCensusDataToGeoJSON","convertGridCsvToGeoJson","context2d","bulmaToast","bulmaQuickview"], body: async () => {
 const [{require}, {Mutable}, {TimeGlyph, GlyphCollection}, turf, {RadialGlyph}, {glyphMap, createDiscretiserValue, _drawCellBackground}, {OSGB}, {Model}, {BudgetAllocator}, {MiniDecarbModel}, {createTable}, {createTimelineInterface}, {YearPicker}, {inferTypes, enrichGeoData, normaliseData}, {downloadBoundaries, joinCensusDataToGeoJSON, convertGridCsvToGeoJson, context2d}, bulmaToast, bulmaQuickview] = await Promise.all([import("./_npm/d3-require@1.3.0/_esm.js"), import("./_observablehq/stdlib.js"), import("./_import/components/glyph-designs/timeGlyph.30b74103.js"), import("./_node/@turf/turf@7.1.0/index.js"), import("./_import/components/radialglyph.e10c9304.js"), import("./_import/components/gridded-glyphmaps/index.min.f034b425.js"), import("./_import/components/osgb/index.1d2476df.js"), import("./_import/components/model.0139f19a.js"), import("./_import/components/budgetAllocator.a51fe3dd.js"), import("./_import/components/miniDecarbModel.f54b29e1.js"), import("./_import/components/sorterTable.b455407f.js"), import("./_import/components/timeline.55a12b84.js"), import("./_import/components/yearpicker/yearpicker.84e70975.js"), import("./_import/components/helpers.ff512595.js"), import("./_import/components/utils.ca7eec9b.js"), import("./_npm/bulma-toast@2.4.4/_esm.js"), import("./_npm/bulma-quickview@2.0.0/dist/js/bulma-quickview.js")]);
 console.log(">> Importing libraries...");
 const d3 = require("d3", "d3-geo-projection");
 const flubber = require("flubber@0.4");
+
+// import { supercluster } from "npm:supercluster";
 
 
 
@@ -298,12 +303,12 @@ const buildingsData = [...oxford_data];
 return {buildingsData};
 }});
 
-define({id: "3f610d4e", inputs: ["buildingsData"], outputs: ["flatData","allColumns"], body: (buildingsData) => {
+define({id: "748ec0a5", inputs: ["buildingsData"], outputs: ["allColumns"], body: (buildingsData) => {
 // const flatData = buildingsData.map((p) => ({ ...p }));
-const flatData = buildingsData.map((p) => Object.assign({}, p));
+// const flatData = buildingsData.map((p) => Object.assign({}, p));
 const allColumns = Object.keys(buildingsData[0]);
 console.log(">>  Loading Data Done");
-return {flatData,allColumns};
+return {allColumns};
 }});
 
 define({id: "74ca6350", inputs: ["FileAttachment"], outputs: ["lsoa_boundary","regular_geodata","cartogram_geodata"], body: (FileAttachment) => {
@@ -376,12 +381,6 @@ JSON.stringify(stackedResults.summary.intervenedCount)
 ))
 }});
 
-define({id: "3dea4862", mode: "inline", inputs: ["mapAggregationInput","display"], body: async (mapAggregationInput,display) => {
-display(await(
-mapAggregationInput
-))
-}});
-
 define({id: "90abdcf0", mode: "inline", inputs: ["map_aggregate","html","playButton","morphFactorInput","display"], body: async (map_aggregate,html,playButton,morphFactorInput,display) => {
 display(await(
 (map_aggregate == "Building Level") ? ""
@@ -443,7 +442,7 @@ svg
 ))
 }});
 
-define({id: "420f610f", inputs: ["getNumericBudget","total_budget","start_year","project_length","flip_budget","setAllocations","getAllocations","allocations","addNewIntervention","technology"], outputs: ["openQuickviewButton","closeQuickviewButton","quickviewDefault","cancelButton","addInterventionBtn"], body: (getNumericBudget,total_budget,start_year,project_length,flip_budget,setAllocations,getAllocations,allocations,addNewIntervention,technology) => {
+define({id: "9867f7d3", inputs: ["getNumericBudget","total_budget","start_year","project_length","flip_budget","setAllocations","lastAllocation","addNewIntervention","technology","allocations"], outputs: ["openQuickviewButton","closeQuickviewButton","quickviewDefault","cancelButton","addInterventionBtn"], body: (getNumericBudget,total_budget,start_year,project_length,flip_budget,setAllocations,lastAllocation,addNewIntervention,technology,allocations) => {
 const openQuickviewButton = document.getElementById("openQuickviewButton");
 const closeQuickviewButton = document.getElementById("closeQuickviewButton");
 const quickviewDefault = document.getElementById("quickviewDefault");
@@ -464,26 +463,20 @@ cancelButton.addEventListener("click", () => {
 // Add New Intervention button logic
 const addInterventionBtn = document.getElementById("addInterventionBtn");
 addInterventionBtn.addEventListener("click", () => {
-  // const technology = document.getElementById("technologySelect").value;
-  // const totalBudget = document.getElementById("totalBudgetInput").value;
-  // const startYear = document.getElementById("startYearInput").value;
-  // // const projectLength = projectLengthInput.value;
-  // const allocationType = document.querySelector(
-  //   "input[name='allocationType']:checked"
-  // ).value;
-
   console.log("  total_budget ... ", getNumericBudget(total_budget));
   console.log("  start_year ... ", start_year);
   console.log("  project_length ... ", project_length);
   console.log("  flip_budget ... ", flip_budget);
 
-  setAllocations(getAllocations());
+  setAllocations(lastAllocation);
+  // console.log("  .. lastAllocation", lastAllocation);
 
-  console.log("  .. allocations", allocations);
+  // console.log("  .. allocations", allocations);
 
   addNewIntervention(start_year, technology, allocations);
 
   // alert("Intervention Added!");
+  console.log("  Allocations added: ", allocations);
   quickviewDefault.classList.remove("is-active"); // Close quickview after submission
 });
 return {openQuickviewButton,closeQuickviewButton,quickviewDefault,cancelButton,addInterventionBtn};
@@ -787,10 +780,12 @@ const { svg, getAllocations } = allocator.visualise(
 return {svg,getAllocations};
 }});
 
-define({id: "d3c9cb92", body: () => {
+define({id: "8a20bd1f", inputs: ["selected","getAllocations","initialAllocations"], outputs: ["lastAllocation"], body: (selected,getAllocations,initialAllocations) => {
+const lastAllocation = selected ? getAllocations(selected) : initialAllocations;
 // set allocation based on custom graph
 // allocation_type;
 // const allocations = selected ? getAllocations(selected) : initialAllocations;
+return {lastAllocation};
 }});
 
 define({id: "def3b8eb", inputs: ["getIntervention","getResults"], outputs: ["interventions","results"], body: (getIntervention,getResults) => {
@@ -853,7 +848,7 @@ playButton.addEventListener("click", () => {
 return {playing,direction,animationFrame,animate};
 }});
 
-define({id: "7fb488e1", inputs: ["setIntervention","interventions","runModel","buildingsData","setResults","results","listOfTech"], outputs: ["createConfigTemplate","addIntervention","addNewIntervention","removeIntervention","modifyIntervention","stackResults","stackedResults"], body: (setIntervention,interventions,runModel,buildingsData,setResults,results,listOfTech) => {
+define({id: "817b00a5", inputs: ["setIntervention","interventions","runModel","buildingsData","setResults","results","listOfTech"], outputs: ["createConfigTemplate","addIntervention","addNewIntervention","removeIntervention","modifyIntervention","stackResults","stackedResults"], body: (setIntervention,interventions,runModel,buildingsData,setResults,results,listOfTech) => {
 console.log(">> Loading intervention functions...");
 // >> Some functions related to creating and managing interventions
 
@@ -898,7 +893,7 @@ function addIntervention(
   setResults([...results, modelResult]);
   console.log("Intervention added:", config);
   // close the modal
-  document.getElementById("interventionModal").style.display = "none";
+  // document.getElementById("interventionModal").style.display = "none";
 }
 
 // handle form submission: add new intervention
@@ -1227,9 +1222,11 @@ const cols = [
 return {cols};
 }});
 
-define({id: "2bd06a2c", inputs: ["selectedIntervention","stackedResults","flatData","createTable","cols","setSelected"], outputs: ["tableData","table"], body: (selectedIntervention,stackedResults,flatData,createTable,cols,setSelected) => {
+define({id: "246d7836", inputs: ["selectedIntervention","stackedResults","buildingsData","createTable","cols","setSelected"], outputs: ["tableData","table"], body: (selectedIntervention,stackedResults,buildingsData,createTable,cols,setSelected) => {
 console.log(">> Create sortable table...");
-const tableData = selectedIntervention ? stackedResults.buildings : flatData;
+const tableData = selectedIntervention
+  ? stackedResults.buildings
+  : buildingsData;
 
 const table = new createTable(tableData, cols, (changes) => {
   console.log("Table changed:", changes);
@@ -1238,8 +1235,8 @@ const table = new createTable(tableData, cols, (changes) => {
 return {tableData,table};
 }});
 
-define({id: "0b5c6465", body: () => {
-// console.log("Test inferring data types", inferTypes(tableData));
+define({id: "9d2f17ea", body: () => {
+// console.log("Test inferring data types", tableData);
 }});
 
 define({id: "a3995ffc", inputs: ["turf","lsoa_boundary","tableData","normaliseData","d3","insideCell","RadialGlyph","setDetailOnDemand"], outputs: ["glyphMapSpecBasic"], body: (turf,lsoa_boundary,tableData,normaliseData,d3,insideCell,RadialGlyph,setDetailOnDemand) => {
@@ -1522,7 +1519,7 @@ define({id: "d5bdb4c8", body: () => {
 // console.log("Flat Data", flatData);
 }});
 
-define({id: "e225a372", inputs: ["enrichGeoData","flatData","regular_geodata","cartogram_geodata"], outputs: ["aggregations","regular_geodata_withproperties","cartogram_geodata_withproperties"], body: (enrichGeoData,flatData,regular_geodata,cartogram_geodata) => {
+define({id: "4f6b1aeb", inputs: ["enrichGeoData","buildingsData","regular_geodata","cartogram_geodata"], outputs: ["aggregations","regular_geodata_withproperties","cartogram_geodata_withproperties"], body: (enrichGeoData,buildingsData,regular_geodata,cartogram_geodata) => {
 console.log(">> Geo-enrichment...");
 // geo-enrichment - combine geodata with building level properties
 const aggregations = {
@@ -1542,7 +1539,7 @@ const aggregations = {
 };
 
 const regular_geodata_withproperties = enrichGeoData(
-  flatData,
+  buildingsData,
   regular_geodata,
   "lsoa",
   "code",
@@ -1555,7 +1552,7 @@ const regular_geodata_withproperties = enrichGeoData(
 // );
 
 const cartogram_geodata_withproperties = enrichGeoData(
-  flatData,
+  buildingsData,
   cartogram_geodata,
   "lsoa",
   "code",
@@ -1655,7 +1652,7 @@ const cartogramLsoaWgs84Lookup = _.keyBy(
 return {geographyLsoaWgs84Lookup,cartogramLsoaWgs84Lookup};
 }});
 
-define({id: "0e975078", inputs: ["cartogramLsoaWgs84Lookup","geographyLsoaWgs84Lookup","flubber","turf","_","morph_factor"], outputs: ["flubbers","tweenWGS84Lookup"], body: (cartogramLsoaWgs84Lookup,geographyLsoaWgs84Lookup,flubber,turf,_,morph_factor) => {
+define({id: "540556db", inputs: ["cartogramLsoaWgs84Lookup","geographyLsoaWgs84Lookup","flubber","turf","_","morph_factor"], outputs: ["flubbers","tweenWGS84Lookup"], body: (cartogramLsoaWgs84Lookup,geographyLsoaWgs84Lookup,flubber,turf,_,morph_factor) => {
 const flubbers = {};
 for (const key of Object.keys(cartogramLsoaWgs84Lookup)) {
   if (geographyLsoaWgs84Lookup[key] && cartogramLsoaWgs84Lookup[key]) {
@@ -1666,6 +1663,7 @@ for (const key of Object.keys(cartogramLsoaWgs84Lookup)) {
     );
   }
 }
+
 const tweenWGS84Lookup = _.mapValues(flubbers, (v, k) => {
   const feat = turf.multiLineString([v(morph_factor)], { code: k });
   feat.centroid = turf.getCoord(turf.centroid(feat.geometry));
@@ -1869,12 +1867,12 @@ const glyphMapSpec = {
 return {glyphMapSpec};
 }});
 
-define({id: "7bd0c63d", inputs: ["morph_factor","morphGlyphMap","valueDiscretiser","tweenWGS84Lookup"], body: (morph_factor,morphGlyphMap,valueDiscretiser,tweenWGS84Lookup) => {
+define({id: "5b299668", inputs: ["morph_factor","morphGlyphMap","valueDiscretiser","tweenWGS84Lookup"], body: (morph_factor,morphGlyphMap,valueDiscretiser,tweenWGS84Lookup) => {
 console.log(">> Morphing...");
 morph_factor; //causes code to run whenever the slider is moved
 morphGlyphMap.setGlyph({
   discretiserFn: valueDiscretiser(tweenWGS84Lookup),
-  //   preDrawFn: (cells, cellSize, ctx, global, panel) => {
+  // preDrawFn: (cells, cellSize, ctx, global, panel) => {
   //   //unfortunately need to repeat what's in the base
 
   //   //draw a coloured polygon
@@ -1884,7 +1882,7 @@ morphGlyphMap.setGlyph({
   //   colour.opacity = range;
   //   ctx.fillStyle = colour;
   //   ctx.fill();
-  // }
+  // },
 });
 }});
 
@@ -1965,13 +1963,11 @@ function applyTransformationToShapes(geographicShapes) {
 return {transformCoordinates,transformGeometry,applyTransformationToShapes};
 }});
 
-define({id: "11a20a47", inputs: ["glyphMap","glyphMapSpecBasic","morphGlyphMap"], outputs: ["createGlyphMap"], body: (glyphMap,glyphMapSpecBasic,morphGlyphMap) => {
+define({id: "74abbf70", inputs: ["createLeafletMap","selected","morphGlyphMap"], outputs: ["createGlyphMap"], body: (createLeafletMap,selected,morphGlyphMap) => {
 function createGlyphMap(map_aggregate, { width, height }) {
   // console.log(width, height);
   if (map_aggregate == "Building Level") {
-    return glyphMap({
-      ...glyphMapSpecBasic(width, height),
-    });
+    return createLeafletMap(selected, width, height);
   } else if (map_aggregate == "LSOA Level") {
     return morphGlyphMap;
   }
@@ -1994,20 +1990,87 @@ function insideCell(c, x, y) {
 return {insideCell};
 }});
 
-define({id: "694cef1c", body: () => {
-console.log(">> Loaded All functions...");
+define({id: "989658e6", outputs: ["convertToGeoJSON"], body: () => {
+console.log(">> Convert to GeoJSON...");
+
+function convertToGeoJSON(objects) {
+  return {
+    type: "FeatureCollection",
+    features: objects.map((obj) => ({
+      type: "Feature",
+      geometry: {
+        type: "Point",
+        coordinates: [obj.data.x, obj.data.y],
+      },
+      properties: { ...obj.data },
+    })),
+  };
+}
+
+// const mapCluster = convertToGeoJSON(selected);
+// console.log("mapcluster", mapCluster);
+// console.log("selectedIntervention", selected);
+return {convertToGeoJSON};
+}});
+
+define({id: "310bd41b", inputs: ["L"], outputs: ["createLeafletMap"], body: (L) => {
+function createLeafletMap(data, width = 600, height = 400) {
+  // Create the map container div
+  const mapDiv = document.createElement("div");
+  mapDiv.style.width = `${width}px`;
+  mapDiv.style.height = `${height}px`;
+  mapDiv.id = "leafletMap"; // Unique ID for Leaflet to hook onto
+
+  // Append the mapDiv to the body or another container if desired
+  document.body.appendChild(mapDiv);
+
+  // Initialize the Leaflet map
+  const map = L.map(mapDiv.id).setView([0, 0], 2); // Default view (centered on the world)
+
+  // Add a tile layer (you can choose others like OpenStreetMap)
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: "© OpenStreetMap contributors",
+  }).addTo(map);
+
+  // Add markers for each data point
+  if (Array.isArray(data) && data.length > 0) {
+    const latLngs = [];
+    data.forEach(({ x, y }) => {
+      if (typeof x === "number" && typeof y === "number") {
+        const marker = L.marker([y, x]).addTo(map);
+        latLngs.push([y, x]);
+      }
+    });
+
+    // Adjust the map view to fit all markers
+    if (latLngs.length > 0) {
+      const bounds = L.latLngBounds(latLngs);
+      map.fitBounds(bounds);
+    }
+  } else {
+    console.warn("No valid data points to display on the map.");
+  }
+
+  return mapDiv;
+}
+return {createLeafletMap};
+}});
+
+define({id: "406365da", body: () => {
+// createLeafletMap(selected);
 }});
 
 </script>
 <div id="observablehq-center">
 <main id="observablehq-main" class="observablehq">
 <!-- ------------ Imports ------------ -->
-<div class="observablehq observablehq--block"><!--:7ff10e61:--></div>
+<div class="observablehq observablehq--block"><!--:cd8e6073:--></div>
 <div class="observablehq observablehq--block"><!--:5dd85f8f:--></div>
+<script src="https://unpkg.com/supercluster@8.0.0/dist/supercluster.min.js"></script>
 <!-- ---------------- Data ---------------- -->
 <div class="observablehq observablehq--block"><!--:ab885abd:--></div>
 <div class="observablehq observablehq--block"><!--:a8708139:--></div>
-<div class="observablehq observablehq--block"><!--:3f610d4e:--></div>
+<div class="observablehq observablehq--block"><!--:748ec0a5:--></div>
 <div class="observablehq observablehq--block"><!--:74ca6350:--></div>
 <!-- ------------ Getter-Setter ------------ -->
 <div class="observablehq observablehq--block"><!--:284f4640:--></div>
@@ -2071,8 +2134,9 @@ console.log(">> Loaded All functions...");
       </header>
       <div class="card-content">
         <div class="content">
-          <observablehq-loading></observablehq-loading><!--:3dea4862:-->
+          <!-- ${mapAggregationInput} -->
           <observablehq-loading></observablehq-loading><!--:90abdcf0:-->
+          <!-- ${html`${playButton} ${morphFactorInput}`} -->
           <observablehq-loading></observablehq-loading><!--:b4672042:-->
         </div>
       </div>
@@ -2160,7 +2224,7 @@ console.log(">> Loaded All functions...");
     <button class="button is-light" id="cancelButton">Cancel</button>
   </footer>
 </div>
-<div class="observablehq observablehq--block"><!--:420f610f:--></div>
+<div class="observablehq observablehq--block"><!--:9867f7d3:--></div>
 <div class="observablehq observablehq--block"><!--:e4bf7cfa:--></div>
 <!-- ---------------- Input form declarations ---------------- -->
 <div class="observablehq observablehq--block"><!--:b281575d:--></div>
@@ -2171,7 +2235,7 @@ console.log(">> Loaded All functions...");
 <div class="observablehq observablehq--block"><!--:1daa6c7f:--></div>
 <!-- get budget allocations -->
 <div class="observablehq observablehq--block"><!--:48f97485:--></div>
-<div class="observablehq observablehq--block"><!--:d3c9cb92:--></div>
+<div class="observablehq observablehq--block"><!--:8a20bd1f:--></div>
 <div class="observablehq observablehq--block"><!--:def3b8eb:--></div>
 <!-- dealing with observable input reactivity -->
 <div class="observablehq observablehq--block"><!--:ab161dff:--></div>
@@ -2179,13 +2243,13 @@ console.log(">> Loaded All functions...");
 <div class="observablehq observablehq--block"><!--:1f8950a6:--></div>
 <!-- ---------------- Functions ---------------- -->
 <!-- Intervention functions -->
-<div class="observablehq observablehq--block"><!--:7fb488e1:--></div>
+<div class="observablehq observablehq--block"><!--:817b00a5:--></div>
 <div class="observablehq observablehq--block"><!--:0540ea38:--></div>
 <div class="observablehq observablehq--block"><!--:81c82f44:--></div>
 <!-- ---------------- Sortable Table ---------------- -->
 <div class="observablehq observablehq--block"><!--:15b870e4:--></div>
-<div class="observablehq observablehq--block"><!--:2bd06a2c:--></div>
-<div class="observablehq observablehq--block"><!--:0b5c6465:--></div>
+<div class="observablehq observablehq--block"><!--:246d7836:--></div>
+<div class="observablehq observablehq--block"><!--:9d2f17ea:--></div>
 <!-- ---------------- Glyph Maps ---------------- -->
 <div class="observablehq observablehq--block"><!--:a3995ffc:--></div>
 <div class="observablehq observablehq--block"><!--:44c9b4b4:--></div>
@@ -2194,20 +2258,23 @@ console.log(">> Loaded All functions...");
 <div class="observablehq observablehq--block"><!--:9d040433:--></div>
 <div class="observablehq observablehq--block"><!--:413407ea:--></div>
 <div class="observablehq observablehq--block"><!--:d5bdb4c8:--></div>
-<div class="observablehq observablehq--block"><!--:e225a372:--></div>
+<div class="observablehq observablehq--block"><!--:4f6b1aeb:--></div>
 <div class="observablehq observablehq--block"><!--:f88d8b52:--></div>
 <div class="observablehq observablehq--block"><!--:eb4cc5c5:--></div>
 <div class="observablehq observablehq--block"><!--:84c83878:--></div>
 <div class="observablehq observablehq--block"><!--:f4f0b74a:--></div>
-<div class="observablehq observablehq--block"><!--:0e975078:--></div>
+<div class="observablehq observablehq--block"><!--:540556db:--></div>
 <div class="observablehq observablehq--block"><!--:4965f46a:--></div>
 <div class="observablehq observablehq--block"><!--:ae1c82d6:--></div>
-<div class="observablehq observablehq--block"><!--:7bd0c63d:--></div>
+<div class="observablehq observablehq--block"><!--:5b299668:--></div>
 <div class="observablehq observablehq--block"><!--:bbe0b721:--></div>
 <div class="observablehq observablehq--block"><!--:0d35bbe4:--></div>
 <div class="observablehq observablehq--block"><!--:e38f4f2a:--></div>
-<div class="observablehq observablehq--block"><!--:11a20a47:--></div>
+<div class="observablehq observablehq--block"><!--:74abbf70:--></div>
 <div class="observablehq observablehq--block"><!--:520e6d60:--></div>
-<div class="observablehq observablehq--block"><!--:694cef1c:--></div>
+<div class="observablehq observablehq--block"><!--:989658e6:--></div>
+<div class="observablehq observablehq--block"><!--:310bd41b:--></div>
+<div class="observablehq observablehq--block"><!--:406365da:--></div>
+<!-- <div id="mapContainer"></div> -->
 </main>
 </div>

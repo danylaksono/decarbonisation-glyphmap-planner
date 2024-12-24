@@ -1,6 +1,6 @@
 /**
- * Bundled by jsDelivr using Rollup v2.79.1 and Terser v5.19.2.
- * Original file: /npm/flatbuffers@24.3.25/mjs/flatbuffers.js
+ * Bundled by jsDelivr using Rollup v2.79.2 and Terser v5.37.0.
+ * Original file: /npm/flatbuffers@24.12.23/mjs/flatbuffers.js
  *
  * Do NOT use SRI with dynamically generated files! More information: https://www.jsdelivr.com/using-sri-with-dynamic-files
  */
