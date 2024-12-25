@@ -225,7 +225,7 @@ const [detailOnDemand, setDetailOnDemand] = useState(null); // detail on demand 
           </header>
           <div class="card-content">
             <div class="content">
-              ${table.getNode()}
+              <!-- ${table.getNode()} -->
               <div>No. of intervened buildings: ${JSON.stringify(stackedResults.summary.intervenedCount)}</div>
             </div>
           </div>
@@ -363,7 +363,7 @@ addInterventionBtn.addEventListener("click", () => {
 
   // console.log("  .. allocations", allocations);
 
-  addNewIntervention(start_year, technology, allocations);
+  addNewIntervention(technology, allocations);
 
   // alert("Intervention Added!");
   console.log("  Allocations added: ", allocations);
@@ -746,9 +746,10 @@ console.log(">> Loading intervention functions...");
 // >> Some functions related to creating and managing interventions
 
 // create config template
-function createConfigTemplate(start_year, allocations) {
+function createConfigTemplate(allocations) {
+  // console.log("received allocations", allocations[0].year);
   return {
-    initial_year: Number(start_year),
+    initial_year: allocations[0].year,// Number(start_year),
     duration: allocations.length,
     rolledover_budget: 0,
     yearly_budgets: allocations.map((item) => item.budget),
@@ -761,13 +762,13 @@ function createConfigTemplate(start_year, allocations) {
 // add new intervention
 function addIntervention(
   techConfig,
-  start_year,
+  // start_year,
   allocation,
   filters = [],
   priorities = []
 ) {
-  const config = createConfigTemplate(start_year, allocation);
-  // console.log("configuration sent", config);
+  const config = createConfigTemplate(allocation);
+  console.log("allocation configuration sent", config);
 
   config.tech = {
     name: techConfig.name,
@@ -783,15 +784,19 @@ function addIntervention(
   const newIntervention = { ...config, id: Date.now() };
   setIntervention([...interventions, newIntervention]);
   const modelResult = runModel(newIntervention, buildingsData);
-  setResults([...results, modelResult]);
+
+  // add a timeout to wait for the model to finish
+  setTimeout(() => {
+    setResults([...results, modelResult]);
+  }, 1000);
+
+  // setResults([...results, modelResult]);
   console.log("Intervention added:", config);
-  // close the modal
-  // document.getElementById("interventionModal").style.display = "none";
-}
+ }
 
 // handle form submission: add new intervention
-function addNewIntervention(start_year, technology, allocations) {
-  const new_start_year = start_year;
+function addNewIntervention(technology, allocations) {
+  // const new_start_year = start_year;
   const new_tech = technology;
   const new_allocations = allocations;
 
@@ -814,7 +819,7 @@ function addNewIntervention(start_year, technology, allocations) {
 
   addIntervention(
     techConfig,
-    new_start_year,
+    // new_start_year,
     new_allocations,
     filters,
     priorities
