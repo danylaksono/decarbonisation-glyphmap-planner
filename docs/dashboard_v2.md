@@ -414,10 +414,8 @@ const techsInput = Inputs.select(
     "PV",
     "ASHP",
     "GSHP",
-    "Insulation - Cavity Wall",
-    "Insulation - External Wall",
-    "Insulation - Roof",
-    "Insulation - Under Floor",
+    "Insulation",
+    "Optimise All",
   ],
   {
     // label: html`<b>Technology</b>`,
@@ -781,8 +779,11 @@ function addIntervention(
   config.filters = [...(config.filters || []), ...filters];
   config.priorities = [...(config.priorities || []), ...priorities];
 
+  // Create new intervention
   const newIntervention = { ...config, id: Date.now() };
-  setIntervention([...interventions, newIntervention]);
+  setIntervention([...interventions, newIntervention]); // Update interventions
+
+  // Run the model and store the results
   const modelResult = runModel(newIntervention, buildingsData);
 
   // add a timeout to wait for the model to finish
@@ -791,7 +792,7 @@ function addIntervention(
   }, 1000);
 
   // setResults([...results, modelResult]);
-  console.log("Intervention added:", config);
+  console.log("Intervention added:", interventions);
  }
 
 // handle form submission: add new intervention
@@ -803,7 +804,8 @@ function addNewIntervention(technology, allocations) {
   // if result exist, take the remaining budget from the latest year
   // and add it to this first year budget
   if (results.length > 0) {
-    const latestResult = results[results.length - 1];
+    let latestResult = results[results.length - 1];
+    console.log("result exist:", latestResult);
     new_allocations[0].budget += latestResult.remainingBudget;
   }
 
