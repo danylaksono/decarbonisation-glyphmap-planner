@@ -250,6 +250,11 @@ const [detailOnDemand, setDetailOnDemand] = useState(null); // detail on demand 
   </div>
 </div>
 
+```js
+display(stackedResults)
+display(results)
+```
+
 <!-------- MODAL/QVIEW -------->
 <div id="quickviewDefault" class="quickview is-left">
   <header class="quickview-header">
@@ -760,7 +765,7 @@ function addIntervention(
   priorities = []
 ) {
   const config = createConfigTemplate(allocation);
-  console.log("allocation configuration sent", config);
+  // console.log("allocation configuration sent", config);
 
   config.tech = {
     name: techConfig.name,
@@ -786,7 +791,7 @@ function addIntervention(
   }, 1000);
 
   // setResults([...results, modelResult]);
-  console.log("Intervention added:", interventions);
+  // console.log("Intervention added:", interventions);
  }
 
 // handle form submission: add new intervention
@@ -803,7 +808,7 @@ function addNewIntervention(technology, allocations) {
     new_allocations[0].budget += latestResult.remainingBudget;
   }
 
-  console.log("new_allocations to be sent", new_allocations);
+  // console.log("new_allocations to be sent", new_allocations);
 
   // Retrieve techConfig from the selected technology
   const techConfig = listOfTech[new_tech];
