@@ -12,46 +12,47 @@ export class BudgetAllocator {
     this.startYear = startYear;
     this.projectLength = projectLength;
     this.years = Array.from({ length: projectLength }, (_, i) => startYear + i);
+    this.allocations = [];
   }
 
-  allocateBudget(method = "linear", invert = false) {
-    const allocations = [];
-    let totalAllocated = 0;
+  // allocateBudget(method = "linear", invert = false) {
+  //   const allocations = [];
+  //   let totalAllocated = 0;
 
-    for (let i = 0; i < this.projectLength; i++) {
-      let budgetForYear;
+  //   for (let i = 0; i < this.projectLength; i++) {
+  //     let budgetForYear;
 
-      // Calculate allocation based on chosen method
-      switch (method) {
-        case "linear":
-          budgetForYear = this.totalBudget / this.projectLength;
-          break;
-        case "exponential":
-          budgetForYear =
-            (this.totalBudget * Math.pow(1.1, i)) /
-            Math.pow(1.1, this.projectLength - 1);
-          break;
-        case "sigmoid":
-          const x = (i - this.projectLength / 2) / (this.projectLength / 8);
-          budgetForYear =
-            this.totalBudget / (1 + Math.exp(-x)) - this.totalBudget / 2;
-          break;
-        default:
-          throw new Error("Unknown allocation method");
-      }
+  //     // Calculate allocation based on chosen method
+  //     switch (method) {
+  //       case "linear":
+  //         budgetForYear = this.totalBudget / this.projectLength;
+  //         break;
+  //       case "exponential":
+  //         budgetForYear =
+  //           (this.totalBudget * Math.pow(1.1, i)) /
+  //           Math.pow(1.1, this.projectLength - 1);
+  //         break;
+  //       case "sigmoid":
+  //         const x = (i - this.projectLength / 2) / (this.projectLength / 8);
+  //         budgetForYear =
+  //           this.totalBudget / (1 + Math.exp(-x)) - this.totalBudget / 2;
+  //         break;
+  //       default:
+  //         throw new Error("Unknown allocation method");
+  //     }
 
-      if (invert) {
-        budgetForYear = this.totalBudget - budgetForYear;
-      }
+  //     if (invert) {
+  //       budgetForYear = this.totalBudget - budgetForYear;
+  //     }
 
-      allocations.push(budgetForYear);
-      totalAllocated += budgetForYear;
-    }
+  //     allocations.push(budgetForYear);
+  //     totalAllocated += budgetForYear;
+  //   }
 
-    // Normalize allocations to ensure the total allocated budget matches the total budget
-    const normalizationFactor = this.totalBudget / totalAllocated;
-    return allocations.map((allocation) => allocation * normalizationFactor);
-  }
+  //   // Normalize allocations to ensure the total allocated budget matches the total budget
+  //   const normalizationFactor = this.totalBudget / totalAllocated;
+  //   return allocations.map((allocation) => allocation * normalizationFactor);
+  // }
 
   /**
    * allocate the budget linearly over the project length
@@ -59,7 +60,9 @@ export class BudgetAllocator {
    */
   allocateLinear() {
     const yearlyBudget = this.totalBudget / this.projectLength;
-    return this.years.map((year) => ({ year, budget: yearlyBudget }));
+    this.allocations = this.years.map((year) => ({ year, budget: yearlyBudget }));
+    // return this.years.map((year) => ({ year, budget: yearlyBudget }));
+    return this.allocations;
   }
 
   /**
@@ -114,7 +117,7 @@ export class BudgetAllocator {
     const weightSum = d3.sum(weights);
 
     let allocatedBudget = 0;
-    const allocations = this.years.map((year, i) => {
+    this.allocations = this.years.map((year, i) => {
       if (allocatedBudget >= this.totalBudget) return { year, budget: 0 };
 
       let budget = (weights[i] / weightSum) * this.totalBudget;
@@ -125,7 +128,8 @@ export class BudgetAllocator {
       return { year, budget };
     });
 
-    return allocations;
+    // return allocations;
+    return this.allocations;
   }
 
   /**
@@ -134,15 +138,15 @@ export class BudgetAllocator {
    * @param {Array} allocations - array of annual budget allocations
    * @returns {Object} summary of the allocation process
    */
-  recap(allocations) {
-    const totalAllocated = d3.sum(allocations, (d) => d.budget);
+  recap() {
+    const totalAllocated = d3.sum(this.allocations, (d) => d.budget);
     const budgetMatches = Math.abs(totalAllocated - this.totalBudget) < 1e-2;
 
     return {
       totalBudget: this.totalBudget,
       startYear: this.startYear,
       projectLength: this.projectLength,
-      allocations,
+      allocations: this.allocations,
       totalAllocated,
       budgetMatches,
       message: budgetMatches
@@ -157,6 +161,7 @@ export class BudgetAllocator {
    * @returns {HTMLElement} - SVG element containing the visualization
    */
   visualise(allocations, onUpdate, width = 600, height = 200) {
+    // const allocations = this.allocations;
     // const width = width || 640;
     // const height = height || 200;
     const margin = { top: 20, right: 30, bottom: 40, left: 80 };
@@ -299,7 +304,8 @@ export class BudgetAllocator {
       })
       .on("end", () => {
         // Update currentAllocations once drag is released
-        currentAllocations = allocations.map((d) => ({ ...d }));
+        // currentAllocations = allocations.map((d) => ({ ...d }));
+        this.allocations = allocations.map((d) => ({ ...d }));
         if (onUpdate) onUpdate(currentAllocations);
       });
 
@@ -323,8 +329,8 @@ export class BudgetAllocator {
 
     // return svg.node();
     return {
-      svg: svg.node(),
-      getAllocations: () => currentAllocations,
+      svg: svg.node()
+      // getAllocations: () => currentAllocations,
     };
   }
 }

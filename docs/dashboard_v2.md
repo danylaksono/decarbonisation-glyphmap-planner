@@ -358,15 +358,16 @@ addInterventionBtn.addEventListener("click", () => {
   console.log("  project_length ... ", project_length);
   console.log("  flip_budget ... ", flip_budget);
 
-  setAllocations(lastAllocation);
+  // setAllocations(lastAllocation);
   // console.log("  .. lastAllocation", lastAllocation);
 
-  // console.log("  .. allocations", allocations);
+  console.log("  .. allocations", allocator.recap().allocations);
 
-  addNewIntervention(technology, allocations);
+  addNewIntervention(technology, allocator.recap().allocations);
 
   // alert("Intervention Added!");
-  console.log("  Allocations added: ", allocations);
+  setAllocations(allocator.recap().allocations);
+  // console.log("  Allocations added: ", allocations);
   quickviewDefault.classList.remove("is-active"); // Close quickview after submission
 });
 ```
@@ -590,7 +591,7 @@ Object.assign(morphFactorInput, {
 const morph_factor = Generators.input(morphFactorInput);
 
 //  flip button
-const flipButtonInput = Inputs.toggle({ label: "Flip", value: true });
+const flipButtonInput = Inputs.toggle({ label: "Flip", value: false });
 Object.assign(flipButtonInput, {
   // oninput: (event) => event.isTrusted && event.stopImmediatePropagation(),
   onchange: (event) => event.currentTarget.dispatchEvent(new Event("input")),
@@ -639,6 +640,8 @@ const allocator = new BudgetAllocator(
 );
 ```
 
+<!-- get budget allocations -->
+
 ```js
 let initialAllocations;
 if (allocation_type === "linear") {
@@ -652,10 +655,8 @@ if (allocation_type === "linear") {
 }
 ```
 
-<!-- get budget allocations -->
-
 ```js
-const { svg, getAllocations } = allocator.visualise(
+const {svg} = allocator.visualise(
   initialAllocations,
   (changes) => {
     console.log("data changed:", changes);
@@ -664,15 +665,8 @@ const { svg, getAllocations } = allocator.visualise(
   400,
   200
 );
-// display(results);
 ```
 
-```js
-const lastAllocation = selected ? getAllocations(selected) : initialAllocations;
-// set allocation based on custom graph
-// allocation_type;
-// const allocations = selected ? getAllocations(selected) : initialAllocations;
-```
 
 ```js
 // store intervention results
@@ -808,6 +802,8 @@ function addNewIntervention(technology, allocations) {
     console.log("result exist:", latestResult);
     new_allocations[0].budget += latestResult.remainingBudget;
   }
+
+  console.log("new_allocations to be sent", new_allocations);
 
   // Retrieve techConfig from the selected technology
   const techConfig = listOfTech[new_tech];
