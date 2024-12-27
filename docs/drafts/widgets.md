@@ -894,3 +894,18 @@ renderSelectableList(items, "selectableList", "output", handleSelected);
   <ul id="selectableList"></ul>
   <div id="output">Selected ID: None</div>
 </div>
+
+
+```js
+// const modelConfig = {
+//   optimizationStrategy: 'carbon-first',
+//   technologies: [
+//     {name: 'PV', config: {...}},
+//     {name: 'ASHP', config: {...}},
+//     // ... other technologies
+//   ],
+//   // ... other config options
+// };
+
+// const model = new MiniDecarbModel(modelConfig, buildings);
+```

@@ -118,33 +118,6 @@ export class MiniDecarbModel {
     this.suitableBuildings.sort((a, b) => b.score - a.score);
   }
 
-  // Calculate score based on carbon savings and priorities
-  //   calculateBuildingScores() {
-  //     // Rank buildings based on carbon savings potential
-  //     const rankedBuildings = [...this.suitableBuildings].sort((a, b) => {
-  //       return (
-  //         b.properties[this.tech.config.savingsKey] -
-  //         a.properties[this.tech.config.savingsKey]
-  //       );
-  //     });
-
-  //     // Assign initial score based on ranking
-  //     rankedBuildings.forEach((building, index) => {
-  //       building.score = rankedBuildings.length - index; // Higher rank gets higher score
-  //     });
-
-  //     // Apply priority adjustments
-  //     this.suitableBuildings.forEach((building) => {
-  //       this.priorities.forEach((priority) => {
-  //         const value = building.properties[priority.attribute] || 0;
-  //         building.score += value * (priority.order === "desc" ? 1 : -1);
-  //       });
-  //     });
-
-  //     // Sort by final score in descending order
-  //     this.suitableBuildings.sort((a, b) => b.score - a.score);
-  //   }
-
   // Get intervention cost for a building
   getBuildingCost(building, technology = this.tech) {
     const labour = building.properties[technology.config.labourKey] || 0;
@@ -279,7 +252,6 @@ export class MiniDecarbModel {
     return {
       interventionId: this.modelId,
       techName: this.tech.name,
-      // initialBudget: d3.sum(this.yearlyBudgets),
       initialBudget: this.yearlyBudgets.reduce((a, b) => a + b, 0),
       yearlyBudgets: this.yearlyBudgets,
       totalBudgetSpent: totalAllocated,
@@ -298,14 +270,4 @@ export class MiniDecarbModel {
   }
 }
 
-// const modelConfig = {
-//   optimizationStrategy: 'carbon-first',
-//   technologies: [
-//     {name: 'PV', config: {...}},
-//     {name: 'ASHP', config: {...}},
-//     // ... other technologies
-//   ],
-//   // ... other config options
-// };
 
-// const model = new MiniDecarbModel(modelConfig, buildings);

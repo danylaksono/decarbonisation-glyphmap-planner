@@ -298,6 +298,16 @@ function updateTimeline() {
 }
 ```
 
+```js
+// update model run
+function updateModelRun() {
+  const modelResult = runModel(interventions[selectedIntervention.index], buildingsData);
+  const updatedResults = [...results];
+  updatedResults[selectedIntervention.index] = modelResult;
+  setResults(updatedResults);
+}
+```
+
 
 <!-------- MODAL/QVIEW -------->
 <div id="quickviewDefault" class="quickview is-left">
@@ -895,6 +905,7 @@ function removeIntervention(index) {
 
     // when intervention is removed, remove the corresponding results
     setResults(results.filter((_, i) => i !== index));
+    updateTimeline();
   } else {
     console.log("Invalid index.");
   }
@@ -1087,7 +1098,7 @@ const listOfTech = {
       suitabilityKey: "pv_suitability",
       labourKey: "pv_labour",
       materialKey: "pv_material",
-      savingsKey: "solar_generation",
+      savingsKey: "pv_generation",
     },
   },
   GSHP: {
@@ -1135,14 +1146,6 @@ function runModel(config, buildings) {
 // update config here
 // addTechConfig(listOfTech.ASHP);
 // // addPriority("substation_headroom", "asc");
-```
-
-```js
-// console.log("selectedIntervention", selectedIntervention);
-// console.log(
-//   "selectedIntervention year",
-//   Object.keys(selectedIntervention.yearlyStats)[0]
-// );
 ```
 
 <!-- ---------------- Sortable Table ---------------- -->

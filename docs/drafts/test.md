@@ -16,29 +16,6 @@ import { DecarbonisationModel } from "./../components/decarbonisationModel.js";
 // import { Model } from "./components/model.js";
 ```
 
-<!-- ## Test UI -->
-
-<!-- <label for="decarbonisation-slider">Decarbonisation Progress:</label> -->
-
-```js
-// const n = html`<input
-//   style="width: 800px;"
-//   type="range"
-//   step="0.1"
-//   min="0"
-//   max="1"
-// />`;
-```
-
-```js
-// const nn = Generators.input(n);
-// display(n);
-```
-
-```js
-// display(nn);
-```
-
 ## Test New Model
 
 ```sql id=oxford_data
@@ -99,8 +76,8 @@ const newBuildings = [...oxford_data];
 // model specifications
 const modelSpec = {
   initial_year: 2024,
-  target_years: 5,
-  overall_budget: overall_budget || 50_000_000,
+  target_years: 2,
+  overall_budget:  50_000,
   uncapped_mode: false,
   technologies: [
     {
@@ -114,7 +91,7 @@ const modelSpec = {
         suitabilityKey: "pv_suitability",
         labourKey: "pv_labour",
         materialKey: "pv_material",
-        savingsKey: "pv_generation", // assuming 1kWh = 1kg CO2
+        savingsKey: "pv_generation",
       },
     },
     {
@@ -128,7 +105,7 @@ const modelSpec = {
         suitabilityKey: "ashp_suitability",
         labourKey: "ashp_labour",
         materialKey: "ashp_material",
-        savingsKey: "heat_demand", // assuming full heat demand offset
+        savingsKey: "heat_demand",
       },
     },
   ],
@@ -177,7 +154,7 @@ const uncappedModel = new DecarbonisationModel(
   newBuildings
 );
 
-// uncappedModel.runModel();
+uncappedModel.runModel();
 
 // console.log(
 //   "Yearly Interventions in 2024:",
@@ -190,369 +167,5 @@ const uncappedModel = new DecarbonisationModel(
 // // Get final stats
 // console.log(uncappedModel.getFinalStats());
 
-// display(uncappedModel.getFinalStats());
-```
-
-## Test UI
-
-```js
-function useState(value) {
-  const state = Mutable(value);
-  const setState = (value) => (state.value = value);
-  return [state, setState];
-}
-const [config, setConfig] = useState({});
-const [slider, setSlider] = useState(0);
-```
-
-```js
-// Overall Budget
-const overallBudgetInput = Inputs.range([0, 100_000_000], {
-  label: "Overall Buget",
-  step: 500_000,
-  value: 50_000_000,
-});
-overallBudgetInput.number.style["max-width"] = "60px";
-Object.assign(overallBudgetInput, {
-  oninput: (event) => event.isTrusted && event.stopImmediatePropagation(),
-  onchange: (event) => event.currentTarget.dispatchEvent(new Event("input")),
-});
-display(overallBudgetInput);
-```
-
-```js
-const overall_budget = Generators.input(overallBudgetInput);
-```
-
-${overall_budget}
-
-```js
-// Technology Name
-const techNameInput = html`<input
-  type="text"
-  placeholder="Technology Name"
-  style="max-width: 300px;"
-/>`;
-const tech_name = Generators.input(techNameInput);
-
-// Allocation
-const techAllocationInput = html`<input
-  type="range"
-  min="0"
-  max="1"
-  step="0.1"
-  placeholder="Allocation"
-  style="max-width: 300px;"
-/>`;
-const tech_allocation = Generators.input(techAllocationInput);
-
-// Suitability Key
-const techSuitabilityKeyInput = html`<input
-  type="text"
-  placeholder="Suitability Key"
-  style="max-width: 300px;"
-/>`;
-const tech_suitabilityKey = Generators.input(techSuitabilityKeyInput);
-
-// Labour Key
-const techLabourKeyInput = html`<input
-  type="text"
-  placeholder="Labour Key"
-  style="max-width: 300px;"
-/>`;
-const tech_labourKey = Generators.input(techLabourKeyInput);
-
-// Material Key
-const techMaterialKeyInput = html`<input
-  type="text"
-  placeholder="Material Key"
-  style="max-width: 300px;"
-/>`;
-const tech_materialKey = Generators.input(techMaterialKeyInput);
-
-// Savings Key
-const techSavingsKeyInput = html`<input
-  type="text"
-  placeholder="Savings Key"
-  style="max-width: 300px;"
-/>`;
-const tech_savingsKey = Generators.input(techSavingsKeyInput);
-```
-
-<!--
-```js
-// Initial Year
-const initialYearInput = html`<input type="number" min="2023" max="2030" value="2024" style="max-width: 300px;" />`;
-const initial_year = Generators.input(initialYearInput);
-
-// Target Years
-const targetYearsInput = html`<input type="range" min="1" max="20" step="1" value="5" style="max-width: 300px;" />`;
-const target_years = Generators.input(targetYearsInput);
-
-// Overall Budget
-const overallBudgetInput = html`<input type="range" min="1000000" max="100000000" step="500000" value="50000000" style="max-width: 300px;" />`;
-const overall_budget = Generators.input(overallBudgetInput);
-
-// Uncapped Mode Checkbox
-const uncappedModeInput = html`<input type="checkbox" />`;
-const uncapped_mode = Generators.input(uncappedModeInput);
-```
-
-```js
-// PV Technology Allocation
-const pvAllocationInput = html`<input type="range" min="0" max="1" step="0.1" value="0.4" style="max-width: 300px;" />`;
-const pv_allocation = Generators.input(pvAllocationInput);
-
-// PV Suitability Key
-const pvSuitabilityKeyInput = html`<input type="text" value="pv_suitability" style="max-width: 300px;" />`;
-const pv_suitabilityKey = Generators.input(pvSuitabilityKeyInput);
-
-// ASHP Technology Allocation
-const ashpAllocationInput = html`<input type="range" min="0" max="1" step="0.1" value="0.6" style="max-width: 300px;" />`;
-const ashp_allocation = Generators.input(ashpAllocationInput);
-
-// ASHP Suitability Key
-const ashpSuitabilityKeyInput = html`<input type="text" value="ashp_suitability" style="max-width: 300px;" />`;
-const ashp_suitabilityKey = Generators.input(ashpSuitabilityKeyInput);
-
-```
-
-
-```js
-// Priority Rule Attribute Selector
-const priorityAttrInput = html`<select style="max-width: 300px;">
-  <option value="deprivation_index">Deprivation Index</option>
-  <option value="fuel_poverty">Fuel Poverty</option>
-</select>`;
-const priority_attribute = Generators.input(priorityAttrInput);
-
-// Priority Rule Order Selector
-const priorityOrderInput = html`<select style="max-width: 300px;">
-  <option value="asc">Ascending</option>
-  <option value="desc">Descending</option>
-</select>`;
-const priority_order = Generators.input(priorityOrderInput);
-
-```
-
-
-```js
-function* modelSpecv2() {
-  while (true) {
-    yield {
-      initial_year,
-      target_years,
-      overall_budget,
-      uncapped_mode,
-      technologies: [
-        {
-          name: "PV",
-          allocation: pv_allocation,
-          config: {
-            suitabilityKey: pv_suitabilityKey,
-          },
-        },
-        {
-          name: "ASHP",
-          allocation: ashp_allocation,
-          config: {
-            suitabilityKey: ashp_suitabilityKey,
-            // add more later
-          },
-        },
-      ],
-      priorityRules: [
-        { attribute: priority_attribute, order: priority_order },
-      ]
-    };
-  }
-}
-
-``` -->
-
-<!-- <div>
-  <h3>Model Specification</h3>
-  <label>Initial Year: ${initialYearInput}</label><br>
-  <label>Target Years: ${targetYearsInput} ${target_years}</label><br>
-  <label>Overall Budget: ${overallBudgetInput} ${overall_budget}</label><br>
-  <label>Uncapped Mode: ${uncappedModeInput}</label><br>
-
-  <h4>Technologies</h4>
-  <h5>PV</h5>
-  <label>Allocation: ${pvAllocationInput}</label><br>
-  <label>Suitability Key: ${pvSuitabilityKeyInput}</label><br>
-
-  <h5>ASHP</h5>
-  <label>Allocation: ${ashpAllocationInput}</label><br>
-  <label>Suitability Key: ${ashpSuitabilityKeyInput}</label><br>
-
-  <h4>Priority Rules</h4>
-  <label>Attribute: ${priorityAttrInput}</label><br>
-  <label>Order: ${priorityOrderInput}</label><br>
-</div> -->
-
-```js
-let technologies = [];
-const addTechnologyButton = html`<button>Add Technology</button>`;
-addTechnologyButton.onclick = () => {
-  const newTechnology = {
-    name: tech_name,
-    allocation: tech_allocation,
-    config: {
-      suitabilityKey: tech_suitabilityKey,
-      labourKey: tech_labourKey,
-      materialKey: tech_materialKey,
-      savingsKey: tech_savingsKey,
-    },
-  };
-
-  technologies.push(newTechnology);
-
-  // Log to check the technologies array is updated
-  console.log("Technologies:", technologies);
-};
-display(addTechnologyButton);
-```
-
-<!-------- MODAL -------->
-<dialog>
-    <div id="project-properties" class="card">
-      <div class="form-group">
-        ${techsInput}
-      </div>
-      <div class="form-group">
-        ${totalBudgetInput}
-      </div>
-      <div class="form-group">
-        <div style="display:flex; flex-direction: row; align-items: center; min-height: 25.5px; gap: 60px;">
-          <span><b>Start Year</b></span> ${startYearInput}
-        </div>
-      </div>
-      <div class="form-group">
-        <label for="total-budget">Project length (years):</label>
-        ${projectLengthInput}
-      </div>
-      <div class="form-group">
-        <label for="total-budget">Budget Allocation Type:</label>
-        ${allocationTypeInput}
-      </div>
-      ${svg}
-      <div class="form-group">
-        ${html`
-          <button class="create-btn" type="button" onclick=${addNewIntervention}>
-            Add New Intervention
-          </button>
-        `}
-      </div>
-    </div>
-</dialog>
-
-<button data-show-modal>Show Modal</button>
-
-```js
-let btn = document.querySelector("[data-show-modal]");
-let modal = document.querySelector("dialog");
-
-// Show the modal
-btn.addEventListener("click", function () {
-  modal.showModal();
-});
-```
-
-## Play button
-
-```js
-// Create the slider input
-const morphFactorInput = html`<input
-  style="width: 100%; max-width: 450px;"
-  type="range"
-  value="0"
-  step="0.05"
-  min="0"
-  max="1"
-/>`;
-Object.assign(morphFactorInput, {
-  oninput: (event) => event.isTrusted && event.stopImmediatePropagation(),
-  onchange: (event) => event.currentTarget.dispatchEvent(new Event("input")),
-});
-```
-```js
-const morph_factor = Generators.input(morphFactorInput);
-```
-
-```js
-// Create the play button
-const playButton = html`<button style="margin-top: 10px;">Play</button>`;
-```
-
-```js
-// Append the slider and button to the view
-display(html`${playButton} ${morphFactorInput}`);
-```
-
-```js
-// Animation logic
-let playing = false; // Track play/pause state
-let direction = 1; // Controls the animation direction (0 to 1 or 1 to 0)
-let animationFrame; // Stores the requestAnimationFrame ID
-
-
-function animate(currentValue) {
-  // Increment or decrement the value
-  let newValue = currentValue + 0.01 * direction;
-
-  // Reverse direction if boundaries are reached
-  if (newValue >= 1 || newValue <= 0) {
-    direction *= -1;
-    newValue = Math.max(0, Math.min(1, newValue)); // Clamp value between 0 and 1
-  }
-
-  // Update the slider and dispatch the "input" event for reactivity
-  set(morphFactorInput, newValue);
-
-  if (playing) {
-    animationFrame = requestAnimationFrame(() => animate(newValue)); // Pass the updated value
-  }
-}
-
-// Button click event listener
-playButton.addEventListener("click", () => {
-  playing = !playing; // Toggle play/pause state
-  playButton.textContent = playing ? "Pause" : "Play";
-
-  if (playing) {
-    // Start the animation with the current slider value
-    const currentValue = parseFloat(morphFactorInput.value);
-    requestAnimationFrame(() => animate(currentValue));
-  } else {
-    cancelAnimationFrame(animationFrame); // Stop the animation
-  }
-});
-```
-
-
-
-<h2>${morph_factor}</h2>
-
-```js
-function set(input, value) {
-  input.value = value;
-  input.dispatchEvent(new Event("input", { bubbles: true }));
-  // console.log("input value:", input.value);
-}
-```
-
-```js
-// set(morphFactorInput, 0.5);
-display(morph_factor);
-```
-
-
-```js
-display(
-  Inputs.button([
-    ["Set to 0", () => set(morphFactorInput, 0)],
-    ["Set to 1", () => set(morphFactorInput, 1)],
-  ])
-);
+display(uncappedModel.getFinalStats());
 ```
