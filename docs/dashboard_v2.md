@@ -203,6 +203,7 @@ const [detailOnDemand, setDetailOnDemand] = useState(null); // detail on demand 
                   onclick=${(e) => {
                     e.stopPropagation();
                     console.log("clicked block", e);
+                    removeIntervention(selectedIntervention.index);
                 }}>
                 <i class="fas fa-trash" style="color:red;"></i>
               </button>`}
@@ -251,8 +252,18 @@ const [detailOnDemand, setDetailOnDemand] = useState(null); // detail on demand 
 </div>
 
 ```js
-display(stackedResults)
+display(interventions)
+```
+```js
 display(results)
+```
+```js
+display(stackedResults)
+```
+
+```js
+interventions;
+console.log(">> selected Intervention...", selectedIntervention);
 ```
 
 <!-------- MODAL/QVIEW -------->
@@ -337,6 +348,8 @@ display(results)
   </footer>
 </div>
 
+
+
 ```js
 const openQuickviewButton = document.getElementById("openQuickviewButton");
 const closeQuickviewButton = document.getElementById("closeQuickviewButton");
@@ -397,7 +410,7 @@ function selectIntervention(index) {
   const selectedItem = document.querySelector(
     `#interventions-list li:nth-child(${index + 1})`
   );
-  setSelectedIntervention(results[selectedInterventionIndex]);
+  setSelectedIntervention({ ...results[selectedInterventionIndex], index: selectedInterventionIndex });
   // console.log("selectedItem: ", results[selectedInterventionIndex]);
   // setSelectedIntervention(selectedItem);
   if (selectedItem) selectedItem.classList.add("selected");
@@ -447,7 +460,7 @@ const technology = Generators.input(techsInput);
 const totalBudgetInput = html`<input
   id="totalBudgetInput"
   class="input"
-  value="10,000,000"
+  value="10,000"
   type="text"
   placeholder="Enter total budget"
 />`;
