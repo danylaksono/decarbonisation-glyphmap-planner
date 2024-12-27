@@ -183,17 +183,19 @@ const [detailOnDemand, setDetailOnDemand] = useState(null); // detail on demand 
               <div id="timeline-panel">
                 ${createTimelineInterface(
                 interventions,
-                () => {},
+                (change) => {
+                  console.log("timeline change", change);
+                },
                 (click) => {
                   selectIntervention(click);
-                  console.log("clicked block", interventions[click]);
+                  console.log("timeline clicked block", interventions[click]);
                 },
                 450,
                 200
               )}
               </div> <!-- timeline panel -->
               <nav id="timeline-buttons">
-                <button id="openQuickviewButton"  data-show="quickview" class="btn" aria-label="Add">
+                <button id="openQuickviewButton" data-show="quickview" class="btn" aria-label="Add">
                   <i class="fas fa-plus"></i>
                 </button>
                 <button class="btn edit" aria-label="Edit">
@@ -207,12 +209,20 @@ const [detailOnDemand, setDetailOnDemand] = useState(null); // detail on demand 
                 }}>
                 <i class="fas fa-trash" style="color:red;"></i>
               </button>`}
-                <button class="btn move-up" aria-label="Move Up">
-                  <i class="fas fa-arrow-up"></i>
-                </button>
-                <button class="btn move-down" aria-label="Move Down">
-                  <i class="fas fa-arrow-down"></i>
-                </button>
+              ${html`<button class="btn move-up" aria-label="Move Up"
+                  onclick=${(e) => {
+                    e.stopPropagation();
+                    reorderIntervention(interventions, selectedIntervention.index, "up");
+                }}>
+                <i class="fas fa-arrow-up"></i>
+              </button>`}
+                ${html`<button class="btn move-down" aria-label="Move Down"
+                  onclick=${(e) => {
+                    e.stopPropagation();
+                    reorderIntervention(interventions, selectedIntervention.index, "down");
+                }}>
+                <i class="fas fa-arrow-down"></i>
+              </button>`}
               </nav>
             </div> <!-- graph container -->
           </div>
@@ -265,6 +275,29 @@ display(stackedResults)
 interventions;
 console.log(">> selected Intervention...", selectedIntervention);
 ```
+
+```js
+// update timeline drawing
+function updateTimeline() {
+  const timelinePanel = document.getElementById("timeline-panel");
+  timelinePanel.innerHTML = "";
+  timelinePanel.appendChild(
+    createTimelineInterface(
+      interventions,
+      (change) => {
+        console.log("timeline change", change);
+      },
+      (click) => {
+        selectIntervention(click);
+        console.log("timeline clicked block", interventions[click]);
+      },
+      450,
+      200
+    )
+  );
+}
+```
+
 
 <!-------- MODAL/QVIEW -------->
 <div id="quickviewDefault" class="quickview is-left">
@@ -840,6 +873,19 @@ function addNewIntervention(technology, allocations) {
     filters,
     priorities
   );
+}
+
+function reorderIntervention(array, index, direction) {
+    if (direction === "up" && index > 0) {
+        // Swap with the previous item
+        [array[index - 1], array[index]] = [array[index], array[index - 1]];
+    } else if (direction === "down" && index < array.length - 1) {
+        // Swap with the next item
+        [array[index], array[index + 1]] = [array[index + 1], array[index]];
+    }
+    console.log("Interventions reordered:", array);
+    updateTimeline();
+    return array;
 }
 
 // remove intervention
