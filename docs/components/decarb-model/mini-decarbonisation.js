@@ -411,4 +411,110 @@ export class MiniDecarbModel {
       })),
     };
   }
+
+  // Helper method to stack results for visualisation
+  static stackResults(modelRecaps) {
+    const buildingMap = new Map();
+    const yearlySummary = {};
+
+    modelRecaps.forEach((modelRecap) => {
+      // Process yearlyStats for overall summary
+      Object.entries(modelRecap.yearlyStats).forEach(([year, stats]) => {
+        if (!yearlySummary[year]) {
+          yearlySummary[year] = {
+            budgetSpent: 0,
+            buildingsIntervened: 0,
+            totalCarbonSaved: 0,
+            technologies: new Set(),
+          };
+        }
+
+        yearlySummary[year].budgetSpent += stats.budgetSpent;
+        yearlySummary[year].buildingsIntervened += stats.buildingsIntervened;
+        // yearlySummary[year].technologies.add(modelRecap.techName);
+        if (stats.buildingsIntervened > 0) {
+            yearlySummary[year].technologies.add(modelRecap.techName);
+        }
+        yearlySummary[year].totalCarbonSaved +=
+          stats.intervenedBuildings.reduce(
+            (sum, b) => sum + (b.carbonSaved || 0),
+            0
+          );
+      });
+
+      // process all buildings from the recap
+      modelRecap.allBuildings.forEach((building) => {
+        if (!buildingMap.has(building.id)) {
+          buildingMap.set(building.id, {
+            ...building.properties,
+            ...building,
+            isIntervened: false,
+            totalCost: 0,
+            totalCarbonSaved: 0,
+            interventionHistory: [],
+            interventionYears: [],
+            interventionTechs: [],
+          });
+        }
+
+        const target = buildingMap.get(building.id);
+
+        // Process interventions if the building was intervened in this model
+        if (building.isIntervened) {
+          const intervention = {
+            tech: modelRecap.techName, // Get techName from recap
+            year: building.interventionYear,
+            cost: building.interventionCost,
+            carbonSaved: building.carbonSaved,
+            interventionID: modelRecap.interventionId, // Get interventionId from recap
+          };
+
+          target.isIntervened = true;
+          target.totalCost += building.interventionCost;
+          target.totalCarbonSaved += building.carbonSaved;
+          target.interventionHistory.push(intervention);
+          target.interventionYears.push(building.interventionYear);
+          if (!target.interventionTechs.includes(modelRecap.techName)) {
+            target.interventionTechs.push(modelRecap.techName);
+          }
+        }
+      });
+    });
+
+    // Finalize the yearly summary
+    Object.values(yearlySummary).forEach((yearData) => {
+      yearData.technologies = Array.from(yearData.technologies);
+    });
+
+    const buildings = Array.from(buildingMap.values());
+    const summary = {
+      totalBuildings: buildings.length,
+      intervenedCount: buildings.filter((b) => b.isIntervened).length,
+      untouchedCount: buildings.filter((b) => !b.isIntervened).length,
+      totalCost: buildings.reduce((sum, b) => sum + b.totalCost, 0),
+      totalCarbonSaved: buildings.reduce(
+        (sum, b) => sum + b.totalCarbonSaved,
+        0
+      ),
+      uniqueTechs: [
+        ...new Set(
+          buildings.flatMap((b) => b.interventionTechs).filter(Boolean)
+        ),
+      ],
+      interventionYearRange: buildings.some((b) => b.interventionYears.length)
+        ? [
+            Math.min(...buildings.flatMap((b) => b.interventionYears)),
+            Math.max(...buildings.flatMap((b) => b.interventionYears)),
+          ]
+        : null,
+    };
+
+    return {
+      buildings,
+      summary,
+      yearlySummary,
+      intervenedBuildings: buildings.filter((b) => b.isIntervened),
+      untouchedBuildings: buildings.filter((b) => !b.isIntervened),
+    };
+  }
 }

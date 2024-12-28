@@ -16,13 +16,16 @@ const flubber = require("flubber@0.4");
 
 import { require } from "npm:d3-require";
 import { Mutable } from "npm:@observablehq/stdlib";
+import * as turf from "@turf/turf";
 // import { supercluster } from "npm:supercluster";
+
+import * as bulmaToast from "npm:bulma-toast";
+import * as bulmaQuickview from "npm:bulma-quickview@2.0.0/dist/js/bulma-quickview.js";
 
 import {
   TimeGlyph,
   GlyphCollection,
 } from "./components/glyph-designs/timeGlyph.js";
-import * as turf from "@turf/turf";
 import { RadialGlyph } from "./components/radialglyph.js";
 import {
   glyphMap,
@@ -30,7 +33,6 @@ import {
   _drawCellBackground,
 } from "./components/gridded-glyphmaps/index.min.js";
 import { OSGB } from "./components/osgb/index.js";
-import { Model } from "./components/model.js";
 import { BudgetAllocator } from "./components/decarb-model/budget-allocator.js";
 import { MiniDecarbModel } from "./components/decarb-model/mini-decarbonisation.js";
 import { createTable } from "./components/sorterTable.js";
@@ -40,15 +42,6 @@ import {
   enrichGeoData,
   normaliseData,
 } from "./components/helpers.js";
-import {
-  downloadBoundaries,
-  joinCensusDataToGeoJSON,
-  convertGridCsvToGeoJson,
-  context2d,
-} from "./components/utils.js";
-
-import * as bulmaToast from "npm:bulma-toast";
-import * as bulmaQuickview from "npm:bulma-quickview@2.0.0/dist/js/bulma-quickview.js";
 ```
 
 ```js
@@ -1014,104 +1007,104 @@ function modifyIntervention(
 }
 
 // stack results from getRecap() method
-function stackResults(results) {
-  const buildingMap = new Map();
-  const yearlySummary = {}; // Object to store the overall yearly summary
+// function stackResults(results) {
+//   const buildingMap = new Map();
+//   const yearlySummary = {}; // Object to store the overall yearly summary
 
-  // Collect and merge all buildings from all results
-  results.forEach((result) => {
-    // Process yearlyStats for overall summary
-    Object.entries(result.yearlyStats).forEach(([year, stats]) => {
-      if (!yearlySummary[year]) {
-        yearlySummary[year] = {
-          budgetSpent: 0,
-          buildingsIntervened: 0,
-          totalCarbonSaved: 0, // Initialize carbon saved
-          technologies: new Set(),
-        };
-      }
+//   // Collect and merge all buildings from all results
+//   results.forEach((result) => {
+//     // Process yearlyStats for overall summary
+//     Object.entries(result.yearlyStats).forEach(([year, stats]) => {
+//       if (!yearlySummary[year]) {
+//         yearlySummary[year] = {
+//           budgetSpent: 0,
+//           buildingsIntervened: 0,
+//           totalCarbonSaved: 0, // Initialize carbon saved
+//           technologies: new Set(),
+//         };
+//       }
 
-      yearlySummary[year].budgetSpent += stats.budgetSpent;
-      yearlySummary[year].buildingsIntervened += stats.buildingsIntervened;
-      yearlySummary[year].technologies.add(result.techName); // Add the technology
+//       yearlySummary[year].budgetSpent += stats.budgetSpent;
+//       yearlySummary[year].buildingsIntervened += stats.buildingsIntervened;
+//       yearlySummary[year].technologies.add(result.techName); // Add the technology
 
-      // Accumulate total carbon saved from intervened buildings for this year
-      stats.intervenedBuildings.forEach((building) => {
-        yearlySummary[year].totalCarbonSaved += building.carbonSaved || 0;
-      });
-    });
+//       // Accumulate total carbon saved from intervened buildings for this year
+//       stats.intervenedBuildings.forEach((building) => {
+//         yearlySummary[year].totalCarbonSaved += building.carbonSaved || 0;
+//       });
+//     });
 
-    result.allBuildings.forEach((building) => {
-      if (!buildingMap.has(building.id)) {
-        const { properties, ...rest } = building; // Destructure properties and other fields
-        buildingMap.set(building.id, {
-          ...rest,
-          ...properties, // Flatten properties here
-          isIntervened: false,
-          totalCost: 0,
-          totalCarbonSaved: 0,
-          interventionHistory: [],
-          interventionYears: [],
-          interventionTechs: [],
-        });
-      }
-    });
+//     result.allBuildings.forEach((building) => {
+//       if (!buildingMap.has(building.id)) {
+//         const { properties, ...rest } = building; // Destructure properties and other fields
+//         buildingMap.set(building.id, {
+//           ...rest,
+//           ...properties, // Flatten properties here
+//           isIntervened: false,
+//           totalCost: 0,
+//           totalCarbonSaved: 0,
+//           interventionHistory: [],
+//           interventionYears: [],
+//           interventionTechs: [],
+//         });
+//       }
+//     });
 
-    // Process interventions
-    result.intervenedBuildings.forEach((building) => {
-      const target = buildingMap.get(building.id);
-      const intervention = {
-        tech: result.techName,
-        year: building.interventionYear,
-        cost: building.interventionCost,
-        carbonSaved: building.carbonSaved,
-        interventionID: result.interventionId,
-      };
+//     // Process interventions
+//     result.intervenedBuildings.forEach((building) => {
+//       const target = buildingMap.get(building.id);
+//       const intervention = {
+//         tech: result.techName,
+//         year: building.interventionYear,
+//         cost: building.interventionCost,
+//         carbonSaved: building.carbonSaved,
+//         interventionID: result.interventionId,
+//       };
 
-      target.isIntervened = true;
-      target.totalCost += building.interventionCost;
-      target.totalCarbonSaved += building.carbonSaved;
-      target.interventionHistory.push(intervention);
-      target.interventionYears.push(building.interventionYear);
-      if (!target.interventionTechs.includes(result.techName)) {
-        target.interventionTechs.push(result.techName);
-      }
-    });
-  });
+//       target.isIntervened = true;
+//       target.totalCost += building.interventionCost;
+//       target.totalCarbonSaved += building.carbonSaved;
+//       target.interventionHistory.push(intervention);
+//       target.interventionYears.push(building.interventionYear);
+//       if (!target.interventionTechs.includes(result.techName)) {
+//         target.interventionTechs.push(result.techName);
+//       }
+//     });
+//   });
 
-  // Finalize the yearly summary
-  Object.values(yearlySummary).forEach((yearData) => {
-    yearData.technologies = Array.from(yearData.technologies); // Convert Set to Array
-  });
+//   // Finalize the yearly summary
+//   Object.values(yearlySummary).forEach((yearData) => {
+//     yearData.technologies = Array.from(yearData.technologies); // Convert Set to Array
+//   });
 
-  const buildings = Array.from(buildingMap.values());
-  const summary = {
-    totalBuildings: buildings.length,
-    intervenedCount: buildings.filter((b) => b.isIntervened).length,
-    untouchedCount: buildings.filter((b) => !b.isIntervened).length,
-    totalCost: buildings.reduce((sum, b) => sum + b.totalCost, 0),
-    totalCarbonSaved: buildings.reduce((sum, b) => sum + b.totalCarbonSaved, 0),
-    uniqueTechs: [
-      ...new Set(buildings.flatMap((b) => b.interventionTechs).filter(Boolean)),
-    ],
-    interventionYearRange: buildings.some((b) => b.interventionYears.length)
-      ? [
-          Math.min(...buildings.flatMap((b) => b.interventionYears)),
-          Math.max(...buildings.flatMap((b) => b.interventionYears)),
-        ]
-      : null,
-  };
+//   const buildings = Array.from(buildingMap.values());
+//   const summary = {
+//     totalBuildings: buildings.length,
+//     intervenedCount: buildings.filter((b) => b.isIntervened).length,
+//     untouchedCount: buildings.filter((b) => !b.isIntervened).length,
+//     totalCost: buildings.reduce((sum, b) => sum + b.totalCost, 0),
+//     totalCarbonSaved: buildings.reduce((sum, b) => sum + b.totalCarbonSaved, 0),
+//     uniqueTechs: [
+//       ...new Set(buildings.flatMap((b) => b.interventionTechs).filter(Boolean)),
+//     ],
+//     interventionYearRange: buildings.some((b) => b.interventionYears.length)
+//       ? [
+//           Math.min(...buildings.flatMap((b) => b.interventionYears)),
+//           Math.max(...buildings.flatMap((b) => b.interventionYears)),
+//         ]
+//       : null,
+//   };
 
-  return {
-    buildings,
-    summary,
-    yearlySummary, // Add the overall yearly summary
-    intervenedBuildings: buildings.filter((b) => b.isIntervened),
-    untouchedBuildings: buildings.filter((b) => !b.isIntervened),
-  };
-}
+//   return {
+//     buildings,
+//     summary,
+//     yearlySummary, // Add the overall yearly summary
+//     intervenedBuildings: buildings.filter((b) => b.isIntervened),
+//     untouchedBuildings: buildings.filter((b) => !b.isIntervened),
+//   };
+// }
 
-const stackedResults = stackResults(results);
+const stackedResults = MiniDecarbModel.stackResults(results);
 
 // console.log("stackedResults", stackedResults);
 ```
