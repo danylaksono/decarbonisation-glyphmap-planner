@@ -31,11 +31,10 @@ import {
 } from "./components/gridded-glyphmaps/index.min.js";
 import { OSGB } from "./components/osgb/index.js";
 import { Model } from "./components/model.js";
-import { BudgetAllocator } from "./components/budgetAllocator.js";
-import { MiniDecarbModel } from "./components/miniDecarbModel.js";
+import { BudgetAllocator } from "./components/decarb-model/budget-allocator.js";
+import { MiniDecarbModel } from "./components/decarb-model/mini-decarbonisation.js";
 import { createTable } from "./components/sorterTable.js";
 import { createTimelineInterface } from "./components/timeline.js";
-import { YearPicker } from "./components/yearpicker/yearpicker.js";
 import {
   inferTypes,
   enrichGeoData,
