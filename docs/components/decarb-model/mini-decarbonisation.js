@@ -426,12 +426,16 @@ export class MiniDecarbModel {
             buildingsIntervened: 0,
             totalCarbonSaved: 0,
             technologies: new Set(),
+            intervenedBuildingIds: new Set(),
           };
         }
 
         yearlySummary[year].budgetSpent += stats.budgetSpent;
         yearlySummary[year].buildingsIntervened += stats.buildingsIntervened;
         // yearlySummary[year].technologies.add(modelRecap.techName);
+        stats.intervenedBuildings.forEach(building => {
+            yearlySummary[year].intervenedBuildingIds.add(building.id);
+          });
         if (stats.buildingsIntervened > 0) {
             yearlySummary[year].technologies.add(modelRecap.techName);
         }
@@ -484,6 +488,7 @@ export class MiniDecarbModel {
     // Finalize the yearly summary
     Object.values(yearlySummary).forEach((yearData) => {
       yearData.technologies = Array.from(yearData.technologies);
+      yearData.intervenedBuildingIds = Array.from(yearData.intervenedBuildingIds);
     });
 
     const buildings = Array.from(buildingMap.values());
