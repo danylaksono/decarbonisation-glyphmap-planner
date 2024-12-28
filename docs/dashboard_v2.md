@@ -261,18 +261,28 @@ const [detailOnDemand, setDetailOnDemand] = useState(null); // detail on demand 
   </div>
 </div>
 
+
+### Interventions
+
 ```js
 display(interventions)
 ```
+### Results
+
 ```js
 display(results)
 ```
+### Stacked Results
+
 ```js
 display(stackedResults)
 ```
 
+### Selected Intervention
+
 ```js
 interventions;
+display(selectedIntervention);
 console.log(">> selected Intervention...", selectedIntervention);
 ```
 

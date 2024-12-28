@@ -52,9 +52,11 @@ export class MiniDecarbModel {
     this.calculateBuildingScores();
 
     // Add cache for building costs
-    this._buildingCosts = new Map();
+    this._buildingCosts = new Map();  // Cache for getBuildingCost
     // Track available buildings for intervention
     this._availableBuildings = null;
+
+
   }
 
   // Add a custom filter for buildings based on criteria
@@ -157,11 +159,28 @@ export class MiniDecarbModel {
 
 
   // Get intervention cost for a building
+  // getBuildingCost(building, technology = this.tech) {
+  //   const labour = building.properties[technology.config.labourKey] || 0;
+  //   const material = building.properties[technology.config.materialKey] || 0;
+  //   return labour + material;
+  // }
+
+  // test with memoization
   getBuildingCost(building, technology = this.tech) {
+    const cacheKey = `${building.id}-${technology.name}`; // Create a unique key
+
+    if (this._buildingCosts.has(cacheKey)) {
+      return this._buildingCosts.get(cacheKey); // Return cached value
+    }
+
     const labour = building.properties[technology.config.labourKey] || 0;
     const material = building.properties[technology.config.materialKey] || 0;
-    return labour + material;
+    const cost = labour + material;
+
+    this._buildingCosts.set(cacheKey, cost); // Store in cache
+    return cost;
   }
+
 
   // New method to calculate carbon savings per cost ratio
   calculateCarbonEfficiency(building, technology) {
