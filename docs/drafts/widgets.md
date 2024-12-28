@@ -154,7 +154,7 @@ if (allocationType === "linear") {
 // linear allocation
 // const linearAllocation = allocator.allocateLinear();
 // display(linearAllocation);
-const { svg, getAllocations } = allocator.visualise(
+const { svg } = allocator.visualise(
   initialAllocations,
   (changes) => {
     // console.log("data changed:", changes);
@@ -168,7 +168,7 @@ display(svg);
 
 ```js
 allocationType;
-const allocations = selected ? getAllocations(selected) : initialAllocations;
+const allocations = allocator.recap().allocations;
 // display(selected);
 // display(allocations);
 ```

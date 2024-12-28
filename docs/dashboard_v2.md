@@ -885,6 +885,7 @@ function addNewIntervention(technology, allocations) {
   );
 }
 
+// Reorder intervention
 function reorderIntervention(array, index, direction) {
     if (direction === "up" && index > 0) {
         // Swap with the previous item
@@ -895,6 +896,41 @@ function reorderIntervention(array, index, direction) {
     }
     console.log("Interventions reordered:", array);
     updateTimeline();
+    return array;
+}
+
+// Reorder intervention by id
+function reorderInterventionById(array, id, direction) {
+    // Find the index of the object with the given id
+    const index = array.findIndex(item => item.id === id);
+
+    if (index === -1) {
+        console.warn(`Item with id ${id} not found. No changes made.`);
+        return array; // Item not found
+    }
+
+    if (direction === "up") {
+        if (index === 0) {
+            console.warn("Item is already in the first position. No changes made.");
+            return array;
+        }
+        [array[index - 1], array[index]] = [array[index], array[index - 1]];
+    } else if (direction === "down") {
+        if (index === array.length - 1) {
+            console.warn("Item is already in the last position. No changes made.");
+            return array;
+        }
+        [array[index], array[index + 1]] = [array[index + 1], array[index]];
+    } else {
+        console.warn("Invalid direction. Use 'up' or 'down'.");
+        return array;
+    }
+
+    // Update the currentIndex property for each object
+    array.forEach((item, idx) => {
+        item.currentIndex = idx;
+    });
+
     return array;
 }
 
