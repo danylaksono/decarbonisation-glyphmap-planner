@@ -257,25 +257,26 @@ const [detailOnDemand, setDetailOnDemand] = useState(null); // detail on demand 
 ### Interventions
 
 ```js
-display(interventions)
-```
-### Results
+allocator;
+// --- Analyze Stacked Results ---
+display(html`<p> "Stacked Recap Summary:" </p>`)
+display(stackedRecap.summary);
 
-```js
-display(results)
-```
-### Stacked Results
+display(html`<p> "Stacked Recap Yearly Summary:" </p>`);
+display( stackedRecap.yearlySummary);
 
-```js
-display(stackedResults)
-```
+display(html`<p> "Stacked Recap Buildings:" </p>`);
+display( stackedRecap.buildings);
 
-### Selected Intervention
+display(html`<p> "Stacked Recap Intervened Buildings:" </p>`);
+display(
+  stackedRecap.intervenedBuildings
+);
 
-```js
-interventions;
-display(selectedIntervention);
-console.log(">> selected Intervention...", selectedIntervention);
+display(html`<p> "List of Intervention Results:" </p>`);
+display(
+  stackedRecap.recap
+);
 ```
 
 ```js
@@ -297,16 +298,6 @@ function updateTimeline() {
       200
     )
   );
-}
-```
-
-```js
-// update model run
-function updateModelRun() {
-  const modelResult = runModel(interventions[selectedIntervention.index], buildingsData);
-  const updatedResults = [...results];
-  updatedResults[selectedIntervention.index] = modelResult;
-  setResults(updatedResults);
 }
 ```
 
@@ -388,11 +379,66 @@ function updateModelRun() {
     </div>
   </div>
   <footer class="quickview-footer">
-    <button class="button is-success" id="addInterventionBtn">Add New Intervention</button>
     <button class="button is-light" id="cancelButton">Cancel</button>
+    <button class="button is-success" id="addInterventionBtn">Add New Intervention</button>
   </footer>
 </div>
 
+
+<!-- ---------------- Intervention Managers ---------------- -->
+
+```js
+// --- Define the list of technologies ---
+const listOfTech = {
+  ASHP: {
+    name: "ASHP",
+    config: {
+      suitabilityKey: "ashp_suitability",
+      labourKey: "ashp_labour",
+      materialKey: "ashp_material",
+      savingsKey: "heat_demand",
+    },
+  },
+  PV: {
+    name: "PV",
+    config: {
+      suitabilityKey: "pv_suitability",
+      labourKey: "pv_labour",
+      materialKey: "pv_material",
+      savingsKey: "pv_generation",
+    },
+  },
+  GSHP: {
+    name: "GSHP",
+    config: {
+      suitabilityKey: "gshp_suitability",
+      labourKey: "gshp_labour",
+      materialKey: "gshp_material",
+      savingsKey: "gshp_size",
+    },
+  },
+  Insulation: {
+    name: "Insulation",
+    config: {
+      suitabilityKey: "insulation_rating",
+      labourKey: "insulation_cwall_labour",
+      materialKey: "insulation_cwall_materials",
+      savingsKey: "insulation_cwall",
+    },
+  },
+};
+
+// --- Create an InterventionManager instance ---
+const manager = new InterventionManager(buildingsData, listOfTech);
+```
+
+```js
+// --- Run the interventions ---
+const recaps = manager.runInterventions();
+
+// --- Get the stacked results ---
+const stackedRecap = manager.getStackedResults();
+```
 
 
 ```js
@@ -421,12 +467,30 @@ addInterventionBtn.addEventListener("click", () => {
   console.log("  project_length ... ", project_length);
   console.log("  flip_budget ... ", flip_budget);
 
-  // setAllocations(lastAllocation);
-  // console.log("  .. lastAllocation", lastAllocation);
+  let currentAllocation = allocator.recap().allocations;
 
-  console.log("  .. allocations", allocator.recap().allocations);
+  // compose configurations
+  const currentConfig = {
+    id: Date.now(),
+    initialYear: start_year,
+    rolloverBudget: 0,
+    yearlyBudgets: currentAllocation.map((item) => item.budget),
+    optimizationStrategy: "tech-first",
+    tech: technology, // Use the tech name as a string
+    priorities: [],
+  };
 
-  addNewIntervention(technology, allocator.recap().allocations);
+  console.log("  Sending this config", currentConfig);
+
+  // add the configuration to the intervention
+  manager.addIntervention(currentConfig);
+
+  // send the intervention to the timeline drawing
+  // setIntervention([...interventions, currentConfig]);
+
+  // console.log("  .. allocations", allocator.recap().allocations);
+
+  // addNewIntervention(technology, allocator.recap().allocations);
 
   // alert("Intervention Added!");
   setAllocations(allocator.recap().allocations);
@@ -1030,44 +1094,7 @@ let config = {
   priorities: [],
 };
 
-const listOfTech = {
-  ASHP: {
-    name: "ASHP",
-    config: {
-      suitabilityKey: "ashp_suitability",
-      labourKey: "ashp_labour",
-      materialKey: "ashp_material",
-      savingsKey: "heat_demand",
-    },
-  },
-  PV: {
-    name: "PV",
-    config: {
-      suitabilityKey: "pv_suitability",
-      labourKey: "pv_labour",
-      materialKey: "pv_material",
-      savingsKey: "pv_generation",
-    },
-  },
-  GSHP: {
-    name: "GSHP",
-    config: {
-      suitabilityKey: "gshp_suitability",
-      labourKey: "gshp_labour",
-      materialKey: "gshp_material",
-      savingsKey: "gshp_size",
-    },
-  },
-  Insulation: {
-    name: "Insulation",
-    config: {
-      suitabilityKey: "insulation_rating",
-      labourKey: "insulation_cwall_labour",
-      materialKey: "insulation_cwall_materials",
-      savingsKey: "insulation_cwall",
-    },
-  },
-};
+
 
 function addTechConfig(techConfig) {
   config.tech = {

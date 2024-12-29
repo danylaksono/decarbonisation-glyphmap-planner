@@ -22,7 +22,7 @@ export class InterventionManager {
     this.results = [];
     this.currentRolloverBudget = 0;
     this.currentOrder = []; // Store order as an array of indices
-    this.autoRun = true; // Flag to control automatic re-running
+    this.autoRun = false; // Flag to control automatic re-running
     this.nextModelId = 0; // Counter for model IDs
   }
 
@@ -31,7 +31,8 @@ export class InterventionManager {
     this.currentOrder.push(this.interventionConfigs.length - 1); // Add new index to order
     console.log("Intervention added:", config.id);
     if (this.autoRun) {
-      this.runInterventions();
+      console.log("Auto-run enabled. Running interventions...");
+      //   this.runInterventions();
     }
     return this; // Allow method chaining
   }
@@ -50,7 +51,8 @@ export class InterventionManager {
       );
       console.log(`Intervention at index ${index} removed.`);
       if (this.autoRun) {
-        this.runInterventions();
+        console.log("Auto-run enabled. Running interventions...");
+        // this.runInterventions();
       }
     } else {
       console.error(`Error: Invalid index ${index} for removal.`);
@@ -65,7 +67,8 @@ export class InterventionManager {
     this.currentRolloverBudget = 0;
     console.log("All interventions cleared.");
     if (this.autoRun) {
-      this.runInterventions();
+      console.log("Auto-run enabled. Running interventions...");
+      //   this.runInterventions();
     }
     return this;
   }
@@ -104,7 +107,8 @@ export class InterventionManager {
     console.log("New intervention order set:", this.currentOrder);
 
     if (this.autoRun) {
-      this.runInterventions();
+      console.log("Auto-run enabled. Running interventions...");
+      //   this.runInterventions();
     }
     return this;
   }
@@ -118,115 +122,134 @@ export class InterventionManager {
     );
   }
 
+  // Cache for intervention results
+  _cachedResults = null;
+
   runInterventions() {
+    // Clear the cache when running interventions
+    this._cachedResults = null;
+
     let currentRolloverBudget = 0; // Initialize rollover budget
     let previousYear = null; // Keep track of the last year of the previous intervention
     let previousRecap = null; // Keep track of the previous recap
 
     // Use map to create and run models, and collect recaps directly
     const recaps = this.interventionConfigs.map((config) => {
-        // Create a deep copy of the config to avoid modifying the original
-        const configCopy = JSON.parse(JSON.stringify(config));
+      // Create a deep copy of the config to avoid modifying the original
+      const configCopy = JSON.parse(JSON.stringify(config));
 
-        console.log(
-            `Running intervention: ${configCopy.id}, Initial Rollover: ${currentRolloverBudget}`
+      console.log(
+        `Running intervention: ${configCopy.id}, Initial Rollover: ${currentRolloverBudget}`
+      );
+
+      // --- Budget Carry-Over Logic ---
+      if (previousRecap !== null) {
+        const lastYearOfPreviousIntervention = Math.max(
+          ...Object.keys(previousRecap.yearlyStats).map(Number)
         );
 
-        // --- Budget Carry-Over Logic ---
-        if (previousRecap !== null) {
-            const lastYearOfPreviousIntervention = Math.max(
-                ...Object.keys(previousRecap.yearlyStats).map(Number)
-            );
+        // Check if the current intervention's initial year matches the last year of the previous intervention
+        if (configCopy.initialYear === lastYearOfPreviousIntervention) {
+          // Carry over the remaining budget to the first year's budget of the current intervention
+          configCopy.yearlyBudgets[0] =
+            (configCopy.yearlyBudgets[0] || 0) + currentRolloverBudget;
+          // Round to 2 decimal places
+          configCopy.yearlyBudgets[0] = parseFloat(
+            configCopy.yearlyBudgets[0].toFixed(2)
+          );
 
-            // Check if the current intervention's initial year matches the last year of the previous intervention
-            if (configCopy.initialYear === lastYearOfPreviousIntervention) {
-                // Carry over the remaining budget to the first year's budget of the current intervention
-                configCopy.yearlyBudgets[0] =
-                    (configCopy.yearlyBudgets[0] || 0) + currentRolloverBudget;
-                // Round to 2 decimal places
-                configCopy.yearlyBudgets[0] = parseFloat(
-                    configCopy.yearlyBudgets[0].toFixed(2)
-                );
+          console.log(
+            `  config ${
+              configCopy.id
+            }: Remaining budget from previous intervention (${currentRolloverBudget}) added to year ${
+              configCopy.initialYear
+            }. New budget: ${configCopy.yearlyBudgets.join(", ")}`
+          );
 
-                console.log(
-                    `  config ${configCopy.id}: Remaining budget from previous intervention (${currentRolloverBudget}) added to year ${configCopy.initialYear}. New budget: ${configCopy.yearlyBudgets.join(", ")}`
-                );
-
-                // Reset currentRolloverBudget to 0 since it's been applied
-                currentRolloverBudget = 0;
-            } else {
-                console.log(
-                    `  config ${configCopy.id}: No rollover applied (previous year: ${lastYearOfPreviousIntervention}, current year: ${configCopy.initialYear})`
-                );
-            }
+          // Reset currentRolloverBudget to 0 since it's been applied
+          currentRolloverBudget = 0;
+        } else {
+          console.log(
+            `  config ${configCopy.id}: No rollover applied (previous year: ${lastYearOfPreviousIntervention}, current year: ${configCopy.initialYear})`
+          );
         }
+      }
 
-        // Create the model
-        const model = new MiniDecarbModel(this.buildings, this.nextModelId++);
+      // Create the model
+      const model = new MiniDecarbModel(this.buildings, this.nextModelId++);
 
-        // Set initial year, optimization strategy, technologies, priorities, and filters (no changes)
-        model.setInitialYear(configCopy.initialYear || 0);
-        model.setOptimizationStrategy(configCopy.optimizationStrategy || "tech-first");
+      // Set initial year, optimization strategy, technologies, priorities, and filters (no changes)
+      model.setInitialYear(configCopy.initialYear || 0);
+      model.setOptimizationStrategy(
+        configCopy.optimizationStrategy || "tech-first"
+      );
 
-        // Add technologies
-        if (
-            configCopy.optimizationStrategy === "carbon-first" &&
-            configCopy.technologies &&
-            configCopy.technologies.length > 0
-        ) {
-            configCopy.technologies.forEach((techName) => {
-                if (this.listOfTech[techName]) {
-                    model.addTechnology(this.listOfTech[techName]);
-                } else {
-                    console.error(`  Error: Technology "${techName}" not found in listOfTech.`);
-                }
-            });
-        } else if (configCopy.tech && this.listOfTech[configCopy.tech]) {
-            model.addTechnology(this.listOfTech[configCopy.tech]);
-        }
-
-        // Add priorities and filters
-        (configCopy.priorities || []).forEach((priority) => {
-            model.addPriority(
-                priority.attribute,
-                priority.order,
-                priority.scoreFunction,
-                priority.weight
+      // Add technologies
+      if (
+        configCopy.optimizationStrategy === "carbon-first" &&
+        configCopy.technologies &&
+        configCopy.technologies.length > 0
+      ) {
+        configCopy.technologies.forEach((techName) => {
+          if (this.listOfTech[techName]) {
+            model.addTechnology(this.listOfTech[techName]);
+          } else {
+            console.error(
+              `  Error: Technology "${techName}" not found in listOfTech.`
             );
+          }
         });
-        (configCopy.filters || []).forEach((filter) => {
-            model.addBuildingFilter(filter.filterFunction, filter.filterName);
-        });
+      } else if (configCopy.tech && this.listOfTech[configCopy.tech]) {
+        model.addTechnology(this.listOfTech[configCopy.tech]);
+      }
 
-        // Set yearly budgets from the config copy (now potentially modified with rollover)
-        model.setYearlyBudgets(configCopy.yearlyBudgets || []);
+      // Add priorities and filters
+      (configCopy.priorities || []).forEach((priority) => {
+        model.addPriority(
+          priority.attribute,
+          priority.order,
+          priority.scoreFunction,
+          priority.weight
+        );
+      });
+      (configCopy.filters || []).forEach((filter) => {
+        model.addBuildingFilter(filter.filterFunction, filter.filterName);
+      });
 
-        // Set the rollover budget (will be 0 if it was applied to the first year)
-        model.setRolloverBudget(currentRolloverBudget);
+      // Set yearly budgets from the config copy (now potentially modified with rollover)
+      model.setYearlyBudgets(configCopy.yearlyBudgets || []);
 
-        // Run the model
-        const recap = model.run();
+      // Set the rollover budget (will be 0 if it was applied to the first year)
+      model.setRolloverBudget(currentRolloverBudget);
 
-        // Update currentRolloverBudget from the recap for the next iteration
-        currentRolloverBudget = parseFloat(recap.remainingBudget.toFixed(2));
+      // Run the model
+      const recap = model.run();
 
-        // Update previousYear for the next iteration
-        previousYear = Math.max(...Object.keys(recap.yearlyStats).map(Number));
+      // Update currentRolloverBudget from the recap for the next iteration
+      currentRolloverBudget = parseFloat(recap.remainingBudget.toFixed(2));
 
-        // Update previousRecap for the next iteration
-        previousRecap = recap;
+      // Update previousYear for the next iteration
+      previousYear = Math.max(...Object.keys(recap.yearlyStats).map(Number));
 
-        console.log(`  config ${configCopy.id}: Intervention run completed. Remaining budget: ${recap.remainingBudget}`);
+      // Update previousRecap for the next iteration
+      previousRecap = recap;
 
-        return recap;
+      console.log(
+        `  config ${configCopy.id}: Intervention run completed. Remaining budget: ${recap.remainingBudget}`
+      );
+
+      return recap;
     });
 
     console.log("All interventions run. Recaps:", recaps);
+    this._cachedResults = recaps; // Cache the results
     return recaps;
-}
+  }
 
   getStackedResults() {
-    return MiniDecarbModel.stackResults(this.runInterventions());
+    // Use cached results if available, otherwise run interventions
+    const results = this._cachedResults || this.runInterventions();
+    return MiniDecarbModel.stackResults(results);
   }
 
   setAutoRun(autoRun) {

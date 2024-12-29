@@ -69,6 +69,7 @@ const newBuildings = [...oxford_data];
 
 
 ```js
+console.log("this SPECIFICATION cell is called");
 // model specifications
 const listOfTech = {
   ASHP: {
@@ -114,6 +115,7 @@ const listOfTech = {
 
 // Config 1: Tech-first, focus on ASHP, prioritize fuel poverty
 const config1 = {
+  id: Date.now(),
   initialYear: 2024,
   rolloverBudget: 0,
   yearlyBudgets: [500000, 5000, 5000],
@@ -124,6 +126,7 @@ const config1 = {
 
 // Config 2: Carbon-first, consider ASHP and PV, prioritize multi-deprivation
 const config2 = {
+  id: Date.now(),
   initialYear: 2024,
   rolloverBudget: 0,
   yearlyBudgets: [6000, 6000, 6000],
@@ -134,6 +137,7 @@ const config2 = {
 
 // Config 3: Tech-first, focus on Insulation, no specific priority
 const config3 = {
+  id: Date.now(),
   initialYear: 2026,
   rolloverBudget: 0,
   yearlyBudgets: [4000, 4000, 4000],
@@ -144,73 +148,15 @@ const config3 = {
 
 ```
 
-```js
-// --- Function to create and run a model with a given config ---
-function createAndRunModel(buildings, config) {
-  const model = new MiniDecarbModel(buildings);
-
-  model.setInitialYear(config.initialYear || 0);
-  model.setRolloverBudget(config.rolloverBudget || 0);
-  model.setYearlyBudgets(config.yearlyBudgets || []);
-  model.setOptimizationStrategy(config.optimizationStrategy || "tech-first");
-
-  // Add technologies
-  if (
-    config.optimizationStrategy === "carbon-first" &&
-    config.technologies &&
-    config.technologies.length > 0
-  ) {
-    config.technologies.forEach((techName) => {
-      if (listOfTech[techName]) {
-        model.addTechnology(listOfTech[techName]);
-      } else {
-        console.error(`Error: Technology "${techName}" not found in listOfTech.`);
-      }
-    });
-  } else if (config.tech) {
-    if (listOfTech[config.tech]) {
-      model.addTechnology(listOfTech[config.tech]);
-    } else {
-      console.error(`Error: Technology "${config.tech}" not found in listOfTech.`);
-    }
-  }
-
-  // Add priorities
-  if (config.priorities) {
-    config.priorities.forEach((priority) => {
-      model.addPriority(
-        priority.attribute,
-        priority.order,
-        priority.scoreFunction,
-        priority.weight
-      );
-    });
-  }
-
-  // add filter
-   if (config.filters) {
-    config.filters.forEach((filter) => {
-      model.addBuildingFilter(filter.filterFunction, filter.filterName);
-    });
-  }
-
-  // Run the model
-  const recap = model.run();
-  return recap;
-}
-```
 
 ```js
+console.log("this INTERVENTION cell is called");
 // --- Create an InterventionManager instance ---
-// let interventionOrder = [2, 0, 1];
 const manager = new InterventionManager(newBuildings, listOfTech);
-```
-
-```js
 
 // --- Add interventions ---
 manager.addIntervention(config1);
-manager.addIntervention(config3);
+// manager.addIntervention(config3);
 // manager.addIntervention(config3);
 
 // --- Change the order of interventions ---
@@ -225,9 +171,10 @@ const stackedRecap = manager.getStackedResults();
 
 
 ```js
+console.log("this ANALYZE cell is called");
 // --- Analyze Stacked Results ---
-// display(html`<p> "Stacked Recap Summary:" </p>`)
-// // display(manager.getRecap());
+display(html`<p> "RECAPS" </p>`)
+display(recaps);
 
 // --- Analyze Stacked Results ---
 display(html`<p> "Stacked Recap Summary:" </p>`)
@@ -249,3 +196,5 @@ display(
   stackedRecap.recap
 );
 ```
+
+
