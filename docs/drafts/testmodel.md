@@ -67,59 +67,6 @@ FROM oxford b;
 const newBuildings = [...oxford_data];
 ```
 
-```js
-const buildings = [
-  {
-    id: "1",
-    floor_area: 100,
-    heated_floor_area: 90,
-    avg_indoor_temperature: 18,
-    ashp_suitability: true,
-    pv_suitability: true,
-    gshp_suitability: false,
-    insulation_rating: "medium",
-    insulation_cwall_labour: 50,
-    insulation_cwall_materials: 100,
-    insulation_cwall: 45,
-    ashp_labour: 100,
-    ashp_material: 200,
-    heat_demand: 500,
-    pv_labour: 80,
-    pv_material: 150,
-    pv_generation: 300,
-    gshp_labour: 120,
-    gshp_material: 250,
-    gshp_size: 600,
-    fuel_poverty: "yes",
-    multideprivation: "deprived",
-  },
-  {
-    id: "2",
-    floor_area: 150,
-    heated_floor_area: 120,
-    avg_indoor_temperature: 20,
-    ashp_suitability: false,
-    pv_suitability: true,
-    gshp_suitability: true,
-    insulation_rating: "low",
-    insulation_cwall_labour: 60,
-    insulation_cwall_materials: 120,
-    insulation_cwall: 60,
-    ashp_labour: 110,
-    ashp_material: 220,
-    heat_demand: 600,
-    pv_labour: 90,
-    pv_material: 180,
-    pv_generation: 400,
-    gshp_labour: 130,
-    gshp_material: 280,
-    gshp_size: 700,
-    fuel_poverty: "no",
-    multideprivation: "not-deprived",
-  },
-  // ... more buildings
-];
-```
 
 ```js
 // model specifications
@@ -167,7 +114,7 @@ const listOfTech = {
 
 // Config 1: Tech-first, focus on ASHP, prioritize fuel poverty
 const config1 = {
-  initialYear: 2026,
+  initialYear: 2024,
   rolloverBudget: 0,
   yearlyBudgets: [500000, 5000, 5000],
   optimizationStrategy: "tech-first",
@@ -187,11 +134,11 @@ const config2 = {
 
 // Config 3: Tech-first, focus on Insulation, no specific priority
 const config3 = {
-  initialYear: 2024,
+  initialYear: 2026,
   rolloverBudget: 0,
   yearlyBudgets: [4000, 4000, 4000],
   optimizationStrategy: "tech-first",
-  tech: "ASHP",
+  tech: "PV",
   priorities: [],
 };
 
@@ -263,11 +210,11 @@ const manager = new InterventionManager(newBuildings, listOfTech);
 
 // --- Add interventions ---
 manager.addIntervention(config1);
-manager.addIntervention(config2);
+manager.addIntervention(config3);
 // manager.addIntervention(config3);
 
 // --- Change the order of interventions ---
-manager.setInterventionOrder([1, 0]);
+// manager.setInterventionOrder([1, 0]);
 
 // --- Run the interventions ---
 const recaps = manager.runInterventions();
@@ -297,8 +244,8 @@ display(
   stackedRecap.intervenedBuildings
 );
 
-display(html`<p> "Stacked Recap Untouched Buildings:" </p>`);
+display(html`<p> "List of Intervention Results:" </p>`);
 display(
-  stackedRecap.untouchedBuildings
+  stackedRecap.recap
 );
 ```

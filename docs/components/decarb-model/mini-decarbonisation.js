@@ -23,6 +23,7 @@ export class InterventionManager {
     this.currentRolloverBudget = 0;
     this.currentOrder = []; // Store order as an array of indices
     this.autoRun = true; // Flag to control automatic re-running
+    this.nextModelId = 0; // Counter for model IDs
   }
 
   addIntervention(config) {
@@ -118,77 +119,114 @@ export class InterventionManager {
   }
 
   runInterventions() {
-    this.results = []; // Clear previous results
-    this.currentRolloverBudget = 0; // Reset rollover budget
+    let currentRolloverBudget = 0; // Initialize rollover budget
+    let previousYear = null; // Keep track of the last year of the previous intervention
+    let previousRecap = null; // Keep track of the previous recap
 
-    // Use the interventionConfigs array directly, which will be in the correct order
-    for (const config of this.interventionConfigs) {
-      const model = new MiniDecarbModel(this.buildings, config.id);
+    // Use map to create and run models, and collect recaps directly
+    const recaps = this.interventionConfigs.map((config) => {
+        // Create a deep copy of the config to avoid modifying the original
+        const configCopy = JSON.parse(JSON.stringify(config));
 
-      model.setInitialYear(config.initialYear || 0);
-      model.setRolloverBudget(this.currentRolloverBudget); // Apply current rollover
-      model.setYearlyBudgets(config.yearlyBudgets || []);
-      model.setOptimizationStrategy(
-        config.optimizationStrategy || "tech-first"
-      );
+        console.log(
+            `Running intervention: ${configCopy.id}, Initial Rollover: ${currentRolloverBudget}`
+        );
 
-      // Add technologies
-      if (
-        config.optimizationStrategy === "carbon-first" &&
-        config.technologies &&
-        config.technologies.length > 0
-      ) {
-        config.technologies.forEach((techName) => {
-          if (this.listOfTech[techName]) {
-            model.addTechnology(this.listOfTech[techName]);
-          } else {
-            console.error(
-              `Error: Technology "${techName}" not found in listOfTech.`
+        // --- Budget Carry-Over Logic ---
+        if (previousRecap !== null) {
+            const lastYearOfPreviousIntervention = Math.max(
+                ...Object.keys(previousRecap.yearlyStats).map(Number)
             );
-          }
-        });
-      } else if (config.tech) {
-        if (this.listOfTech[config.tech]) {
-          model.addTechnology(this.listOfTech[config.tech]);
-        } else {
-          console.error(
-            `Error: Technology "${config.tech}" not found in listOfTech.`
-          );
+
+            // Check if the current intervention's initial year matches the last year of the previous intervention
+            if (configCopy.initialYear === lastYearOfPreviousIntervention) {
+                // Carry over the remaining budget to the first year's budget of the current intervention
+                configCopy.yearlyBudgets[0] =
+                    (configCopy.yearlyBudgets[0] || 0) + currentRolloverBudget;
+                // Round to 2 decimal places
+                configCopy.yearlyBudgets[0] = parseFloat(
+                    configCopy.yearlyBudgets[0].toFixed(2)
+                );
+
+                console.log(
+                    `  config ${configCopy.id}: Remaining budget from previous intervention (${currentRolloverBudget}) added to year ${configCopy.initialYear}. New budget: ${configCopy.yearlyBudgets.join(", ")}`
+                );
+
+                // Reset currentRolloverBudget to 0 since it's been applied
+                currentRolloverBudget = 0;
+            } else {
+                console.log(
+                    `  config ${configCopy.id}: No rollover applied (previous year: ${lastYearOfPreviousIntervention}, current year: ${configCopy.initialYear})`
+                );
+            }
         }
-      }
 
-      // Add priorities
-      if (config.priorities) {
-        config.priorities.forEach((priority) => {
-          model.addPriorityToConfig(
-            priority.attribute,
-            priority.order,
-            priority.scoreFunction,
-            priority.weight
-          );
+        // Create the model
+        const model = new MiniDecarbModel(this.buildings, this.nextModelId++);
+
+        // Set initial year, optimization strategy, technologies, priorities, and filters (no changes)
+        model.setInitialYear(configCopy.initialYear || 0);
+        model.setOptimizationStrategy(configCopy.optimizationStrategy || "tech-first");
+
+        // Add technologies
+        if (
+            configCopy.optimizationStrategy === "carbon-first" &&
+            configCopy.technologies &&
+            configCopy.technologies.length > 0
+        ) {
+            configCopy.technologies.forEach((techName) => {
+                if (this.listOfTech[techName]) {
+                    model.addTechnology(this.listOfTech[techName]);
+                } else {
+                    console.error(`  Error: Technology "${techName}" not found in listOfTech.`);
+                }
+            });
+        } else if (configCopy.tech && this.listOfTech[configCopy.tech]) {
+            model.addTechnology(this.listOfTech[configCopy.tech]);
+        }
+
+        // Add priorities and filters
+        (configCopy.priorities || []).forEach((priority) => {
+            model.addPriority(
+                priority.attribute,
+                priority.order,
+                priority.scoreFunction,
+                priority.weight
+            );
         });
-      }
-
-      // Add filters
-      if (config.filters) {
-        config.filters.forEach((filter) => {
-          model.addBuildingFilter(filter.filterFunction, filter.filterName);
+        (configCopy.filters || []).forEach((filter) => {
+            model.addBuildingFilter(filter.filterFunction, filter.filterName);
         });
-      }
 
-      const recap = model.run();
-      this.results.push(recap);
+        // Set yearly budgets from the config copy (now potentially modified with rollover)
+        model.setYearlyBudgets(configCopy.yearlyBudgets || []);
 
-      // Update current rollover budget
-      this.currentRolloverBudget = recap.remainingBudget;
-    }
+        // Set the rollover budget (will be 0 if it was applied to the first year)
+        model.setRolloverBudget(currentRolloverBudget);
 
-    console.log("Interventions run. Results:", this.results);
-    return this.results;
-  }
+        // Run the model
+        const recap = model.run();
+
+        // Update currentRolloverBudget from the recap for the next iteration
+        currentRolloverBudget = parseFloat(recap.remainingBudget.toFixed(2));
+
+        // Update previousYear for the next iteration
+        previousYear = Math.max(...Object.keys(recap.yearlyStats).map(Number));
+
+        // Update previousRecap for the next iteration
+        previousRecap = recap;
+
+        console.log(`  config ${configCopy.id}: Intervention run completed. Remaining budget: ${recap.remainingBudget}`);
+
+        return recap;
+    });
+
+    console.log("All interventions run. Recaps:", recaps);
+    return recaps;
+}
 
   getStackedResults() {
-    return MiniDecarbModel.stackResults(this.results);
+    return MiniDecarbModel.stackResults(this.runInterventions());
   }
 
   setAutoRun(autoRun) {
@@ -660,7 +698,7 @@ export class MiniDecarbModel {
     }
 
     return {
-      interventionId: Date.now(), //this.modelId,
+      modelId: this.modelId,
       techName:
         this.config.optimizationStrategy === "carbon-first"
           ? this.config.technologies.map((tech) => tech.name)
@@ -793,6 +831,7 @@ export class MiniDecarbModel {
       yearlySummary,
       intervenedBuildings: buildings.filter((b) => b.isIntervened),
       untouchedBuildings: buildings.filter((b) => !b.isIntervened),
+      recap: modelRecaps, // for debugging only
     };
   }
 }

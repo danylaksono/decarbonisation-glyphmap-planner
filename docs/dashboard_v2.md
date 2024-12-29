@@ -34,7 +34,7 @@ import {
 } from "./components/gridded-glyphmaps/index.min.js";
 import { OSGB } from "./components/osgb/index.js";
 import { BudgetAllocator } from "./components/decarb-model/budget-allocator.js";
-import { MiniDecarbModel } from "./components/decarb-model/mini-decarbonisation.js";
+import { InterventionManager, MiniDecarbModel } from "./components/decarb-model/mini-decarbonisation.js";
 import { createTable } from "./components/sorterTable.js";
 import { createTimelineInterface } from "./components/timeline.js";
 import {
@@ -897,7 +897,7 @@ function reorderIntervention(array, index, direction) {
     [array[index], array[index + 1]] = [array[index + 1], array[index]];
   }
   console.log("Interventions reordered:", array);
-  updateTimeline(); // You might need to update this to pass the new order
+  updateTimeline();
 
   // Update the InterventionManager with the new order
   if (manager) {
@@ -1919,7 +1919,7 @@ function createLeafletMap(data, width = 600, height = 400) {
   // Initialize the Leaflet map
   const map = L.map(mapDiv.id).setView([0, 0], 2); // Default view (centered on the world)
 
-  // Add a tile layer (you can choose others like OpenStreetMap)
+  // Add a tile layer
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     attribution: "© OpenStreetMap contributors",
   }).addTo(map);
