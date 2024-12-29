@@ -561,18 +561,75 @@ export class MiniDecarbModel {
   }
 
   // New method to calculate carbon savings per cost ratio
+  //   calculateCarbonEfficiency(building, technology) {
+  //     // Carbon-first: tech is passed as argument
+  //     if (this.config.optimizationStrategy === "carbon-first") {
+  //       const cost = this.getBuildingCost(building, technology);
+  //       const carbonSaved = building.properties[technology.config.savingsKey];
+  //       return cost > 0 ? carbonSaved / cost : 0;
+  //     } else {
+  //       const cost = this.getBuildingCost(building);
+  //       const carbonSaved =
+  //         building.properties[this.config.tech.config.savingsKey];
+  //       return cost > 0 ? carbonSaved / cost : 0;
+  //     }
+  //   }
+
   calculateCarbonEfficiency(building, technology) {
-    // Carbon-first: tech is passed as argument
+    const startTime = performance.now();
+    let carbonEfficiency;
+
     if (this.config.optimizationStrategy === "carbon-first") {
+      // Carbon-first: tech is passed as argument
       const cost = this.getBuildingCost(building, technology);
+      if (cost === undefined) {
+        console.warn(
+          `Warning: Cost not found for building ${building.id} and tech ${technology.name}. Check getBuildingCost.`
+        );
+        return 0; // Or handle it in some other appropriate way, like returning a very large negative number
+      }
+
       const carbonSaved = building.properties[technology.config.savingsKey];
-      return cost > 0 ? carbonSaved / cost : 0;
+
+      if (carbonSaved === undefined) {
+        console.warn(
+          `Warning: Carbon savings not found for building ${building.id} and tech ${technology.name}. Check technology config.`
+        );
+        return 0; // Or handle it appropriately
+      }
+
+      carbonEfficiency = cost > 0 ? carbonSaved / cost : 0;
     } else {
+      // Tech-first: this.config.tech is used
       const cost = this.getBuildingCost(building);
+      if (cost === undefined) {
+        console.warn(
+          `Warning: Cost not found for building ${building.id} and tech ${this.config.tech.name}. Check getBuildingCost.`
+        );
+        return 0; // Or handle it appropriately
+      }
       const carbonSaved =
         building.properties[this.config.tech.config.savingsKey];
-      return cost > 0 ? carbonSaved / cost : 0;
+
+      if (carbonSaved === undefined) {
+        console.warn(
+          `Warning: Carbon savings not found for building ${building.id} and tech ${this.config.tech.name}. Check technology config.`
+        );
+        return 0; // Or handle it appropriately
+      }
+
+      carbonEfficiency = cost > 0 ? carbonSaved / cost : 0;
     }
+
+    const endTime = performance.now();
+
+    console.log(
+      `Building ID: ${building.id}, Tech: ${
+        technology ? technology.name : this.config.tech.name
+      }, Carbon Efficiency: ${carbonEfficiency}`
+    );
+
+    return carbonEfficiency;
   }
 
   calculatePotentialInterventions() {
@@ -603,6 +660,8 @@ export class MiniDecarbModel {
         if (buildingInterventions.length > 0) {
           this._potentialInterventions.set(building.id, buildingInterventions);
         }
+
+        // console.log("Potential Interventions:", buildingInterventions);
       }
     }
 
@@ -618,37 +677,54 @@ export class MiniDecarbModel {
       (a, b) => a.carbonEfficiency - b.carbonEfficiency
     );
 
-    // Add all available interventions to the priority queue
-    const allInterventions = [];
+    // Add all available interventions to the priority queue initially
     for (const buildingInterventions of interventions.values()) {
       for (const intervention of buildingInterventions) {
-        if (!intervention.building.isIntervened) {
-          allInterventions.push(intervention);
-        }
+        pq.enqueue(intervention);
       }
     }
 
-    // Set the heap to all interventions and then heapify:
-    pq._heap = allInterventions;
-    pq._heapify();
+    // console.log("pq:", pq);
+    console.log("Priority Queue (before interventions):", pq._heap);
 
     for (let year = 0; year < this.config.numYears; year++) {
       const yearBudget = this.config.yearly_budgets[year] + remainingBudget;
       let spent = 0;
       const buildingsIntervened = [];
 
+      // Keep track of processed interventions in this year
+      const processedInterventions = new Set();
+
       while (pq.size() > 0 && spent + pq.peek().cost <= yearBudget) {
         const intervention = pq.dequeue();
         const { building, tech, cost } = intervention;
 
-        // Check again if the building has been intervened in the meantime (might happen in multi-year scenarios)
+        // Skip if this intervention has already been processed in this year
+        if (processedInterventions.has(intervention)) continue;
+        processedInterventions.add(intervention);
+
+        // Check again if the building has been intervened in the meantime
+        console.log(
+          "Building ID:",
+          building.id,
+          "Intervened:",
+          building.isIntervened
+        );
         if (!building.isIntervened) {
           this.applyIntervention(building, tech, cost, year);
-
           spent += cost;
           buildingsIntervened.push(building);
+
+          console.log("Intervention applied:", building.id, tech.name, cost);
+          console.log("Spent this year:", spent, "Year Budget:", yearBudget);
         }
       }
+
+      // Remove processed interventions from the queue
+      pq._heap = pq._heap.filter(
+        (intervention) => !processedInterventions.has(intervention)
+      );
+      pq._heapify();
 
       this.updateYearlyStats(
         year,
@@ -657,17 +733,6 @@ export class MiniDecarbModel {
         yearBudget - spent
       );
       remainingBudget = yearBudget - spent;
-
-      // After each year, re-enqueue any interventions for non-intervened buildings
-      // (in case budget changes or new buildings become available)
-      pq._heap = []; // Clear the existing heap
-      for (const buildingInterventions of interventions.values()) {
-        for (const intervention of buildingInterventions) {
-          if (!intervention.building.isIntervened) {
-            pq.enqueue(intervention);
-          }
-        }
-      }
     }
   }
 
@@ -770,8 +835,10 @@ export class MiniDecarbModel {
     this.calculateBuildingScores();
 
     if (this.config.optimizationStrategy === "carbon-first") {
+      console.log("Running carbon-first model");
       this.runCarbonFirstModel();
     } else {
+      console.log("Running tech-first model");
       this.runTechFirstModel();
     }
 
@@ -930,7 +997,7 @@ export class MiniDecarbModel {
       summary,
       yearlySummary,
       intervenedBuildings: buildings.filter((b) => b.isIntervened),
-    //   untouchedBuildings: buildings.filter((b) => !b.isIntervened), // don't think we need this
+      //   untouchedBuildings: buildings.filter((b) => !b.isIntervened), // don't think we need this
       recap: modelRecaps, // for debugging only
     };
   }

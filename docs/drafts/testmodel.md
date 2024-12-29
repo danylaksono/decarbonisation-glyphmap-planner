@@ -60,7 +60,8 @@ import { InterventionManager, MiniDecarbModel } from "./../components/decarb-mod
     "Substation - Headroom" AS substation_headroom,
     "Substation - % headroom" AS substation_headroom_pct,
     "Substation - Demand_rag" AS substation_demand
-FROM oxford b;
+FROM oxford b
+WHERE "substation_headroom" >= 1000;
 ```
 
 ```js
@@ -129,7 +130,7 @@ const config2 = {
   id: Date.now(),
   initialYear: 2024,
   rolloverBudget: 0,
-  yearlyBudgets: [6000, 6000, 6000],
+  yearlyBudgets: [60000, 6000, 6000],
   optimizationStrategy: "carbon-first",
   technologies: ["ASHP", "PV"], // Use an array of tech names
   priorities: [],
@@ -155,9 +156,9 @@ console.log("this INTERVENTION cell is called");
 const manager = new InterventionManager(newBuildings, listOfTech);
 
 // --- Add interventions ---
-manager.addIntervention(config1);
+// manager.addIntervention(config1);
 // manager.addIntervention(config3);
-// manager.addIntervention(config3);
+manager.addIntervention(config2);
 
 // --- Change the order of interventions ---
 // manager.setInterventionOrder([1, 0]);

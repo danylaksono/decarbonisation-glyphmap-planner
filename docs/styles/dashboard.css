@@ -7,6 +7,11 @@ html {
   font-family: var(--bulma-body-family);
 }
 
+/* disable built-in loading spinner */
+.observablehq--loading::before {
+  display: none;
+}
+
 #observablehq-main,
 #observablehq-header,
 #observablehq-footer {

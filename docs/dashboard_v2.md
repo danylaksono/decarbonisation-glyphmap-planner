@@ -152,6 +152,7 @@ const [allocations, setAllocations] = useState([]); // list of budget allocation
 const [selectedIntervention, setSelectedIntervention] = useState(null); // selected intervention in timeline
 // const [selectedInterventionIndex, setSelectedInterventionIndex] = useState(null); // selected intervention index
 const [detailOnDemand, setDetailOnDemand] = useState(null); // detail on demand on map
+const [currentConfig, setCurrentConfig] = useState({}); // current configuration
 ```
 
 <!-------- Stylesheets -------->
@@ -433,11 +434,19 @@ const manager = new InterventionManager(buildingsData, listOfTech);
 ```
 
 ```js
-// // --- Run the interventions ---
-// const recaps = manager.runInterventions();
+function triggerModelRun() {
+  console.log(">> Triggering Model Run...");
 
-// // --- Get the stacked results ---
-// const stackedRecap = manager.getStackedResults();
+  // --- Run the interventions ---
+  const recaps = manager.runInterventions();
+}
+```
+
+```js
+console.log(">> Stacked Result from Model Run...");
+
+// --- Get the stacked results ---
+const stackedRecap = manager.getStackedResults();
 ```
 
 
@@ -458,50 +467,50 @@ closeQuickviewButton.addEventListener("click", () => {
 cancelButton.addEventListener("click", () => {
   quickviewDefault.classList.remove("is-active");
 });
+
 const addInterventionBtn = document.getElementById("addInterventionBtn");
+
+// Add New Intervention button logic
+addInterventionBtn.addEventListener("click", () => {
+  console.log("Intervention button clicked");
+  // add the configuration to the intervention
+  const config = {...formData};
+  // setCurrentConfig(newConfig);
+  // console.log("  Sending this config", newConfig);
+
+  // send the intervention to the timeline drawing
+  // setIntervention([...interventions, currentConfig]);
+
+  // add the intervention to the model
+  addNewIntervention(config);
+
+  // setAllocations(allocator.recap().allocations);
+  quickviewDefault.classList.remove("is-active"); // Close quickview after submission
+});
 ```
 
 ```js
-console.log(">> Cell called: Preparing Interventions event listener...");
+// Update allocations
+setAllocations(allocator.recap().allocations);
+```
 
-let currentAllocation = allocator.recap().allocations;
+```js
+
+console.log(">> FormData...");
+
+// let currentAllocation = allocator.recap().allocations;
 
 // compose configurations
-const currentConfig = {
+const formData = {
   id: technology + "_" + start_year.toString(),
   initialYear: start_year,
   rolloverBudget: 0,
-  yearlyBudgets: currentAllocation.map((item) => item.budget),
+  yearlyBudgets: allocations.map((item) => item.budget),
   optimizationStrategy: "tech-first",
   tech: technology,
   priorities: [],
 };
 
-// Add New Intervention button logic
-addInterventionBtn.addEventListener("click", () => {
-
-  // add the configuration to the intervention
-  console.log("  Sending this config", currentConfig);
-  manager.addIntervention(currentConfig);
-
-  // --- Run the interventions ---
-  const recaps = manager.runInterventions();
-
-  // --- Get the stacked results ---
-  const stackedRecap = manager.getStackedResults();
-
-  // send the intervention to the timeline drawing
-  // setIntervention([...interventions, currentConfig]);
-
-  // console.log("  .. allocations", allocator.recap().allocations);
-
-  // addNewIntervention(technology, allocator.recap().allocations);
-
-  // alert("Intervention Added!");
-  setAllocations(allocator.recap().allocations);
-  // console.log("  Allocations added: ", allocations);
-  quickviewDefault.classList.remove("is-active"); // Close quickview after submission
-});
 ```
 
 ```js
@@ -870,14 +879,15 @@ console.log(">> Loading intervention functions...");
 // >> Some functions related to creating and managing interventions
 
 // create config template
-function createConfigTemplate(allocations) {
-  // console.log("received allocations", allocations[0].year);
+function createConfigTemplate(start_year, allocations, technology) {
+  console.log(">> Creating config template...");
   return {
-    initial_year: allocations[0].year,// Number(start_year),
-    duration: allocations.length,
-    rolledover_budget: 0,
-    yearly_budgets: allocations.map((item) => item.budget),
-    tech: {},
+    id: technology + "_" + start_year.toString(),
+    initialYear: Number(start_year),
+    rolloverBudget: 0,
+    yearlyBudgets: allocations.map((item) => item.budget),
+    optimizationStrategy: "tech-first",
+    tech: technology,
     priorities: [],
     filters: [],
   };
@@ -923,19 +933,23 @@ function addIntervention(
 
 // handle form submission: add new intervention
 function addNewIntervention(config) {
-  // const new_start_year = start_year;
-  const new_tech = technology;
-  const new_allocations = allocations;
 
   // if result exist, take the remaining budget from the latest year
   // and add it to this first year budget
-  if (results.length > 0) {
-    let latestResult = results[results.length - 1];
-    console.log("result exist:", latestResult);
-    new_allocations[0].budget += latestResult.remainingBudget;
-  }
+  // if (results.length > 0) {
+  //   let latestResult = results[results.length - 1];
+  //   console.log("result exist:", latestResult);
+  //   new_allocations[0].budget += latestResult.remainingBudget;
+  // }
+
+  // let config = createConfigTemplate(start_year, allocations, technology);
 
   // console.log("new_allocations to be sent", new_allocations);
+  console.log("Adding new intervention .., config: ", config);
+
+  // manager.addIntervention(config);
+
+  // triggerModelRun();
 
   // Retrieve techConfig from the selected technology
   // const techConfig = listOfTech[new_tech];
