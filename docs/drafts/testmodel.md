@@ -8,7 +8,7 @@ sql:
 ---
 
 ```js
-import { MiniDecarbModel } from "./../components/decarb-model/mini-decarbonisation.js";
+import { InterventionManager, MiniDecarbModel } from "./../components/decarb-model/mini-decarbonisation.js";
 ```
 
 ## Test New Model
@@ -167,7 +167,7 @@ const listOfTech = {
 
 // Config 1: Tech-first, focus on ASHP, prioritize fuel poverty
 const config1 = {
-  initialYear: 2024,
+  initialYear: 2026,
   rolloverBudget: 0,
   yearlyBudgets: [500000, 5000, 5000],
   optimizationStrategy: "tech-first",
@@ -191,7 +191,7 @@ const config3 = {
   rolloverBudget: 0,
   yearlyBudgets: [4000, 4000, 4000],
   optimizationStrategy: "tech-first",
-  tech: "Insulation",
+  tech: "ASHP",
   priorities: [],
 };
 
@@ -240,6 +240,13 @@ function createAndRunModel(buildings, config) {
     });
   }
 
+  // add filter
+   if (config.filters) {
+    config.filters.forEach((filter) => {
+      model.addBuildingFilter(filter.filterFunction, filter.filterName);
+    });
+  }
+
   // Run the model
   const recap = model.run();
   return recap;
@@ -247,23 +254,33 @@ function createAndRunModel(buildings, config) {
 ```
 
 ```js
-// display(newBuildings);
+// --- Create an InterventionManager instance ---
+// let interventionOrder = [2, 0, 1];
+const manager = new InterventionManager(newBuildings, listOfTech);
 ```
 
 ```js
 
-// --- Run Models and Stack Results ---
+// --- Add interventions ---
+manager.addIntervention(config1);
+manager.addIntervention(config2);
+// manager.addIntervention(config3);
 
-const recap1 = createAndRunModel(newBuildings, config1);
-const recap2 = createAndRunModel(newBuildings, config2);
-const recap3 = createAndRunModel(newBuildings, config3);
+// --- Change the order of interventions ---
+manager.setInterventionOrder([1, 0]);
 
-const stackedRecap = MiniDecarbModel.stackResults([recap1, recap2]);
+// --- Run the interventions ---
+const recaps = manager.runInterventions();
 
+// --- Get the stacked results ---
+const stackedRecap = manager.getStackedResults();
 ```
 
 
 ```js
+// --- Analyze Stacked Results ---
+// display(html`<p> "Stacked Recap Summary:" </p>`)
+// // display(manager.getRecap());
 
 // --- Analyze Stacked Results ---
 display(html`<p> "Stacked Recap Summary:" </p>`)

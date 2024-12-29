@@ -889,16 +889,22 @@ function addNewIntervention(technology, allocations) {
 
 // Reorder intervention
 function reorderIntervention(array, index, direction) {
-    if (direction === "up" && index > 0) {
-        // Swap with the previous item
-        [array[index - 1], array[index]] = [array[index], array[index - 1]];
-    } else if (direction === "down" && index < array.length - 1) {
-        // Swap with the next item
-        [array[index], array[index + 1]] = [array[index + 1], array[index]];
-    }
-    console.log("Interventions reordered:", array);
-    updateTimeline();
-    return array;
+  if (direction === "up" && index > 0) {
+    // Swap with the previous item
+    [array[index - 1], array[index]] = [array[index], array[index - 1]];
+  } else if (direction === "down" && index < array.length - 1) {
+    // Swap with the next item
+    [array[index], array[index + 1]] = [array[index + 1], array[index]];
+  }
+  console.log("Interventions reordered:", array);
+  updateTimeline(); // You might need to update this to pass the new order
+
+  // Update the InterventionManager with the new order
+  if (manager) {
+    manager.setInterventionOrder(array); // Pass the new order to the manager
+  }
+
+  return array;
 }
 
 // Reorder intervention by id

@@ -14,6 +14,196 @@ class Building {
   }
 }
 
+export class InterventionManager {
+  constructor(buildings, listOfTech) {
+    this.buildings = buildings;
+    this.listOfTech = listOfTech;
+    this.interventionConfigs = [];
+    this.results = [];
+    this.currentRolloverBudget = 0;
+    this.currentOrder = []; // Store order as an array of indices
+    this.autoRun = true; // Flag to control automatic re-running
+  }
+
+  addIntervention(config) {
+    this.interventionConfigs.push(config);
+    this.currentOrder.push(this.interventionConfigs.length - 1); // Add new index to order
+    console.log("Intervention added:", config.id);
+    if (this.autoRun) {
+      this.runInterventions();
+    }
+    return this; // Allow method chaining
+  }
+
+  removeIntervention(index) {
+    if (index >= 0 && index < this.interventionConfigs.length) {
+      this.interventionConfigs.splice(index, 1);
+      // Remove the corresponding index from currentOrder
+      const orderIndex = this.currentOrder.indexOf(index);
+      if (orderIndex > -1) {
+        this.currentOrder.splice(orderIndex, 1);
+      }
+      // Adjust indices in currentOrder after removal
+      this.currentOrder = this.currentOrder.map((idx) =>
+        idx > index ? idx - 1 : idx
+      );
+      console.log(`Intervention at index ${index} removed.`);
+      if (this.autoRun) {
+        this.runInterventions();
+      }
+    } else {
+      console.error(`Error: Invalid index ${index} for removal.`);
+    }
+    return this;
+  }
+
+  clearInterventions() {
+    this.interventionConfigs = [];
+    this.currentOrder = [];
+    this.results = [];
+    this.currentRolloverBudget = 0;
+    console.log("All interventions cleared.");
+    if (this.autoRun) {
+      this.runInterventions();
+    }
+    return this;
+  }
+
+  // Updated to handle order dynamically
+  setInterventionOrder(newOrder) {
+    if (!this.isValidOrder(newOrder)) {
+      console.error(
+        "Error: Invalid intervention order. Check for duplicates or out-of-range indices."
+      );
+      return;
+    }
+
+    if (newOrder.length !== this.interventionConfigs.length) {
+      console.error(
+        "Error: newOrder array must have the same length as interventionConfigs."
+      );
+      return;
+    }
+
+    // Create a mapping from old index to new index
+    const indexMapping = {};
+    for (let i = 0; i < newOrder.length; i++) {
+      indexMapping[this.currentOrder[i]] = newOrder[i];
+    }
+
+    // Update the interventionConfigs array based on the new order
+    const orderedConfigs = newOrder.map(
+      (index) => this.interventionConfigs[index]
+    );
+    this.interventionConfigs = orderedConfigs;
+
+    // Update currentOrder to reflect the new order
+    this.currentOrder = newOrder;
+
+    console.log("New intervention order set:", this.currentOrder);
+
+    if (this.autoRun) {
+      this.runInterventions();
+    }
+    return this;
+  }
+
+  isValidOrder(order) {
+    if (new Set(order).size !== order.length) {
+      return false; // Contains duplicates
+    }
+    return order.every(
+      (index) => index >= 0 && index < this.interventionConfigs.length
+    );
+  }
+
+  runInterventions() {
+    this.results = []; // Clear previous results
+    this.currentRolloverBudget = 0; // Reset rollover budget
+
+    // Use the interventionConfigs array directly, which will be in the correct order
+    for (const config of this.interventionConfigs) {
+      const model = new MiniDecarbModel(this.buildings, config.id);
+
+      model.setInitialYear(config.initialYear || 0);
+      model.setRolloverBudget(this.currentRolloverBudget); // Apply current rollover
+      model.setYearlyBudgets(config.yearlyBudgets || []);
+      model.setOptimizationStrategy(
+        config.optimizationStrategy || "tech-first"
+      );
+
+      // Add technologies
+      if (
+        config.optimizationStrategy === "carbon-first" &&
+        config.technologies &&
+        config.technologies.length > 0
+      ) {
+        config.technologies.forEach((techName) => {
+          if (this.listOfTech[techName]) {
+            model.addTechnology(this.listOfTech[techName]);
+          } else {
+            console.error(
+              `Error: Technology "${techName}" not found in listOfTech.`
+            );
+          }
+        });
+      } else if (config.tech) {
+        if (this.listOfTech[config.tech]) {
+          model.addTechnology(this.listOfTech[config.tech]);
+        } else {
+          console.error(
+            `Error: Technology "${config.tech}" not found in listOfTech.`
+          );
+        }
+      }
+
+      // Add priorities
+      if (config.priorities) {
+        config.priorities.forEach((priority) => {
+          model.addPriorityToConfig(
+            priority.attribute,
+            priority.order,
+            priority.scoreFunction,
+            priority.weight
+          );
+        });
+      }
+
+      // Add filters
+      if (config.filters) {
+        config.filters.forEach((filter) => {
+          model.addBuildingFilter(filter.filterFunction, filter.filterName);
+        });
+      }
+
+      const recap = model.run();
+      this.results.push(recap);
+
+      // Update current rollover budget
+      this.currentRolloverBudget = recap.remainingBudget;
+    }
+
+    console.log("Interventions run. Results:", this.results);
+    return this.results;
+  }
+
+  getStackedResults() {
+    return MiniDecarbModel.stackResults(this.results);
+  }
+
+  setAutoRun(autoRun) {
+    this.autoRun = autoRun;
+    return this; // Allow method chaining
+  }
+
+  logCurrentState() {
+    console.log("Current Intervention Order:", this.currentOrder);
+    console.log("Intervention Configurations:", this.interventionConfigs);
+    console.log("Current Rollover Budget:", this.currentRolloverBudget);
+    console.log("Results:", this.results);
+  }
+}
+
 export class MiniDecarbModel {
   constructor(buildings) {
     // Initialize with default config
@@ -135,10 +325,10 @@ export class MiniDecarbModel {
         this.getBuildingCost(building);
       }
     }
-    console.log(
-      "precalculateBuildingCosts buildingCosts Map:",
-      this._buildingCosts
-    );
+    // console.log(
+    //   "precalculateBuildingCosts buildingCosts Map:",
+    //   this._buildingCosts
+    // );
   }
 
   // test with memoization
@@ -273,15 +463,6 @@ export class MiniDecarbModel {
     return this._potentialInterventions;
   }
 
-  // Run the model year by year with budget rollover
-  runModel() {
-    if (this.optimizationStrategy === "carbon-first") {
-      this.runCarbonFirstModel();
-    } else {
-      this.runTechFirstModel(); // existing implementation
-    }
-  }
-
   runCarbonFirstModel() {
     let remainingBudget = this.config.rolledover_budget || 0;
     const interventions = this.calculatePotentialInterventions();
@@ -292,13 +473,6 @@ export class MiniDecarbModel {
     );
 
     // Add all available interventions to the priority queue
-    // for (const buildingInterventions of interventions.values()) {
-    //   for (const intervention of buildingInterventions) {
-    //     if (!intervention.building.isIntervened) {
-    //       pq.enqueue(intervention);
-    //     }
-    //   }
-    // }
     const allInterventions = [];
     for (const buildingInterventions of interventions.values()) {
       for (const intervention of buildingInterventions) {
@@ -408,44 +582,6 @@ export class MiniDecarbModel {
     }
   }
 
-  processYearTechFirst(year, yearBudget, buildingCosts) {
-    let spent = 0;
-    const intervenedBuildings = [];
-
-    // Get available buildings for this year
-    const availableBuildings = this.getAvailableBuildings();
-
-    // Process buildings until budget is exhausted
-    for (const building of availableBuildings) {
-      const cost = buildingCosts.get(building.id);
-
-      // Skip if cost exceeds remaining budget
-      if (spent + cost > yearBudget) continue;
-
-      // Apply intervention
-      this.applyIntervention(building, {
-        year: this.initialYear + year,
-        cost: cost,
-        techName: this.tech.name,
-        carbonSaved: building.properties[this.tech.config.savingsKey],
-      });
-
-      spent += cost;
-      intervenedBuildings.push(building);
-    }
-
-    // Reset available buildings cache as interventions have been made
-    this.resetAvailableBuildings();
-
-    // Return year statistics
-    return {
-      budgetSpent: spent,
-      buildingsIntervened: intervenedBuildings.length,
-      remainingBudget: yearBudget - spent,
-      intervenedBuildings,
-    };
-  }
-
   updateYearlyStats(year, spent, buildings, remainingBudget) {
     this.yearlyStats[this.config.initial_year + year] = {
       budgetSpent: spent,
@@ -459,6 +595,7 @@ export class MiniDecarbModel {
     building.isIntervened = true;
     building.interventionYear = this.config.initial_year + year;
     building.interventionCost = cost;
+    building.numInterventions++;
 
     if (this.config.optimizationStrategy === "carbon-first") {
       building.interventionTechs = tech.name;
@@ -468,7 +605,6 @@ export class MiniDecarbModel {
       building.carbonSaved =
         building.properties[this.config.tech.config.savingsKey];
     }
-    this.numInterventions++;
   }
 
   // --- Model Running Method ---
@@ -511,7 +647,7 @@ export class MiniDecarbModel {
     }
 
     return {
-      interventionId: this.modelId, // Set this.modelId in the constructor if needed
+      interventionId: Date.now(), //this.modelId,
       techName:
         this.config.optimizationStrategy === "carbon-first"
           ? this.config.technologies.map((tech) => tech.name)
@@ -571,7 +707,7 @@ export class MiniDecarbModel {
       modelRecap.allBuildings.forEach((building) => {
         if (!buildingMap.has(building.id)) {
           buildingMap.set(building.id, {
-            ...building.properties,
+            // ...building.properties,
             ...building,
             isIntervened: false,
             totalCost: 0,
@@ -579,6 +715,7 @@ export class MiniDecarbModel {
             interventionHistory: [],
             interventionYears: [],
             interventionTechs: [],
+            numInterventions: building.numInterventions,
           });
         }
 
