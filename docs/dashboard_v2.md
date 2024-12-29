@@ -34,7 +34,7 @@ import {
 } from "./components/gridded-glyphmaps/index.min.js";
 import { OSGB } from "./components/osgb/index.js";
 import { BudgetAllocator } from "./components/decarb-model/budget-allocator.js";
-import { MiniDecarbModel } from "./components/decarb-model/mini-decarbonisation.js";
+import { InterventionManager, MiniDecarbModel } from "./components/decarb-model/mini-decarbonisation.js";
 import { createTable } from "./components/sorterTable.js";
 import { createTimelineInterface } from "./components/timeline.js";
 import {
@@ -889,16 +889,22 @@ function addNewIntervention(technology, allocations) {
 
 // Reorder intervention
 function reorderIntervention(array, index, direction) {
-    if (direction === "up" && index > 0) {
-        // Swap with the previous item
-        [array[index - 1], array[index]] = [array[index], array[index - 1]];
-    } else if (direction === "down" && index < array.length - 1) {
-        // Swap with the next item
-        [array[index], array[index + 1]] = [array[index + 1], array[index]];
-    }
-    console.log("Interventions reordered:", array);
-    updateTimeline();
-    return array;
+  if (direction === "up" && index > 0) {
+    // Swap with the previous item
+    [array[index - 1], array[index]] = [array[index], array[index - 1]];
+  } else if (direction === "down" && index < array.length - 1) {
+    // Swap with the next item
+    [array[index], array[index + 1]] = [array[index + 1], array[index]];
+  }
+  console.log("Interventions reordered:", array);
+  updateTimeline();
+
+  // Update the InterventionManager with the new order
+  if (manager) {
+    manager.setInterventionOrder(array); // Pass the new order to the manager
+  }
+
+  return array;
 }
 
 // Reorder intervention by id
@@ -1913,7 +1919,7 @@ function createLeafletMap(data, width = 600, height = 400) {
   // Initialize the Leaflet map
   const map = L.map(mapDiv.id).setView([0, 0], 2); // Default view (centered on the world)
 
-  // Add a tile layer (you can choose others like OpenStreetMap)
+  // Add a tile layer
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     attribution: "© OpenStreetMap contributors",
   }).addTo(map);
