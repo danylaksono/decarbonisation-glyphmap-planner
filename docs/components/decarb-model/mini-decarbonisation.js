@@ -1,6 +1,6 @@
 import { PriorityQueue } from "./priority-queue.js";
 
-// Building class - minimal structure to track interventions
+// ------------------------ Building class ------------------------
 class Building {
   constructor(id, properties) {
     this.id = id;
@@ -14,6 +14,7 @@ class Building {
   }
 }
 
+// ------------------------ Intervention Manager class ------------------------
 export class InterventionManager {
   constructor(buildings, listOfTech) {
     this.buildings = buildings;
@@ -22,8 +23,9 @@ export class InterventionManager {
     this.results = [];
     this.currentRolloverBudget = 0;
     this.currentOrder = []; // Store order as an array of indices
-    this.autoRun = false; // Flag to control automatic re-running
+    this.autoRun = false; // Flag to control automatic re-running. set to false by default
     this.nextModelId = 0; // Counter for model IDs
+    this._cachedResults = null; // Cache results for stacking
   }
 
   addIntervention(config) {
@@ -32,7 +34,7 @@ export class InterventionManager {
     console.log("Intervention added:", config.id);
     if (this.autoRun) {
       console.log("Auto-run enabled. Running interventions...");
-      //   this.runInterventions();
+      this.runInterventions();
     }
     return this; // Allow method chaining
   }
@@ -52,7 +54,7 @@ export class InterventionManager {
       console.log(`Intervention at index ${index} removed.`);
       if (this.autoRun) {
         console.log("Auto-run enabled. Running interventions...");
-        // this.runInterventions();
+        this.runInterventions();
       }
     } else {
       console.error(`Error: Invalid index ${index} for removal.`);
@@ -68,7 +70,7 @@ export class InterventionManager {
     console.log("All interventions cleared.");
     if (this.autoRun) {
       console.log("Auto-run enabled. Running interventions...");
-      //   this.runInterventions();
+      this.runInterventions();
     }
     return this;
   }
@@ -108,7 +110,7 @@ export class InterventionManager {
 
     if (this.autoRun) {
       console.log("Auto-run enabled. Running interventions...");
-      //   this.runInterventions();
+      this.runInterventions();
     }
     return this;
   }
@@ -122,10 +124,7 @@ export class InterventionManager {
     );
   }
 
-  // Cache for intervention results
-  _cachedResults = null;
-
-  runInterventions() {
+  runInterventionsWithRollover() {
     // Clear the cache when running interventions
     this._cachedResults = null;
 
@@ -241,14 +240,92 @@ export class InterventionManager {
       return recap;
     });
 
-    console.log("All interventions run. Recaps:", recaps);
+    console.log(
+      "All interventions with rollover successfully run. Recaps:",
+      recaps
+    );
     this._cachedResults = recaps; // Cache the results
     return recaps;
   }
 
+  runInterventions() {
+    const startTime = performance.now();
+    this.results = []; // Clear previous results
+    this.currentRolloverBudget = 0; // Reset rollover budget
+
+    // Use the interventionConfigs array directly, which will be in the correct order
+    for (const config of this.interventionConfigs) {
+      const model = new MiniDecarbModel(this.buildings, config.id);
+
+      model.setInitialYear(config.initialYear || 0);
+      model.setRolloverBudget(this.currentRolloverBudget); // Apply current rollover
+      model.setYearlyBudgets(config.yearlyBudgets || []);
+      model.setOptimizationStrategy(
+        config.optimizationStrategy || "tech-first"
+      );
+
+      // Add technologies
+      if (
+        config.optimizationStrategy === "carbon-first" &&
+        config.technologies &&
+        config.technologies.length > 0
+      ) {
+        config.technologies.forEach((techName) => {
+          if (this.listOfTech[techName]) {
+            model.addTechnology(this.listOfTech[techName]);
+          } else {
+            console.error(
+              `Error: Technology "${techName}" not found in listOfTech.`
+            );
+          }
+        });
+      } else if (config.tech) {
+        if (this.listOfTech[config.tech]) {
+          model.addTechnology(this.listOfTech[config.tech]);
+        } else {
+          console.error(
+            `Error: Technology "${config.tech}" not found in listOfTech.`
+          );
+        }
+      }
+
+      // Add priorities
+      if (config.priorities) {
+        config.priorities.forEach((priority) => {
+          model.addPriority(
+            priority.attribute,
+            priority.order,
+            priority.scoreFunction,
+            priority.weight
+          );
+        });
+      }
+
+      // Add filters
+      if (config.filters) {
+        config.filters.forEach((filter) => {
+          model.addBuildingFilter(filter.filterFunction, filter.filterName);
+        });
+      }
+
+      const recap = model.run();
+      this.results.push(recap);
+
+      // Update current rollover budget
+      this.currentRolloverBudget = recap.remainingBudget;
+    }
+
+    console.log("Interventions run. Results:", this.results);
+    // model runtime in seconds
+    const endTime = performance.now();
+    console.log("Model run time:", (endTime - startTime) / 1000, "s");
+
+    return this.results;
+  }
+
   getStackedResults() {
-    // Use cached results if available, otherwise run interventions
-    const results = this._cachedResults || this.runInterventions();
+    // Use cached results if available, otherwise use the results array
+    const results = this._cachedResults || this.results;
     return MiniDecarbModel.stackResults(results);
   }
 
@@ -679,7 +756,7 @@ export class MiniDecarbModel {
   // --- Model Running Method ---
 
   run() {
-    const startTime = performance.now();
+    // const startTime = performance.now();
     // Set tech to the first technology if optimization strategy is not carbon-first and only one technology is available
     if (
       this.config.optimizationStrategy !== "carbon-first" &&
@@ -697,10 +774,10 @@ export class MiniDecarbModel {
     } else {
       this.runTechFirstModel();
     }
-    const endTime = performance.now();
 
-    // model runtime in seconds
-    console.log("Model run time:", (endTime - startTime) / 1000, "s");
+    // // model runtime in seconds
+    // const endTime = performance.now();
+    // console.log("Model run time:", (endTime - startTime) / 1000, "s");
 
     return this.getRecap();
   }
@@ -726,10 +803,10 @@ export class MiniDecarbModel {
         this.config.optimizationStrategy === "carbon-first"
           ? this.config.technologies.map((tech) => tech.name)
           : this.config.tech.name, // Handle carbon-first tech name(s)
-      initialBudget: this.config.yearly_budgets.reduce((a, b) => a + b, 0),
+      initialBudget: this.config.yearly_budgets.reduce((a, b) => a + b, 0), // total initial budget
       yearlyBudgets: this.config.yearly_budgets,
       totalBudgetSpent: totalAllocated,
-      remainingBudget: remainingBudget,
+      remainingBudget: remainingBudget, // remaining budget after last year
       yearlyStats: this.yearlyStats,
       intervenedBuildings: this.suitableBuildings.filter((b) => b.isIntervened),
       untouchedBuildings: this.suitableBuildings.filter((b) => !b.isIntervened),
@@ -853,7 +930,7 @@ export class MiniDecarbModel {
       summary,
       yearlySummary,
       intervenedBuildings: buildings.filter((b) => b.isIntervened),
-      untouchedBuildings: buildings.filter((b) => !b.isIntervened),
+    //   untouchedBuildings: buildings.filter((b) => !b.isIntervened), // don't think we need this
       recap: modelRecaps, // for debugging only
     };
   }

@@ -433,11 +433,11 @@ const manager = new InterventionManager(buildingsData, listOfTech);
 ```
 
 ```js
-// --- Run the interventions ---
-const recaps = manager.runInterventions();
+// // --- Run the interventions ---
+// const recaps = manager.runInterventions();
 
-// --- Get the stacked results ---
-const stackedRecap = manager.getStackedResults();
+// // --- Get the stacked results ---
+// const stackedRecap = manager.getStackedResults();
 ```
 
 
@@ -458,32 +458,37 @@ closeQuickviewButton.addEventListener("click", () => {
 cancelButton.addEventListener("click", () => {
   quickviewDefault.classList.remove("is-active");
 });
+const addInterventionBtn = document.getElementById("addInterventionBtn");
+```
+
+```js
+console.log(">> Cell called: Preparing Interventions event listener...");
+
+let currentAllocation = allocator.recap().allocations;
+
+// compose configurations
+const currentConfig = {
+  id: technology + "_" + start_year.toString(),
+  initialYear: start_year,
+  rolloverBudget: 0,
+  yearlyBudgets: currentAllocation.map((item) => item.budget),
+  optimizationStrategy: "tech-first",
+  tech: technology,
+  priorities: [],
+};
 
 // Add New Intervention button logic
-const addInterventionBtn = document.getElementById("addInterventionBtn");
 addInterventionBtn.addEventListener("click", () => {
-  console.log("  total_budget ... ", getNumericBudget(total_budget));
-  console.log("  start_year ... ", start_year);
-  console.log("  project_length ... ", project_length);
-  console.log("  flip_budget ... ", flip_budget);
-
-  let currentAllocation = allocator.recap().allocations;
-
-  // compose configurations
-  const currentConfig = {
-    id: Date.now(),
-    initialYear: start_year,
-    rolloverBudget: 0,
-    yearlyBudgets: currentAllocation.map((item) => item.budget),
-    optimizationStrategy: "tech-first",
-    tech: technology, // Use the tech name as a string
-    priorities: [],
-  };
-
-  console.log("  Sending this config", currentConfig);
 
   // add the configuration to the intervention
+  console.log("  Sending this config", currentConfig);
   manager.addIntervention(currentConfig);
+
+  // --- Run the interventions ---
+  const recaps = manager.runInterventions();
+
+  // --- Get the stacked results ---
+  const stackedRecap = manager.getStackedResults();
 
   // send the intervention to the timeline drawing
   // setIntervention([...interventions, currentConfig]);
@@ -917,7 +922,7 @@ function addIntervention(
  }
 
 // handle form submission: add new intervention
-function addNewIntervention(technology, allocations) {
+function addNewIntervention(config) {
   // const new_start_year = start_year;
   const new_tech = technology;
   const new_allocations = allocations;
@@ -933,7 +938,7 @@ function addNewIntervention(technology, allocations) {
   // console.log("new_allocations to be sent", new_allocations);
 
   // Retrieve techConfig from the selected technology
-  const techConfig = listOfTech[new_tech];
+  // const techConfig = listOfTech[new_tech];
   // console.log("techConfig", techConfig);
 
   // Example filters and priorities
@@ -942,13 +947,13 @@ function addNewIntervention(technology, allocations) {
   const filters = [];
   const priorities = [];
 
-  addIntervention(
-    techConfig,
-    // new_start_year,
-    new_allocations,
-    filters,
-    priorities
-  );
+  // addIntervention(
+  //   techConfig,
+  //   // new_start_year,
+  //   new_allocations,
+  //   filters,
+  //   priorities
+  // );
 }
 
 // Reorder intervention
