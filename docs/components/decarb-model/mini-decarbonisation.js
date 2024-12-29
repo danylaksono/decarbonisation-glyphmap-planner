@@ -10,53 +10,85 @@ class Building {
     this.interventionCost = null;
     this.carbonSaved = null;
     this.score = null;
+    this.numInterventions = 0;
   }
 }
 
-// Mini version of decarbonization model with additional features
 export class MiniDecarbModel {
-  constructor(modelConfig, buildings) {
-    // Basic configuration
-    this.modelId = modelConfig.id;
-    this.initialYear = modelConfig.initial_year;
-    this.rolledoverBudget = modelConfig.rolledover_budget; // from previous project
-    this.yearlyBudgets = modelConfig.yearly_budgets; // Array of budgets per year
-    this.numYears = this.yearlyBudgets.length;
-
-    // Tech configuration - assuming single technology here
-    this.tech = {
-      name: modelConfig.tech.name,
-      config: modelConfig.tech.config,
+  constructor(buildings) {
+    // Initialize with default config
+    this.config = {
+      initial_year: 0,
+      rolledover_budget: 0,
+      yearly_budgets: [],
+      tech: {},
+      priorities: [],
+      optimizationStrategy: "tech-first",
+      technologies: [],
     };
 
-    // Priority configurations
-    this.priorities = modelConfig.priorities || []; // [{attribute: 'fuel_poverty', order: 'desc'}]
-
-    // Tracking and model setup
     this.buildings = buildings.map((b) => new Building(b.id, b));
-    this.suitableBuildings = []; // Filtered buildings
-    this.remainingBudgets = [...this.yearlyBudgets];
+    this.suitableBuildings = [];
     this.yearlyStats = {};
-
     this.appliedFilters = [];
+    this._buildingCosts = new Map();
+    this._availableBuildings = null;
+    this._potentialInterventions = null;
+  }
 
-    // Add optimization strategy
-    this.optimizationStrategy =
-      modelConfig.optimizationStrategy || "tech-first"; // or 'carbon-first'
+  // Configuration Methods
+  setInitialYear(year) {
+    this.config.initial_year = year;
+  }
 
-    // For carbon-first optimization, we can include multiple technologies
-    if (this.optimizationStrategy === "carbon-first") {
-      this.availableTechs = modelConfig.technologies || [this.tech];
+  setRolloverBudget(budget) {
+    this.config.rolledover_budget = budget;
+  }
+
+  setYearlyBudgets(budgets) {
+    this.config.yearly_budgets = budgets;
+    this.config.numYears = budgets.length;
+  }
+
+  setOptimizationStrategy(strategy) {
+    this.config.optimizationStrategy = strategy;
+    if (strategy === "carbon-first") {
+      this.config.technologies = [];
     }
+  }
 
-    // Initialize the model
+  addTechnology(techConfig) {
+    console.log("Adding technology", techConfig);
+    if (this.config.optimizationStrategy === "carbon-first") {
+      this.config.technologies.push(techConfig);
+    } else {
+      this.config.tech = techConfig;
+    }
     this.filterSuitableBuildings();
     this.calculateBuildingScores();
+  }
 
-    // Add cache for building costs
-    this._buildingCosts = new Map(); // Cache for getBuildingCost
-    // Track available buildings for intervention
-    this._availableBuildings = null;
+  // Filter suitable buildings early based on tech requirements
+  filterSuitableBuildings() {
+    if (this.config.optimizationStrategy === "carbon-first") {
+      // Handle multiple technologies
+      this.suitableBuildings = this.buildings.filter((b) => {
+        return this.config.technologies.some(
+          (tech) => b.properties[tech.config.suitabilityKey]
+          // (tech) => b[tech.config.suitabilityKey]
+        );
+      });
+    } else {
+      // Handle single technology (tech-first)
+      this.suitableBuildings = this.buildings.filter(
+        (b) => b.properties[this.config.tech.config.suitabilityKey]
+      );
+    }
+    // console.log("Suitable buildings", this.suitableBuildings);
+  }
+
+  addAvailableTechnology(techConfig) {
+    this.config.technologies.push(techConfig);
   }
 
   // Add a custom filter for buildings based on criteria
@@ -65,34 +97,83 @@ export class MiniDecarbModel {
     this.appliedFilters.push(filterName);
   }
 
-  // Filter suitable buildings early based on tech requirements
-  filterSuitableBuildings() {
-    this.suitableBuildings = this.buildings.filter(
-      (b) => b.properties[this.tech.config.suitabilityKey]
+  // Add a priority to the configuration, not directly to the model
+  addPriority(attribute, order = "asc", scoreFunction = null, weight = 1.0) {
+    this.config.priorities.push({ attribute, order, scoreFunction, weight });
+  }
+
+  // Get available buildings sorted by score and filtered by intervention status
+  getAvailableBuildings() {
+    if (!this._availableBuildings) {
+      this._availableBuildings = this.suitableBuildings
+        .filter((b) => !b.isIntervened)
+        .sort((a, b) => b.score - a.score);
+    }
+    return this._availableBuildings;
+  }
+
+  // Reset available buildings cache when needed
+  resetAvailableBuildings() {
+    this._availableBuildings = null;
+  }
+
+  // Cache building costs for the current technology
+  precalculateBuildingCosts() {
+    this._buildingCosts.clear(); // Clear previous costs
+
+    if (this.config.optimizationStrategy === "carbon-first") {
+      for (const building of this.suitableBuildings) {
+        for (const tech of this.config.technologies) {
+          // Calculate cost using getBuildingCost, which also caches the cost
+          this.getBuildingCost(building, tech);
+        }
+      }
+    } else {
+      // Tech-first: Use the single technology
+      for (const building of this.suitableBuildings) {
+        // Calculate cost using getBuildingCost, which also caches the cost
+        this.getBuildingCost(building);
+      }
+    }
+    console.log(
+      "precalculateBuildingCosts buildingCosts Map:",
+      this._buildingCosts
     );
   }
 
-  // Add a priority rule for sorting buildings
-  addPriorityRule(attribute, order) {
-    this.priorities.push({ attribute, order });
-  }
+  // test with memoization
+  getBuildingCost(building, technology = this.tech) {
+    // Determine cache key based on optimization strategy
+    const cacheKey =
+      this.config.optimizationStrategy === "carbon-first"
+        ? `${building.id}-${technology.name}`
+        : `${building.id}-${this.config.tech.name}`;
 
-  addPriorityRuleCustom(ruleConfig) {
-    /* ruleConfig example:
-    {
-      attribute: 'multideprivation',
-      scoreFunction: (value) => {
-        // Custom scoring logic
-        const scores = {
-          'deprived': 1000,
-          'not-deprived': 0
-        };
-        return scores[value] || 0;
-      },
-      weight: 1.0  // Optional weighting factor
+    // Check if the cost is already cached
+    if (this._buildingCosts.has(cacheKey)) {
+      return this._buildingCosts.get(cacheKey);
     }
-    */
-    this.priorities.push(ruleConfig);
+
+    // Calculate the cost based on the optimization strategy
+    let cost;
+    if (this.config.optimizationStrategy === "carbon-first") {
+      const labour = building.properties[technology.config.labourKey] || 0;
+      const material = building.properties[technology.config.materialKey] || 0;
+      cost = labour + material;
+    } else {
+      const labour =
+        building.properties[this.config.tech.config.labourKey] || 0;
+      const material =
+        building.properties[this.config.tech.config.materialKey] || 0;
+      cost = labour + material;
+    }
+
+    // Log the calculated cost and cache key for debugging
+    // console.log("getBuildingCost - Building ID:", building.id, "Tech:", technology?.name, "Cost:", cost, "Cache Key:", cacheKey);
+
+    // Store the calculated cost in the cache
+    this._buildingCosts.set(cacheKey, cost);
+    return cost;
   }
 
   calculateBuildingScores() {
@@ -101,12 +182,25 @@ export class MiniDecarbModel {
 
     // Create an index for faster lookups
     const savingsIndex = new Map();
-    this.suitableBuildings.forEach((building) => {
-      savingsIndex.set(
-        building,
-        building.properties[this.tech.config.savingsKey]
-      );
-    });
+
+    if (this.config.optimizationStrategy === "carbon-first") {
+      // Carbon-first: Iterate through technologies and accumulate savings
+      this.suitableBuildings.forEach((building) => {
+        let totalSavings = 0;
+        this.config.technologies.forEach((tech) => {
+          totalSavings += building.properties[tech.config.savingsKey] || 0;
+        });
+        savingsIndex.set(building, totalSavings);
+      });
+    } else {
+      // Tech-first: Use savings from the single technology
+      this.suitableBuildings.forEach((building) => {
+        savingsIndex.set(
+          building,
+          building.properties[this.config.tech.config.savingsKey]
+        );
+      });
+    }
 
     // Sort once using the index
     this.suitableBuildings.sort(
@@ -119,7 +213,7 @@ export class MiniDecarbModel {
       let score = buildingCount - index;
 
       // Apply priority rules efficiently
-      for (const rule of this.priorities) {
+      for (const rule of this.config.priorities) {
         const value = building.properties[rule.attribute];
         if (value !== undefined) {
           score += (rule.scoreFunction?.(value) ?? 0) * (rule.weight ?? 1.0);
@@ -130,27 +224,19 @@ export class MiniDecarbModel {
     });
   }
 
-  // test with memoization
-  getBuildingCost(building, technology = this.tech) {
-    const cacheKey = `${building.id}-${technology.name}`; // Create a unique key
-
-    if (this._buildingCosts.has(cacheKey)) {
-      return this._buildingCosts.get(cacheKey); // Return cached value
-    }
-
-    const labour = building.properties[technology.config.labourKey] || 0;
-    const material = building.properties[technology.config.materialKey] || 0;
-    const cost = labour + material;
-
-    this._buildingCosts.set(cacheKey, cost); // Store in cache
-    return cost;
-  }
-
   // New method to calculate carbon savings per cost ratio
   calculateCarbonEfficiency(building, technology) {
-    const cost = this.getBuildingCost(building, technology);
-    const carbonSaved = building.properties[technology.config.savingsKey];
-    return cost > 0 ? carbonSaved / cost : 0;
+    // Carbon-first: tech is passed as argument
+    if (this.config.optimizationStrategy === "carbon-first") {
+      const cost = this.getBuildingCost(building, technology);
+      const carbonSaved = building.properties[technology.config.savingsKey];
+      return cost > 0 ? carbonSaved / cost : 0;
+    } else {
+      const cost = this.getBuildingCost(building);
+      const carbonSaved =
+        building.properties[this.config.tech.config.savingsKey];
+      return cost > 0 ? carbonSaved / cost : 0;
+    }
   }
 
   calculatePotentialInterventions() {
@@ -161,7 +247,7 @@ export class MiniDecarbModel {
       for (const building of this.suitableBuildings) {
         const buildingInterventions = [];
 
-        for (const tech of this.availableTechs) {
+        for (const tech of this.config.technologies) {
           if (building.properties[tech.config.suitabilityKey]) {
             const cost = this.getBuildingCost(building, tech);
             const carbonEfficiency = this.calculateCarbonEfficiency(
@@ -197,7 +283,7 @@ export class MiniDecarbModel {
   }
 
   runCarbonFirstModel() {
-    let remainingBudget = this.rolledoverBudget || 0;
+    let remainingBudget = this.config.rolledover_budget || 0;
     const interventions = this.calculatePotentialInterventions();
 
     // Create a priority queue for interventions, ordered by carbon efficiency (ascending)
@@ -226,8 +312,8 @@ export class MiniDecarbModel {
     pq._heap = allInterventions;
     pq._heapify();
 
-    for (let year = 0; year < this.numYears; year++) {
-      const yearBudget = this.yearlyBudgets[year] + remainingBudget;
+    for (let year = 0; year < this.config.numYears; year++) {
+      const yearBudget = this.config.yearly_budgets[year] + remainingBudget;
       let spent = 0;
       const buildingsIntervened = [];
 
@@ -265,63 +351,50 @@ export class MiniDecarbModel {
     }
   }
 
-  updateYearlyStats(year, spent, buildings, remainingBudget) {
-    this.yearlyStats[this.initialYear + year] = {
-      budgetSpent: spent,
-      buildingsIntervened: buildings.length,
-      remainingBudget,
-      intervenedBuildings: buildings,
-    };
-  }
-
-  // Cache building costs for the current technology
-  precalculateBuildingCosts() {
-    if (this._buildingCosts.size === 0) {
-      for (const building of this.suitableBuildings) {
-        const cost = this.getBuildingCost(building);
-        if (cost > 0) {
-          this._buildingCosts.set(building.id, cost);
-        }
-      }
-    }
-    return this._buildingCosts;
-  }
-
-  // Get available buildings sorted by score and filtered by intervention status
-  getAvailableBuildings() {
-    if (!this._availableBuildings) {
-      this._availableBuildings = this.suitableBuildings
-        .filter((b) => !b.isIntervened)
-        .sort((a, b) => b.score - a.score);
-    }
-    return this._availableBuildings;
-  }
-
-  // Reset available buildings cache when needed
-  resetAvailableBuildings() {
-    this._availableBuildings = null;
-  }
-
   runTechFirstModel() {
-    const buildingCosts = this.precalculateBuildingCosts();
-    let remainingBudget = this.rolledoverBudget || 0;
+    // Calculate and cache building costs
+    this.precalculateBuildingCosts();
 
-    for (let year = 0; year < this.numYears; year++) {
-      const yearBudget = this.yearlyBudgets[year] + remainingBudget;
+    let remainingBudget = this.config.rolledover_budget || 0;
+
+    for (let year = 0; year < this.config.numYears; year++) {
+      const yearBudget = this.config.yearly_budgets[year] + remainingBudget;
       let spent = 0;
       const buildingsIntervened = [];
 
       const availableBuildings = this.getAvailableBuildings();
 
       for (const building of availableBuildings) {
-        const cost = buildingCosts.get(building.id);
+        // In tech-first, use the precalculated cost for the single tech
+        const cost = this._buildingCosts.get(
+          `${building.id}-${this.config.tech.name}`
+        );
 
-        if (spent + cost <= yearBudget) {
-          this.applyIntervention(building, this.tech, cost, year);
+        // Log for debugging
+        // console.log(
+        //   "Building ID:",
+        //   building.id,
+        //   "Tech:",
+        //   this.config.tech.name,
+        //   "Cost:",
+        //   cost
+        // );
 
-          spent += cost;
-          buildingsIntervened.push(building);
+        if (cost === undefined) {
+          console.warn(
+            `Warning: Cost not found for building ${building.id} and tech ${this.config.tech.name}. Check precalculateBuildingCosts.`
+          );
+          continue;
         }
+
+        if (spent + cost > yearBudget) {
+          continue;
+        }
+
+        this.applyIntervention(building, this.config.tech, cost, year);
+
+        spent += cost;
+        buildingsIntervened.push(building);
       }
 
       this.updateYearlyStats(
@@ -373,12 +446,53 @@ export class MiniDecarbModel {
     };
   }
 
+  updateYearlyStats(year, spent, buildings, remainingBudget) {
+    this.yearlyStats[this.config.initial_year + year] = {
+      budgetSpent: spent,
+      buildingsIntervened: buildings.length,
+      remainingBudget,
+      intervenedBuildings: buildings,
+    };
+  }
+
   applyIntervention(building, tech, cost, year) {
     building.isIntervened = true;
-    building.interventionTechs = tech.name;
-    building.interventionYear = this.initialYear + year;
+    building.interventionYear = this.config.initial_year + year;
     building.interventionCost = cost;
-    building.carbonSaved = building.properties[tech.config.savingsKey];
+
+    if (this.config.optimizationStrategy === "carbon-first") {
+      building.interventionTechs = tech.name;
+      building.carbonSaved = building.properties[tech.config.savingsKey];
+    } else {
+      building.interventionTechs = this.config.tech.name;
+      building.carbonSaved =
+        building.properties[this.config.tech.config.savingsKey];
+    }
+    this.numInterventions++;
+  }
+
+  // --- Model Running Method ---
+
+  run() {
+    // Set tech to the first technology if optimization strategy is not carbon-first and only one technology is available
+    if (
+      this.config.optimizationStrategy !== "carbon-first" &&
+      this.config.technologies.length > 0
+    ) {
+      this.config.tech = this.config.technologies[0];
+    }
+
+    // Initialize the model
+    this.filterSuitableBuildings();
+    this.calculateBuildingScores();
+
+    if (this.config.optimizationStrategy === "carbon-first") {
+      this.runCarbonFirstModel();
+    } else {
+      this.runTechFirstModel();
+    }
+
+    return this.getRecap();
   }
 
   // Recap of model configuration, yearly allocation, and total allocation check
@@ -388,15 +502,22 @@ export class MiniDecarbModel {
       0
     );
 
-    // Get remaining budget from final year
-    const finalYear = Math.max(...Object.keys(this.yearlyStats).map(Number));
-    const remainingBudget = this.yearlyStats[finalYear].remainingBudget;
+    // Calculate remaining budget correctly
+    let remainingBudget = 0;
+    const numYears = Object.keys(this.yearlyStats).length;
+    if (numYears > 0) {
+      const lastYear = Math.max(...Object.keys(this.yearlyStats).map(Number));
+      remainingBudget = this.yearlyStats[lastYear].remainingBudget;
+    }
 
     return {
-      interventionId: this.modelId,
-      techName: this.tech.name,
-      initialBudget: this.yearlyBudgets.reduce((a, b) => a + b, 0),
-      yearlyBudgets: this.yearlyBudgets,
+      interventionId: this.modelId, // Set this.modelId in the constructor if needed
+      techName:
+        this.config.optimizationStrategy === "carbon-first"
+          ? this.config.technologies.map((tech) => tech.name)
+          : this.config.tech.name, // Handle carbon-first tech name(s)
+      initialBudget: this.config.yearly_budgets.reduce((a, b) => a + b, 0),
+      yearlyBudgets: this.config.yearly_budgets,
       totalBudgetSpent: totalAllocated,
       remainingBudget: remainingBudget,
       yearlyStats: this.yearlyStats,
@@ -404,7 +525,7 @@ export class MiniDecarbModel {
       untouchedBuildings: this.suitableBuildings.filter((b) => !b.isIntervened),
       allBuildings: this.suitableBuildings,
       appliedFilters: this.appliedFilters,
-      priorityRules: this.priorities.map((rule) => ({
+      priorityRules: this.config.priorities.map((rule) => ({
         attribute: rule.attribute,
         hasCustomScore: !!rule.scoreFunction,
         weight: rule.weight || 1.0,
@@ -433,11 +554,11 @@ export class MiniDecarbModel {
         yearlySummary[year].budgetSpent += stats.budgetSpent;
         yearlySummary[year].buildingsIntervened += stats.buildingsIntervened;
         // yearlySummary[year].technologies.add(modelRecap.techName);
-        stats.intervenedBuildings.forEach(building => {
-            yearlySummary[year].intervenedBuildingIds.add(building.id);
-          });
+        stats.intervenedBuildings.forEach((building) => {
+          yearlySummary[year].intervenedBuildingIds.add(building.id);
+        });
         if (stats.buildingsIntervened > 0) {
-            yearlySummary[year].technologies.add(modelRecap.techName);
+          yearlySummary[year].technologies.add(modelRecap.techName);
         }
         yearlySummary[year].totalCarbonSaved +=
           stats.intervenedBuildings.reduce(
@@ -488,7 +609,9 @@ export class MiniDecarbModel {
     // Finalize the yearly summary
     Object.values(yearlySummary).forEach((yearData) => {
       yearData.technologies = Array.from(yearData.technologies);
-      yearData.intervenedBuildingIds = Array.from(yearData.intervenedBuildingIds);
+      yearData.intervenedBuildingIds = Array.from(
+        yearData.intervenedBuildingIds
+      );
     });
 
     const buildings = Array.from(buildingMap.values());
