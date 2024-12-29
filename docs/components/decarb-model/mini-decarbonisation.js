@@ -219,6 +219,7 @@ export class MiniDecarbModel {
 
     this.buildings = buildings.map((b) => new Building(b.id, b));
     this.suitableBuildings = [];
+    this.suitableBuildingsNeedUpdate = true; // Flag to indicate if filtering is needed
     this.yearlyStats = {};
     this.appliedFilters = [];
     this._buildingCosts = new Map();
@@ -256,10 +257,15 @@ export class MiniDecarbModel {
     }
     this.filterSuitableBuildings();
     this.calculateBuildingScores();
+    this.suitableBuildingsNeedUpdate = true;
   }
 
   // Filter suitable buildings early based on tech requirements
   filterSuitableBuildings() {
+    if (!this.suitableBuildingsNeedUpdate) {
+      return; // No need to filter if the flag is false
+    }
+
     if (this.config.optimizationStrategy === "carbon-first") {
       // Handle multiple technologies
       this.suitableBuildings = this.buildings.filter((b) => {
@@ -275,6 +281,7 @@ export class MiniDecarbModel {
       );
     }
     // console.log("Suitable buildings", this.suitableBuildings);
+    this.suitableBuildingsNeedUpdate = false; // Reset the flag after filtering
   }
 
   addAvailableTechnology(techConfig) {
@@ -285,6 +292,7 @@ export class MiniDecarbModel {
   addBuildingFilter(filterFn, filterName = "Custom filter") {
     this.suitableBuildings = this.suitableBuildings.filter(filterFn);
     this.appliedFilters.push(filterName);
+    this.suitableBuildingsNeedUpdate = true; // Need to re-filter when filters change
   }
 
   // Add a priority to the configuration, not directly to the model
@@ -610,6 +618,7 @@ export class MiniDecarbModel {
   // --- Model Running Method ---
 
   run() {
+    const startTime = performance.now();
     // Set tech to the first technology if optimization strategy is not carbon-first and only one technology is available
     if (
       this.config.optimizationStrategy !== "carbon-first" &&
@@ -627,6 +636,10 @@ export class MiniDecarbModel {
     } else {
       this.runTechFirstModel();
     }
+    const endTime = performance.now();
+
+    // model runtime in seconds
+    console.log("Model run time:", (endTime - startTime) / 1000, "s");
 
     return this.getRecap();
   }
