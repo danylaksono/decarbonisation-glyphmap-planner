@@ -240,3 +240,16 @@ export function normaliseData(data, keysToNormalise) {
 
   return normalisedData;
 }
+
+
+export function insideCell(c, x, y) {
+  // console.log(x + " " + y  + " " + c.getXCentre() + " " + c.getYCentre() + " " + c.getCellSize());
+  if (
+    x >= c.getXCentre() - c.getCellSize() &&
+    x <= c.getXCentre() + c.getCellSize() &&
+    y >= c.getYCentre() - c.getCellSize() &&
+    y <= c.getYCentre() + c.getCellSize()
+  )
+    return true;
+  return false;
+}

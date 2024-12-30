@@ -623,11 +623,12 @@ export class MiniDecarbModel {
 
     const endTime = performance.now();
 
-    console.log(
-      `Building ID: ${building.id}, Tech: ${
-        technology ? technology.name : this.config.tech.name
-      }, Carbon Efficiency: ${carbonEfficiency}`
-    );
+    // DEBUG: Log building ID, tech name, and carbon efficiency
+    // console.log(
+    //   `Building ID: ${building.id}, Tech: ${
+    //     technology ? technology.name : this.config.tech.name
+    //   }, Carbon Efficiency: ${carbonEfficiency}`
+    // );
 
     return carbonEfficiency;
   }
@@ -685,7 +686,7 @@ export class MiniDecarbModel {
     }
 
     // console.log("pq:", pq);
-    console.log("Priority Queue (before interventions):", pq._heap);
+    // console.log("Priority Queue (before interventions):", pq._heap);
 
     for (let year = 0; year < this.config.numYears; year++) {
       const yearBudget = this.config.yearly_budgets[year] + remainingBudget;
@@ -704,19 +705,19 @@ export class MiniDecarbModel {
         processedInterventions.add(intervention);
 
         // Check again if the building has been intervened in the meantime
-        console.log(
-          "Building ID:",
-          building.id,
-          "Intervened:",
-          building.isIntervened
-        );
+        // console.log(
+        //   "Building ID:",
+        //   building.id,
+        //   "Intervened:",
+        //   building.isIntervened
+        // );
         if (!building.isIntervened) {
           this.applyIntervention(building, tech, cost, year);
           spent += cost;
           buildingsIntervened.push(building);
 
-          console.log("Intervention applied:", building.id, tech.name, cost);
-          console.log("Spent this year:", spent, "Year Budget:", yearBudget);
+        //   console.log("Intervention applied:", building.id, tech.name, cost);
+        //   console.log("Spent this year:", spent, "Year Budget:", yearBudget);
         }
       }
 

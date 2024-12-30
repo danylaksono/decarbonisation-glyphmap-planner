@@ -41,6 +41,7 @@ import {
   inferTypes,
   enrichGeoData,
   normaliseData,
+  insideCell,
 } from "./components/helpers.js";
 ```
 
@@ -230,7 +231,7 @@ const [currentConfig, setCurrentConfig] = useState({}); // current configuration
           <div class="card-content">
             <div class="content">
               <!-- ${table.getNode()} -->
-              <div>No. of intervened buildings: ${JSON.stringify(stackedResults.summary.intervenedCount)}</div>
+              <!-- <div>No. of intervened buildings: ${JSON.stringify(stackedResults.summary.intervenedCount)}</div> -->
             </div>
           </div>
         </div>
@@ -247,7 +248,7 @@ const [currentConfig, setCurrentConfig] = useState({}); // current configuration
           ${(map_aggregate == "Building Level") ? ""
             : html`${playButton} ${morphFactorInput}`}
           <!-- ${html`${playButton} ${morphFactorInput}`} -->
-          ${resize((width, height) => createGlyphMap(map_aggregate, {width, height}))}
+          <!-- ${resize((width, height) => createGlyphMap(map_aggregate, {width, height}))} -->
         </div>
       </div>
     </div>
@@ -470,47 +471,6 @@ cancelButton.addEventListener("click", () => {
 
 const addInterventionBtn = document.getElementById("addInterventionBtn");
 
-// Add New Intervention button logic
-addInterventionBtn.addEventListener("click", () => {
-  console.log("Intervention button clicked");
-  // add the configuration to the intervention
-  const config = {...formData};
-  // setCurrentConfig(newConfig);
-  // console.log("  Sending this config", newConfig);
-
-  // send the intervention to the timeline drawing
-  // setIntervention([...interventions, currentConfig]);
-
-  // add the intervention to the model
-  addNewIntervention(config);
-
-  // setAllocations(allocator.recap().allocations);
-  quickviewDefault.classList.remove("is-active"); // Close quickview after submission
-});
-```
-
-```js
-// Update allocations
-setAllocations(allocator.recap().allocations);
-```
-
-```js
-
-console.log(">> FormData...");
-
-// let currentAllocation = allocator.recap().allocations;
-
-// compose configurations
-const formData = {
-  id: technology + "_" + start_year.toString(),
-  initialYear: start_year,
-  rolloverBudget: 0,
-  yearlyBudgets: allocations.map((item) => item.budget),
-  optimizationStrategy: "tech-first",
-  tech: technology,
-  priorities: [],
-};
-
 ```
 
 ```js
@@ -574,12 +534,6 @@ Object.assign(techsInput, {
 const technology = Generators.input(techsInput);
 // display(techsInput);
 
-// Total Budget
-// const totalBudgetInput = Inputs.number({
-//   // label: html`<b>Total Budget</b>`,
-//   placeholder: "Available Budget in GBP",
-//   value: 100_000_000,
-// });
 const totalBudgetInput = html`<input
   id="totalBudgetInput"
   class="input"
@@ -614,16 +568,6 @@ totalBudgetInput.addEventListener("focus", (event) => {
 });
 
 // Start Year
-// const startYearInput = Inputs.text({
-//   label: html`<b>Start Year</b>`,
-//   placeholder: "Starting year?",
-//   disabled: selectedIntervention ? true : false,
-//   value: selectedIntervention
-//     ? Number(Object.keys(selectedIntervention.yearlyStats)[0])
-//     : 2024,
-//   // submit: html`<button class="create-btn" style="color:white;">Submit</button>`,
-// });
-// startYearInput.style["max-width"] = "300px";
 const startYearInput = html`<input
   class="input"
   type="number"
@@ -641,12 +585,6 @@ Object.assign(startYearInput, {
 const start_year = Generators.input(startYearInput);
 
 // Project Length
-// const projectLengthInput = Inputs.range([0, 10], {
-//   // label: html`<b>Project length in years</b>`,
-//   step: 1,
-//   value: 5,
-// });
-// projectLengthInput.number.style["max-width"] = "60px";
 const projectLengthInput = html`<input
   id="projectLengthInput"
   class="slider is-fullwidth"
@@ -743,6 +681,31 @@ const flip_budget = Generators.input(flipButtonInput);
 const playButton = html`<button class="btn edit" style="margin-top: 10px;">
   <i class="fas fa-play"></i>&nbsp;
 </button>`;
+
+
+// ----------------- QuickView Event Listeners -----------------
+
+// Add New Intervention button logic
+addInterventionBtn.addEventListener("click", () => {
+  console.log("Intervention button clicked");
+
+  const formData = {
+    id: techsInput.value + "_" + startYearInput.value.toString(),
+    initialYear: startYearInput.value,
+    rolloverBudget: 0,
+    // yearlyBudgets: allocations.map((item) => item.budget),
+    optimizationStrategy: "tech-first",
+    tech: techsInput.value,
+    priorities: [],
+  };
+
+  console.log(">> FormData in click...");
+  console.log("formData", formData);
+
+  addNewIntervention(formData);
+
+  quickviewDefault.classList.remove("is-active"); // Close quickview after submission
+});
 ```
 
 ```js
@@ -779,11 +742,7 @@ const allocator = new BudgetAllocator(
   Number(start_year),
   Number(project_length)
 );
-```
 
-<!-- get budget allocations -->
-
-```js
 let initialAllocations;
 if (allocation_type === "linear") {
   initialAllocations = allocator.allocateLinear();
@@ -794,9 +753,7 @@ if (allocation_type === "linear") {
     flip_budget
   );
 }
-```
 
-```js
 const {svg} = allocator.visualise(
   initialAllocations,
   (changes) => {
@@ -806,6 +763,15 @@ const {svg} = allocator.visualise(
   400,
   200
 );
+
+```
+
+```js
+const theallocation = selected ? selected: allocator.recap().allocations;
+console.log(">> THE Allocation:", theallocation);
+
+// setAllocations(allocator.recap().allocations); // infinite loop
+
 ```
 
 
@@ -879,20 +845,23 @@ console.log(">> Loading intervention functions...");
 // >> Some functions related to creating and managing interventions
 
 // create config template
-function createConfigTemplate(start_year, allocations, technology) {
+function createConfigTemplate(startyear, budgetallocation, techs) {
   console.log(">> Creating config template...");
+  // setAllocations(allocator.recap().allocations);
   return {
-    id: technology + "_" + start_year.toString(),
-    initialYear: Number(start_year),
+    id: techs + "_" + startyear.toString(),
+    initialYear: Number(startyear),
     rolloverBudget: 0,
-    yearlyBudgets: allocations.map((item) => item.budget),
+    yearlyBudgets: budgetallocation.map((item) => item.budget),
     optimizationStrategy: "tech-first",
-    tech: technology,
+    tech: techs,
     priorities: [],
     filters: [],
   };
 }
+```
 
+```js
 // add new intervention
 function addIntervention(
   techConfig,
@@ -901,31 +870,26 @@ function addIntervention(
   filters = [],
   priorities = []
 ) {
-  const config = createConfigTemplate(allocation);
+  // const config = createConfigTemplate(allocation);
   // console.log("allocation configuration sent", config);
 
-  config.tech = {
-    name: techConfig.name,
-    config: techConfig.config,
-  };
+  // config.tech = {
+  //   name: techConfig.name,
+  //   config: techConfig.config,
+  // };
 
   // console.log("techConfig Name", techConfig);
 
   // Apply filters and priorities - append to existing
-  config.filters = [...(config.filters || []), ...filters];
-  config.priorities = [...(config.priorities || []), ...priorities];
+  // config.filters = [...(config.filters || []), ...filters];
+  // config.priorities = [...(config.priorities || []), ...priorities];
 
   // Create new intervention
-  const newIntervention = { ...config, id: Date.now() };
-  setIntervention([...interventions, newIntervention]); // Update interventions
+  // const newIntervention = { ...config, id: Date.now() };
+  // setIntervention([...interventions, newIntervention]); // Update interventions
 
   // Run the model and store the results
-  const modelResult = runModel(newIntervention, buildingsData);
-
-  // add a timeout to wait for the model to finish
-  setTimeout(() => {
-    setResults([...results, modelResult]);
-  }, 1000);
+  const modelResult = null;// runModel(newIntervention, buildingsData);
 
   // setResults([...results, modelResult]);
   // console.log("Intervention added:", interventions);
@@ -933,7 +897,8 @@ function addIntervention(
 
 // handle form submission: add new intervention
 function addNewIntervention(config) {
-
+  // const new_allocations = allocations;
+  // console.log("new_allocations", new_allocations);
   // if result exist, take the remaining budget from the latest year
   // and add it to this first year budget
   // if (results.length > 0) {
@@ -942,7 +907,10 @@ function addNewIntervention(config) {
   //   new_allocations[0].budget += latestResult.remainingBudget;
   // }
 
-  // let config = createConfigTemplate(start_year, allocations, technology);
+  // let thisconfig = createConfigTemplate(start_year, allocations, technology);
+
+  // const new_allocations = allocations.map((item) => item.budget);
+  // console.log("new_allocations", new_allocations);
 
   // console.log("new_allocations to be sent", new_allocations);
   console.log("Adding new intervention .., config: ", config);
@@ -990,40 +958,6 @@ function reorderIntervention(array, index, direction) {
   return array;
 }
 
-// Reorder intervention by id
-function reorderInterventionById(array, id, direction) {
-    // Find the index of the object with the given id
-    const index = array.findIndex(item => item.id === id);
-
-    if (index === -1) {
-        console.warn(`Item with id ${id} not found. No changes made.`);
-        return array; // Item not found
-    }
-
-    if (direction === "up") {
-        if (index === 0) {
-            console.warn("Item is already in the first position. No changes made.");
-            return array;
-        }
-        [array[index - 1], array[index]] = [array[index], array[index - 1]];
-    } else if (direction === "down") {
-        if (index === array.length - 1) {
-            console.warn("Item is already in the last position. No changes made.");
-            return array;
-        }
-        [array[index], array[index + 1]] = [array[index + 1], array[index]];
-    } else {
-        console.warn("Invalid direction. Use 'up' or 'down'.");
-        return array;
-    }
-
-    // Update the currentIndex property for each object
-    array.forEach((item, idx) => {
-        item.currentIndex = idx;
-    });
-
-    return array;
-}
 
 // remove intervention
 function removeIntervention(index) {
@@ -1038,108 +972,20 @@ function removeIntervention(index) {
   }
 }
 
-// Modify current intervention
-function modifyIntervention(
-  index,
-  newTechConfig = null,
-  newStartYear = null,
-  newAllocations = null,
-  newFilters = null,
-  newPriorities = null
-) {
-  // Validate index
-  if (index < 0 || index >= interventions.length) {
-    console.error("Invalid intervention index");
-    return;
-  }
-
-  // Get existing intervention
-  const intervention = { ...interventions[index] };
-
-  // Update values if provided
-  if (newTechConfig) {
-    intervention.tech = {
-      name: newTechConfig.name,
-      config: newTechConfig.config,
-    };
-  }
-
-  if (newStartYear) {
-    intervention.initial_year = Number(newStartYear);
-  }
-
-  if (newAllocations) {
-    intervention.yearly_budgets = newAllocations.map((item) => item.budget);
-    intervention.duration = newAllocations.length;
-  }
-
-  if (newFilters) {
-    intervention.filters = [...newFilters];
-  }
-
-  if (newPriorities) {
-    intervention.priorities = [...newPriorities];
-  }
-
-  // Update interventions array
-  const updatedInterventions = [...interventions];
-  updatedInterventions[index] = intervention;
-  setIntervention(updatedInterventions);
-
-  // Re-run model and update results
-  const modelResult = runModel(intervention, buildingsData);
-  const updatedResults = [...results];
-  updatedResults[index] = modelResult;
-  setResults(updatedResults);
-
-  console.log("Intervention modified:", intervention);
-}
 ```
 
 ```js
-const stackedResults = MiniDecarbModel.stackResults(results);
+// console.log(">> Loading model tech configuration...");
 
-// console.log("stackedResults", stackedResults);
-```
-
-```js
-console.log(">> Loading model tech configuration...");
-
-let config = {
-  initial_year: 0, // Number(start_year),
-  rolledover_budget: 0,
-  yearly_budgets: allocations.map((item) => item.budget),
-  tech: {},
-  priorities: [],
-};
+// let config = {
+//   initial_year: 0, // Number(start_year),
+//   rolledover_budget: 0,
+//   yearly_budgets: allocations.map((item) => item.budget),
+//   tech: {},
+//   priorities: [],
+// };
 
 
-
-function addTechConfig(techConfig) {
-  config.tech = {
-    name: techConfig.name,
-    config: techConfig.config,
-  };
-}
-
-function addPriority(name, order = "asc") {
-  const newPriority = {
-    name: name,
-    order: order,
-  };
-
-  config.priorities.push(newPriority);
-}
-
-function runModel(config, buildings) {
-  const model = new MiniDecarbModel(config, buildings);
-  model.runModel();
-  return model.getRecap();
-}
-
-// update config here
-// addTechConfig(listOfTech.ASHP);
-// // addPriority("substation_headroom", "asc");
 ```
 
 <!-- ---------------- Sortable Table ---------------- -->
@@ -1180,19 +1026,17 @@ const cols = [
 
 ```js
 console.log(">> Create sortable table...");
-const tableData = selectedIntervention
-  ? stackedResults.buildings
-  : buildingsData;
+const tableData = null;
+// const tableData = selectedIntervention
+//   ? stackedResults.buildings
+//   : buildingsData;
 
-const table = new createTable(tableData, cols, (changes) => {
-  console.log("Table changed:", changes);
-  setSelected(changes.selection);
-});
+// const table = new createTable(tableData, cols, (changes) => {
+//   console.log("Table changed:", changes);
+//   setSelected(changes.selection);
+// });
 ```
 
-```js
-// console.log("Test inferring data types", tableData);
-```
 
 <!-- ---------------- Glyph Maps ---------------- -->
 
@@ -1403,73 +1247,7 @@ function drawDetailOnDemand(width, height) {
 }
 ```
 
-```js
-function drawRadialMultivariateGlyph(normalisedData, x, y, size, ctx) {
-  let angle = (2 * Math.PI) / normalisedData.length;
-  let centerX = x;
-  let centerY = y;
-  let radius = size / 2;
-  // console.log(radius);
 
-  //get a colour palette
-  let colors = d3
-    .scaleOrdinal(d3.schemeTableau10)
-    .domain(d3.range(normalisedData.length));
-
-  normalisedData.map((d, i) => {
-    drawPieSlice(
-      ctx,
-      centerX,
-      centerY,
-      radius * 0.9,
-      angle * (i + 0.1),
-      angle * (i + 0.9),
-      "rgba(0,0,0,0.05)"
-    );
-    drawPieSlice(
-      ctx,
-      centerX,
-      centerY,
-      radius * Math.sqrt(d) * 0.95,
-      angle * (i + 0.1),
-      angle * (i + 0.9),
-      colors(i)
-    );
-  });
-}
-```
-
-```js
-function drawPieSlice(ctx, cx, cy, r, angleStart, angleEnd, color) {
-  ctx.beginPath();
-  ctx.moveTo(cx, cy);
-  ctx.arc(cx, cy, r, angleStart, angleEnd);
-  ctx.lineTo(cx, cy);
-  ctx.fillStyle = color;
-  ctx.fill();
-}
-```
-
-```js
-// joining attributes to geodata
-// const regular_geodata_withproperties = joinCensusDataToGeoJSON(
-//   [...flatData],
-//   regular_geodata
-// );
-// const cartogram_geodata_withproperties = joinCensusDataToGeoJSON(
-//   [...flatData],
-//   cartogram_geodata
-// );
-// console.log("regular_geodata_withproperties", regular_geodata_withproperties);
-// console.log(
-//   "cartogram_geodata_withproperties",
-//   cartogram_geodata_withproperties
-// );
-```
-
-```js
-// console.log("Flat Data", flatData);
-```
 
 ```js
 console.log(">> Geo-enrichment...");
@@ -1908,93 +1686,9 @@ function applyTransformationToShapes(geographicShapes) {
 function createGlyphMap(map_aggregate, { width, height }) {
   // console.log(width, height);
   if (map_aggregate == "Building Level") {
-    return createLeafletMap(selected, width, height);
+    return null;//createLeafletMap(selected, width, height);
   } else if (map_aggregate == "LSOA Level") {
     return morphGlyphMap;
   }
 }
 ```
-
-```js
-function insideCell(c, x, y) {
-  // console.log(x + " " + y  + " " + c.getXCentre() + " " + c.getYCentre() + " " + c.getCellSize());
-  if (
-    x >= c.getXCentre() - c.getCellSize() &&
-    x <= c.getXCentre() + c.getCellSize() &&
-    y >= c.getYCentre() - c.getCellSize() &&
-    y <= c.getYCentre() + c.getCellSize()
-  )
-    return true;
-  return false;
-}
-```
-
-```js
-console.log(">> Convert to GeoJSON...");
-
-function convertToGeoJSON(objects) {
-  return {
-    type: "FeatureCollection",
-    features: objects.map((obj) => ({
-      type: "Feature",
-      geometry: {
-        type: "Point",
-        coordinates: [obj.data.x, obj.data.y],
-      },
-      properties: { ...obj.data },
-    })),
-  };
-}
-
-// const mapCluster = convertToGeoJSON(selected);
-// console.log("mapcluster", mapCluster);
-// console.log("selectedIntervention", selected);
-```
-
-```js
-function createLeafletMap(data, width = 600, height = 400) {
-  // Create the map container div
-  const mapDiv = document.createElement("div");
-  mapDiv.style.width = `${width}px`;
-  mapDiv.style.height = `${height}px`;
-  mapDiv.id = "leafletMap"; // Unique ID for Leaflet to hook onto
-
-  // Append the mapDiv to the body or another container if desired
-  document.body.appendChild(mapDiv);
-
-  // Initialize the Leaflet map
-  const map = L.map(mapDiv.id).setView([0, 0], 2); // Default view (centered on the world)
-
-  // Add a tile layer
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    attribution: "© OpenStreetMap contributors",
-  }).addTo(map);
-
-  // Add markers for each data point
-  if (Array.isArray(data) && data.length > 0) {
-    const latLngs = [];
-    data.forEach(({ x, y }) => {
-      if (typeof x === "number" && typeof y === "number") {
-        const marker = L.marker([y, x]).addTo(map);
-        latLngs.push([y, x]);
-      }
-    });
-
-    // Adjust the map view to fit all markers
-    if (latLngs.length > 0) {
-      const bounds = L.latLngBounds(latLngs);
-      map.fitBounds(bounds);
-    }
-  } else {
-    console.warn("No valid data points to display on the map.");
-  }
-
-  return mapDiv;
-}
-```
-
-```js
-// createLeafletMap(selected);
-```
-
-<!-- <div id="mapContainer"></div> -->

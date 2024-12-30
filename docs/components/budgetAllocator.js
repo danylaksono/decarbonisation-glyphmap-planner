@@ -15,52 +15,16 @@ export class BudgetAllocator {
     this.allocations = [];
   }
 
-  // allocateBudget(method = "linear", invert = false) {
-  //   const allocations = [];
-  //   let totalAllocated = 0;
-
-  //   for (let i = 0; i < this.projectLength; i++) {
-  //     let budgetForYear;
-
-  //     // Calculate allocation based on chosen method
-  //     switch (method) {
-  //       case "linear":
-  //         budgetForYear = this.totalBudget / this.projectLength;
-  //         break;
-  //       case "exponential":
-  //         budgetForYear =
-  //           (this.totalBudget * Math.pow(1.1, i)) /
-  //           Math.pow(1.1, this.projectLength - 1);
-  //         break;
-  //       case "sigmoid":
-  //         const x = (i - this.projectLength / 2) / (this.projectLength / 8);
-  //         budgetForYear =
-  //           this.totalBudget / (1 + Math.exp(-x)) - this.totalBudget / 2;
-  //         break;
-  //       default:
-  //         throw new Error("Unknown allocation method");
-  //     }
-
-  //     if (invert) {
-  //       budgetForYear = this.totalBudget - budgetForYear;
-  //     }
-
-  //     allocations.push(budgetForYear);
-  //     totalAllocated += budgetForYear;
-  //   }
-
-  //   // Normalize allocations to ensure the total allocated budget matches the total budget
-  //   const normalizationFactor = this.totalBudget / totalAllocated;
-  //   return allocations.map((allocation) => allocation * normalizationFactor);
-  // }
-
   /**
    * allocate the budget linearly over the project length
    * @returns {Array} array of annual allocations
    */
   allocateLinear() {
     const yearlyBudget = this.totalBudget / this.projectLength;
-    this.allocations = this.years.map((year) => ({ year, budget: yearlyBudget }));
+    this.allocations = this.years.map((year) => ({
+      year,
+      budget: yearlyBudget,
+    }));
     // return this.years.map((year) => ({ year, budget: yearlyBudget }));
     return this.allocations;
   }
@@ -73,39 +37,24 @@ export class BudgetAllocator {
    * @returns {Array} array of annual allocations
    */
   allocateCustom(curveType, options = {}, invert = false) {
-    let curveFunction;
     const { exponent = 2 } = options;
-
-    // create a scale based on the selected curveType
-    switch (curveType) {
-      case "linear":
-        curveFunction = d3.scaleLinear().domain([0, 1]).range([1, 10]);
-        break;
-      case "log":
-        curveFunction = d3
+    const curveFunctions = {
+      linear: () => d3.scaleLinear().domain([0, 1]).range([1, 10]),
+      log: () =>
+        d3
           .scaleLog()
           .domain([1, this.projectLength])
           .range([1, 10])
-          .clamp(true);
-        break;
-      case "sqrt":
-        curveFunction = d3.scaleSqrt().domain([0, 1]).range([1, 10]);
-        break;
-      case "exp":
-        curveFunction = d3
-          .scalePow()
-          .exponent(exponent)
-          .domain([0, 1])
-          .range([1, 10]);
-        break;
-      case "quad":
-        curveFunction = d3.scalePow().exponent(2).domain([0, 1]).range([1, 10]);
-        break;
-      case "cubic":
-        curveFunction = d3.scalePow().exponent(3).domain([0, 1]).range([1, 10]);
-        break;
-      default:
-        throw new Error(`Unsupported curve type: ${curveType}`);
+          .clamp(true),
+      sqrt: () => d3.scaleSqrt().domain([0, 1]).range([1, 10]),
+      exp: () => d3.scalePow().exponent(exponent).domain([0, 1]).range([1, 10]),
+      quad: () => d3.scalePow().exponent(2).domain([0, 1]).range([1, 10]),
+      cubic: () => d3.scalePow().exponent(3).domain([0, 1]).range([1, 10]),
+    };
+
+    const curveFunction = curveFunctions[curveType];
+    if (!curveFunction) {
+      throw new Error(`Unsupported curve type: ${curveType}`);
     }
 
     // weights
@@ -161,9 +110,7 @@ export class BudgetAllocator {
    * @returns {HTMLElement} - SVG element containing the visualization
    */
   visualise(allocations, onUpdate, width = 600, height = 200) {
-    // const allocations = this.allocations;
-    // const width = width || 640;
-    // const height = height || 200;
+    console.log("<< Visualising budget allocations");
     const margin = { top: 20, right: 30, bottom: 40, left: 80 };
 
     let currentAllocations = allocations.map((d) => ({ ...d }));
@@ -279,19 +226,30 @@ export class BudgetAllocator {
         tooltip.style("visibility", "hidden");
       });
 
+    console.log("circle created", circles);
+
     const drag = d3
       .drag()
       .on("drag", (event, d) => {
+        console.log("Drag event triggered");
+        console.log("Current d:", d);
+        console.log("Current workingAllocations:", currentAllocations);
         const newY = Math.max(
           margin.top,
           Math.min(height - margin.bottom, event.y)
         );
         const newBudget = yScale.invert(newY);
-        d.budget = newBudget;
+
+        // Find and update the allocation for this year
+        const index = allocations.findIndex((a) => a.year === d.year);
+        if (index !== -1) {
+          allocations[index].budget = newBudget;
+          this.allocations[index].budget = newBudget;
+        }
 
         // Update circles and line
         circles.data(allocations).attr("cy", (d) => yScale(d.budget));
-        linePath.datum(allocations).attr("d", line).attr("stroke", "#e91e63");
+        linePath.datum(allocations).attr("d", line);
 
         // Update total display
         const totalAllocated = d3.sum(allocations, (d) => d.budget);
@@ -299,17 +257,25 @@ export class BudgetAllocator {
           `Total: ${totalAllocated.toFixed(2)} / ${this.totalBudget}`
         );
 
-        // currentAllocations = allocations.map((d) => ({ ...d }));
-        // console.log("currentAllocations", currentAllocations);
+        this.allocations = allocations.map((d) => ({ ...d }));
+        console.log("Updated allocations:", this.allocations);
+
+        // Call the onUpdate callback with current allocations
+        if (onUpdate) {
+          console.log("onUpdate triggered");
+          onUpdate([...allocations]); // Pass a copy of current allocations
+        }
       })
       .on("end", () => {
-        // Update currentAllocations once drag is released
-        // currentAllocations = allocations.map((d) => ({ ...d }));
+        console.log("Drag end event triggered");
         this.allocations = allocations.map((d) => ({ ...d }));
-        if (onUpdate) onUpdate(currentAllocations);
+        if (onUpdate) {
+          onUpdate([...this.allocations]);
+        }
       });
 
     // Apply drag behavior to circles
+    console.log("attach drag behavior to circles");
     circles.call(drag);
 
     // Axis labels
@@ -329,7 +295,7 @@ export class BudgetAllocator {
 
     // return svg.node();
     return {
-      svg: svg.node()
+      svg: svg.node(),
       // getAllocations: () => currentAllocations,
     };
   }
