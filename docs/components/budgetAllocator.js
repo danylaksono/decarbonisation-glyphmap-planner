@@ -8,6 +8,11 @@ export class BudgetAllocator {
    * @param {number} projectLength - duration of the project in years
    */
   constructor(totalBudget, startYear, projectLength) {
+    if (totalBudget <= 0 || projectLength <= 0) {
+      throw new Error(
+        "Total budget and project length must be positive numbers."
+      );
+    }
     this.totalBudget = totalBudget;
     this.startYear = startYear;
     this.projectLength = projectLength;
@@ -37,6 +42,11 @@ export class BudgetAllocator {
    * @returns {Array} array of annual allocations
    */
   allocateCustom(curveType, options = {}, invert = false) {
+    if (
+      !["linear", "log", "sqrt", "exp", "quad", "cubic"].includes(curveType)
+    ) {
+      throw new Error(`Unsupported curve type: ${curveType}`);
+    }
     const { exponent = 2 } = options;
     const curveFunctions = {
       linear: () => d3.scaleLinear().domain([0, 1]).range([1, 10]),
