@@ -126,6 +126,7 @@ export class BudgetAllocator {
     const margin = { top: 20, right: 30, bottom: 40, left: 80 };
 
     let currentAllocations = allocations.map((d) => ({ ...d }));
+    const initialAllocations = allocations.map((d) => ({ ...d }));
 
     const totalBudget = this.totalBudget;
     const numYears = this.projectLength;
@@ -170,6 +171,16 @@ export class BudgetAllocator {
       .append("g")
       .attr("transform", `translate(${margin.left},0)`)
       .call(d3.axisLeft(yScale).tickFormat(formatYAxis));
+
+    // Draw initial allocations line (thin grey dashed line)
+    svg
+      .append("path")
+      .datum(initialAllocations)
+      .attr("fill", "none")
+      .attr("stroke", "#ccc")
+      .attr("stroke-width", 1)
+      .attr("stroke-dasharray", "4 2")
+      .attr("d", line);
 
     const linePath = svg
       .append("path")
@@ -233,7 +244,7 @@ export class BudgetAllocator {
         d.budget = newBudget;
 
         circles.data(allocations).attr("cy", (d) => yScale(d.budget));
-        linePath.datum(allocations).attr("d", line).attr("stroke", "#e91e63");
+        linePath.datum(allocations).attr("d", line); //.attr("stroke", "#e91e63");
 
         const totalAllocated = d3.sum(allocations, (d) => d.budget);
         totalDisplay.text(
