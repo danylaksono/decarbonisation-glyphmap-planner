@@ -240,7 +240,12 @@ export class BudgetAllocator {
           margin.top,
           Math.min(height - margin.bottom, event.y)
         );
-        const newBudget = yScale.invert(newY);
+        // const newBudget = yScale.invert(newY);
+        // d.budget = newBudget;
+        let newBudget = yScale.invert(newY);
+
+        // Snap to nearest 10
+        newBudget = Math.round(newBudget / 10) * 10;
         d.budget = newBudget;
 
         circles.data(allocations).attr("cy", (d) => yScale(d.budget));
@@ -248,7 +253,7 @@ export class BudgetAllocator {
 
         const totalAllocated = d3.sum(allocations, (d) => d.budget);
         totalDisplay.text(
-          `Total: ${totalAllocated.toFixed(2)} / ${this.totalBudget}`
+          `Total: ${totalAllocated.toFixed(0)} / ${this.totalBudget}`
         );
 
         this.allocations = allocations.map((d) => ({ ...d }));
