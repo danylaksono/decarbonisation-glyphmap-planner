@@ -9,7 +9,7 @@ html {
 
 /* disable built-in loading spinner */
 .observablehq--loading::before {
-  display: none;
+  display: none !important;
 }
 
 #observablehq-main,

@@ -94,6 +94,10 @@ export class BudgetAllocator {
     return this.allocations;
   }
 
+  getAllocations() {
+    return this.allocations;
+  }
+
   /**
    * recap of the allocation, including input parameters and annual budget allocation
    * ensures that the total allocation equals the initial budget
@@ -279,8 +283,9 @@ export class BudgetAllocator {
       .attr("text-anchor", "middle")
       .text("Budget Allocation");
 
-    return {
-      svg: svg.node(),
-    };
+    return svg.node();
+    // return {
+    //   svg: svg.node(),
+    // };
   }
 }

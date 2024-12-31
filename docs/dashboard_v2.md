@@ -34,9 +34,13 @@ import {
 } from "./components/gridded-glyphmaps/index.min.js";
 import { OSGB } from "./components/osgb/index.js";
 import { BudgetAllocator } from "./components/decarb-model/budget-allocator.js";
-import { InterventionManager, MiniDecarbModel } from "./components/decarb-model/mini-decarbonisation.js";
+import {
+  InterventionManager,
+  MiniDecarbModel,
+} from "./components/decarb-model/mini-decarbonisation.js";
+import { createTimelineInterface } from "./components/decarb-model/timeline.js";
+
 import { createTable } from "./components/sorterTable.js";
-import { createTimelineInterface } from "./components/timeline.js";
 import {
   inferTypes,
   enrichGeoData,
@@ -118,8 +122,8 @@ const buildingsData = [...oxford_data];
 ```
 
 ```js
-// const flatData = buildingsData.map((p) => ({ ...p }));
-// const flatData = buildingsData.map((p) => Object.assign({}, p));
+// const flatData = buildingsData.map((p) => ({ ...p })); // very slow
+// const flatData = buildingsData.map((p) => Object.assign({}, p)); // even slower
 const allColumns = Object.keys(buildingsData[0]);
 console.log(">>  Loading Data Done");
 ```
@@ -255,55 +259,6 @@ const [currentConfig, setCurrentConfig] = useState({}); // current configuration
   </div>
 </div>
 
-
-### Interventions
-
-```js
-allocator;
-// --- Analyze Stacked Results ---
-display(html`<p> "Stacked Recap Summary:" </p>`)
-display(stackedRecap.summary);
-
-display(html`<p> "Stacked Recap Yearly Summary:" </p>`);
-display( stackedRecap.yearlySummary);
-
-display(html`<p> "Stacked Recap Buildings:" </p>`);
-display( stackedRecap.buildings);
-
-display(html`<p> "Stacked Recap Intervened Buildings:" </p>`);
-display(
-  stackedRecap.intervenedBuildings
-);
-
-display(html`<p> "List of Intervention Results:" </p>`);
-display(
-  stackedRecap.recap
-);
-```
-
-```js
-// update timeline drawing
-function updateTimeline() {
-  const timelinePanel = document.getElementById("timeline-panel");
-  timelinePanel.innerHTML = "";
-  timelinePanel.appendChild(
-    createTimelineInterface(
-      interventions,
-      (change) => {
-        console.log("timeline change", change);
-      },
-      (click) => {
-        selectIntervention(click);
-        console.log("timeline clicked block", interventions[click]);
-      },
-      450,
-      200
-    )
-  );
-}
-```
-
-
 <!-------- MODAL/QVIEW -------->
 <div id="quickviewDefault" class="quickview is-left">
   <header class="quickview-header">
@@ -375,7 +330,7 @@ function updateTimeline() {
         </div>
         <!-- visual budget allocator  -->
         <div class="field">
-          ${svg}
+          ${budgetVisualiser}
         </div>
       </form>
     </div>
@@ -386,6 +341,66 @@ function updateTimeline() {
   </footer>
 </div>
 
+```js
+const openQuickviewButton = document.getElementById("openQuickviewButton");
+const closeQuickviewButton = document.getElementById("closeQuickviewButton");
+const quickviewDefault = document.getElementById("quickviewDefault");
+const cancelButton = document.getElementById("cancelButton");
+
+openQuickviewButton.addEventListener("click", () => {
+  quickviewDefault.classList.add("is-active");
+});
+
+closeQuickviewButton.addEventListener("click", () => {
+  quickviewDefault.classList.remove("is-active");
+});
+
+cancelButton.addEventListener("click", () => {
+  quickviewDefault.classList.remove("is-active");
+});
+```
+
+### Interventions
+
+```js
+// --- Analyze Stacked Results ---
+display(html`<p>"Stacked Recap Summary:"</p>`);
+display(stackedRecap.summary);
+
+display(html`<p>"Stacked Recap Yearly Summary:"</p>`);
+display(stackedRecap.yearlySummary);
+
+display(html`<p>"Stacked Recap Buildings:"</p>`);
+display(stackedRecap.buildings);
+
+display(html`<p>"Stacked Recap Intervened Buildings:"</p>`);
+display(stackedRecap.intervenedBuildings);
+
+display(html`<p>"List of Intervention Results:"</p>`);
+display(stackedRecap.recap);
+```
+
+```js
+// update timeline drawing
+// function updateTimeline() {
+//   const timelinePanel = document.getElementById("timeline-panel");
+//   timelinePanel.innerHTML = "";
+//   timelinePanel.appendChild(
+//     createTimelineInterface(
+//       interventions,
+//       (change) => {
+//         console.log("timeline change", change);
+//       },
+//       (click) => {
+//         selectIntervention(click);
+//         console.log("timeline clicked block", interventions[click]);
+//       },
+//       450,
+//       200
+//     )
+//   );
+// }
+```
 
 <!-- ---------------- Intervention Managers ---------------- -->
 
@@ -450,34 +465,11 @@ console.log(">> Stacked Result from Model Run...");
 const stackedRecap = manager.getStackedResults();
 ```
 
-
 ```js
-const openQuickviewButton = document.getElementById("openQuickviewButton");
-const closeQuickviewButton = document.getElementById("closeQuickviewButton");
-const quickviewDefault = document.getElementById("quickviewDefault");
-const cancelButton = document.getElementById("cancelButton");
-
-openQuickviewButton.addEventListener("click", () => {
-  quickviewDefault.classList.add("is-active");
-});
-
-closeQuickviewButton.addEventListener("click", () => {
-  quickviewDefault.classList.remove("is-active");
-});
-
-cancelButton.addEventListener("click", () => {
-  quickviewDefault.classList.remove("is-active");
-});
-
-const addInterventionBtn = document.getElementById("addInterventionBtn");
-
-```
-
-```js
-console.log(">> Preparing Interventions...");
+console.log(">> Select Interventions...");
 // for dealing with selected list items
 let selectedInterventionIndex = null; // Track the selected intervention index
-// console.log("selectedInterventionIndex: ", selectedInterventionIndex);
+// // console.log("selectedInterventionIndex: ", selectedInterventionIndex);
 
 function selectIntervention(index) {
   // Update the selected index
@@ -493,7 +485,10 @@ function selectIntervention(index) {
   const selectedItem = document.querySelector(
     `#interventions-list li:nth-child(${index + 1})`
   );
-  setSelectedIntervention({ ...results[selectedInterventionIndex], index: selectedInterventionIndex });
+  setSelectedIntervention({
+    ...results[selectedInterventionIndex],
+    index: selectedInterventionIndex,
+  });
   // console.log("selectedItem: ", results[selectedInterventionIndex]);
   // setSelectedIntervention(selectedItem);
   if (selectedItem) selectedItem.classList.add("selected");
@@ -509,16 +504,9 @@ if (interventions.length === 0) {
 <!-- ---------------- Input form declarations ---------------- -->
 
 ```js
-console.log(">> Creating input forms...");
-// list of decarb technologies
+// --- technology ---
 const techsInput = Inputs.select(
-  [
-    "PV",
-    "ASHP",
-    "GSHP",
-    "Insulation",
-    "Optimise All",
-  ],
+  ["PV", "ASHP", "GSHP", "Insulation", "Optimise All"],
   {
     // label: html`<b>Technology</b>`,
     value: "ASHP",
@@ -533,7 +521,10 @@ Object.assign(techsInput, {
 });
 const technology = Generators.input(techsInput);
 // display(techsInput);
+```
 
+```js
+// --- total budget ---
 const totalBudgetInput = html`<input
   id="totalBudgetInput"
   class="input"
@@ -566,8 +557,10 @@ totalBudgetInput.addEventListener("focus", (event) => {
   // Remove formatting to allow direct editing
   event.target.value = event.target.value.replace(/,/g, "").replace(/£/g, "");
 });
+```
 
-// Start Year
+```js
+// --- start year ---
 const startYearInput = html`<input
   class="input"
   type="number"
@@ -583,8 +576,10 @@ Object.assign(startYearInput, {
 });
 // console.log("startYearInput.style", startYearInput.columns);
 const start_year = Generators.input(startYearInput);
+```
 
-// Project Length
+```js
+// --- project length ---
 const projectLengthInput = html`<input
   id="projectLengthInput"
   class="slider is-fullwidth"
@@ -600,8 +595,10 @@ Object.assign(projectLengthInput, {
   onchange: (event) => event.currentTarget.dispatchEvent(new Event("input")),
 });
 const project_length = Generators.input(projectLengthInput);
+```
 
-// Allocation Type
+```js
+// --- allocation type ---
 const allocationTypeInput = Inputs.radio(["linear", "sqrt", "exp", "cubic"], {
   // label: html`<b>Allocation Type</b>`,
   value: "linear",
@@ -611,7 +608,10 @@ Object.assign(allocationTypeInput, {
   onchange: (event) => event.currentTarget.dispatchEvent(new Event("input")),
 });
 const allocation_type = Generators.input(allocationTypeInput);
+```
 
+```js
+// --- building priority ---
 const priorityInput = Inputs.form([
   Inputs.select([...allColumns, "None"], {
     label: html`<b>Sorting Priority</b>`,
@@ -625,7 +625,10 @@ const priorityInput = Inputs.form([
   }),
 ]);
 const priority_input = Generators.input(priorityInput);
+```
 
+```js
+// --- building filter ---
 const filterInput = Inputs.form([
   Inputs.select([...allColumns, "None"], {
     label: html`<b>Filter Column</b>`,
@@ -639,7 +642,10 @@ const filterInput = Inputs.form([
   }),
 ]);
 const filter_input = Generators.input(filterInput);
+```
 
+```js
+// --- glyphmap type ---
 const glyphmapTypeInput = Inputs.radio(
   ["Interventions", "Decarbonisation Time series"],
   {
@@ -648,13 +654,19 @@ const glyphmapTypeInput = Inputs.radio(
   }
 );
 const glyphmapType = Generators.input(glyphmapTypeInput);
+```
 
+```js
+// --- map aggregation ---
 const mapAggregationInput = Inputs.radio(["LSOA Level", "Building Level"], {
   label: "Map Aggregated at",
   value: "LSOA Level",
 });
 const map_aggregate = Generators.input(mapAggregationInput);
+```
 
+```js
+// --- morph factor ---
 const morphFactorInput = html`<input
   style="width: 100%; max-width:450px;"
   type="range"
@@ -668,22 +680,36 @@ Object.assign(morphFactorInput, {
   onchange: (event) => event.currentTarget.dispatchEvent(new Event("input")),
 });
 const morph_factor = Generators.input(morphFactorInput);
+```
 
-//  flip button
+```js
+// --- flip button ---
 const flipButtonInput = Inputs.toggle({ label: "Flip", value: false });
 Object.assign(flipButtonInput, {
   // oninput: (event) => event.isTrusted && event.stopImmediatePropagation(),
   onchange: (event) => event.currentTarget.dispatchEvent(new Event("input")),
 });
 const flip_budget = Generators.input(flipButtonInput);
+```
 
-// play button
+```js
+// --- play button ---
 const playButton = html`<button class="btn edit" style="margin-top: 10px;">
   <i class="fas fa-play"></i>&nbsp;
 </button>`;
+```
 
+```js
+// Debounced version of addNewIntervention
+const debouncedAddNewIntervention = _.debounce((formData) => {
+  console.log("Adding new intervention with data:", formData);
+  addNewIntervention(formData);
+}, 1000);
+```
 
+```js
 // ----------------- QuickView Event Listeners -----------------
+const addInterventionBtn = document.getElementById("addInterventionBtn");
 
 // Add New Intervention button logic
 addInterventionBtn.addEventListener("click", () => {
@@ -693,17 +719,13 @@ addInterventionBtn.addEventListener("click", () => {
     id: techsInput.value + "_" + startYearInput.value.toString(),
     initialYear: startYearInput.value,
     rolloverBudget: 0,
-    // yearlyBudgets: allocations.map((item) => item.budget),
     optimizationStrategy: "tech-first",
     tech: techsInput.value,
     priorities: [],
   };
 
-  console.log(">> FormData in click...");
-  console.log("formData", formData);
-
-  addNewIntervention(formData);
-
+  console.log(">> Prepared FormData:", formData);
+  debouncedAddNewIntervention(formData);
   quickviewDefault.classList.remove("is-active"); // Close quickview after submission
 });
 ```
@@ -731,10 +753,10 @@ document
 ```js
 console.log(">> Budget Allocator...");
 
-console.log("  .. total_budget", getNumericBudget(total_budget));
-console.log("  .. start_year", start_year);
-console.log("  .. project_length", project_length);
-console.log("  .. flip_budget", flip_budget);
+// console.log("  .. total_budget", getNumericBudget(total_budget));
+// console.log("  .. start_year", start_year);
+// console.log("  .. project_length", project_length);
+// console.log("  .. flip_budget", flip_budget);
 
 // Budget Allocator
 const allocator = new BudgetAllocator(
@@ -749,31 +771,27 @@ if (allocation_type === "linear") {
 } else {
   initialAllocations = allocator.allocateCustom(
     allocation_type,
-    { exponent: 2 },
+    { exponent: 4 },
     flip_budget
   );
 }
+```
 
-const {svg} = allocator.visualise(
+```js
+const budgetVisualiser = allocator.visualise(
   initialAllocations,
   (changes) => {
-    console.log("data changed:", changes);
+    // console.log("data changed:", changes);
     setSelected(changes);
   },
   400,
   200
 );
-
 ```
 
 ```js
-const theallocation = selected ? selected: allocator.recap().allocations;
-console.log(">> THE Allocation:", theallocation);
-
-// setAllocations(allocator.recap().allocations); // infinite loop
-
+setAllocations(allocator.getAllocations());
 ```
-
 
 ```js
 // store intervention results
@@ -781,10 +799,8 @@ let interventions = getIntervention;
 let results = getResults;
 ```
 
-<!-- dealing with observable input reactivity -->
-
 ```js
-// dealing with observable input reactivity
+// <!-- dealing with observable input reactivity -->
 // two ways Obs input
 function set(input, value) {
   input.value = value;
@@ -889,55 +905,31 @@ function addIntervention(
   // setIntervention([...interventions, newIntervention]); // Update interventions
 
   // Run the model and store the results
-  const modelResult = null;// runModel(newIntervention, buildingsData);
+  const modelResult = null; // runModel(newIntervention, buildingsData);
 
   // setResults([...results, modelResult]);
   // console.log("Intervention added:", interventions);
- }
-
-// handle form submission: add new intervention
-function addNewIntervention(config) {
-  // const new_allocations = allocations;
-  // console.log("new_allocations", new_allocations);
-  // if result exist, take the remaining budget from the latest year
-  // and add it to this first year budget
-  // if (results.length > 0) {
-  //   let latestResult = results[results.length - 1];
-  //   console.log("result exist:", latestResult);
-  //   new_allocations[0].budget += latestResult.remainingBudget;
-  // }
-
-  // let thisconfig = createConfigTemplate(start_year, allocations, technology);
-
-  // const new_allocations = allocations.map((item) => item.budget);
-  // console.log("new_allocations", new_allocations);
-
-  // console.log("new_allocations to be sent", new_allocations);
-  console.log("Adding new intervention .., config: ", config);
-
-  // manager.addIntervention(config);
-
-  // triggerModelRun();
-
-  // Retrieve techConfig from the selected technology
-  // const techConfig = listOfTech[new_tech];
-  // console.log("techConfig", techConfig);
-
-  // Example filters and priorities
-  // const filters = [(b) => b.properties["substation_headroom"] >= 500];
-  // const priorities = [{ name: "substation_capacity_rating", order: "asc" }];
-  const filters = [];
-  const priorities = [];
-
-  // addIntervention(
-  //   techConfig,
-  //   // new_start_year,
-  //   new_allocations,
-  //   filters,
-  //   priorities
-  // );
 }
+```
 
+```js
+function randomFunction() {
+  console.log("=================Random function called!");
+  // console.log("allocation", view(theallocation));
+}
+// return randomFunction();
+```
+
+```js
+// handle form submission: add new intervention
+function addNewIntervention(data) {
+  const newAllocation = allocations;
+  console.log({ ...data, yearlyBudgets: newAllocation });
+  console.log("newAllocation", newAllocation);
+}
+```
+
+```js
 // Reorder intervention
 function reorderIntervention(array, index, direction) {
   if (direction === "up" && index > 0) {
@@ -948,7 +940,7 @@ function reorderIntervention(array, index, direction) {
     [array[index], array[index + 1]] = [array[index + 1], array[index]];
   }
   console.log("Interventions reordered:", array);
-  updateTimeline();
+  // updateTimeline();
 
   // Update the InterventionManager with the new order
   if (manager) {
@@ -958,7 +950,6 @@ function reorderIntervention(array, index, direction) {
   return array;
 }
 
-
 // remove intervention
 function removeIntervention(index) {
   if (index >= 0 && index < interventions.length) {
@@ -966,26 +957,11 @@ function removeIntervention(index) {
 
     // when intervention is removed, remove the corresponding results
     setResults(results.filter((_, i) => i !== index));
-    updateTimeline();
+    // updateTimeline();
   } else {
     console.log("Invalid index.");
   }
 }
-
-```
-
-```js
-// console.log(">> Loading model tech configuration...");
-
-// let config = {
-//   initial_year: 0, // Number(start_year),
-//   rolledover_budget: 0,
-//   yearly_budgets: allocations.map((item) => item.budget),
-//   tech: {},
-//   priorities: [],
-// };
-
-
 ```
 
 <!-- ---------------- Sortable Table ---------------- -->
@@ -1036,7 +1012,6 @@ const tableData = null;
 //   setSelected(changes.selection);
 // });
 ```
-
 
 <!-- ---------------- Glyph Maps ---------------- -->
 
@@ -1246,8 +1221,6 @@ function drawDetailOnDemand(width, height) {
   return canvas;
 }
 ```
-
-
 
 ```js
 console.log(">> Geo-enrichment...");
@@ -1686,7 +1659,7 @@ function applyTransformationToShapes(geographicShapes) {
 function createGlyphMap(map_aggregate, { width, height }) {
   // console.log(width, height);
   if (map_aggregate == "Building Level") {
-    return null;//createLeafletMap(selected, width, height);
+    return null; //createLeafletMap(selected, width, height);
   } else if (map_aggregate == "LSOA Level") {
     return morphGlyphMap;
   }
