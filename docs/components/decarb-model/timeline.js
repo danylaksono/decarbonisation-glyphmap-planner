@@ -7,15 +7,53 @@ export function createTimelineInterface(
   width = 800,
   height = 400
 ) {
+  // validate interventions
+  console.log("Received interventions for timeline: ", interventions);
+
+  if (!Array.isArray(interventions)) {
+    throw new Error("Interventions must be an array");
+  }
+  // validate intervention contents
+  interventions.forEach((intervention, i) => {
+    if (typeof intervention !== "object") {
+      throw new Error(`Intervention at index ${i} is not an object`);
+    }
+    if (typeof intervention.tech !== "string") {
+      throw new Error(`Intervention at index ${i} is missing a 'tech' string`);
+    }
+    if (typeof intervention.initialYear !== "number") {
+      throw new Error(
+        `Intervention '${intervention.tech}' is missing an 'initialYear' number`
+      );
+    }
+    if (typeof intervention.duration !== "number") {
+      throw new Error(
+        `Intervention '${intervention.tech}' is missing a 'duration' number`
+      );
+    }
+    if (intervention.yearlyBudgets) {
+      if (!Array.isArray(intervention.yearlyBudgets)) {
+        throw new Error(
+          `Intervention '${intervention.tech}' has a 'yearlyBudgets' property that is not an array`
+        );
+      }
+      if (intervention.yearlyBudgets.length !== intervention.duration) {
+        throw new Error(
+          `Intervention '${intervention.tech}' has a 'yearlyBudgets' array with the wrong length`
+        );
+      }
+    }
+  });
+
   // Set up dimensions and margins for the SVG
   const margin = { top: 20, right: 30, bottom: 30, left: 40 };
   const innerWidth = width - margin.left - margin.right;
   const innerHeight = height - margin.top - margin.bottom;
 
   // Calculate the year range from our data
-  const minYear = Math.min(...interventions.map((d) => d.initial_year));
+  const minYear = Math.min(...interventions.map((d) => d.initialYear));
   const maxYear = Math.max(
-    ...interventions.map((d) => d.initial_year + d.duration)
+    ...interventions.map((d) => d.initialYear + d.duration)
   );
 
   // Create scales for x-axis (years) and y-axis (intervention rows)
@@ -84,11 +122,11 @@ export function createTimelineInterface(
   blocks
     .append("rect")
     .attr("class", "block")
-    .attr("x", (d) => xScale(d.initial_year))
+    .attr("x", (d) => xScale(d.initialYear))
     .attr("y", (d, i) => yScale(i))
     .attr(
       "width",
-      (d) => xScale(d.initial_year + d.duration) - xScale(d.initial_year)
+      (d) => xScale(d.initialYear + d.duration) - xScale(d.initialYear)
     )
     .attr("height", yScale.bandwidth())
     // .attr("height", 30)
@@ -109,19 +147,19 @@ export function createTimelineInterface(
   blocks
     .append("text")
     .attr("class", "block-label")
-    .attr("x", (d) => xScale(d.initial_year) + 5)
+    .attr("x", (d) => xScale(d.initialYear) + 5)
     .attr("y", (d, i) => yScale(i) + yScale.bandwidth() / 2)
     .attr("dy", "0.35em")
     .attr("fill", "white")
     .attr("pointer-events", "none")
-    .text((d) => d.tech.name)
+    .text((d) => d.tech)
     .style("font-size", "12px");
 
   // Resize handles
   blocks
     .append("rect")
     .attr("class", "resize-handle")
-    .attr("x", (d) => xScale(d.initial_year + d.duration) - 4)
+    .attr("x", (d) => xScale(d.initialYear + d.duration) - 4)
     .attr("y", (d, i) => yScale(i))
     .attr("width", 8)
     .attr("height", yScale.bandwidth())
@@ -132,7 +170,7 @@ export function createTimelineInterface(
   const blockDrag = d3
     .drag()
     .on("start", function (event, d) {
-      const blockX = xScale(d.initial_year);
+      const blockX = xScale(d.initialYear);
       d.dragOffset = event.x - blockX;
     })
     .on("drag", function (event, d) {
@@ -149,15 +187,15 @@ export function createTimelineInterface(
       );
 
       // Update intervention year
-      d.initial_year = constrainedYear;
+      d.initialYear = constrainedYear;
       const group = d3.select(this.parentNode);
 
       // Update visual elements
-      group.select(".block").attr("x", xScale(d.initial_year));
-      group.select(".block-label").attr("x", xScale(d.initial_year) + 5);
+      group.select(".block").attr("x", xScale(d.initialYear));
+      group.select(".block-label").attr("x", xScale(d.initialYear) + 5);
       group
         .select(".resize-handle")
-        .attr("x", xScale(d.initial_year + d.duration) - 4);
+        .attr("x", xScale(d.initialYear + d.duration) - 4);
 
       // Trigger onChange with updated intervention
       if (onChange) {
@@ -173,10 +211,10 @@ export function createTimelineInterface(
     // Calculate and constrain new duration
     const newDuration = Math.max(
       1,
-      Math.round(xScale.invert(newX) - d.initial_year)
+      Math.round(xScale.invert(newX) - d.initialYear)
     );
     const constrainedDuration = Math.min(
-      maxAllowedYear - d.initial_year,
+      maxAllowedYear - d.initialYear,
       newDuration
     );
 
@@ -188,10 +226,10 @@ export function createTimelineInterface(
       .select(".block")
       .attr(
         "width",
-        xScale(d.initial_year + d.duration) - xScale(d.initial_year)
+        xScale(d.initialYear + d.duration) - xScale(d.initialYear)
       );
 
-    d3.select(this).attr("x", xScale(d.initial_year + d.duration) - 4);
+    d3.select(this).attr("x", xScale(d.initialYear + d.duration) - 4);
 
     // Trigger onChange with updated intervention
     if (onChange) {
@@ -212,7 +250,7 @@ export function createTimelineInterface(
       .append("text")
       .attr("x", 10)
       .attr("y", 20)
-      .text(d.tech.name)
+      .text(d.tech)
       .style("font-weight", "bold");
 
     // Add details
@@ -220,7 +258,7 @@ export function createTimelineInterface(
       .append("text")
       .attr("x", 10)
       .attr("y", 40)
-      .text(`Start: ${d.initial_year}`);
+      .text(`Start: ${d.initialYear}`);
 
     tooltipSvg
       .append("text")
@@ -229,7 +267,7 @@ export function createTimelineInterface(
       .text(`Duration: ${d.duration} years`);
 
     // Add mini budget graph if budget data exists
-    if (d.yearly_budgets) {
+    if (d.yearlyBudgets) {
       // Format function for large numbers
       const formatBudget = (value) => {
         if (value >= 1e9) return (value / 1e9).toFixed(1) + "B";
@@ -248,23 +286,23 @@ export function createTimelineInterface(
 
       const xScale = d3
         .scaleLinear()
-        .domain([d.initial_year, d.initial_year + d.duration - 1])
+        .domain([d.initialYear, d.initialYear + d.duration - 1])
         .range([0, graphWidth]);
 
       const yScale = d3
         .scaleLinear()
-        .domain([0, d3.max(d.yearly_budgets)])
+        .domain([0, d3.max(d.yearlyBudgets)])
         .range([graphHeight, 0]);
 
       // Add budget line
       const line = d3
         .line()
-        .x((_, i) => xScale(d.initial_year + i))
+        .x((_, i) => xScale(d.initialYear + i))
         .y((d) => yScale(d));
 
       graphG
         .append("path")
-        .datum(d.yearly_budgets)
+        .datum(d.yearlyBudgets)
         .attr("fill", "none")
         .attr("stroke", "steelblue")
         .attr("stroke-width", 1.5)
@@ -282,7 +320,7 @@ export function createTimelineInterface(
             .axisBottom(xScale)
             .ticks(tickCount)
             .tickValues(
-              d3.range(d.initial_year, d.initial_year + d.duration, tickStep)
+              d3.range(d.initialYear, d.initialYear + d.duration, tickStep)
             )
             .tickFormat(d3.format("d"))
         )

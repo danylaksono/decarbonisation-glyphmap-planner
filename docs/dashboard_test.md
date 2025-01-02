@@ -196,7 +196,7 @@ const [allocations, setAllocations] = useState([]); // list of budget allocation
                 },
                 (click) => {
                   //selectIntervention(click);
-                  //console.log("timeline clicked block", interventions[click]);
+                  console.log("timeline clicked block", interventions[click]);
                 },
                 450,
                 200
@@ -775,10 +775,19 @@ playButton.addEventListener("click", () => {
 // handle form submission: add new intervention
 function addNewIntervention(data) {
   // console.log(Date.now(), "Checking allocations now:", allocations);
-  const currentAllocation = getFromSession("allocations").map(
-    (item) => item.budget
-  );
-  const newConfig = { ...data, yearlyBudgets: currentAllocation };
+  const currentAllocation = getFromSession("allocations");
+
+  const yearlyBudgets = currentAllocation.map((item) => item.budget);
+  // const duration = currentAllocation.length;
+  // const initialYear = data.initialYear;
+
+  const newConfig = {
+    ...data,
+    yearlyBudgets: yearlyBudgets,
+    // duration: duration,
+    // initialYear: initialYear,
+    // tech: data.tech,
+  };
   console.log(">> CONFIG from session", newConfig);
 
   // add the new intervention to the model
@@ -790,7 +799,8 @@ function addNewIntervention(data) {
 ```
 
 ```js
-const recaps = getIntervention;
+const interventions = getIntervention;
+console.log(">> Interventions", interventions);
 ```
 
 ```js
@@ -802,7 +812,16 @@ const stackedRecap = getResults;
 function runModel() {
   console.log(">>>> Running the decarbonisation model...");
   const recaps = manager.runInterventions();
-  setIntervention(recaps);
+  const formatRecaps = recaps.map((r) => {
+    return {
+      ...r,
+      interventionId: r.modelId,
+      initialYear: Number(Object.keys(r.yearlyStats)[0]), // first year in the array
+      tech: r.techName,
+      duration: r.projectDuration,
+    };
+  });
+  setIntervention(formatRecaps);
   const stackedRecap = manager.getStackedResults();
   setResults(stackedRecap);
 }

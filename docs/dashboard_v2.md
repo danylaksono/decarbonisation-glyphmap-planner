@@ -796,6 +796,7 @@ setAllocations(allocator.getAllocations());
 ```js
 // store intervention results
 let interventions = getIntervention;
+console.log(">> Interventions:", interventions);
 let results = getResults;
 ```
 

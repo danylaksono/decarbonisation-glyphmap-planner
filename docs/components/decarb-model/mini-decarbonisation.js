@@ -876,6 +876,7 @@ export class MiniDecarbModel {
       yearlyBudgets: this.config.yearly_budgets,
       totalBudgetSpent: totalAllocated,
       remainingBudget: remainingBudget, // remaining budget after last year
+      projectDuration: numYears,
       yearlyStats: this.yearlyStats,
       intervenedBuildings: this.suitableBuildings.filter((b) => b.isIntervened),
       // untouchedBuildings: this.suitableBuildings.filter((b) => !b.isIntervened),
