@@ -178,14 +178,16 @@ export const enrichGeoData = function (
 
     for (const column in aggregations) {
       const aggregationType = aggregations[column];
-      const values = buildings
-        .map(b => b[column])
-        .filter(v => v != null); // Remove null/undefined values
+      const values = buildings.map((b) => b[column]).filter((v) => v != null); // Remove null/undefined values
 
       if (aggregationType === "sum" || aggregationType === "mean") {
         const sum = values.reduce((a, b) => a + (Number(b) || 0), 0);
-        aggregatedData[code][column] = aggregationType === "sum" ?
-          sum : (values.length ? sum / values.length : 0);
+        aggregatedData[code][column] =
+          aggregationType === "sum"
+            ? sum
+            : values.length
+            ? sum / values.length
+            : 0;
       } else if (aggregationType === "count") {
         if (typeof values[0] === "string") {
           // Handle categorical counts
@@ -207,13 +209,13 @@ export const enrichGeoData = function (
   // 3. Create new GeoJSON with merged data
   return {
     ...geoJSON,
-    features: geoJSON.features.map(feature => ({
+    features: geoJSON.features.map((feature) => ({
       ...feature,
       properties: {
         ...feature.properties,
-        ...(aggregatedData[feature.properties[geoJSONJoinColumn]] || {})
-      }
-    }))
+        ...(aggregatedData[feature.properties[geoJSONJoinColumn]] || {}),
+      },
+    })),
   };
 };
 
@@ -241,7 +243,6 @@ export function normaliseData(data, keysToNormalise) {
   return normalisedData;
 }
 
-
 export function insideCell(c, x, y) {
   // console.log(x + " " + y  + " " + c.getXCentre() + " " + c.getYCentre() + " " + c.getCellSize());
   if (
@@ -252,4 +253,41 @@ export function insideCell(c, x, y) {
   )
     return true;
   return false;
+}
+
+export function debounceInput(input, delay = 1000) {
+  // From https://github.com/Fil/pangea/blob/main/src/components/debounce.js
+  // Wrap the input in a div, and get ready to pass changes up.
+  const div = document.createElement("div");
+  div.appendChild(input);
+  div.value = input.value;
+
+  function pass(value) {
+    div.value = value;
+    div.dispatchEvent(new Event("input"));
+  }
+
+  let timer = null;
+  let value;
+
+  // On input, check if we recently reported a value.
+  // If we did, do nothing and wait for a delay;
+  // otherwise, report the current value and set a timeout.
+  function inputted() {
+    if (timer !== null) return;
+    value = input.value;
+    requestAnimationFrame(() => pass(value));
+    timer = setTimeout(delayed, delay);
+  }
+
+  // After a delay, check if the last-reported value is the current value.
+  // If it’s not, report the new value.
+  function delayed() {
+    timer = null;
+    if (value === input.value) return;
+    pass((value = input.value));
+  }
+
+  input.addEventListener("input", inputted);
+  return div;
 }

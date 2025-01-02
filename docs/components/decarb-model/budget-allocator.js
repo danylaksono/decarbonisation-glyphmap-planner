@@ -129,7 +129,7 @@ export class BudgetAllocator {
   visualise(allocations, onUpdate, width = 600, height = 200) {
     const margin = { top: 20, right: 30, bottom: 40, left: 80 };
 
-    let currentAllocations = allocations.map((d) => ({ ...d }));
+    // let currentAllocations = allocations.map((d) => ({ ...d }));
     const initialAllocations = allocations.map((d) => ({ ...d }));
 
     const totalBudget = this.totalBudget;

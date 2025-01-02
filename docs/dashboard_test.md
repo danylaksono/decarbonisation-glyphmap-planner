@@ -46,6 +46,7 @@ import {
   enrichGeoData,
   normaliseData,
   insideCell,
+  debounceInput,
 } from "./components/helpers.js";
 ```
 
@@ -154,14 +155,17 @@ function useState(value) {
 
 ```js
 console.log(">> Getters and Setters...");
-const [selected, setSelected] = useState({}); // selected data in table
+const [selected, setSelected] = useState(0); // selected data in table
 const [getIntervention, setIntervention] = useState([]); // list of interventions
 const [getResults, setResults] = useState([]); // list of results, from running model
-const [allocations, setAllocations] = useState([]); // list of budget allocations
 const [selectedIntervention, setSelectedIntervention] = useState(null); // selected intervention in timeline
 // const [selectedInterventionIndex, setSelectedInterventionIndex] = useState(null); // selected intervention index
 const [detailOnDemand, setDetailOnDemand] = useState(null); // detail on demand on map
 const [currentConfig, setCurrentConfig] = useState({}); // current configuration
+```
+
+```js
+const [allocations, setAllocations] = useState([]); // list of budget allocations
 ```
 
 <!-------- Stylesheets -------->
@@ -189,8 +193,8 @@ const [currentConfig, setCurrentConfig] = useState({}); // current configuration
                   console.log("timeline change", change);
                 },
                 (click) => {
-                  selectIntervention(click);
-                  console.log("timeline clicked block", interventions[click]);
+                  //selectIntervention(click);
+                  //console.log("timeline clicked block", interventions[click]);
                 },
                 450,
                 200
@@ -207,21 +211,21 @@ const [currentConfig, setCurrentConfig] = useState({}); // current configuration
                   onclick=${(e) => {
                     e.stopPropagation();
                     console.log("clicked block", e);
-                    console.log(">>> selectedIntervention ID", results[selectedIntervention.index].interventionId);
+                    //console.log(">>> selectedIntervention ID", results[selectedIntervention.index].interventionId);
                 }}>
                 <i class="fas fa-trash" style="color:red;"></i>
               </button>`}
               ${html`<button class="btn move-up" aria-label="Move Up"
                   onclick=${(e) => {
                     e.stopPropagation();
-                    reorderIntervention(interventions, selectedIntervention.index, "up");
+                    //reorderIntervention(interventions, selectedIntervention.index, "up");
                 }}>
                 <i class="fas fa-arrow-up"></i>
               </button>`}
                 ${html`<button class="btn move-down" aria-label="Move Down"
                   onclick=${(e) => {
                     e.stopPropagation();
-                    reorderIntervention(interventions, selectedIntervention.index, "down");
+                    //reorderIntervention(interventions, selectedIntervention.index, "down");
                 }}>
                 <i class="fas fa-arrow-down"></i>
               </button>`}
@@ -501,9 +505,9 @@ totalBudgetInput.addEventListener("focus", (event) => {
 const startYearInput = html`<input
   class="input"
   type="number"
-  value="2024"
+  value="2025"
   step="1"
-  min="2024"
+  min="2025"
   max="2080"
   label="Start Year"
 />`;
@@ -528,7 +532,7 @@ const projectLengthInput = html`<input
 />`;
 
 Object.assign(projectLengthInput, {
-  // oninput: (event) => event.isTrusted && event.stopImmediatePropagation(),
+  oninput: (event) => event.isTrusted && event.stopImmediatePropagation(),
   onchange: (event) => event.currentTarget.dispatchEvent(new Event("input")),
 });
 const project_length = Generators.input(projectLengthInput);
@@ -661,8 +665,9 @@ addInterventionBtn.addEventListener("click", () => {
     priorities: [],
   };
 
-  console.log(">> Prepared FormData:", formData);
-  debouncedAddNewIntervention(formData);
+  // console.log(">> Prepared FormData:", formData);
+  // debouncedAddNewIntervention(formData);
+  addNewIntervention(formData);
   quickviewDefault.classList.remove("is-active"); // Close quickview after submission
 });
 ```
@@ -678,11 +683,6 @@ const getNumericBudget = (value) => {
 
 ```js
 console.log(">> Budget Allocator...");
-
-// console.log("  .. total_budget", getNumericBudget(total_budget));
-// console.log("  .. start_year", start_year);
-// console.log("  .. project_length", project_length);
-// console.log("  .. flip_budget", flip_budget);
 
 // Budget Allocator
 const allocator = new BudgetAllocator(
@@ -707,8 +707,8 @@ if (allocation_type === "linear") {
 const budgetVisualiser = allocator.visualise(
   initialAllocations,
   (changes) => {
-    // console.log("data changed:", changes);
-    setSelected(changes);
+    // console.log("On Budget Updated", changes);
+    // setSelected(changes);
   },
   400,
   200
@@ -796,8 +796,39 @@ function createConfigTemplate(startyear, budgetallocation, techs) {
 ```js
 // handle form submission: add new intervention
 function addNewIntervention(data) {
-  const newAllocation = allocations;
-  console.log({ ...data, yearlyBudgets: newAllocation });
-  console.log("newAllocation", newAllocation);
+  console.log(Date.now(), "Checking allocations now:", allocations);
+  const currentId = ++selected;
+  setSelected(currentId);
+  invalidation.then(() => {
+    console.log(selected, currentId);
+    if (currentId === callCount) {
+      setAllocations([]);
+    }
+  });
+}
+```
+
+```js
+// Debounced version
+const debouncedAllocations = _.debounce((data) => {
+  console.log("Debouncing function allocation with:", data);
+  addNewIntervention(data);
+}, 1000);
+```
+
+```js
+function finaliseAllocation(budget) {
+  console.log(">> Finalising Allocation...");
+  const newAllocation = budget;
+  setAllocations(newAllocation);
+  console.log("Final Allocation:", newAllocation);
+  // return newAllocation;
+}
+```
+
+```js
+{
+  allocator;
+  finaliseAllocation(allocator.getAllocations());
 }
 ```
