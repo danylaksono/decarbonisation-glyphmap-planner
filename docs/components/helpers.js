@@ -258,6 +258,7 @@ export function insideCell(c, x, y) {
 export function debounceInput(input, delay = 1000) {
   // From https://github.com/Fil/pangea/blob/main/src/components/debounce.js
   // Wrap the input in a div, and get ready to pass changes up.
+  console.log("....... debouncing input");
   const div = document.createElement("div");
   div.appendChild(input);
   div.value = input.value;
@@ -290,4 +291,64 @@ export function debounceInput(input, delay = 1000) {
 
   input.addEventListener("input", inputted);
   return div;
+}
+
+export function saveToSession(key, value) {
+  // Validate parameters
+  if (!key || typeof key !== "string") {
+    throw new Error("Invalid key: must be a non-empty string");
+  }
+
+  try {
+    // Handle null/undefined
+    if (value === undefined) {
+      value = null;
+    }
+
+    // Check available space (rough estimation)
+    const serialized = JSON.stringify(value);
+    if (serialized.length * 2 > 5242880) {
+      // 5MB limit
+      throw new Error("Data exceeds storage capacity");
+    }
+
+    sessionStorage.setItem(key, serialized);
+    console.log(`Saved to session: ${key}`);
+    return true;
+  } catch (error) {
+    if (error.name === "QuotaExceededError") {
+      console.error("Storage quota exceeded");
+    } else {
+      console.error("Failed to save to session:", error);
+    }
+    return false;
+  }
+}
+
+export function getFromSession(key, defaultValue = null) {
+  // Validate key
+  if (!key || typeof key !== "string") {
+    throw new Error("Invalid key: must be a non-empty string");
+  }
+
+  try {
+    console.log(`Reading from session: ${key}`);
+    const item = sessionStorage.getItem(key);
+
+    // Handle missing data
+    if (item === null) {
+      return defaultValue;
+    }
+
+    // Safe parsing
+    try {
+      return JSON.parse(item);
+    } catch (parseError) {
+      console.warn("Failed to parse stored data:", parseError);
+      return defaultValue;
+    }
+  } catch (error) {
+    console.error("Failed to read from session:", error);
+    return defaultValue;
+  }
 }

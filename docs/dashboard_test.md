@@ -47,6 +47,8 @@ import {
   normaliseData,
   insideCell,
   debounceInput,
+  saveToSession,
+  getFromSession,
 } from "./components/helpers.js";
 ```
 
@@ -642,10 +644,10 @@ const playButton = html`<button class="btn edit" style="margin-top: 10px;">
 
 ```js
 // Debounced version of addNewIntervention
-const debouncedAddNewIntervention = _.debounce((formData) => {
-  console.log("Adding new intervention with data:", formData);
-  addNewIntervention(formData);
-}, 1000);
+// const debouncedAddNewIntervention = _.debounce((formData) => {
+//   console.log("Adding new intervention with data:", formData);
+//   addNewIntervention(formData);
+// }, 1000);
 ```
 
 ```js
@@ -796,31 +798,24 @@ function createConfigTemplate(startyear, budgetallocation, techs) {
 ```js
 // handle form submission: add new intervention
 function addNewIntervention(data) {
-  console.log(Date.now(), "Checking allocations now:", allocations);
-  const currentId = ++selected;
-  setSelected(currentId);
-  invalidation.then(() => {
-    console.log(selected, currentId);
-    if (currentId === callCount) {
-      setAllocations([]);
-    }
-  });
+  // console.log(Date.now(), "Checking allocations now:", allocations);
+  console.log("from session", getFromSession("allocations"));
 }
 ```
 
 ```js
 // Debounced version
-const debouncedAllocations = _.debounce((data) => {
-  console.log("Debouncing function allocation with:", data);
-  addNewIntervention(data);
-}, 1000);
+// const debouncedAllocations = _.debounce((data) => {
+//   console.log("Debouncing function allocation with:", data);
+//   addNewIntervention(data);
+// }, 1000);
 ```
 
 ```js
 function finaliseAllocation(budget) {
   console.log(">> Finalising Allocation...");
   const newAllocation = budget;
-  setAllocations(newAllocation);
+  saveToSession("allocations", newAllocation);
   console.log("Final Allocation:", newAllocation);
   // return newAllocation;
 }
