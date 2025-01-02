@@ -216,21 +216,24 @@ const [allocations, setAllocations] = useState([]); // list of budget allocation
                     console.log("Delete intervention ", selectedInterventionIndex);
                     manager.setAutoRun(true).removeIntervention(selectedInterventionIndex);
                     runModel();
-                    //console.log(">>> removed selectedIntervention ID", getResults[selectedIntervention.index].interventionId);
-                }}>
+                 }
+                }>
                 <i class="fas fa-trash" style="color:red;"></i>
               </button>`}
               ${html`<button class="btn move-up" aria-label="Move Up"
                   onclick=${(e) => {
                     e.stopPropagation();
-                    //reorderIntervention(interventions, selectedIntervention.index, "up");
+                    reorderIntervention(manager.currentOrder, selectedInterventionIndex, "up");
+                    runModel();
                 }}>
                 <i class="fas fa-arrow-up"></i>
               </button>`}
                 ${html`<button class="btn move-down" aria-label="Move Down"
                   onclick=${(e) => {
                     e.stopPropagation();
-                    //reorderIntervention(interventions, selectedIntervention.index, "down");
+                    console.log(manager.currentOrder);
+                    reorderIntervention(manager.currentOrder, selectedInterventionIndex, "down");
+                    runModel();
                 }}>
                 <i class="fas fa-arrow-down"></i>
               </button>`}
@@ -254,6 +257,7 @@ const [allocations, setAllocations] = useState([]); // list of budget allocation
         </div>
     </div> <!-- left bottom -->
     </div> <!-- left panel -->
+
   <div id="main-panel">
     <div class="card" style="overflow-x:hidden; overflow-y:hidden; height:96vh;">
       <header class="quickview-header">
@@ -831,34 +835,76 @@ function runModel() {
 ```js
 // Reorder intervention
 function reorderIntervention(array, index, direction) {
-  if (direction === "up" && index > 0) {
-    // Swap with the previous item
-    [array[index - 1], array[index]] = [array[index], array[index - 1]];
-  } else if (direction === "down" && index < array.length - 1) {
-    // Swap with the next item
-    [array[index], array[index + 1]] = [array[index + 1], array[index]];
-  }
-  console.log("Interventions reordered:", array);
-  // updateTimeline();
+  console.log(
+    ">> Reordering intervention...",
+    getInterventions[index].interventionId,
+    direction
+  );
+  try {
+    // Validate inputs
+    if (!Array.isArray(array) || array.length === 0) {
+      throw new Error("Invalid intervention array");
+    }
 
-  // Update the InterventionManager with the new order
-  if (manager) {
-    manager.setInterventionOrder(array); // Pass the new order to the manager
-  }
+    if (index < 0 || index >= array.length) {
+      throw new Error("Invalid index for reordering");
+    }
 
-  return array;
+    // Check if manager exists and array length matches interventions
+    if (manager && array.length !== manager.interventionConfigs.length) {
+      throw new Error("Array length doesn't match number of interventions");
+    }
+
+    // Perform reordering
+    let newArray = [...array]; // Create copy to avoid modifying original
+    if (direction === "up" && index > 0) {
+      [newArray[index - 1], newArray[index]] = [
+        newArray[index],
+        newArray[index - 1],
+      ];
+    } else if (direction === "down" && index < array.length - 1) {
+      [newArray[index], newArray[index + 1]] = [
+        newArray[index + 1],
+        newArray[index],
+      ];
+    } else {
+      throw new Error("Invalid direction or index for reordering");
+    }
+
+    // Update manager
+    if (manager) {
+      if (!manager.setInterventionOrder(newArray)) {
+        throw new Error("Failed to update intervention order");
+      }
+      console.log("Interventions reordered:", newArray);
+    }
+
+    return newArray;
+  } catch (error) {
+    console.error("Reorder failed:", error.message);
+    return array; // Return original array if reordering fails
+  }
 }
+```
 
-// remove intervention
-// function removeIntervention(index) {
-//   if (index >= 0 && index < interventions.length) {
-//     setInterventions(interventions.filter((_, i) => i !== index));
-
-//     // when intervention is removed, remove the corresponding results
-//     setResults(results.filter((_, i) => i !== index));
-//     // updateTimeline();
-//   } else {
-//     console.log("Invalid index.");
-//   }
-// }
+```js
+// update timeline drawing
+function updateTimeline() {
+  const timelinePanel = document.getElementById("timeline-panel");
+  timelinePanel.innerHTML = "";
+  timelinePanel.appendChild(
+    createTimelineInterface(
+      interventions,
+      (change) => {
+        console.log("timeline change", change);
+      },
+      (click) => {
+        setSelectedInterventionIndex(click);
+        console.log("timeline clicked block", interventions[click]);
+      },
+      450,
+      200
+    )
+  );
+}
 ```
