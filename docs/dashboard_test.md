@@ -158,10 +158,11 @@ function useState(value) {
 ```js
 console.log(">> Getters and Setters...");
 const [selected, setSelected] = useState([]); // selected data in table
-const [getIntervention, setIntervention] = useState([]); // list of interventions
+const [getInterventions, setInterventions] = useState([]); // list of interventions
 const [getResults, setResults] = useState([]); // list of results, from running model
 const [selectedIntervention, setSelectedIntervention] = useState(null); // selected intervention in timeline
-// const [selectedInterventionIndex, setSelectedInterventionIndex] = useState(null); // selected intervention index
+const [selectedInterventionIndex, setSelectedInterventionIndex] =
+  useState(null); // selected intervention index
 const [detailOnDemand, setDetailOnDemand] = useState(null); // detail on demand on map
 const [currentConfig, setCurrentConfig] = useState({}); // current configuration
 ```
@@ -195,8 +196,8 @@ const [allocations, setAllocations] = useState([]); // list of budget allocation
                   console.log("timeline change", change);
                 },
                 (click) => {
-                  //selectIntervention(click);
-                  console.log("timeline clicked block", interventions[click]);
+                  setSelectedInterventionIndex(click);
+                  console.log("Clicked Interventions", click, interventions[click]);
                 },
                 450,
                 200
@@ -212,8 +213,10 @@ const [allocations, setAllocations] = useState([]); // list of budget allocation
                 ${html`<button class="btn erase" aria-label="Delete"
                   onclick=${(e) => {
                     e.stopPropagation();
-                    console.log("clicked block", e);
-                    //console.log(">>> selectedIntervention ID", results[selectedIntervention.index].interventionId);
+                    console.log("Delete intervention ", selectedInterventionIndex);
+                    manager.setAutoRun(true).removeIntervention(selectedInterventionIndex);
+                    runModel();
+                    //console.log(">>> removed selectedIntervention ID", getResults[selectedIntervention.index].interventionId);
                 }}>
                 <i class="fas fa-trash" style="color:red;"></i>
               </button>`}
@@ -772,21 +775,16 @@ playButton.addEventListener("click", () => {
 <!-- Intervention functions -->
 
 ```js
-// handle form submission: add new intervention
+// Handle form submission: add new intervention
 function addNewIntervention(data) {
   // console.log(Date.now(), "Checking allocations now:", allocations);
   const currentAllocation = getFromSession("allocations");
 
   const yearlyBudgets = currentAllocation.map((item) => item.budget);
-  // const duration = currentAllocation.length;
-  // const initialYear = data.initialYear;
 
   const newConfig = {
     ...data,
     yearlyBudgets: yearlyBudgets,
-    // duration: duration,
-    // initialYear: initialYear,
-    // tech: data.tech,
   };
   console.log(">> CONFIG from session", newConfig);
 
@@ -799,7 +797,8 @@ function addNewIntervention(data) {
 ```
 
 ```js
-const interventions = getIntervention;
+// This updates the stored interventions
+const interventions = getInterventions;
 console.log(">> Interventions", interventions);
 ```
 
@@ -808,7 +807,7 @@ const stackedRecap = getResults;
 ```
 
 ```js
-// function to run the model, returning both recaps and stacked results
+// function to run the model
 function runModel() {
   console.log(">>>> Running the decarbonisation model...");
   const recaps = manager.runInterventions();
@@ -821,8 +820,45 @@ function runModel() {
       duration: r.projectDuration,
     };
   });
-  setIntervention(formatRecaps);
+
+  // store to current interventions
+  setInterventions(formatRecaps);
   const stackedRecap = manager.getStackedResults();
   setResults(stackedRecap);
 }
+```
+
+```js
+// Reorder intervention
+function reorderIntervention(array, index, direction) {
+  if (direction === "up" && index > 0) {
+    // Swap with the previous item
+    [array[index - 1], array[index]] = [array[index], array[index - 1]];
+  } else if (direction === "down" && index < array.length - 1) {
+    // Swap with the next item
+    [array[index], array[index + 1]] = [array[index + 1], array[index]];
+  }
+  console.log("Interventions reordered:", array);
+  // updateTimeline();
+
+  // Update the InterventionManager with the new order
+  if (manager) {
+    manager.setInterventionOrder(array); // Pass the new order to the manager
+  }
+
+  return array;
+}
+
+// remove intervention
+// function removeIntervention(index) {
+//   if (index >= 0 && index < interventions.length) {
+//     setInterventions(interventions.filter((_, i) => i !== index));
+
+//     // when intervention is removed, remove the corresponding results
+//     setResults(results.filter((_, i) => i !== index));
+//     // updateTimeline();
+//   } else {
+//     console.log("Invalid index.");
+//   }
+// }
 ```

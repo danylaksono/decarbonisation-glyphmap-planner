@@ -28,6 +28,32 @@ export class InterventionManager {
     this._cachedResults = null; // Cache results for stacking
   }
 
+  // Method to modify an existing intervention configuration
+  modifyIntervention(index, updates) {
+    if (index < 0 || index >= this.interventionConfigs.length) {
+      console.error("Invalid intervention index");
+      return this;
+    }
+
+    // Update the configuration
+    this.interventionConfigs[index] = {
+      ...this.interventionConfigs[index],
+      ...updates,
+    };
+
+    if (this.autoRun) {
+      this.runInterventions();
+    }
+
+    return this;
+  }
+
+  // Method to modify and re-run specific intervention
+  modifyAndRunIntervention(index, updates) {
+    this.modifyIntervention(index, updates);
+    return this.runInterventions();
+  }
+
   addIntervention(config) {
     this.interventionConfigs.push(config);
     this.currentOrder.push(this.interventionConfigs.length - 1); // Add new index to order
@@ -39,26 +65,47 @@ export class InterventionManager {
     return this; // Allow method chaining
   }
 
-  removeIntervention(index) {
+  removeIntervention(indexOrId) {
+    let index = indexOrId;
+
+    // If string provided, assume it's an ID and find its index
+    if (typeof indexOrId === "string") {
+      index = this.interventionConfigs.findIndex(
+        (config) => config.id === indexOrId
+      );
+    }
+
     if (index >= 0 && index < this.interventionConfigs.length) {
+      // Store ID for logging
+      const removedId = this.interventionConfigs[index].id;
+
+      // Remove from configs array
       this.interventionConfigs.splice(index, 1);
-      // Remove the corresponding index from currentOrder
+
+      // Remove from order array
       const orderIndex = this.currentOrder.indexOf(index);
       if (orderIndex > -1) {
         this.currentOrder.splice(orderIndex, 1);
       }
-      // Adjust indices in currentOrder after removal
+
+      // Adjust remaining indices
       this.currentOrder = this.currentOrder.map((idx) =>
         idx > index ? idx - 1 : idx
       );
-      console.log(`Intervention at index ${index} removed.`);
+
+      // Clear cached results
+      this._cachedResults = null;
+
+      console.log(`Intervention ${removedId} at index ${index} removed.`);
+
       if (this.autoRun) {
         console.log("Auto-run enabled. Running interventions...");
         this.runInterventions();
       }
     } else {
-      console.error(`Error: Invalid index ${index} for removal.`);
+      console.error(`Error: Invalid index or ID '${indexOrId}' for removal.`);
     }
+
     return this;
   }
 
@@ -364,6 +411,67 @@ export class MiniDecarbModel {
     this._buildingCosts = new Map();
     this._availableBuildings = null;
     this._potentialInterventions = null;
+  }
+
+  // Method to reset the model state
+  reset() {
+    // Reset building states
+    this.buildings.forEach((building) => {
+      building.isIntervened = false;
+      building.interventionYear = null;
+      building.interventionCost = null;
+      building.carbonSaved = null;
+      building.numInterventions = 0;
+      building.interventionTechs = null;
+    });
+
+    // Reset model states
+    this.yearlyStats = {};
+    this._buildingCosts.clear();
+    this._availableBuildings = null;
+    this._potentialInterventions = null;
+    this.suitableBuildingsNeedUpdate = true;
+
+    return this;
+  }
+
+  // Method to modify configuration
+  updateConfig(updates) {
+    // Validate and apply updates
+    if (updates.yearly_budgets) {
+      this.config.yearly_budgets = updates.yearly_budgets;
+      this.config.numYears = updates.yearly_budgets.length;
+    }
+
+    if (updates.initial_year !== undefined) {
+      this.config.initial_year = updates.initial_year;
+    }
+
+    if (updates.rolledover_budget !== undefined) {
+      this.config.rolledover_budget = updates.rolledover_budget;
+    }
+
+    if (updates.optimizationStrategy) {
+      this.config.optimizationStrategy = updates.optimizationStrategy;
+      if (updates.optimizationStrategy === "carbon-first") {
+        this.config.technologies = [];
+      }
+    }
+
+    // Force recalculation flags
+    this.suitableBuildingsNeedUpdate = true;
+    this._buildingCosts.clear();
+    this._availableBuildings = null;
+    this._potentialInterventions = null;
+
+    return this;
+  }
+
+  // Convenience method to modify and re-run
+  modifyAndRun(updates) {
+    this.reset();
+    this.updateConfig(updates);
+    return this.run();
   }
 
   // Configuration Methods
