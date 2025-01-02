@@ -313,7 +313,7 @@ export function saveToSession(key, value) {
     }
 
     sessionStorage.setItem(key, serialized);
-    console.log(`Saved to session: ${key}`);
+    console.log(`Saved to session: ${key}: ${serialized}`);
     return true;
   } catch (error) {
     if (error.name === "QuotaExceededError") {
@@ -332,8 +332,8 @@ export function getFromSession(key, defaultValue = null) {
   }
 
   try {
-    console.log(`Reading from session: ${key}`);
     const item = sessionStorage.getItem(key);
+    console.log(`Reading from session: ${key}: ${item}`);
 
     // Handle missing data
     if (item === null) {

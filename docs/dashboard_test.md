@@ -157,7 +157,7 @@ function useState(value) {
 
 ```js
 console.log(">> Getters and Setters...");
-const [selected, setSelected] = useState(0); // selected data in table
+const [selected, setSelected] = useState([]); // selected data in table
 const [getIntervention, setIntervention] = useState([]); // list of interventions
 const [getResults, setResults] = useState([]); // list of results, from running model
 const [selectedIntervention, setSelectedIntervention] = useState(null); // selected intervention in timeline
@@ -437,13 +437,6 @@ const listOfTech = {
 const manager = new InterventionManager(buildingsData, listOfTech);
 ```
 
-```js
-console.log(">> Stacked Result from Model Run...");
-
-// --- Get the stacked results ---
-const stackedRecap = manager.getStackedResults();
-```
-
 <!-- ---------------- Input form declarations ---------------- -->
 
 ```js
@@ -643,32 +636,22 @@ const playButton = html`<button class="btn edit" style="margin-top: 10px;">
 ```
 
 ```js
-// Debounced version of addNewIntervention
-// const debouncedAddNewIntervention = _.debounce((formData) => {
-//   console.log("Adding new intervention with data:", formData);
-//   addNewIntervention(formData);
-// }, 1000);
-```
-
-```js
 // ----------------- QuickView Event Listeners -----------------
 const addInterventionBtn = document.getElementById("addInterventionBtn");
 
 // Add New Intervention button logic
 addInterventionBtn.addEventListener("click", () => {
-  console.log("Intervention button clicked");
+  // console.log("Intervention button clicked");
 
   const formData = {
     id: techsInput.value + "_" + startYearInput.value.toString(),
-    initialYear: startYearInput.value,
+    initialYear: Number(startYearInput.value),
     rolloverBudget: 0,
     optimizationStrategy: "tech-first",
     tech: techsInput.value,
     priorities: [],
   };
 
-  // console.log(">> Prepared FormData:", formData);
-  // debouncedAddNewIntervention(formData);
   addNewIntervention(formData);
   quickviewDefault.classList.remove("is-active"); // Close quickview after submission
 });
@@ -710,11 +693,25 @@ const budgetVisualiser = allocator.visualise(
   initialAllocations,
   (changes) => {
     // console.log("On Budget Updated", changes);
-    // setSelected(changes);
+    setSelected(changes);
   },
   400,
   200
 );
+```
+
+```js
+setSelected(allocator.getAllocations());
+```
+
+```js
+// ----------------- Assign budget -----------------
+{
+  allocator;
+  // const newAllocation = selected ? selected : allocator.getAllocations();
+  // console.log("newAllocation", newAllocation);
+  saveToSession("allocations", selected);
+}
 ```
 
 ```js
@@ -775,55 +772,38 @@ playButton.addEventListener("click", () => {
 <!-- Intervention functions -->
 
 ```js
-console.log(">> Loading intervention functions...");
-// >> Some functions related to creating and managing interventions
-
-// create config template
-function createConfigTemplate(startyear, budgetallocation, techs) {
-  console.log(">> Creating config template...");
-  // setAllocations(allocator.recap().allocations);
-  return {
-    id: techs + "_" + startyear.toString(),
-    initialYear: Number(startyear),
-    rolloverBudget: 0,
-    yearlyBudgets: budgetallocation.map((item) => item.budget),
-    optimizationStrategy: "tech-first",
-    tech: techs,
-    priorities: [],
-    filters: [],
-  };
-}
-```
-
-```js
 // handle form submission: add new intervention
 function addNewIntervention(data) {
   // console.log(Date.now(), "Checking allocations now:", allocations);
-  console.log("from session", getFromSession("allocations"));
+  const currentAllocation = getFromSession("allocations").map(
+    (item) => item.budget
+  );
+  const newConfig = { ...data, yearlyBudgets: currentAllocation };
+  console.log(">> CONFIG from session", newConfig);
+
+  // add the new intervention to the model
+  manager.addIntervention(newConfig);
+
+  // run the model
+  runModel();
 }
 ```
 
 ```js
-// Debounced version
-// const debouncedAllocations = _.debounce((data) => {
-//   console.log("Debouncing function allocation with:", data);
-//   addNewIntervention(data);
-// }, 1000);
+const recaps = getIntervention;
 ```
 
 ```js
-function finaliseAllocation(budget) {
-  console.log(">> Finalising Allocation...");
-  const newAllocation = budget;
-  saveToSession("allocations", newAllocation);
-  console.log("Final Allocation:", newAllocation);
-  // return newAllocation;
-}
+const stackedRecap = getResults;
 ```
 
 ```js
-{
-  allocator;
-  finaliseAllocation(allocator.getAllocations());
+// function to run the model, returning both recaps and stacked results
+function runModel() {
+  console.log(">>>> Running the decarbonisation model...");
+  const recaps = manager.runInterventions();
+  setIntervention(recaps);
+  const stackedRecap = manager.getStackedResults();
+  setResults(stackedRecap);
 }
 ```

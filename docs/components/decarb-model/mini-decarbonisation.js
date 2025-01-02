@@ -343,7 +343,7 @@ export class InterventionManager {
 }
 
 export class MiniDecarbModel {
-  constructor(buildings) {
+  constructor(buildings, modelId = "default") {
     // Initialize with default config
     this.config = {
       initial_year: 0,
@@ -355,6 +355,7 @@ export class MiniDecarbModel {
       technologies: [],
     };
 
+    this.modelId = modelId;
     this.buildings = buildings.map((b) => new Building(b.id, b));
     this.suitableBuildings = [];
     this.suitableBuildingsNeedUpdate = true; // Flag to indicate if filtering is needed
@@ -716,8 +717,8 @@ export class MiniDecarbModel {
           spent += cost;
           buildingsIntervened.push(building);
 
-        //   console.log("Intervention applied:", building.id, tech.name, cost);
-        //   console.log("Spent this year:", spent, "Year Budget:", yearBudget);
+          //   console.log("Intervention applied:", building.id, tech.name, cost);
+          //   console.log("Spent this year:", spent, "Year Budget:", yearBudget);
         }
       }
 
@@ -877,7 +878,7 @@ export class MiniDecarbModel {
       remainingBudget: remainingBudget, // remaining budget after last year
       yearlyStats: this.yearlyStats,
       intervenedBuildings: this.suitableBuildings.filter((b) => b.isIntervened),
-      untouchedBuildings: this.suitableBuildings.filter((b) => !b.isIntervened),
+      // untouchedBuildings: this.suitableBuildings.filter((b) => !b.isIntervened),
       allBuildings: this.suitableBuildings,
       appliedFilters: this.appliedFilters,
       priorityRules: this.config.priorities.map((rule) => ({
@@ -1000,6 +1001,89 @@ export class MiniDecarbModel {
       intervenedBuildings: buildings.filter((b) => b.isIntervened),
       //   untouchedBuildings: buildings.filter((b) => !b.isIntervened), // don't think we need this
       recap: modelRecaps, // for debugging only
+    };
+  }
+
+  // Helper method to create building filters
+  // Example use:
+  // const userFilterFunction = InterventionManager.createDynamicFilter(
+  //   userAttribute,
+  //   userOperator,
+  //   userThreshold
+  // );
+
+  // const userConfig = {
+  //   filters: [
+  //     {
+  //       filterName: `${userAttribute} ${userOperator} ${userThreshold}`,
+  //       filterFunction: userFilterFunction,
+  //     },
+  //   ],
+  // };
+  static createDynamicFilter(attribute, operator, threshold) {
+    // Validate attribute
+    if (typeof attribute !== "string" || attribute.trim() === "") {
+      throw new Error(
+        "Invalid attribute: Attribute must be a non-empty string."
+      );
+    }
+
+    // Validate operator
+    const validOperators = [">", ">=", "<", "<=", "<", "<=", "==", "!="];
+    if (!validOperators.includes(operator)) {
+      throw new Error(
+        `Invalid operator: Supported operators are ${validOperators.join(
+          ", "
+        )}.`
+      );
+    }
+
+    // Validate threshold
+    if (typeof threshold !== "number" && typeof threshold !== "string") {
+      throw new Error(
+        "Invalid threshold: Threshold must be a number or a string."
+      );
+    }
+
+    // Return the filter function with proper error handling
+    return function (building) {
+      if (!building || typeof building !== "object") {
+        console.warn("Invalid building object passed to the filter function.");
+        return false; // Exclude invalid buildings
+      }
+
+      const value = building.properties?.[attribute];
+      if (value === undefined) {
+        console.warn(
+          `Attribute "${attribute}" not found in building properties.`
+        );
+        return false; // Exclude buildings missing the attribute
+      }
+
+      // Perform comparison
+      try {
+        switch (operator) {
+          case ">":
+            return value > threshold;
+          case ">=":
+            return value >= threshold;
+          case "<":
+            return value < threshold;
+          case "<=":
+            return value <= threshold;
+          case "==":
+            return value == threshold;
+          case "!=":
+            return value != threshold;
+          default:
+            throw new Error(`Unexpected operator: ${operator}`);
+        }
+      } catch (error) {
+        console.error(
+          `Error evaluating filter: ${attribute} ${operator} ${threshold} - ${error.message}`
+        );
+        return false; // Exclude buildings if an error occurs
+      }
     };
   }
 }

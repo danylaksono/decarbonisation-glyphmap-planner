@@ -8,7 +8,10 @@ sql:
 ---
 
 ```js
-import { InterventionManager, MiniDecarbModel } from "./../components/decarb-model/mini-decarbonisation.js";
+import {
+  InterventionManager,
+  MiniDecarbModel,
+} from "./../components/decarb-model/mini-decarbonisation.js";
 ```
 
 ## Test New Model
@@ -68,7 +71,6 @@ WHERE "substation_headroom" >= 1000;
 const newBuildings = [...oxford_data];
 ```
 
-
 ```js
 console.log("this SPECIFICATION cell is called");
 // model specifications
@@ -111,7 +113,6 @@ const listOfTech = {
   },
 };
 
-
 // --- Define Different Configurations ---
 
 // Config 1: Tech-first, focus on ASHP, prioritize fuel poverty
@@ -127,7 +128,7 @@ const config1 = {
 
 // Config 2: Carbon-first, consider ASHP and PV, prioritize multi-deprivation
 const config2 = {
-  id: Date.now(),
+  modelId: Date.now(),
   initialYear: 2024,
   rolloverBudget: 0,
   yearlyBudgets: [60000, 6000, 6000],
@@ -146,9 +147,7 @@ const config3 = {
   tech: "PV",
   priorities: [],
 };
-
 ```
-
 
 ```js
 console.log("this INTERVENTION cell is called");
@@ -156,9 +155,9 @@ console.log("this INTERVENTION cell is called");
 const manager = new InterventionManager(newBuildings, listOfTech);
 
 // --- Add interventions ---
-// manager.addIntervention(config1);
+manager.addIntervention(config1);
 // manager.addIntervention(config3);
-manager.addIntervention(config2);
+// manager.addIntervention(config2);
 
 // --- Change the order of interventions ---
 // manager.setInterventionOrder([1, 0]);
@@ -170,32 +169,25 @@ const recaps = manager.runInterventions();
 const stackedRecap = manager.getStackedResults();
 ```
 
-
 ```js
 console.log("this ANALYZE cell is called");
 // --- Analyze Stacked Results ---
-display(html`<p> "RECAPS" </p>`)
+display(html`<p>"RECAPS"</p>`);
 display(recaps);
 
 // --- Analyze Stacked Results ---
-display(html`<p> "Stacked Recap Summary:" </p>`)
+display(html`<p>"Stacked Recap Summary:"</p>`);
 display(stackedRecap.summary);
 
-display(html`<p> "Stacked Recap Yearly Summary:" </p>`);
-display( stackedRecap.yearlySummary);
+display(html`<p>"Stacked Recap Yearly Summary:"</p>`);
+display(stackedRecap.yearlySummary);
 
-display(html`<p> "Stacked Recap Buildings:" </p>`);
-display( stackedRecap.buildings);
+display(html`<p>"Stacked Recap Buildings:"</p>`);
+display(stackedRecap.buildings);
 
-display(html`<p> "Stacked Recap Intervened Buildings:" </p>`);
-display(
-  stackedRecap.intervenedBuildings
-);
+display(html`<p>"Stacked Recap Intervened Buildings:"</p>`);
+display(stackedRecap.intervenedBuildings);
 
-display(html`<p> "List of Intervention Results:" </p>`);
-display(
-  stackedRecap.recap
-);
+display(html`<p>"List of Intervention Results:"</p>`);
+display(stackedRecap.recap);
 ```
-
-
