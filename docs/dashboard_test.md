@@ -211,10 +211,10 @@ const [allocations, setAllocations] = useState([]);
               )}
               </div> <!-- timeline panel -->
               <nav id="timeline-buttons">
-                <button id="openQuickviewButton" data-show="quickview" class="btn" aria-label="Add">
+                <button id="openQuickviewButton" data-show="quickview" class="btn tooltip" data-tooltip="Add New Intervention" aria-label="Add">
                   <i class="fas fa-plus"></i>
                 </button>
-                ${html`<button class="btn edit" aria-label="Edit"
+                ${html`<button class="btn edit tooltip" data-tooltip="Modify Intervention" aria-label="Edit"
                   onclick=${(e) => {
                     e.stopPropagation();
                     console.log("Modify intervention ", selectedInterventionIndex);
@@ -223,7 +223,7 @@ const [allocations, setAllocations] = useState([]);
                 }>
                 <i class="fas fa-edit" style="color:green;"></i>
               </button>`}
-                ${html`<button class="btn erase" aria-label="Delete"
+                ${html`<button class="btn erase tooltip" data-tooltip="Remove Intervention" aria-label="Delete"
                   onclick=${(e) => {
                     e.stopPropagation();
                     console.log("Delete intervention ", selectedInterventionIndex);
@@ -233,7 +233,7 @@ const [allocations, setAllocations] = useState([]);
                 }>
                 <i class="fas fa-trash" style="color:red;"></i>
               </button>`}
-              ${html`<button class="btn move-up" aria-label="Move Up"
+              ${html`<button class="btn move-up tooltip" data-tooltip="Move Up" aria-label="Move Up"
                   onclick=${(e) => {
                     e.stopPropagation();
                     reorderIntervention(manager.currentOrder, selectedInterventionIndex, "up");
@@ -241,7 +241,7 @@ const [allocations, setAllocations] = useState([]);
                 }}>
                 <i class="fas fa-arrow-up"></i>
               </button>`}
-                ${html`<button class="btn move-down" aria-label="Move Down"
+                ${html`<button class="btn move-down tooltip" data-tooltip="Move Down" aria-label="Move Down"
                   onclick=${(e) => {
                     e.stopPropagation();
                     console.log(manager.currentOrder);

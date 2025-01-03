@@ -250,3 +250,52 @@ html {
   background-color: var(--bulma-card-content-background-color);
   padding: 5px;
 }
+
+/* tooltip.css */
+
+.tooltip {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+}
+
+.tooltip:hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  top: 50%;
+  right: 125%; /* Adjust here */
+  transform: translateY(-50%);
+  background-color: #363636; /* Bulma dark shade */
+  color: #fff;
+  text-align: center;
+  padding: 0.5em;
+  border-radius: 4px;
+  font-size: 0.875em; /* Bulma small text size */
+  white-space: nowrap;
+  z-index: 999;
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+.tooltip:hover::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: 115%;
+  transform: translateY(-50%);
+  border-width: 6px;
+  border-style: solid;
+  border-color: transparent #363636 transparent transparent;
+  z-index: 998;
+}
+
+.tooltip::after,
+.tooltip::before {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.tooltip:hover::after,
+.tooltip:hover::before {
+  opacity: 1;
+}
