@@ -65,11 +65,25 @@ export function createTimelineInterface(
     .domain([minYear - 1, maxYear + 1]) // Add buffer year on each side
     .range([0, innerWidth]);
 
+  // const fixedPadding = 1; // pixels between blocks
+  // const totalPaddingSpace = fixedPadding * (interventions.length - 1);
+  // const availableBlockSpace = innerHeight - totalPaddingSpace;
+  // const blockHeight = Math.min(
+  //   maxBlockHeight,
+  //   availableBlockSpace / interventions.length
+  // );
+
+  // const yScale = d3
+  //   .scaleBand()
+  //   .domain(interventions.map((_, i) => i))
+  //   .range([0, innerHeight])
+  //   .paddingInner(fixedPadding / (blockHeight + fixedPadding)) // converts pixels to ratio
+  //   .paddingOuter(0);
   const yScale = d3
     .scaleBand()
     .domain(interventions.map((_, i) => i))
     .range([0, innerHeight])
-    .padding(0.1);
+    .padding(0.01);
 
   // Create SVG container
   const svg = d3.create("svg").attr("width", width).attr("height", height);
@@ -165,20 +179,55 @@ export function createTimelineInterface(
   blocks
     .append("text")
     .attr("class", "block-label")
-    .attr("x", (d) => xScale(d.initialYear) + 5)
-    // .attr("y", (d, i) => yScale(i) + yScale.bandwidth() / 2)
+    .attr(
+      "x",
+      (d) =>
+        xScale(d.initialYear) +
+        (xScale(d.initialYear + d.duration) - xScale(d.initialYear)) / 2
+    ) // Center horizontally
     .attr("y", (d, i) => {
       if (interventions.length === 1) {
-        return innerHeight / 2; // Center vertically
+        return innerHeight / 2; // Center vertically for single intervention
       } else {
-        return yScale(i) + yScale.bandwidth() / 2;
+        return yScale(i) + Math.min(yScale.bandwidth(), maxBlockHeight) / 2; // Center in block
       }
     })
-    .attr("dy", "0.35em")
+    .attr("text-anchor", "middle") // Center text horizontally
+    .attr("dominant-baseline", "middle") // Center text vertically
     .attr("fill", "white")
     .attr("pointer-events", "none")
     .text((d) => d.tech)
-    .style("font-size", "12px");
+    .style("font-size", "12px")
+    .each(function (d) {
+      // Truncate text if too long for block width
+      const blockWidth =
+        xScale(d.initialYear + d.duration) - xScale(d.initialYear);
+      const text = d3.select(this);
+      let textLength = this.getComputedTextLength();
+      let textContent = text.text();
+      while (textLength > blockWidth - 10 && textContent.length > 0) {
+        textContent = textContent.slice(0, -1);
+        text.text(textContent + "...");
+        textLength = this.getComputedTextLength();
+      }
+    });
+  // blocks
+  //   .append("text")
+  //   .attr("class", "block-label")
+  //   .attr("x", (d) => xScale(d.initialYear) + 5)
+  //   // .attr("y", (d, i) => yScale(i) + yScale.bandwidth() / 2)
+  //   .attr("y", (d, i) => {
+  //     if (interventions.length === 1) {
+  //       return innerHeight / 2; // Center vertically
+  //     } else {
+  //       return yScale(i) + yScale.bandwidth() / 2;
+  //     }
+  //   })
+  //   .attr("dy", "0.35em")
+  //   .attr("fill", "white")
+  //   .attr("pointer-events", "none")
+  //   .text((d) => d.tech)
+  //   .style("font-size", "12px");
 
   // Resize handles
   blocks
