@@ -56,6 +56,9 @@ export function createTimelineInterface(
     ...interventions.map((d) => d.initialYear + d.duration)
   );
 
+  // Set up maximum block height
+  const maxBlockHeight = 40;
+
   // Create scales for x-axis (years) and y-axis (intervention rows)
   const xScale = d3
     .scaleLinear()
@@ -130,12 +133,20 @@ export function createTimelineInterface(
     .append("rect")
     .attr("class", "block")
     .attr("x", (d) => xScale(d.initialYear))
-    .attr("y", (d, i) => yScale(i))
+    // .attr("y", (d, i) => yScale(i))
+    .attr("y", (d, i) => {
+      if (interventions.length === 1) {
+        return innerHeight / 2 - maxBlockHeight / 2; // Center vertically
+      } else {
+        return yScale(i);
+      }
+    })
     .attr(
       "width",
       (d) => xScale(d.initialYear + d.duration) - xScale(d.initialYear)
     )
-    .attr("height", yScale.bandwidth())
+    // .attr("height", yScale.bandwidth())
+    .attr("height", (d, i) => Math.min(yScale.bandwidth(), maxBlockHeight))
     // .attr("height", 30)
     .attr("fill", "steelblue")
     .on("click", function (event, d) {
@@ -155,7 +166,14 @@ export function createTimelineInterface(
     .append("text")
     .attr("class", "block-label")
     .attr("x", (d) => xScale(d.initialYear) + 5)
-    .attr("y", (d, i) => yScale(i) + yScale.bandwidth() / 2)
+    // .attr("y", (d, i) => yScale(i) + yScale.bandwidth() / 2)
+    .attr("y", (d, i) => {
+      if (interventions.length === 1) {
+        return innerHeight / 2; // Center vertically
+      } else {
+        return yScale(i) + yScale.bandwidth() / 2;
+      }
+    })
     .attr("dy", "0.35em")
     .attr("fill", "white")
     .attr("pointer-events", "none")
@@ -167,9 +185,17 @@ export function createTimelineInterface(
     .append("rect")
     .attr("class", "resize-handle")
     .attr("x", (d) => xScale(d.initialYear + d.duration) - 4)
-    .attr("y", (d, i) => yScale(i))
+    // .attr("y", (d, i) => yScale(i))
+    .attr("y", (d, i) => {
+      if (interventions.length === 1) {
+        return innerHeight / 2 - maxBlockHeight / 2; // Same as the block's y position
+      } else {
+        return yScale(i);
+      }
+    })
     .attr("width", 8)
-    .attr("height", yScale.bandwidth())
+    // .attr("height", yScale.bandwidth())
+    .attr("height", (d, i) => Math.min(yScale.bandwidth(), maxBlockHeight))
     .attr("fill", "transparent")
     .attr("cursor", "ew-resize");
 
