@@ -193,7 +193,7 @@ const [allocations, setAllocations] = useState([]); // list of budget allocation
                 ${createTimelineInterface(
                 interventions,
                 (change) => {
-                  console.log("timeline change", change);
+                  console.log("Timeline changed", change);
                 },
                 (click) => {
                   setSelectedInterventionIndex(click);

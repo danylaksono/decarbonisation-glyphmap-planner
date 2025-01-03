@@ -96,7 +96,14 @@ export function createTimelineInterface(
   g.append("g")
     .attr("class", "x-axis")
     .attr("transform", `translate(0,${innerHeight})`)
-    .call(d3.axisBottom(xScale).tickFormat(d3.format("d")));
+    .call(
+      d3
+        .axisBottom(xScale)
+        .tickValues(
+          d3.range(Math.ceil(minYear - 1), Math.floor(maxYear + 1) + 1)
+        ) // Added +1 to include last year
+        .tickFormat(d3.format("d"))
+    );
 
   g.append("rect")
     .attr("class", "background")
