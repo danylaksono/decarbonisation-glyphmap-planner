@@ -158,16 +158,23 @@ function useState(value) {
 ```js
 console.log(">> Getters and Setters...");
 const [selected, setSelected] = useState([]); // selected data in table
-const [getIntervention, setIntervention] = useState([]); // list of interventions
+const [getInterventions, setInterventions] = useState([]); // list of interventions
 const [getResults, setResults] = useState([]); // list of results, from running model
 const [selectedIntervention, setSelectedIntervention] = useState(null); // selected intervention in timeline
-// const [selectedInterventionIndex, setSelectedInterventionIndex] = useState(null); // selected intervention index
+const [selectedInterventionIndex, setSelectedInterventionIndex] =
+  useState(null); // selected intervention index
 const [detailOnDemand, setDetailOnDemand] = useState(null); // detail on demand on map
 const [currentConfig, setCurrentConfig] = useState({}); // current configuration
 ```
 
 ```js
-const [allocations, setAllocations] = useState([]); // list of budget allocations
+// mutable modified timeline
+const [timelineModifications, setTimelineModifications] = useState([]); // list of budget allocations
+```
+
+```js
+// mutable list of budget allocations
+const [allocations, setAllocations] = useState([]);
 ```
 
 <!-------- Stylesheets -------->
@@ -192,11 +199,12 @@ const [allocations, setAllocations] = useState([]); // list of budget allocation
                 ${createTimelineInterface(
                 interventions,
                 (change) => {
-                  console.log("timeline change", change);
+                  console.log("Timeline changed", change);
+                  setTimelineModifications(change);
                 },
                 (click) => {
-                  //selectIntervention(click);
-                  console.log("timeline clicked block", interventions[click]);
+                  setSelectedInterventionIndex(click);
+                  console.log("Clicked Interventions", click, interventions[click]);
                 },
                 450,
                 200
@@ -206,28 +214,39 @@ const [allocations, setAllocations] = useState([]); // list of budget allocation
                 <button id="openQuickviewButton" data-show="quickview" class="btn" aria-label="Add">
                   <i class="fas fa-plus"></i>
                 </button>
-                <button class="btn edit" aria-label="Edit">
-                  <i class="fas fa-edit" style="color:green;"></i>
-                </button>
+                ${html`<button class="btn edit" aria-label="Edit"
+                  onclick=${(e) => {
+                    e.stopPropagation();
+                    console.log("Modify intervention ", selectedInterventionIndex);
+                    modifyIntervention(selectedInterventionIndex, timelineModifications[selectedInterventionIndex]);
+                 }
+                }>
+                <i class="fas fa-edit" style="color:green;"></i>
+              </button>`}
                 ${html`<button class="btn erase" aria-label="Delete"
                   onclick=${(e) => {
                     e.stopPropagation();
-                    console.log("clicked block", e);
-                    //console.log(">>> selectedIntervention ID", results[selectedIntervention.index].interventionId);
-                }}>
+                    console.log("Delete intervention ", selectedInterventionIndex);
+                    manager.setAutoRun(true).removeIntervention(selectedInterventionIndex);
+                    runModel();
+                 }
+                }>
                 <i class="fas fa-trash" style="color:red;"></i>
               </button>`}
               ${html`<button class="btn move-up" aria-label="Move Up"
                   onclick=${(e) => {
                     e.stopPropagation();
-                    //reorderIntervention(interventions, selectedIntervention.index, "up");
+                    reorderIntervention(manager.currentOrder, selectedInterventionIndex, "up");
+                    runModel();
                 }}>
                 <i class="fas fa-arrow-up"></i>
               </button>`}
                 ${html`<button class="btn move-down" aria-label="Move Down"
                   onclick=${(e) => {
                     e.stopPropagation();
-                    //reorderIntervention(interventions, selectedIntervention.index, "down");
+                    console.log(manager.currentOrder);
+                    reorderIntervention(manager.currentOrder, selectedInterventionIndex, "down");
+                    runModel();
                 }}>
                 <i class="fas fa-arrow-down"></i>
               </button>`}
@@ -251,6 +270,7 @@ const [allocations, setAllocations] = useState([]); // list of budget allocation
         </div>
     </div> <!-- left bottom -->
     </div> <!-- left panel -->
+
   <div id="main-panel">
     <div class="card" style="overflow-x:hidden; overflow-y:hidden; height:96vh;">
       <header class="quickview-header">
@@ -772,21 +792,16 @@ playButton.addEventListener("click", () => {
 <!-- Intervention functions -->
 
 ```js
-// handle form submission: add new intervention
+// Handle form submission: add new intervention
 function addNewIntervention(data) {
   // console.log(Date.now(), "Checking allocations now:", allocations);
   const currentAllocation = getFromSession("allocations");
 
   const yearlyBudgets = currentAllocation.map((item) => item.budget);
-  // const duration = currentAllocation.length;
-  // const initialYear = data.initialYear;
 
   const newConfig = {
     ...data,
     yearlyBudgets: yearlyBudgets,
-    // duration: duration,
-    // initialYear: initialYear,
-    // tech: data.tech,
   };
   console.log(">> CONFIG from session", newConfig);
 
@@ -799,7 +814,8 @@ function addNewIntervention(data) {
 ```
 
 ```js
-const interventions = getIntervention;
+// This updates the stored interventions
+const interventions = getInterventions;
 console.log(">> Interventions", interventions);
 ```
 
@@ -808,7 +824,7 @@ const stackedRecap = getResults;
 ```
 
 ```js
-// function to run the model, returning both recaps and stacked results
+// function to run the model
 function runModel() {
   console.log(">>>> Running the decarbonisation model...");
   const recaps = manager.runInterventions();
@@ -821,8 +837,142 @@ function runModel() {
       duration: r.projectDuration,
     };
   });
-  setIntervention(formatRecaps);
+
+  // store to current interventions
+  setInterventions(formatRecaps);
   const stackedRecap = manager.getStackedResults();
   setResults(stackedRecap);
 }
+```
+
+```js
+// Reorder intervention
+function reorderIntervention(array, index, direction) {
+  console.log(
+    ">> Reordering intervention...",
+    getInterventions[index].interventionId,
+    direction
+  );
+  try {
+    // Validate inputs
+    if (!Array.isArray(array) || array.length === 0) {
+      throw new Error("Invalid intervention array");
+    }
+
+    if (index < 0 || index >= array.length) {
+      throw new Error("Invalid index for reordering");
+    }
+
+    // Check if manager exists and array length matches interventions
+    if (manager && array.length !== manager.interventionConfigs.length) {
+      throw new Error("Array length doesn't match number of interventions");
+    }
+
+    // Perform reordering
+    let newArray = [...array]; // Create copy to avoid modifying original
+    if (direction === "up" && index > 0) {
+      [newArray[index - 1], newArray[index]] = [
+        newArray[index],
+        newArray[index - 1],
+      ];
+    } else if (direction === "down" && index < array.length - 1) {
+      [newArray[index], newArray[index + 1]] = [
+        newArray[index + 1],
+        newArray[index],
+      ];
+    } else {
+      throw new Error("Invalid direction or index for reordering");
+    }
+
+    // Update manager
+    if (manager) {
+      if (!manager.setInterventionOrder(newArray)) {
+        throw new Error("Failed to update intervention order");
+      }
+      console.log("Interventions reordered:", newArray);
+    }
+
+    return newArray;
+  } catch (error) {
+    console.error("Reorder failed:", error.message);
+    return array; // Return original array if reordering fails
+  }
+}
+```
+
+```js
+// update timeline drawing
+function updateTimeline() {
+  const timelinePanel = document.getElementById("timeline-panel");
+  timelinePanel.innerHTML = "";
+  timelinePanel.appendChild(
+    createTimelineInterface(
+      interventions,
+      (change) => {
+        console.log("timeline change", change);
+      },
+      (click) => {
+        setSelectedInterventionIndex(click);
+        console.log("timeline clicked block", interventions[click]);
+      },
+      450,
+      200
+    )
+  );
+}
+```
+
+```js
+// function to update the selected intervention
+function modifyIntervention(index, newConfig) {
+  if (!newConfig) {
+    console.info("No change detected for intervention", index);
+    return;
+  }
+
+  console.log(" The new config", index, newConfig);
+
+  // const currentConfig = interventions[index];
+  let yearlyBudgets;
+
+  if (newConfig.duration !== newConfig.projectDuration) {
+    console.log("Assigning new budget allocations..");
+
+    // calculate yearlyBudgets by creating an array of newConfig.projectDuration length where each item's value is from initialBudget divided by newConfig.projectDuration.
+    const initialBudget = newConfig.initialBudget;
+    yearlyBudgets = Array(newConfig.duration)
+      .fill(initialBudget / newConfig.duration)
+      .map((item) => Math.round(item));
+  } else {
+    yearlyBudgets = newConfig.yearlyBudgets;
+  }
+
+  console.log("GIVEN Yearly budgets", yearlyBudgets);
+
+  const modifiedConfig = {
+    ...newConfig,
+    yearlyBudgets: yearlyBudgets,
+    initialYear: newConfig.initialYear,
+    tech: newConfig.techName,
+    duration: newConfig.projectDuration,
+  };
+
+  console.log(">> Modifying intervention.. ", index, modifiedConfig);
+  // const newResults = manager.modifyAndRunIntervention(index, modifiedConfig);
+  // console.log(" result from modifications", newResults);
+  // store to current interventions
+  // setInterventions(newResults);
+  // const stackedRecap = manager.getStackedResults();
+  // setResults(stackedRecap);
+  // updateTimeline();
+  manager.modifyIntervention(index, modifiedConfig);
+  runModel();
+  //   const newResults = manager.modifyAndRunIntervention(index, {
+  //   yearlyBudgets: [150000, 250000, 300000]
+  // });
+}
+```
+
+```js
+
 ```

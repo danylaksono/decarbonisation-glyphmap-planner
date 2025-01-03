@@ -169,6 +169,17 @@ const recaps = manager.runInterventions();
 const stackedRecap = manager.getStackedResults();
 ```
 
+### Modify and Run Intervention
+
+```js
+const newResults = manager.modifyAndRunIntervention(0, {
+  yearlyBudgets: [5000, 0, 0],
+});
+display(newResults);
+```
+
+### Model Outputs
+
 ```js
 console.log("this ANALYZE cell is called");
 // --- Analyze Stacked Results ---
