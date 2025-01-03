@@ -168,7 +168,13 @@ const [currentConfig, setCurrentConfig] = useState({}); // current configuration
 ```
 
 ```js
-const [allocations, setAllocations] = useState([]); // list of budget allocations
+// mutable modified timeline
+const [timelineModifications, setTimelineModifications] = useState([]); // list of budget allocations
+```
+
+```js
+// mutable list of budget allocations
+const [allocations, setAllocations] = useState([]);
 ```
 
 <!-------- Stylesheets -------->
@@ -194,6 +200,7 @@ const [allocations, setAllocations] = useState([]); // list of budget allocation
                 interventions,
                 (change) => {
                   console.log("Timeline changed", change);
+                  setTimelineModifications(change);
                 },
                 (click) => {
                   setSelectedInterventionIndex(click);
@@ -207,9 +214,15 @@ const [allocations, setAllocations] = useState([]); // list of budget allocation
                 <button id="openQuickviewButton" data-show="quickview" class="btn" aria-label="Add">
                   <i class="fas fa-plus"></i>
                 </button>
-                <button class="btn edit" aria-label="Edit">
-                  <i class="fas fa-edit" style="color:green;"></i>
-                </button>
+                ${html`<button class="btn edit" aria-label="Edit"
+                  onclick=${(e) => {
+                    e.stopPropagation();
+                    console.log("Modify intervention ", selectedInterventionIndex);
+                    modifyIntervention(selectedInterventionIndex, timelineModifications[selectedInterventionIndex]);
+                 }
+                }>
+                <i class="fas fa-edit" style="color:green;"></i>
+              </button>`}
                 ${html`<button class="btn erase" aria-label="Delete"
                   onclick=${(e) => {
                     e.stopPropagation();
@@ -907,4 +920,59 @@ function updateTimeline() {
     )
   );
 }
+```
+
+```js
+// function to update the selected intervention
+function modifyIntervention(index, newConfig) {
+  if (!newConfig) {
+    console.info("No change detected for intervention", index);
+    return;
+  }
+
+  console.log(" The new config", index, newConfig);
+
+  // const currentConfig = interventions[index];
+  let yearlyBudgets;
+
+  if (newConfig.duration !== newConfig.projectDuration) {
+    console.log("Assigning new budget allocations..");
+
+    // calculate yearlyBudgets by creating an array of newConfig.projectDuration length where each item's value is from initialBudget divided by newConfig.projectDuration.
+    const initialBudget = newConfig.initialBudget;
+    yearlyBudgets = Array(newConfig.duration)
+      .fill(initialBudget / newConfig.duration)
+      .map((item) => Math.round(item));
+  } else {
+    yearlyBudgets = newConfig.yearlyBudgets;
+  }
+
+  console.log("GIVEN Yearly budgets", yearlyBudgets);
+
+  const modifiedConfig = {
+    ...newConfig,
+    yearlyBudgets: yearlyBudgets,
+    initialYear: newConfig.initialYear,
+    tech: newConfig.techName,
+    duration: newConfig.projectDuration,
+  };
+
+  console.log(">> Modifying intervention.. ", index, modifiedConfig);
+  // const newResults = manager.modifyAndRunIntervention(index, modifiedConfig);
+  // console.log(" result from modifications", newResults);
+  // store to current interventions
+  // setInterventions(newResults);
+  // const stackedRecap = manager.getStackedResults();
+  // setResults(stackedRecap);
+  // updateTimeline();
+  manager.modifyIntervention(index, modifiedConfig);
+  runModel();
+  //   const newResults = manager.modifyAndRunIntervention(index, {
+  //   yearlyBudgets: [150000, 250000, 300000]
+  // });
+}
+```
+
+```js
+
 ```

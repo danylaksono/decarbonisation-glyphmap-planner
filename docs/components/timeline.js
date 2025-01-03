@@ -326,7 +326,8 @@ export function createTimelineInterface(
 
   // Check if data is empty
   if (interventions.length === 0) {
-    svg.append("text")
+    svg
+      .append("text")
       .attr("class", "no-data-message")
       .attr("x", width / 2)
       .attr("y", height / 2)
