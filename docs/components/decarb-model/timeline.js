@@ -268,20 +268,27 @@ export function createTimelineInterface(
         Math.min(maxAllowedYear - d.duration, newYear)
       );
 
-      // Update intervention year
       d.initialYear = constrainedYear;
       const group = d3.select(this.parentNode);
 
-      // Update visual elements
+      // Update block position
       group.select(".block").attr("x", xScale(d.initialYear));
-      group.select(".block-label").attr("x", xScale(d.initialYear) + 5);
+
+      // Update text position - centered
+      group
+        .select(".block-label")
+        .attr(
+          "x",
+          xScale(d.initialYear) +
+            (xScale(d.initialYear + d.duration) - xScale(d.initialYear)) / 2
+        );
+
       group
         .select(".resize-handle")
         .attr("x", xScale(d.initialYear + d.duration) - 4);
 
-      // Trigger onChange with updated intervention
       if (onChange) {
-        onChange([...interventions]); // Create a new array reference with current values
+        onChange([...interventions]);
       }
     });
 
@@ -290,7 +297,6 @@ export function createTimelineInterface(
     const newX = event.x;
     const [minAllowedYear, maxAllowedYear] = xScale.domain();
 
-    // Calculate and constrain new duration
     const newDuration = Math.max(
       1,
       Math.round(xScale.invert(newX) - d.initialYear)
@@ -300,22 +306,30 @@ export function createTimelineInterface(
       newDuration
     );
 
-    // Update duration
     d.duration = constrainedDuration;
+    const group = d3.select(this.parentNode);
 
-    // Update block width and handle position
-    d3.select(this.parentNode)
+    // Update block width
+    group
       .select(".block")
       .attr(
         "width",
         xScale(d.initialYear + d.duration) - xScale(d.initialYear)
       );
 
+    // Update text position - centered
+    group
+      .select(".block-label")
+      .attr(
+        "x",
+        xScale(d.initialYear) +
+          (xScale(d.initialYear + d.duration) - xScale(d.initialYear)) / 2
+      );
+
     d3.select(this).attr("x", xScale(d.initialYear + d.duration) - 4);
 
-    // Trigger onChange with updated intervention
     if (onChange) {
-      onChange([...interventions]); // Create a new array reference with current values
+      onChange([...interventions]);
     }
   });
 
