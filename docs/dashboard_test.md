@@ -214,7 +214,7 @@ const [allocations, setAllocations] = useState([]);
                 <button id="openQuickviewButton" data-show="quickview" class="btn tooltip" data-tooltip="Add New Intervention" aria-label="Add">
                   <i class="fas fa-plus"></i>
                 </button>
-                ${html`<button class="btn edit tooltip" data-tooltip="Modify Intervention" aria-label="Edit"
+                ${html`<button class="btn edit tooltip" data-tooltip="Apply Modification" aria-label="Edit"
                   onclick=${(e) => {
                     e.stopPropagation();
                     console.log("Modify intervention ", selectedInterventionIndex);
@@ -282,7 +282,7 @@ const [allocations, setAllocations] = useState([]);
           ${(map_aggregate == "Building Level") ? ""
             : html`${playButton} ${morphFactorInput}`}
           <!-- ${html`${playButton} ${morphFactorInput}`} -->
-          <!-- ${resize((width, height) => createGlyphMap(map_aggregate, {width, height}))} -->
+          ${resize((width, height) => createGlyphMap(map_aggregate, {width, height}))}
         </div>
       </div>
     </div>
@@ -973,6 +973,531 @@ function modifyIntervention(index, newConfig) {
 }
 ```
 
-```js
+<!-- ---------------- Sortable Table ---------------- -->
 
+```js
+console.log(">> Define sortable table columns...");
+// columns to show in the table
+const cols = [
+  { column: "id", nominals: null },
+  {
+    column: "isIntervened",
+    nominals: null,
+  },
+  { column: "lsoa", nominals: null },
+  {
+    column: "insulation_rating",
+    ordinals: ["Unknown", "A", "B", "C", "D", "E", "F", "G"],
+  },
+  {
+    column: "insulation_ewall",
+    // ordinals: null,
+    nominals: null,
+    // ordinals: ["Unknown", "A", "B", "C", "D", "E", "F", "G"],
+  },
+  {
+    column: "pv_generation",
+    thresholds: [
+      0, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 20000,
+      30000, 40000, 50000,
+    ],
+  },
+  {
+    column: "ashp_size",
+    thresholds: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30, 40, 50],
+  },
+];
+```
+
+```js
+console.log(">> Create sortable table...");
+const tableData = null;
+// const tableData = selectedIntervention
+//   ? stackedResults.buildings
+//   : buildingsData;
+
+// const table = new createTable(tableData, cols, (changes) => {
+//   console.log("Table changed:", changes);
+//   setSelected(changes.selection);
+// });
+```
+
+<!-- ---------------- Glyph Maps ---------------- -->
+
+```js
+console.log(">> Glyphmap-related functions...");
+function drawDetailOnDemand(width, height) {
+  let canvas = document.createElement("canvas");
+  let ctx = canvas.getContext("2d");
+  canvas.width = width;
+  canvas.height = width;
+
+  if (!detailOnDemand) {
+    return canvas;
+  }
+
+  let data = detailOnDemand;
+
+  let rg = new RadialGlyph([
+    data.carbon.ashp,
+    data.carbon.pv,
+    data.carbon.gshp,
+    data.costs.ashp,
+    data.costs.pv,
+    data.costs.gshp,
+  ]);
+  rg.draw(ctx, width / 2, height / 2, Math.min(width / 2, height / 2));
+
+  return canvas;
+}
+```
+
+```js
+console.log(">> Geo-enrichment...");
+// geo-enrichment - combine geodata with building level properties
+const aggregations = {
+  building_area: "sum",
+  ashp_labour: "sum",
+  ashp_material: "sum",
+  pv_labour: "sum",
+  pv_material: "sum",
+  gshp_labour: "sum",
+  gshp_material: "sum",
+  gshp_size: "sum",
+  heat_demand: "sum", // type inferrence need to deal with some nullish values
+  pv_generation: "sum", // type inferrence need to deal with some nullish values
+  ashp_suitability: "count",
+  pv_suitability: "count",
+  gshp_suitability: "count",
+};
+
+const regular_geodata_withproperties = enrichGeoData(
+  buildingsData,
+  regular_geodata,
+  "lsoa",
+  "code",
+  aggregations
+);
+
+// console.log(
+//   "regular_geodata_withproperties_enriched",
+//   regular_geodata_withproperties_enriched
+// );
+
+const cartogram_geodata_withproperties = enrichGeoData(
+  buildingsData,
+  cartogram_geodata,
+  "lsoa",
+  "code",
+  aggregations
+);
+// console.log(
+//   "cartogram_geodata_withproperties_enriched",
+//   cartogram_geodata_withproperties_enriched
+// );
+```
+
+```js
+// Data processing functions
+console.log(">> Data processing functions: Regular LSOA...");
+const osgb = new OSGB();
+let clone = turf.clone(regular_geodata);
+turf.coordEach(clone, (currentCoord) => {
+  const newCoord = osgb.toGeo(currentCoord);
+  currentCoord[0] = newCoord[0];
+  currentCoord[1] = newCoord[1];
+});
+const regularGeodataLsoaWgs84 = clone;
+```
+
+```js
+// Data processing functions
+console.log(">> Data processing functions: Cartogram LSOA...");
+const osgb = new OSGB();
+let clone = turf.clone(cartogram_geodata);
+turf.coordEach(clone, (currentCoord) => {
+  const newCoord = osgb.toGeo(currentCoord);
+  currentCoord[0] = newCoord[0];
+  currentCoord[1] = newCoord[1];
+});
+const cartogramGeodataLsoaWgs84 = clone;
+// display(cartogramLsoaWgs84());
+```
+
+```js
+// Create a lookup table for the key data - geography
+console.log(">> Create lookup tables...");
+const keydata = _.keyBy(
+  regular_geodata_withproperties.features.map((feat) => {
+    return {
+      code: feat.properties.code,
+      population: +feat.properties.population,
+      data: feat,
+    };
+  }),
+  "code"
+);
+// console.log("keydat", keydata);
+
+const regularGeodataLookup = _.keyBy(
+  regular_geodata_withproperties.features.map((feat) => {
+    return { ...feat, centroid: turf.getCoord(turf.centroid(feat.geometry)) };
+  }),
+  (feat) => feat.properties.code
+);
+
+const cartogramGeodataLsoaLookup = _.keyBy(
+  cartogram_geodata_withproperties.features.map((feat) => {
+    return { ...feat, centroid: turf.getCoord(turf.centroid(feat.geometry)) };
+  }),
+  (feat) => feat.properties.code
+);
+```
+
+```js
+const geographyLsoaWgs84Lookup = _.keyBy(
+  regular_geodata_withproperties.features.map((feat) => {
+    const transformedGeometry = transformGeometry(feat.geometry);
+    const centroid = turf.getCoord(turf.centroid(transformedGeometry));
+    return {
+      ...feat,
+      geometry: transformedGeometry,
+      centroid: centroid,
+    };
+  }),
+  (feat) => feat.properties.code
+);
+
+const cartogramLsoaWgs84Lookup = _.keyBy(
+  cartogram_geodata_withproperties.features.map((feat) => {
+    const transformedGeometry = transformGeometry(feat.geometry);
+    const centroid = turf.getCoord(turf.centroid(transformedGeometry));
+    return {
+      ...feat,
+      geometry: transformedGeometry,
+      centroid: centroid,
+    };
+  }),
+  (feat) => feat.properties.code
+);
+```
+
+```js
+// Flubber interpolations
+const flubbers = {};
+for (const key of Object.keys(cartogramLsoaWgs84Lookup)) {
+  if (geographyLsoaWgs84Lookup[key] && cartogramLsoaWgs84Lookup[key]) {
+    flubbers[key] = flubber.interpolate(
+      turf.getCoords(geographyLsoaWgs84Lookup[key])[0],
+      turf.getCoords(cartogramLsoaWgs84Lookup[key])[0],
+      { string: false }
+    );
+  }
+}
+
+const tweenWGS84Lookup = _.mapValues(flubbers, (v, k) => {
+  const feat = turf.multiLineString([v(morph_factor)], { code: k });
+  feat.centroid = turf.getCoord(turf.centroid(feat.geometry));
+  return feat;
+});
+```
+
+```js
+// discretiser
+function valueDiscretiser(geomLookup) {
+  return createDiscretiserValue({
+    valueFn: (row) => {
+      return row.code;
+    },
+    glyphLocationFn: (key) => geomLookup[key]?.centroid,
+    boundaryFn: (key) => geomLookup[key]?.geometry.coordinates[0],
+  });
+}
+```
+
+```js
+console.log(">> Initialize the GlyphMap Specification...");
+const glyphMapSpec = {
+  coordType: "notmercator",
+  initialBB: transformCoordinates(turf.bbox(regular_geodata)),
+  data: Object.values(keydata),
+  getLocationFn: (row) => regularGeodataLookup[row.code]?.centroid,
+  discretisationShape: "grid",
+  interactiveCellSize: true,
+  interactiveZoomPan: true,
+  mapType: "CartoPositron",
+  // mapType: "StamenTonerLite",
+  cellSize: 30,
+
+  width: 500,
+  height: 500,
+
+  customMap: {
+    scaleParams: [],
+
+    initFn: (cells, cellSize, global, panel) => {
+      // console.log("initFn", cells, cellSize, global, panel);
+    },
+
+    preAggrFn: (cells, cellSize, global, panel) => {
+      // console.log("global", global);
+    },
+
+    aggrFn: (cell, row, weight, global, panel) => {
+      // console.log("aggrFn", row);
+      if (cell.building_area) {
+        cell.building_area += row.data.properties.building_area;
+        // Update existing values
+        cell.data.costs.ashp +=
+          row.data.properties.ashp_labour + row.data.properties.ashp_material;
+        cell.data.costs.pv +=
+          row.data.properties.pv_labour + row.data.properties.pv_material;
+        cell.data.costs.gshp +=
+          row.data.properties.gshp_labour + row.data.properties.gshp_material;
+        cell.data.carbon.ashp += row.data.properties.heat_demand;
+        cell.data.carbon.pv += row.data.properties.pv_generation;
+        cell.data.carbon.gshp += row.data.properties.gshp_size;
+      } else {
+        cell.building_area = row.data.properties.building_area;
+        // Initialize data structure
+        cell.data = {
+          costs: {
+            ashp:
+              row.data.properties.ashp_labour +
+              row.data.properties.ashp_material,
+            pv: row.data.properties.pv_labour + row.data.properties.pv_material,
+            gshp:
+              row.data.properties.gshp_labour +
+              row.data.properties.gshp_material,
+          },
+          carbon: {
+            ashp: row.data.properties.heat_demand,
+            pv: row.data.properties.pv_generation,
+            gshp: row.data.properties.gshp_size,
+          },
+        };
+      }
+
+      // --- Normalization ---
+      // Create arrays for costs and carbon for normalization
+      let costsData = Object.entries(cell.data.costs).map(([key, value]) => ({
+        key,
+        value,
+      }));
+      let carbonData = Object.entries(cell.data.carbon).map(([key, value]) => ({
+        key,
+        value,
+      }));
+
+      // Normalize costs and carbon data separately
+      costsData = normaliseData(costsData, ["value"]);
+      carbonData = normaliseData(carbonData, ["value"]);
+
+      // Update cell.data with normalized values
+      cell.data.costs = costsData.reduce((acc, { key, value }) => {
+        acc[key] = value;
+        return acc;
+      }, {});
+      cell.data.carbon = carbonData.reduce((acc, { key, value }) => {
+        acc[key] = value;
+        return acc;
+      }, {});
+    },
+
+    postAggrFn: (cells, cellSize, global, panel) => {
+      //add cell interaction
+      let canvas = d3.select(panel).select("canvas").node();
+
+      canvas.addEventListener("click", function (evt) {
+        //check which cell the click was in
+        const rect = canvas.getBoundingClientRect();
+        let x = evt.clientX - rect.left;
+        let y = evt.clientY - rect.top;
+        global.clickedCell = null;
+        for (let i = 0; i < cells.length; i++)
+          if (insideCell(cells[i], x, y)) global.clickedCell = cells[i];
+      });
+    },
+
+    preDrawFn: (cells, cellSize, ctx, global, panel) => {
+      if (!cells || cells.length === 0) {
+        console.error("No cells data available");
+        return;
+      }
+
+      global.pathGenerator = d3.geoPath().context(ctx);
+      global.colourScalePop = d3
+        .scaleSequential(d3.interpolateBlues)
+        .domain([0, d3.max(cells.map((row) => row.building_area))]);
+
+      //draw a coloured polygon
+      // ctx.beginPath();
+      // ctx.rect(0, 0, panel.getWidth(), panel.getHeight());
+      // const colour = d3.color("#fff");
+      // colour.opacity = morph_factor;
+      // ctx.fillStyle = colour;
+      // ctx.fill();
+    },
+
+    drawFn: (cell, x, y, cellSize, ctx, global, panel) => {
+      const boundary = cell.getBoundary(0);
+      if (boundary[0] != boundary[boundary.length - 1]) {
+        boundary.push(boundary[0]);
+      }
+      const boundaryFeat = turf.polygon([boundary]);
+
+      ctx.beginPath();
+      global.pathGenerator(boundaryFeat);
+      ctx.fillStyle = global.colourScalePop(cell.building_area);
+      ctx.fill();
+
+      ctx.lineWidth = 0.2;
+      ctx.strokeStyle = "rgb(7, 77, 255)";
+      ctx.stroke();
+
+      //add contour to clicked cells
+      if (global.clickedCell == cell) {
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = "rgb(250,250,250)";
+        ctx.stroke();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = "rgb(50,50,50)";
+        ctx.stroke();
+      }
+
+      //draw a radial glyph -> change the array to real data (between 0 and 1)
+      // drawRadialMultivariateGlyph([0.5, 0.1, 0.9, 0.3], x, y, cellSize, ctx);
+      let rg = new RadialGlyph([
+        cell.data.carbon.ashp,
+        cell.data.carbon.pv,
+        cell.data.carbon.gshp,
+        cell.data.costs.ashp,
+        cell.data.costs.pv,
+        cell.data.costs.gshp,
+      ]);
+      rg.draw(ctx, x, y, cellSize / 2);
+
+      // console.log("boundary", boundary);
+    },
+
+    postDrawFn: (cells, cellSize, ctx, global, panel) => {},
+
+    tooltipTextFn: (cell) => {
+      if (cell) {
+        console.log("cell on tooltip", cell);
+        setDetailOnDemand(cell.data);
+        return `Total Building Area: ${cell.building_area.toFixed(2)} m^2`;
+      } else {
+        return "no data";
+      }
+    },
+  },
+};
+// display([...glyphMapSpec2()]);
+```
+
+```js
+{
+  console.log(">> Morphing...", morph_factor);
+  morph_factor; //causes code to run whenever the slider is moved
+  morphGlyphMap.setGlyph({
+    discretiserFn: valueDiscretiser(tweenWGS84Lookup),
+    preDrawFn: (cells, cellSize, ctx, global, panel) => {
+      //unfortunately need to repeat what's in the base
+
+      //draw a coloured polygon
+      ctx.beginPath();
+      ctx.rect(0, 0, panel.getWidth(), panel.getHeight());
+      const colour = d3.color("#fff");
+      colour.opacity = morph_factor; //morphFactorInput;
+      ctx.fillStyle = colour;
+      ctx.fill();
+    },
+  });
+}
+```
+
+```js
+const glyphMapSpecWgs84 = {
+  ...glyphMapSpec,
+  coordType: "mercator",
+  initialBB: turf.bbox(regularGeodataLsoaWgs84),
+  getLocationFn: (row) => geographyLsoaWgs84Lookup[row.code]?.centroid,
+};
+// display(glyphMapSpecWgs84);
+```
+
+```js
+//morphGlyphMap as a factory function returning an object with setGlyph
+function createMorphGlyphMap(width, height) {
+  // Create the glyph map instance with the WGS84 specifications
+  const glyphMapInstance = glyphMap({
+    ...glyphMapSpecWgs84, //takes the base spec...
+    width: width,
+    height: height,
+  });
+
+  return glyphMapInstance;
+}
+const morphGlyphMap = createMorphGlyphMap(1000, 600);
+```
+
+```js
+// Coordinate transformation utilities
+function transformCoordinates(coords) {
+  if (coords.length === 4 && !Array.isArray(coords[0])) {
+    // bounding box
+    return [
+      ...proj.toGeo([coords[0], coords[1]]),
+      ...proj.toGeo([coords[2], coords[3]]),
+    ];
+  } else if (Array.isArray(coords[0])) {
+    // arrays of coordinates
+    return coords.map(transformCoordinates);
+  } else {
+    // individual coordinate pairs
+    return proj.toGeo(coords);
+  }
+}
+
+function transformGeometry(geometry) {
+  if (geometry.type === "GeometryCollection") {
+    return {
+      ...geometry,
+      geometries: geometry.geometries.map(transformGeometry),
+    };
+  }
+
+  return {
+    ...geometry,
+    coordinates: transformCoordinates(geometry.coordinates),
+  };
+}
+
+// Function to apply transformation to geographicShapes
+function applyTransformationToShapes(geographicShapes) {
+  return Object.fromEntries(
+    Object.entries(geographicShapes).map(([code, feature]) => [
+      code,
+      {
+        ...feature,
+        geometry: transformGeometry(feature.geometry),
+      },
+    ])
+  );
+}
+
+// check to see if it works
+// display(transformCoordinates([547764, 180871]));
+```
+
+```js
+function createGlyphMap(map_aggregate, { width, height }) {
+  // console.log(width, height);
+  if (map_aggregate == "Building Level") {
+    return null; //createLeafletMap(selected, width, height);
+  } else if (map_aggregate == "LSOA Level") {
+    return morphGlyphMap;
+  }
+}
 ```
