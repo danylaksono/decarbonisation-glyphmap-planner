@@ -1,4 +1,7 @@
 import * as d3 from "npm:d3";
+import { OSGB } from "./osgb/index.js";
+
+const proj = new OSGB();
 
 /**
  * Infer visualization-oriented data types (e.g., Quantitative, Nominal, Temporal, Ordinal).
@@ -293,6 +296,7 @@ export function debounceInput(input, delay = 1000) {
   return div;
 }
 
+// using session storage to escape observablehq's reactivity
 export function saveToSession(key, value) {
   // Validate parameters
   if (!key || typeof key !== "string") {
@@ -352,3 +356,50 @@ export function getFromSession(key, defaultValue = null) {
     return defaultValue;
   }
 }
+
+// Coordinate transformation utilities
+export function transformCoordinates(coords) {
+  if (coords.length === 4 && !Array.isArray(coords[0])) {
+    // bounding box
+    return [
+      ...proj.toGeo([coords[0], coords[1]]),
+      ...proj.toGeo([coords[2], coords[3]]),
+    ];
+  } else if (Array.isArray(coords[0])) {
+    // arrays of coordinates
+    return coords.map(transformCoordinates);
+  } else {
+    // individual coordinate pairs
+    return proj.toGeo(coords);
+  }
+}
+
+export function transformGeometry(geometry) {
+  if (geometry.type === "GeometryCollection") {
+    return {
+      ...geometry,
+      geometries: geometry.geometries.map(transformGeometry),
+    };
+  }
+
+  return {
+    ...geometry,
+    coordinates: transformCoordinates(geometry.coordinates),
+  };
+}
+
+// Function to apply transformation to geographicShapes
+export function applyTransformationToShapes(geographicShapes) {
+  return Object.fromEntries(
+    Object.entries(geographicShapes).map(([code, feature]) => [
+      code,
+      {
+        ...feature,
+        geometry: transformGeometry(feature.geometry),
+      },
+    ])
+  );
+}
+
+// check to see if it works
+// display(transformCoordinates([547764, 180871]));

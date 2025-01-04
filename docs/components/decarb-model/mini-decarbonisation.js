@@ -1036,7 +1036,7 @@ export class MiniDecarbModel {
       modelRecap.allBuildings.forEach((building) => {
         if (!buildingMap.has(building.id)) {
           buildingMap.set(building.id, {
-            // ...building.properties,
+            ...building.properties,
             ...building,
             isIntervened: false,
             totalCost: 0,

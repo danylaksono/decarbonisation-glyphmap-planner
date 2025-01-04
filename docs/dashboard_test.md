@@ -49,6 +49,9 @@ import {
   debounceInput,
   saveToSession,
   getFromSession,
+  transformCoordinates,
+  transformGeometry,
+  applyTransformationToShapes,
 } from "./components/helpers.js";
 ```
 
@@ -263,6 +266,7 @@ const [allocations, setAllocations] = useState([]);
           </header>
           <div class="card-content">
             <div class="content">
+            ${Inputs.table(data)}
               <!-- ${table.getNode()} -->
               <!-- <div>No. of intervened buildings: ${JSON.stringify(stackedResults.summary.intervenedCount)}</div> -->
             </div>
@@ -408,6 +412,13 @@ display(stackedRecap.intervenedBuildings);
 
 display(html`<p>"List of Intervention Results:"</p>`);
 display(stackedRecap.recap);
+
+display(html`<p>"Selected Intervention"</p>`);
+display(
+  selectedInterventionIndex === null
+    ? [...buildingsData]
+    : interventions[selectedInterventionIndex].intervenedBuildings
+);
 ```
 
 <!-- ---------------- Intervention Managers ---------------- -->
@@ -650,8 +661,8 @@ const flip_budget = Generators.input(flipButtonInput);
 
 ```js
 // --- play button ---
-const playButton = html`<button class="btn edit" style="margin-top: 10px;">
-  <i class="fas fa-play"></i>&nbsp;
+const playButton = html`<button class="btn edit" style="margin-top: 5px;">
+  <i class="fas fa-play fa-large"></i>&nbsp;
 </button>`;
 ```
 
@@ -757,9 +768,16 @@ function animate(currentValue) {
   let newValue = currentValue + 0.01 * direction;
 
   // Reverse direction if boundaries are reached
+  // if (newValue >= 1 || newValue <= 0) {
+  //   direction *= -1;
+  //   newValue = Math.max(0, Math.min(1, newValue)); // Clamp value between 0 and 1
+  // }
   if (newValue >= 1 || newValue <= 0) {
-    direction *= -1;
-    newValue = Math.max(0, Math.min(1, newValue)); // Clamp value between 0 and 1
+    newValue = Math.max(0, Math.min(1, newValue)); // Clamp value
+    playing = false; // Pause animation
+    playButton.innerHTML = '<i class="fas fa-play"></i>'; // Update button
+    cancelAnimationFrame(animationFrame);
+    return; // Stop animation loop
   }
 
   // Update the slider and dispatch the "input" event for reactivity
@@ -973,6 +991,22 @@ function modifyIntervention(index, newConfig) {
 }
 ```
 
+<!-- ----------------  D A T A  ---------------- -->
+
+```js
+const data =
+  selectedInterventionIndex === null
+    ? stackedRecap?.buildings ?? buildingsData
+    : interventions[selectedInterventionIndex]?.intervenedBuildings;
+console.log(">> DATA DATA DATA", data);
+```
+
+```js
+// Table Data
+const tableColumns = Object.keys(data[0]).filter((key) => key !== "properties");
+console.log(">> Define table columns...", tableColumns);
+```
+
 <!-- ---------------- Sortable Table ---------------- -->
 
 ```js
@@ -1023,34 +1057,6 @@ const tableData = null;
 ```
 
 <!-- ---------------- Glyph Maps ---------------- -->
-
-```js
-console.log(">> Glyphmap-related functions...");
-function drawDetailOnDemand(width, height) {
-  let canvas = document.createElement("canvas");
-  let ctx = canvas.getContext("2d");
-  canvas.width = width;
-  canvas.height = width;
-
-  if (!detailOnDemand) {
-    return canvas;
-  }
-
-  let data = detailOnDemand;
-
-  let rg = new RadialGlyph([
-    data.carbon.ashp,
-    data.carbon.pv,
-    data.carbon.gshp,
-    data.costs.ashp,
-    data.costs.pv,
-    data.costs.gshp,
-  ]);
-  rg.draw(ctx, width / 2, height / 2, Math.min(width / 2, height / 2));
-
-  return canvas;
-}
-```
 
 ```js
 console.log(">> Geo-enrichment...");
@@ -1404,6 +1410,10 @@ const glyphMapSpec = {
     discretiserFn: valueDiscretiser(tweenWGS84Lookup),
     preDrawFn: (cells, cellSize, ctx, global, panel) => {
       //unfortunately need to repeat what's in the base
+      global.pathGenerator = d3.geoPath().context(ctx);
+      global.colourScalePop = d3
+        .scaleSequential(d3.interpolateBlues)
+        .domain([0, d3.max(cells.map((row) => row.building_area))]);
 
       //draw a coloured polygon
       ctx.beginPath();
@@ -1439,56 +1449,7 @@ function createMorphGlyphMap(width, height) {
 
   return glyphMapInstance;
 }
-const morphGlyphMap = createMorphGlyphMap(1000, 600);
-```
-
-```js
-// Coordinate transformation utilities
-function transformCoordinates(coords) {
-  if (coords.length === 4 && !Array.isArray(coords[0])) {
-    // bounding box
-    return [
-      ...proj.toGeo([coords[0], coords[1]]),
-      ...proj.toGeo([coords[2], coords[3]]),
-    ];
-  } else if (Array.isArray(coords[0])) {
-    // arrays of coordinates
-    return coords.map(transformCoordinates);
-  } else {
-    // individual coordinate pairs
-    return proj.toGeo(coords);
-  }
-}
-
-function transformGeometry(geometry) {
-  if (geometry.type === "GeometryCollection") {
-    return {
-      ...geometry,
-      geometries: geometry.geometries.map(transformGeometry),
-    };
-  }
-
-  return {
-    ...geometry,
-    coordinates: transformCoordinates(geometry.coordinates),
-  };
-}
-
-// Function to apply transformation to geographicShapes
-function applyTransformationToShapes(geographicShapes) {
-  return Object.fromEntries(
-    Object.entries(geographicShapes).map(([code, feature]) => [
-      code,
-      {
-        ...feature,
-        geometry: transformGeometry(feature.geometry),
-      },
-    ])
-  );
-}
-
-// check to see if it works
-// display(transformCoordinates([547764, 180871]));
+const morphGlyphMap = createMorphGlyphMap(1000, 800);
 ```
 
 ```js
