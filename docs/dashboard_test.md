@@ -1017,10 +1017,19 @@ console.log(">> DATA DATA DATA", data);
 
 ```js
 // Table Data
-const excludedColumns = ["properties"];
-const tableColumns = Object.keys(data[0]).filter(
-  (key) => !excludedColumns.includes(key)
-);
+const excludedColumns = ["properties", "x", "y"]; // columns to exclude from the table
+const customOrder = ["id", "lsoa", "msoa", "isIntervened", "score"]; // custom order for columns
+const tableColumns = customOrder;
+// const tableColumns = Object.keys(data[0])
+//   .filter((key) => !excludedColumns.includes(key))
+//   .sort((a, b) => {
+//     const indexA = customOrder.indexOf(a);
+//     const indexB = customOrder.indexOf(b);
+//     if (indexA === -1 && indexB === -1) return a.localeCompare(b); // Sort alphabetically if not in customOrder
+//     if (indexA === -1) return 1; // Put a after b
+//     if (indexB === -1) return -1; // Put b after a
+//     return indexA - indexB; // Sort based on customOrder
+//   });
 console.log(">> Define table columns...", tableColumns);
 ```
 
