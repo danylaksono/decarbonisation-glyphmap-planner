@@ -266,7 +266,11 @@ const [allocations, setAllocations] = useState([]);
           </header>
           <div class="card-content">
             <div class="content">
-            ${Inputs.table(data)}
+            ${Inputs.table(data, 
+              {
+              columns: tableColumns
+              })
+            }
               <!-- ${table.getNode()} -->
               <!-- <div>No. of intervened buildings: ${JSON.stringify(stackedResults.summary.intervenedCount)}</div> -->
             </div>
@@ -994,16 +998,29 @@ function modifyIntervention(index, newConfig) {
 <!-- ----------------  D A T A  ---------------- -->
 
 ```js
+const selectedIntervenedBuildings =
+  interventions[selectedInterventionIndex]?.intervenedBuildings;
+
+const flatData = selectedIntervenedBuildings?.map((p) => ({
+  ...p,
+  ...p.properties,
+}));
+
+console.log(">> Intervened buildings", flatData);
+
 const data =
   selectedInterventionIndex === null
     ? stackedRecap?.buildings ?? buildingsData
-    : interventions[selectedInterventionIndex]?.intervenedBuildings;
+    : flatData;
 console.log(">> DATA DATA DATA", data);
 ```
 
 ```js
 // Table Data
-const tableColumns = Object.keys(data[0]).filter((key) => key !== "properties");
+const excludedColumns = ["properties"];
+const tableColumns = Object.keys(data[0]).filter(
+  (key) => !excludedColumns.includes(key)
+);
 console.log(">> Define table columns...", tableColumns);
 ```
 
