@@ -42,6 +42,10 @@ import { createTimelineInterface } from "./components/decarb-model/timeline.js";
 
 import { createTable } from "./components/sorterTable.js";
 import {
+  SummarizeColumn,
+  createTableFormat,
+} from "./components/input-table/input-table.js";
+import {
   inferTypes,
   enrichGeoData,
   normaliseData,
@@ -261,14 +265,16 @@ const [allocations, setAllocations] = useState([]);
     </div> <!-- left top -->
     <div class="left-bottom">
         <div class="card" style="overflow-x:hidden;">
-          <header class="quickview-header">
+          <!-- <header class="quickview-header">
             <p class="title">Table View </p>
-          </header>
+          </header> -->
           <div class="card-content">
             <div class="content">
             ${Inputs.table(data, 
               {
-              columns: tableColumns
+              columns: tableColumns,
+              format: tableFormat,
+              layout: "auto",
               })
             }
               <!-- ${table.getNode()} -->
@@ -1017,11 +1023,91 @@ console.log(">> DATA DATA DATA", data);
 
 ```js
 // Table Data
-const excludedColumns = ["properties"];
-const tableColumns = Object.keys(data[0]).filter(
-  (key) => !excludedColumns.includes(key)
-);
+const excludedColumns = ["properties", "x", "y"]; // columns to exclude from the table
+const customOrder = ["id", "lsoa", "msoa", "isIntervened", "score"]; // custom order for columns
+const customOrder2 = ["id", "lsoa", "score"]; // custom order for columns
+// const tableColumns = customOrder2;
+
+// const customHeader = {
+//   id: createTableHeader(50, 20, "#4a90e2", "id"),
+//   lsoa: createTableHeader(50, 20, "#4a90e2", "LSOA"),
+//   score: createTableHeader(50, 20, "#4a90e2", "Score"),
+// };
+
+const tableColumns = Object.keys(data[0])
+  .filter((key) => !excludedColumns.includes(key))
+  .sort((a, b) => {
+    const indexA = customOrder.indexOf(a);
+    const indexB = customOrder.indexOf(b);
+    if (indexA === -1 && indexB === -1) return a.localeCompare(b); // Sort alphabetically if not in customOrder
+    if (indexA === -1) return 1; // Put a after b
+    if (indexB === -1) return -1; // Put b after a
+    return indexA - indexB; // Sort based on customOrder
+  });
 console.log(">> Define table columns...", tableColumns);
+```
+
+```js
+// test table
+html`<h1>Summarize</h1>`;
+// display(SummarizeColumn(data, "lsoa"));
+```
+
+```js
+// create a function which return rectangle svg node, given width, height, fill
+function createRectangle(width, height, fill) {
+  const rect = d3
+    .select("body")
+    .append("svg")
+    .attr("width", width)
+    .attr("height", height);
+  rect
+    .append("rect")
+    .attr("width", width)
+    .attr("height", height)
+    .attr("fill", fill);
+  return rect;
+  // return rect;
+}
+
+function createTableHeader(fill, headerText) {
+  const header = d3
+    .select("body")
+    .append("svg")
+    .attr("viewBox", "0 0 100 100")
+    .attr("preserveAspectRatio", "none")
+    .style("width", "100%")
+    .style("height", "100%")
+    .style("overflow", "visible");
+
+  // Create the rectangle background
+  header
+    .append("rect")
+    .attr("width", "100%")
+    .attr("height", "100%")
+    .attr("fill", fill)
+    .style("stroke", "#000")
+    .style("stroke-width", "1px");
+
+  // Add centered text
+  header
+    .append("text")
+    .attr("x", "50%")
+    .attr("y", "50%")
+    .attr("text-anchor", "middle")
+    .attr("dominant-baseline", "middle")
+    .style("fill", "#ffffff")
+    .style("font-family", "Arial, sans-serif")
+    .style("font-size", "14px")
+    .style("font-weight", "bold")
+    .text(headerText);
+
+  return header;
+}
+```
+
+```js
+const tableFormat = createTableFormat(data);
 ```
 
 <!-- ---------------- Sortable Table ---------------- -->
