@@ -30,16 +30,20 @@ export function highlightRows(form, { color = "yellow" }) {
 }
 
 // Sparkbar example
-export function sparkbar(max) {
-  return (x) => htl.html`<div style="
-    background: lightblue;
-    width: ${(100 * x) / max}%;
-    float: right;
-    padding-right: 3px;
-    box-sizing: border-box;
-    overflow: visible;
-    display: flex;
-    justify-content: end;">${x.toLocaleString("en")}`;
+export function sparkbar(max, colorScale, alpha = 0.6) {
+  return (x) => {
+    const color = d3.color(colorScale(x));
+    color.opacity = alpha; // Set transparency
+    return htl.html`<div style="
+      background: ${color};
+      width: ${(100 * x) / max}%;
+      float: right;
+      padding-right: 3px;
+      box-sizing: border-box;
+      overflow: visible;
+      display: flex;
+      justify-content: end;">${x.toLocaleString("en")}`;
+  };
 }
 
 // sparkarea example
@@ -269,14 +273,21 @@ export function inferColumnType(data, column) {
 }
 
 export function createTableFormat(data, options = {}) {
-  const defaultColorInterpolator = d3.interpolatePlasma;
+  const defaultColorInterpolator = d3.interpolateViridis;
 
   return Object.fromEntries(
     Object.keys(data[0]).map((column) => {
+      // skip checking "id" column
+      if (column === "id") {
+        return [column, (x) => x?.toString()];
+      }
+
       const columnType = inferColumnType(data, column);
+      // console.log(("columnType of ", column, columnType));
 
       if (columnType === "numeric") {
         const max = d3.max(data, (d) => d[column]);
+        console.log("max value in column", column, max);
         const colorScale = d3
           .scaleSequential()
           .domain([0, max])
