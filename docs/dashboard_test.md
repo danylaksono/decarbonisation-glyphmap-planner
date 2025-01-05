@@ -41,7 +41,10 @@ import {
 import { createTimelineInterface } from "./components/decarb-model/timeline.js";
 
 import { createTable } from "./components/sorterTable.js";
-import { SummarizeColumn } from "./components/input-table/input-table.js";
+import {
+  SummarizeColumn,
+  createTableFormat,
+} from "./components/input-table/input-table.js";
 import {
   inferTypes,
   enrichGeoData,
@@ -270,6 +273,7 @@ const [allocations, setAllocations] = useState([]);
             ${Inputs.table(data, 
               {
               columns: tableColumns,
+              format: tableFormat,
               layout: "auto",
               })
             }
@@ -1024,11 +1028,11 @@ const customOrder = ["id", "lsoa", "msoa", "isIntervened", "score"]; // custom o
 const customOrder2 = ["id", "lsoa", "score"]; // custom order for columns
 // const tableColumns = customOrder2;
 
-const customHeader = {
-  id: createTableHeader(50, 20, "#4a90e2", "id"),
-  lsoa: createTableHeader(50, 20, "#4a90e2", "LSOA"),
-  score: createTableHeader(50, 20, "#4a90e2", "Score"),
-};
+// const customHeader = {
+//   id: createTableHeader(50, 20, "#4a90e2", "id"),
+//   lsoa: createTableHeader(50, 20, "#4a90e2", "LSOA"),
+//   score: createTableHeader(50, 20, "#4a90e2", "Score"),
+// };
 
 const tableColumns = Object.keys(data[0])
   .filter((key) => !excludedColumns.includes(key))
@@ -1066,31 +1070,33 @@ function createRectangle(width, height, fill) {
   // return rect;
 }
 
-function createTableHeader(width, height, fill, headerText) {
+function createTableHeader(fill, headerText) {
   const header = d3
     .select("body")
     .append("svg")
-    .attr("width", width)
-    .attr("height", height)
-    .style("overflow", "visible"); // Allows text to overflow if needed
+    .attr("viewBox", "0 0 100 100")
+    .attr("preserveAspectRatio", "none")
+    .style("width", "100%")
+    .style("height", "100%")
+    .style("overflow", "visible");
 
   // Create the rectangle background
   header
     .append("rect")
-    .attr("width", width)
-    .attr("height", height)
+    .attr("width", "100%")
+    .attr("height", "100%")
     .attr("fill", fill)
-    .style("stroke", "#000") // Adds a border
+    .style("stroke", "#000")
     .style("stroke-width", "1px");
 
   // Add centered text
   header
     .append("text")
-    .attr("x", width / 2)
-    .attr("y", height / 2)
-    .attr("text-anchor", "middle") // Centers text horizontally
-    .attr("dominant-baseline", "middle") // Centers text vertically
-    .style("fill", "#ffffff") // Text color (white for better contrast)
+    .attr("x", "50%")
+    .attr("y", "50%")
+    .attr("text-anchor", "middle")
+    .attr("dominant-baseline", "middle")
+    .style("fill", "#ffffff")
     .style("font-family", "Arial, sans-serif")
     .style("font-size", "14px")
     .style("font-weight", "bold")
@@ -1098,6 +1104,10 @@ function createTableHeader(width, height, fill, headerText) {
 
   return header;
 }
+```
+
+```js
+const tableFormat = createTableFormat(data);
 ```
 
 <!-- ---------------- Sortable Table ---------------- -->

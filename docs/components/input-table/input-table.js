@@ -29,6 +29,54 @@ export function highlightRows(form, { color = "yellow" }) {
   return form;
 }
 
+// Sparkbar example
+export function sparkbar(max) {
+  return (x) => htl.html`<div style="
+    background: lightblue;
+    width: ${(100 * x) / max}%;
+    float: right;
+    padding-right: 3px;
+    box-sizing: border-box;
+    overflow: visible;
+    display: flex;
+    justify-content: end;">${x.toLocaleString("en")}`;
+}
+
+// sparkarea example
+// from https://observablehq.com/@mbostock/covid-cases-by-state
+export function sparkarea({
+  x: X,
+  y: Y,
+  xdomain = d3.extent(X),
+  ydomain = d3.extent(Y),
+  width = 240,
+  height = 20,
+}) {
+  const x = d3.scaleUtc(xdomain, [0, width]);
+  const y = d3.scaleLinear(ydomain, [height, 0]);
+  const area = d3
+    .area()
+    .x((d, i) => x(X[i]))
+    .y1((d, i) => y(Y[i]))
+    .y0(height)
+    .defined((d, i) => !isNaN(X[i]) && !isNaN(Y[i]));
+  return d3
+    .create("svg")
+    .attr("width", width)
+    .attr("height", height)
+    .style("vertical-align", "middle")
+    .style("margin", "-3px 0")
+    .call((g) => g.append("path").attr("fill", "#faa").attr("d", area(data)))
+    .call((g) =>
+      g
+        .append("path")
+        .attr("fill", "none")
+        .attr("stroke", "red")
+        .attr("d", area.lineY1()(data))
+    )
+    .node();
+}
+
 // A function to summarize a single column
 // from https://observablehq.com/@observablehq/summary-table
 export const SummarizeColumn = (data, col) => {
@@ -209,6 +257,43 @@ export const SummarizeColumn = (data, col) => {
   return el;
   //   return chart;
 };
+
+export function inferColumnType(data, column) {
+  if (data.every((d) => typeof d[column] === "number" && !isNaN(d[column]))) {
+    return "numeric";
+  } else if (data.every((d) => typeof d[column] === "string")) {
+    return "text";
+  } else {
+    return "other";
+  }
+}
+
+export function createTableFormat(data, options = {}) {
+  const defaultColorInterpolator = d3.interpolatePlasma;
+
+  return Object.fromEntries(
+    Object.keys(data[0]).map((column) => {
+      const columnType = inferColumnType(data, column);
+
+      if (columnType === "numeric") {
+        const max = d3.max(data, (d) => d[column]);
+        const colorScale = d3
+          .scaleSequential()
+          .domain([0, max])
+          .interpolator(
+            options.colorInterpolators?.[column] || defaultColorInterpolator
+          );
+
+        return [column, sparkbar(max, colorScale)];
+      } else if (columnType === "text") {
+        return [column, (x) => x?.toString().toLowerCase()];
+      } else {
+        // Default for other types
+        return [column, (x) => x?.toString()];
+      }
+    })
+  );
+}
 
 export const getType = (data, column) => {
   for (const d of data) {
