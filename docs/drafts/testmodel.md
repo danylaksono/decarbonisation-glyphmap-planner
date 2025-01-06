@@ -9,9 +9,25 @@ sql:
 
 ```js
 import {
+  TimeGlyph,
+  GlyphCollection,
+} from "./../components/glyph-designs/timeGlyph.js";
+import {
   InterventionManager,
   MiniDecarbModel,
 } from "./../components/decarb-model/mini-decarbonisation.js";
+```
+
+```js
+function context2d(width, height, dpi = devicePixelRatio) {
+  const canvas = document.createElement("canvas");
+  canvas.width = width * dpi;
+  canvas.height = height * dpi;
+  canvas.style = `width: ${width}px;`;
+  const context = canvas.getContext("2d");
+  context.scale(dpi, dpi);
+  return context;
+}
 ```
 
 ## Test New Model
@@ -142,7 +158,7 @@ const config3 = {
   id: Date.now(),
   initialYear: 2026,
   rolloverBudget: 0,
-  yearlyBudgets: [4000, 4000, 4000],
+  yearlyBudgets: [9000, 7000, 4000],
   optimizationStrategy: "tech-first",
   tech: "PV",
   priorities: [],
@@ -156,7 +172,7 @@ const manager = new InterventionManager(newBuildings, listOfTech);
 
 // --- Add interventions ---
 manager.addIntervention(config1);
-// manager.addIntervention(config3);
+manager.addIntervention(config3);
 // manager.addIntervention(config2);
 
 // --- Change the order of interventions ---
@@ -201,4 +217,49 @@ display(stackedRecap.intervenedBuildings);
 
 display(html`<p>"List of Intervention Results:"</p>`);
 display(stackedRecap.recap);
+```
+
+## Glyphs
+
+```js
+// timeglyph
+const tgData = {
+  ASHP: [0.2, 0.3, 0.4, 0.5, 0.6], // Values for category "ASHP" over 5 time steps
+  PV: [0.1, 0.2, 0.1, 0.15, 0.2], // Values for category "PV" over the same time steps
+  Wind: [0.05, 0.1, 0.15, 0.1, 0.05], // Another category "Wind"
+};
+
+const data1 = {
+  ASHP: [0.2, 0.3, 0.4],
+  PV: [0.1, 0.2, 0.1],
+};
+
+const data2 = {
+  ASHP: [0.3, 0.4, 0.5],
+  PV: [0.2, 0.3, 0.2],
+};
+
+const tg = new TimeGlyph(tgData);
+const tg2 = new TimeGlyph(data1);
+const tg3 = new TimeGlyph(data2);
+```
+
+```js
+const [w, h] = [600, 600];
+const ctx = context2d(w, h);
+const canvas = ctx.canvas;
+ctx.fillStyle = "lightgrey";
+ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+const x = 200;
+const y = 200;
+
+const collection = new GlyphCollection();
+
+// collection.add(tg2);
+// collection.add(tg3);
+
+display(canvas);
+tg2.draw(ctx, x, y, 200, 200);
+tg3.draw(ctx, x + 210, y, 200, 200);
 ```

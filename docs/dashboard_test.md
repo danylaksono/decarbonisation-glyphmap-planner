@@ -1181,7 +1181,8 @@ const aggregations = {
 };
 
 const regular_geodata_withproperties = enrichGeoData(
-  buildingsData,
+  // buildingsData,
+  data,
   regular_geodata,
   "lsoa",
   "code",
@@ -1194,7 +1195,8 @@ const regular_geodata_withproperties = enrichGeoData(
 // );
 
 const cartogram_geodata_withproperties = enrichGeoData(
-  buildingsData,
+  // buildingsData,
+  data,
   cartogram_geodata,
   "lsoa",
   "code",
