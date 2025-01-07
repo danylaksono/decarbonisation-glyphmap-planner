@@ -287,7 +287,7 @@ export function createTableFormat(data, options = {}) {
 
       if (columnType === "numeric") {
         const max = d3.max(data, (d) => d[column]);
-        console.log("max value in column", column, max);
+        // console.log("max value in column", column, max);
         const colorScale = d3
           .scaleSequential()
           .domain([0, max])

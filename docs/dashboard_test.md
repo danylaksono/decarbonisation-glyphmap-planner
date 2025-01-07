@@ -1044,7 +1044,7 @@ const tableColumns = Object.keys(data[0])
     if (indexB === -1) return -1; // Put b after a
     return indexA - indexB; // Sort based on customOrder
   });
-console.log(">> Define table columns...", tableColumns);
+// console.log(">> Define table columns...", tableColumns);
 ```
 
 ```js
@@ -1189,10 +1189,10 @@ const regular_geodata_withproperties = enrichGeoData(
   aggregations
 );
 
-// console.log(
-//   "regular_geodata_withproperties_enriched",
-//   regular_geodata_withproperties_enriched
-// );
+console.log(
+  "regular_geodata_withproperties_enriched",
+  regular_geodata_withproperties
+);
 
 const cartogram_geodata_withproperties = enrichGeoData(
   // buildingsData,
@@ -1248,7 +1248,7 @@ const keydata = _.keyBy(
   }),
   "code"
 );
-// console.log("keydat", keydata);
+console.log(">>> Keydata", keydata);
 
 const regularGeodataLookup = _.keyBy(
   regular_geodata_withproperties.features.map((feat) => {
@@ -1355,6 +1355,7 @@ const glyphMapSpec = {
     },
 
     aggrFn: (cell, row, weight, global, panel) => {
+      // console.log("  >> Data aggregation...", row.data);
       // console.log("aggrFn", row);
       if (cell.building_area) {
         cell.building_area += row.data.properties.building_area;
@@ -1451,6 +1452,7 @@ const glyphMapSpec = {
     },
 
     drawFn: (cell, x, y, cellSize, ctx, global, panel) => {
+      // console.log("  >> Data at cell", cell.data);
       const boundary = cell.getBoundary(0);
       if (boundary[0] != boundary[boundary.length - 1]) {
         boundary.push(boundary[0]);
