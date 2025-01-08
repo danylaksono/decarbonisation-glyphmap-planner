@@ -1023,9 +1023,9 @@ console.log(">> DATA DATA DATA", data);
 
 ```js
 // Table Data
-const excludedColumns = ["properties", "x", "y"]; // columns to exclude from the table
-const customOrder = ["id", "lsoa", "msoa", "isIntervened", "score"]; // custom order for columns
-const customOrder2 = ["id", "lsoa", "score"]; // custom order for columns
+const excludedColumns = ["properties", "x", "y", "score"]; // columns to exclude from the table
+const customOrder = ["id", "lsoa", "msoa", "isIntervened"]; // custom order for columns
+// const customOrder2 = ["id", "lsoa", "score"]; // custom order for columns
 // const tableColumns = customOrder2;
 
 // const customHeader = {
@@ -1164,20 +1164,85 @@ const tableData = null;
 ```js
 console.log(">> Geo-enrichment...");
 // geo-enrichment - combine geodata with building level properties
+
+// define the aggregation function for each column
+// const aggregations = {
+//   building_area: "sum",
+//   ashp_labour: "sum",
+//   ashp_material: "sum",
+//   pv_labour: "sum",
+//   pv_material: "sum",
+//   gshp_labour: "sum",
+//   gshp_material: "sum",
+//   gshp_size: "sum",
+//   heat_demand: "sum", // type inferrence need to deal with some nullish values
+//   pv_generation: "sum", // type inferrence need to deal with some nullish values
+//   ashp_suitability: "count",
+//   pv_suitability: "count",
+//   gshp_suitability: "count",
+// };
+
+// dum
 const aggregations = {
+  // "id": 200004687243,
+  isIntervened: "count",
+  interventionYear: "sum",
+  interventionCost: "sum",
+  carbonSaved: "sum",
+  // "score": 21179,
+  numInterventions: "sum",
+  interventionTechs: "count",
+  // // "lsoa": "E01028540",
+  // // "msoa": "E02005945",
+  // "x": -1.22156225350691,
+  // "y": 51.7575669032743,
   building_area: "sum",
+  garden_area: "sum",
+  ashp_suitability: "count",
+  ashp_size: "sum",
   ashp_labour: "sum",
   ashp_material: "sum",
-  pv_labour: "sum",
-  pv_material: "sum",
+  ashp_total: "sum",
+  gshp_suitability: "count",
+  gshp_size: "sum",
   gshp_labour: "sum",
   gshp_material: "sum",
-  gshp_size: "sum",
-  heat_demand: "sum", // type inferrence need to deal with some nullish values
-  pv_generation: "sum", // type inferrence need to deal with some nullish values
-  ashp_suitability: "count",
+  gshp_total: "sum",
+  heat_demand: "sum",
+  insulation_rating: "count",
+  insulation_cwall: "count",
+  insulation_cwall_labour: "sum",
+  insulation_cwall_materials: "sum",
+  insulation_cwall_total: "sum",
+  insulation_ewall: "count",
+  insulation_ewall_labour: "sum",
+  insulation_ewall_materials: "sum",
+  insulation_ewall_total: "sum",
+  insulation_roof: "count",
+  insulation_roof_labour: "sum",
+  insulation_roof_materials: "sum",
+  insulation_roof_total: "sum",
+  insulation_floor: "count",
+  insulation_floor_labour: "sum",
+  insulation_floor_materials: "sum",
+  insulation_floor_total: "sum",
   pv_suitability: "count",
-  gshp_suitability: "count",
+  pv_size: "sum",
+  pv_generation: "sum",
+  pv_labour: "sum",
+  pv_material: "sum",
+  pv_total: "sum",
+  substation_name: "count",
+  substation_capacity_rating: "sum",
+  substation_peakload: "sum",
+  substation_headroom: "sum",
+  substation_headroom_pct: "sum",
+  substation_demand: "count",
+  deprivation_score: "sum",
+  deprivation_rank: "sum",
+  deprivation_decile: "sum",
+  fuel_poverty_households: "sum",
+  fuel_poverty_proportion: "sum",
 };
 
 const regular_geodata_withproperties = enrichGeoData(

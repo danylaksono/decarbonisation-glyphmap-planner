@@ -164,22 +164,15 @@ export const enrichGeoData = function (
   geoJSONJoinColumn = "code",
   aggregations = {}
 ) {
+  console.log("enrichGeoData called with data:", buildingData);
   // 1. Group building data by join column
   const groupedData = buildingData.reduce((acc, item) => {
     const code = item[joinColumn];
-    if (!code) return acc;
+    if (!code) return acc; // Skip items with missing join values
     acc[code] = acc[code] || [];
     acc[code].push(item);
     return acc;
   }, {});
-
-  // Get all unique columns from the data
-  const allColumns = new Set();
-  buildingData.forEach((item) => {
-    Object.keys(item).forEach((key) => {
-      if (key !== joinColumn) allColumns.add(key);
-    });
-  });
 
   // 2. Aggregate building data for each group
   const aggregatedData = {};
@@ -187,45 +180,21 @@ export const enrichGeoData = function (
     aggregatedData[code] = {};
     const buildings = groupedData[code];
 
-    // Process all columns
-    for (const column of allColumns) {
-      // If column has explicit aggregation rule, use it
-      if (column in aggregations) {
-        const aggregationType = aggregations[column];
-        const values = buildings.map((b) => b[column]).filter((v) => v != null);
+    for (const column in aggregations) {
+      const aggregationType = aggregations[column];
+      const values = buildings.map((b) => b[column]).filter((v) => v != null); // Remove null/undefined values
 
-        if (aggregationType === "sum" || aggregationType === "mean") {
-          const sum = values.reduce((a, b) => a + (Number(b) || 0), 0);
-          aggregatedData[code][column] =
-            aggregationType === "sum"
-              ? sum
-              : values.length
-              ? sum / values.length
-              : 0;
-        } else if (aggregationType === "count") {
-          if (typeof values[0] === "string") {
-            const counts = values.reduce((acc, val) => {
-              acc[val] = (acc[val] || 0) + 1;
-              return acc;
-            }, {});
-            for (const [val, count] of Object.entries(counts)) {
-              aggregatedData[code][`${column}_${val}`] = count;
-            }
-          } else {
-            aggregatedData[code][column] = values.length;
-          }
-        }
-      } else {
-        // Auto-detect and aggregate based on type
-        const dataType = getType(buildings, column);
-        const values = buildings.map((b) => b[column]).filter((v) => v != null);
-
-        if (dataType === "continuous") {
-          const sum = values.reduce((a, b) => a + (Number(b) || 0), 0);
-          aggregatedData[code][column] = values.length
+      if (aggregationType === "sum" || aggregationType === "mean") {
+        const sum = values.reduce((a, b) => a + (Number(b) || 0), 0);
+        aggregatedData[code][column] =
+          aggregationType === "sum"
+            ? sum
+            : values.length
             ? sum / values.length
             : 0;
-        } else if (dataType === "ordinal") {
+      } else if (aggregationType === "count") {
+        if (typeof values[0] === "string") {
+          // Handle categorical counts
           const counts = values.reduce((acc, val) => {
             acc[val] = (acc[val] || 0) + 1;
             return acc;
@@ -233,7 +202,8 @@ export const enrichGeoData = function (
           for (const [val, count] of Object.entries(counts)) {
             aggregatedData[code][`${column}_${val}`] = count;
           }
-        } else if (dataType === "date") {
+        } else {
+          // Simple count
           aggregatedData[code][column] = values.length;
         }
       }
@@ -251,18 +221,6 @@ export const enrichGeoData = function (
       },
     })),
   };
-};
-
-export const getType = (data, column) => {
-  for (const d of data) {
-    const value = d[column];
-    if (value == null) continue;
-    if (typeof value === "number") return "continuous";
-    if (value instanceof Date) return "date";
-    return "ordinal";
-  }
-  // if all are null, return ordinal
-  return "ordinal";
 };
 
 export function normaliseData(data, keysToNormalise) {
