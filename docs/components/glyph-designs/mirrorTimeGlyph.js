@@ -1,26 +1,47 @@
-export function StreamGraphGlyph(data, keysToVisualize, collection = null) {
+export function StreamGraphGlyph(
+  data,
+  keysToVisualize,
+  timeKey = "year",
+  collection = null,
+  config = {
+    upwardKeys: ["ashp_carbonsaved", "ev_carbonsaved", "pv_carbonsaved"],
+    downwardKeys: ["labour_cost", "material_cost", "total_cost"],
+  }
+) {
+  // Validate config
+  if (!config.upwardKeys || !config.downwardKeys) {
+    throw new Error("Config must define upwardKeys and downwardKeys arrays");
+  }
+
   if (
     !data ||
     !Array.isArray(data) ||
     data.length === 0 ||
     !keysToVisualize ||
-    !Array.isArray(keysToVisualize)
+    !Array.isArray(keysToVisualize) ||
+    !timeKey ||
+    typeof timeKey !== "string"
   ) {
     throw new Error(
-      "Invalid data or keys: Data must be a non-empty array and keys must be provided."
+      "Invalid inputs: Data must be non-empty array, keys must be provided, and timeKey must be string."
     );
+  }
+
+  // Validate timeKey exists in data
+  if (!data[0].hasOwnProperty(timeKey)) {
+    throw new Error(`Data must contain the specified timeKey: ${timeKey}`);
   }
 
   // Private constants
   const downwardKeys = keysToVisualize.filter((key) =>
-    ["labour_cost", "material_cost", "total_cost"].includes(key)
+    config.downwardKeys.includes(key)
   );
   const upwardKeys = keysToVisualize.filter((key) =>
-    ["ashp_carbonsaved", "ev_carbonsaved", "pv_carbonsaved"].includes(key)
+    config.upwardKeys.includes(key)
   );
 
-  // Data access methods
-  this.getYears = () => data.map((d) => d.year);
+  // Update data access methods
+  this.getTimeValues = () => data.map((d) => d[timeKey]);
   this.getUpwardMax = () =>
     d3.max(data, (d) =>
       upwardKeys.reduce((sum, key) => sum + Math.abs(d[key]), 0)
@@ -39,10 +60,10 @@ export function StreamGraphGlyph(data, keysToVisualize, collection = null) {
     const drawHeight = height - 2 * padding;
     const maxHeight = drawHeight / 2;
 
-    // Create scales
+    // Update scale to use timeKey
     const xScale = d3
       .scaleTime()
-      .domain(d3.extent(this.getYears(), (year) => new Date(year)))
+      .domain(d3.extent(this.getTimeValues(), (value) => new Date(value)))
       .range([
         centerX - drawWidth / 2 + padding,
         centerX + drawWidth / 2 - padding,
@@ -78,12 +99,12 @@ export function StreamGraphGlyph(data, keysToVisualize, collection = null) {
     // Draw series
     const curve = d3.curveBumpX;
 
-    // Draw upward series
+    // Update area generators to use timeKey
     upwardSeries.forEach((s) => {
       ctx.beginPath();
       const area = d3
         .area()
-        .x((d) => xScale(new Date(d.data.year)))
+        .x((d) => xScale(new Date(d.data[timeKey])))
         .y0((d) => centerY - yScaleUpward(d[0]))
         .y1((d) => centerY - yScaleUpward(d[1]))
         .curve(curve);
@@ -93,12 +114,11 @@ export function StreamGraphGlyph(data, keysToVisualize, collection = null) {
       ctx.fill();
     });
 
-    // Draw downward series
     downwardSeries.forEach((s) => {
       ctx.beginPath();
       const area = d3
         .area()
-        .x((d) => xScale(new Date(d.data.year)))
+        .x((d) => xScale(new Date(d.data[timeKey])))
         .y0((d) => centerY + yScaleDownward(d[0]))
         .y1((d) => centerY + yScaleDownward(d[1]))
         .curve(curve);
@@ -135,3 +155,17 @@ export function StreamGraphCollection() {
     );
   };
 }
+
+// Usage example:
+const customConfig = {
+  upwardKeys: ["metric1", "metric2"],
+  downwardKeys: ["cost1", "cost2"],
+};
+
+const glyph = new StreamGraphGlyph(
+  data,
+  keysToVisualize,
+  "year",
+  null,
+  customConfig
+);

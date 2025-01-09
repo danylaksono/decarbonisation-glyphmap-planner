@@ -433,7 +433,7 @@ display(
 
 ```js
 display(html`<p>"Grouped Intervention"</p>`);
-const groupedAll = MiniDecarbModel.group(data, ["lsoa", "EPC_rating"]);
+const groupedAll = MiniDecarbModel.group(data, ["lsoa", "interventionYear"]);
 display(groupedAll);
 ```
 
