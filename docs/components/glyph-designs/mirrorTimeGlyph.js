@@ -157,15 +157,15 @@ export function StreamGraphCollection() {
 }
 
 // Usage example:
-const customConfig = {
-  upwardKeys: ["metric1", "metric2"],
-  downwardKeys: ["cost1", "cost2"],
-};
+// const customConfig = {
+//   upwardKeys: ["metric1", "metric2"],
+//   downwardKeys: ["cost1", "cost2"],
+// };
 
-const glyph = new StreamGraphGlyph(
-  data,
-  keysToVisualize,
-  "year",
-  null,
-  customConfig
-);
+// const glyph = new StreamGraphGlyph(
+//   data,
+//   keysToVisualize,
+//   "year",
+//   null,
+//   customConfig
+// );
