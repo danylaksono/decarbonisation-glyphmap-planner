@@ -999,6 +999,7 @@ export class MiniDecarbModel {
   }
 
   // Helper method to stack results for visualisation
+  // Helper method to stack results for visualisation
   static stackResults(modelRecaps) {
     const buildingMap = new Map();
     const yearlySummary = {};
@@ -1018,7 +1019,6 @@ export class MiniDecarbModel {
 
         yearlySummary[year].budgetSpent += stats.budgetSpent;
         yearlySummary[year].buildingsIntervened += stats.buildingsIntervened;
-        // yearlySummary[year].technologies.add(modelRecap.techName);
         stats.intervenedBuildings.forEach((building) => {
           yearlySummary[year].intervenedBuildingIds.add(building.id);
         });
@@ -1053,11 +1053,11 @@ export class MiniDecarbModel {
         // Process interventions if the building was intervened in this model
         if (building.isIntervened) {
           const intervention = {
-            tech: modelRecap.techName, // Get techName from recap
+            tech: modelRecap.techName,
             year: building.interventionYear,
             cost: building.interventionCost,
             carbonSaved: building.carbonSaved,
-            interventionID: modelRecap.interventionId, // Get interventionId from recap
+            interventionID: modelRecap.interventionId,
           };
 
           target.isIntervened = true;
@@ -1103,33 +1103,112 @@ export class MiniDecarbModel {
         : null,
     };
 
-    return {
+    const stackedResultObject = {
       buildings,
+      intervenedBuildings: buildings.filter((b) => b.isIntervened),
       summary,
       yearlySummary,
-      intervenedBuildings: buildings.filter((b) => b.isIntervened),
-      //   untouchedBuildings: buildings.filter((b) => !b.isIntervened), // don't think we need this
-      recap: modelRecaps, // for debugging only
+      recap: modelRecaps,
     };
+
+    return stackedResultObject;
   }
 
-  // Helper method to create building filters
-  // Example use:
-  // const userFilterFunction = InterventionManager.createDynamicFilter(
-  //   userAttribute,
-  //   userOperator,
-  //   userThreshold
-  // );
+  static group(data, keys, useMap = false) {
+    if (
+      !Array.isArray(data) ||
+      !data.length ||
+      !Array.isArray(keys) ||
+      !keys.length
+    ) {
+      return data;
+    }
 
-  // const userConfig = {
-  //   filters: [
-  //     {
-  //       filterName: `${userAttribute} ${userOperator} ${userThreshold}`,
-  //       filterFunction: userFilterFunction,
-  //     },
-  //   ],
-  // };
+    const grouped = useMap ? new Map() : {};
+    const [currentKey, ...remainingKeys] = keys;
+
+    // Group by current key
+    for (const item of data) {
+      const key = item[currentKey];
+
+      if (useMap) {
+        if (!grouped.has(key)) {
+          grouped.set(
+            key,
+            remainingKeys.length ? { items: [], children: new Map() } : []
+          );
+        }
+
+        if (remainingKeys.length) {
+          const group = grouped.get(key);
+          group.items.push(item);
+        } else {
+          grouped.get(key).push(item);
+        }
+      } else {
+        if (!grouped[key]) {
+          grouped[key] = remainingKeys.length
+            ? { items: [], children: {} }
+            : [];
+        }
+
+        if (remainingKeys.length) {
+          grouped[key].items.push(item);
+        } else {
+          grouped[key].push(item);
+        }
+      }
+    }
+
+    // Recursively group remaining keys
+    if (remainingKeys.length) {
+      if (useMap) {
+        for (const [key, group] of grouped) {
+          group.children = this.group(group.items, remainingKeys, useMap);
+        }
+      } else {
+        for (const key in grouped) {
+          grouped[key].children = this.group(
+            grouped[key].items,
+            remainingKeys,
+            useMap
+          );
+        }
+      }
+    }
+
+    return grouped;
+  }
+
+  static traverse(grouped, callback, depth = 0) {
+    const entries =
+      grouped instanceof Map ? grouped.entries() : Object.entries(grouped);
+
+    for (const [key, value] of entries) {
+      callback(key, value, depth);
+      if (value.children) {
+        this.traverse(value.children, callback, depth + 1);
+      }
+    }
+  }
+
   static createDynamicFilter(attribute, operator, threshold) {
+    // Helper method to create building filters
+    // Example use:
+    // const userFilterFunction = InterventionManager.createDynamicFilter(
+    //   userAttribute,
+    //   userOperator,
+    //   userThreshold
+    // );
+
+    // const userConfig = {
+    //   filters: [
+    //     {
+    //       filterName: `${userAttribute} ${userOperator} ${userThreshold}`,
+    //       filterFunction: userFilterFunction,
+    //     },
+    //   ],
+    // };
     // Validate attribute
     if (typeof attribute !== "string" || attribute.trim() === "") {
       throw new Error(

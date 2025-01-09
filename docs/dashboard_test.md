@@ -87,7 +87,7 @@ const proj = new OSGB();
     "Low Carbon Technology Costs_Ground Source Heat Pump - Materials" AS gshp_material,
     "Low Carbon Technology Costs_Ground Source Heat Pump - Total" AS gshp_total,
     "Domestic Heat Demand_Annual Heat Demand (kWh)" AS heat_demand,
-    "Domestic Insulation Potential_EPC Rating" AS insulation_rating,
+    "Domestic Insulation Potential_EPC Rating" AS EPC_rating,
     "Domestic Insulation Potential_Insulation - Cavity Wall" AS insulation_cwall,
     "Low Carbon Technology Costs_Insulation - Cavity Wall - Labour" AS insulation_cwall_labour,
     "Low Carbon Technology Costs_Insulation - Cavity Wall  - Materials" AS insulation_cwall_materials,
@@ -429,6 +429,12 @@ display(
     ? [...buildingsData]
     : interventions[selectedInterventionIndex].intervenedBuildings
 );
+```
+
+```js
+display(html`<p>"Grouped Intervention"</p>`);
+const groupedAll = MiniDecarbModel.group(data, ["lsoa", "EPC_rating"]);
+display(groupedAll);
 ```
 
 <!-- ---------------- Intervention Managers ---------------- -->
@@ -1232,7 +1238,7 @@ const aggregations = {
   pv_labour: "sum",
   pv_material: "sum",
   pv_total: "sum",
-  substation_name: "count",
+  // substation_name: "count",
   substation_capacity_rating: "sum",
   substation_peakload: "sum",
   substation_headroom: "sum",
@@ -1420,11 +1426,11 @@ const glyphMapSpec = {
     },
 
     aggrFn: (cell, row, weight, global, panel) => {
-      // console.log("  >> Data aggregation...", row.data);
+      // console.log("  >> Data aggregation in GlyphMap...", row.data);
       // console.log("aggrFn", row);
       if (cell.building_area) {
-        cell.building_area += row.data.properties.building_area;
         // Update existing values
+        cell.building_area += row.data.properties.building_area;
         cell.data.costs.ashp +=
           row.data.properties.ashp_labour + row.data.properties.ashp_material;
         cell.data.costs.pv +=
@@ -1594,6 +1600,15 @@ const glyphMapSpec = {
       colour.opacity = morph_factor; //morphFactorInput;
       ctx.fillStyle = colour;
       ctx.fill();
+    },
+    tooltipTextFn: (cell) => {
+      if (cell) {
+        console.log("cell on tooltip", cell);
+        setDetailOnDemand(cell.data);
+        return `Total Building Area: ${cell.building_area.toFixed(2)} m^2`;
+      } else {
+        return "no data";
+      }
     },
   });
 }

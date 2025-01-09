@@ -164,7 +164,7 @@ export const enrichGeoData = function (
   geoJSONJoinColumn = "code",
   aggregations = {}
 ) {
-  console.log("enrichGeoData called with data:", buildingData);
+  // console.log("enrichGeoData called with data:", buildingData);
   // 1. Group building data by join column
   const groupedData = buildingData.reduce((acc, item) => {
     const code = item[joinColumn];
