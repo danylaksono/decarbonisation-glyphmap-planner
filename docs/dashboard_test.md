@@ -1601,15 +1601,6 @@ const glyphMapSpec = {
       ctx.fillStyle = colour;
       ctx.fill();
     },
-    tooltipTextFn: (cell) => {
-      if (cell) {
-        console.log("cell on tooltip", cell);
-        setDetailOnDemand(cell.data);
-        return `Total Building Area: ${cell.building_area.toFixed(2)} m^2`;
-      } else {
-        return "no data";
-      }
-    },
   });
 }
 ```

@@ -1,6 +1,5 @@
 export function StreamGraphGlyph(
   data,
-  keysToVisualize,
   timeKey = "year",
   collection = null,
   config = {
@@ -17,13 +16,11 @@ export function StreamGraphGlyph(
     !data ||
     !Array.isArray(data) ||
     data.length === 0 ||
-    !keysToVisualize ||
-    !Array.isArray(keysToVisualize) ||
     !timeKey ||
     typeof timeKey !== "string"
   ) {
     throw new Error(
-      "Invalid inputs: Data must be non-empty array, keys must be provided, and timeKey must be string."
+      "Invalid inputs: Data must be non-empty array and timeKey must be string."
     );
   }
 
@@ -32,13 +29,9 @@ export function StreamGraphGlyph(
     throw new Error(`Data must contain the specified timeKey: ${timeKey}`);
   }
 
-  // Private constants
-  const downwardKeys = keysToVisualize.filter((key) =>
-    config.downwardKeys.includes(key)
-  );
-  const upwardKeys = keysToVisualize.filter((key) =>
-    config.upwardKeys.includes(key)
-  );
+  // Private constants - directly use config keys
+  const downwardKeys = config.downwardKeys;
+  const upwardKeys = config.upwardKeys;
 
   // Update data access methods
   this.getTimeValues = () => data.map((d) => d[timeKey]);
@@ -159,13 +152,7 @@ export function StreamGraphCollection() {
 // Usage example:
 // const customConfig = {
 //   upwardKeys: ["metric1", "metric2"],
-//   downwardKeys: ["cost1", "cost2"],
+//   downwardKeys: ["cost1", "cost2"]
 // };
 
-// const glyph = new StreamGraphGlyph(
-//   data,
-//   keysToVisualize,
-//   "year",
-//   null,
-//   customConfig
-// );
+// const glyph = new StreamGraphGlyph(data, "year", null, customConfig);

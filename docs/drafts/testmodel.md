@@ -8,6 +8,7 @@ sql:
 ---
 
 ```js
+import * as L from "npm:leaflet";
 import {
   TimeGlyph,
   GlyphCollection,
@@ -16,6 +17,7 @@ import {
   InterventionManager,
   MiniDecarbModel,
 } from "./../components/decarb-model/mini-decarbonisation.js";
+import { LeafletMap } from "./../components/leaflet/leaflet-map.js";
 ```
 
 ```js
@@ -37,6 +39,8 @@ function context2d(width, height, dpi = devicePixelRatio) {
     "UPRN" AS id,
     "LSOA code" AS lsoa,
     "MSOA code" AS msoa,
+    "xcoord" AS x,
+    "ycoord" AS y,
     "Air Source Heat Pump Potential_Building Size (m^2)" AS building_area,
     "Air Source Heat Pump Potential_Garden Area (m^2)" AS garden_area,
     "Air Source Heat Pump Potential_Overall Suitability Rating" AS ashp_suitability,
@@ -217,130 +221,90 @@ display(stackedRecap.intervenedBuildings);
 
 display(html`<p>"List of Intervention Results:"</p>`);
 display(stackedRecap.recap);
+
+display(html`<p>"Grouped Intervention"</p>`);
+const groupedAll = MiniDecarbModel.group(stackedRecap.intervenedBuildings, [
+  "lsoa",
+  "interventionYear",
+]);
+display(groupedAll);
 ```
 
 ## Glyphs
 
 ```js
 // timeglyph
-const tgData = {
-  ASHP: [0.2, 0.3, 0.4, 0.5, 0.6], // Values for category "ASHP" over 5 time steps
-  PV: [0.1, 0.2, 0.1, 0.15, 0.2], // Values for category "PV" over the same time steps
-  Wind: [0.05, 0.1, 0.15, 0.1, 0.05], // Another category "Wind"
-};
+// const tgData = {
+//   ASHP: [0.2, 0.3, 0.4, 0.5, 0.6], // Values for category "ASHP" over 5 time steps
+//   PV: [0.1, 0.2, 0.1, 0.15, 0.2], // Values for category "PV" over the same time steps
+//   Wind: [0.05, 0.1, 0.15, 0.1, 0.05], // Another category "Wind"
+// };
 
-const data1 = {
-  ASHP: [0.2, 0.3, 0.4],
-  PV: [0.1, 0.2, 0.1],
-};
+// const data1 = {
+//   ASHP: [0.2, 0.3, 0.4],
+//   PV: [0.1, 0.2, 0.1],
+// };
 
-const data2 = {
-  ASHP: [0.3, 0.4, 0.5],
-  PV: [0.2, 0.3, 0.2],
-};
+// const data2 = {
+//   ASHP: [0.3, 0.4, 0.5],
+//   PV: [0.2, 0.3, 0.2],
+// };
 
-const tg = new TimeGlyph(tgData);
-const tg2 = new TimeGlyph(data1);
-const tg3 = new TimeGlyph(data2);
+// const tg = new TimeGlyph(tgData);
+// const tg2 = new TimeGlyph(data1);
+// const tg3 = new TimeGlyph(data2);
 ```
 
 ```js
-const [w, h] = [600, 600];
-const ctx = context2d(w, h);
-const canvas = ctx.canvas;
-ctx.fillStyle = "lightgrey";
-ctx.fillRect(0, 0, canvas.width, canvas.height);
+// const [w, h] = [600, 600];
+// const ctx = context2d(w, h);
+// const canvas = ctx.canvas;
+// ctx.fillStyle = "lightgrey";
+// ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-const x = 200;
-const y = 200;
+// const x = 200;
+// const y = 200;
 
-const collection = new GlyphCollection();
+// const collection = new GlyphCollection();
 
-collection.add(tg2);
-collection.add(tg3);
+// collection.add(tg2);
+// collection.add(tg3);
 
-collection.recalculate();
+// collection.recalculate();
 
-display(canvas);
-tg2.draw(ctx, x, y, 200, 200);
-tg3.draw(ctx, x + 210, y, 200, 200);
+// display(canvas);
+// tg2.draw(ctx, x, y, 200, 200);
+// tg3.draw(ctx, x + 210, y, 200, 200);
 ```
 
 ```js
-import * as d3 from "npm:d3";
+const container = document.createElement("div");
+document.body.appendChild(container);
 
-export function TimeGlyph(data, collection = null, stacked = true) {
-  if (!data || typeof data !== "object" || Object.keys(data).length === 0) {
-    throw new Error("Invalid data: Data must be a non-empty object.");
-  }
+const mapInstance = new LeafletMap(container, {
+  width: "800px",
+  height: "600px",
+  tooltipFormatter: (props) => `<strong>${props.id}</strong>`,
+});
 
-  this.timeCount = () => d3.max(Object.keys(data).map((d) => data[d].length));
-  this.categories = () => Object.keys(data);
-  this.data = (category, time) => data[category][time];
-  this.maxAtTime = (time) =>
-    stacked
-      ? d3.sum(this.categories().map((c) => this.data(c, time)))
-      : d3.max(this.categories().map((c) => this.data(c, time)));
-  this.maxAllTime = () =>
-    d3.max(d3.range(this.timeCount()).map((t) => this.maxAtTime(t)));
+// Add a data layer
+const buildingsData = [
+  { x: 110.123, y: -7.231231, name: "Building A" },
+  { x: 110.223, y: -7.231251, name: "Building B" },
+];
 
-  this.setCollection = (newCollection) => {
-    collection = newCollection;
-  };
+mapInstance.addLayer("buildings", stackedRecap.buildings, {
+  clusterRadius: 50,
+  fitBounds: true,
+});
 
-  this.draw = (ctx, x, y, w, h) => {
-    let maxTime = this.timeCount();
-    let xInterval = w / maxTime;
+display(container);
+// Later, update the layer
+// mapInstance.updateLayer("buildings", newData);
 
-    // Use the collection's normalization value if available
-    let norm = collection != null ? collection.norm : this.maxAllTime();
+// // Toggle layer visibility
+// mapInstance.setLayerVisibility("buildings", false);
 
-    let colors = d3
-      .scaleOrdinal(d3.schemeTableau10)
-      .domain(d3.range(this.categories().length));
-
-    // Use Float32Array for efficient large-scale processing
-    let yOffset = new Float32Array(maxTime).fill(0);
-
-    this.categories().forEach((c, cindex) => {
-      ctx.beginPath();
-      ctx.moveTo(x + (maxTime - 1) * xInterval, y + yOffset[maxTime - 1]);
-
-      for (let t = maxTime - 2; t >= 0; t--) {
-        ctx.lineTo(x + t * xInterval, y + yOffset[t]);
-      }
-
-      for (let t = 0; t < maxTime; t++) {
-        let normalisedValue = this.data(c, t) / norm;
-        ctx.lineTo(x + t * xInterval, y + yOffset[t] + normalisedValue * h);
-
-        if (stacked) yOffset[t] += normalisedValue * h;
-      }
-
-      ctx.closePath();
-      ctx.fillStyle = colors(cindex);
-      ctx.fill();
-    });
-  };
-}
-
-export function GlyphCollection() {
-  this.glyphs = [];
-  this.norm = null;
-
-  // Add a glyph to the collection and update its reference
-  this.add = (glyph) => {
-    this.glyphs.push(glyph);
-    glyph.setCollection(this);
-  };
-
-  // Recalculate the global normalization factor
-  this.recalculate = () => {
-    this.norm = d3.max(
-      this.glyphs.flatMap((glyph) =>
-        d3.range(glyph.timeCount()).map((t) => glyph.maxAtTime(t))
-      )
-    );
-  };
-}
+// // Clean up
+// mapInstance.destroy();
 ```
