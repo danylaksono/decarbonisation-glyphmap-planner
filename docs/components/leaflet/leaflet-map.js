@@ -15,6 +15,11 @@ export class LeafletMap {
       minZoom: 3,
       minPoints: 3,
       defaultTile: "Carto Positron Light NoLabel",
+      visibleBaseLayers: [
+        "Carto Positron Light NoLabel",
+        "OpenStreetMap",
+        "Carto Voyager",
+      ], // Default visible basemaps
       tooltipFormatter: null, // Add default tooltip formatter option
       ...options,
     };
@@ -27,6 +32,8 @@ export class LeafletMap {
     this.baseLayers = new Map(); // Store base tile layers
     this.activeBaseLayer = null;
     this.tileDictionary = { ...tileDictionary };
+    this.overlayLayers = new Map(); // Store overlay layers for layer control
+    this.layerControl = null;
 
     this._initializeMap();
   }
@@ -371,6 +378,63 @@ export class LeafletMap {
     this.map.off(event, callback);
   }
 
+  // Add new methods
+  addGeoJSONLayer(layerId, geojson, options = {}) {
+    if (this.overlayLayers.has(layerId)) {
+      console.warn(`Layer ${layerId} already exists`);
+      return;
+    }
+
+    const layer = L.geoJSON(geojson, {
+      style: options.style,
+      pointToLayer: options.pointToLayer,
+      onEachFeature: options.onEachFeature,
+    }).addTo(this.map);
+
+    this.overlayLayers.set(layerId, layer);
+    this._updateLayerControl();
+
+    return layer;
+  }
+
+  _updateLayerControl() {
+    // Remove existing control if it exists
+    if (this.layerControl) {
+      this.layerControl.remove();
+    }
+
+    // Create base layers object
+    const baseLayers = {};
+    this.baseLayers.forEach((layer, name) => {
+      if (this.options.visibleBaseLayers.includes(name)) {
+        baseLayers[name] = layer;
+      }
+    });
+
+    // Create overlay layers object
+    const overlays = {};
+    this.overlayLayers.forEach((layer, name) => {
+      overlays[name] = layer;
+    });
+
+    // Create new control
+    this.layerControl = L.control.layers(baseLayers, overlays).addTo(this.map);
+  }
+
+  removeGeoJSONLayer(layerId) {
+    const layer = this.overlayLayers.get(layerId);
+    if (layer) {
+      layer.remove();
+      this.overlayLayers.delete(layerId);
+      this._updateLayerControl();
+    }
+  }
+
+  setVisibleBaseLayers(layerNames) {
+    this.options.visibleBaseLayers = layerNames;
+    this._updateLayerControl();
+  }
+
   // Clean up
   destroy() {
     // Remove all event listeners
@@ -383,6 +447,10 @@ export class LeafletMap {
     this.clusters.clear();
     this.eventListeners.clear();
     this.baseLayers.clear();
+    this.overlayLayers.clear();
+    if (this.layerControl) {
+      this.layerControl.remove();
+    }
 
     // Remove the map
     this.map.remove();

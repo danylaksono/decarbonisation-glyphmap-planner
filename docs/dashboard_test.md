@@ -17,6 +17,7 @@ const flubber = require("flubber@0.4");
 import { require } from "npm:d3-require";
 import { Mutable } from "npm:@observablehq/stdlib";
 import * as turf from "@turf/turf";
+// import polylabel from "https://cdn.jsdelivr.net/npm/polylabel@2.0.1/+esm";
 // import { supercluster } from "npm:supercluster";
 
 import * as bulmaToast from "npm:bulma-toast";
@@ -39,6 +40,7 @@ import {
   MiniDecarbModel,
 } from "./components/decarb-model/mini-decarbonisation.js";
 import { createTimelineInterface } from "./components/decarb-model/timeline.js";
+import { LeafletMap } from "./components/leaflet/leaflet-map.js";
 
 import { createTable } from "./components/sorterTable.js";
 import {
@@ -63,7 +65,8 @@ import {
 const proj = new OSGB();
 ```
 
-<script src="https://unpkg.com/supercluster@8.0.0/dist/supercluster.min.js"></script>
+<!-- <script src="https://unpkg.com/supercluster@8.0.0/dist/supercluster.min.js"></script> -->
+<!-- <script src="https://unpkg.com/polylabel@1.0.0/polylabel.min.js"></script> -->
 
 <!-- ---------------- Data ---------------- -->
 
@@ -292,7 +295,7 @@ const [allocations, setAllocations] = useState([]);
       </header>
       <div class="card-content">
         <div class="content">
-          <!-- ${mapAggregationInput} -->
+          ${mapAggregationInput}
           ${(map_aggregate == "Building Level") ? ""
             : html`${playButton} ${morphFactorInput}`}
           <!-- ${html`${playButton} ${morphFactorInput}`} -->
@@ -1634,9 +1637,43 @@ const morphGlyphMap = createMorphGlyphMap(1000, 800);
 function createGlyphMap(map_aggregate, { width, height }) {
   // console.log(width, height);
   if (map_aggregate == "Building Level") {
-    return null; //createLeafletMap(selected, width, height);
+    return createLeafletMap(data, width, height);
   } else if (map_aggregate == "LSOA Level") {
     return morphGlyphMap;
   }
 }
+```
+
+```js
+// Leaflet map
+function createLeafletMap(data, width, height) {
+  const leafletContainer = document.createElement("div");
+  document.body.appendChild(leafletContainer);
+
+  const mapInstance = new LeafletMap(leafletContainer, {
+    width: "800px",
+    height: "800px",
+    tooltipFormatter: (props) => `<strong>${props.id}</strong>`,
+  });
+
+  mapInstance.addLayer("buildings", data, {
+    clusterRadius: 50,
+    fitBounds: true,
+  });
+
+  mapInstance.addGeoJSONLayer("LSOA Boundary", lsoa_boundary, {
+    style: {
+      color: "#f7a55e",
+      weight: 2,
+      opacity: 0.65,
+    },
+    onEachFeature: (feature, layer) => {
+      layer.bindPopup(feature.properties.LSOA21NM);
+    },
+  });
+
+  return leafletContainer;
+}
+
+// display(leafletContainer);
 ```

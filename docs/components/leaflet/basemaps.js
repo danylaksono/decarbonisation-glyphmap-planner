@@ -115,7 +115,7 @@ export const tileDictionary = {
       maxZoom: 20,
     },
   },
-  "OpenStreetMap Standard": {
+  OpenStreetMap: {
     url: "http://tile.openstreetmap.org/{z}/{x}/{y}.png",
     options: {
       attribution:
