@@ -299,3 +299,14 @@ html {
 .tooltip:hover::before {
   opacity: 1;
 }
+
+.switch {
+  display: inline-block;
+  position: relative;
+  width: 48px;
+  height: 24px;
+}
+
+.switch input {
+  display: none;
+}

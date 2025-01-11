@@ -273,13 +273,7 @@ const [allocations, setAllocations] = useState([]);
           </header> -->
           <div class="card-content">
             <div class="content">
-            ${Inputs.table(data, 
-              {
-              columns: tableColumns,
-              format: tableFormat,
-              layout: "auto",
-              })
-            }
+              ${ObsTable}
               <!-- ${table.getNode()} -->
               <!-- <div>No. of intervened buildings: ${JSON.stringify(stackedResults.summary.intervenedCount)}</div> -->
             </div>
@@ -296,6 +290,7 @@ const [allocations, setAllocations] = useState([]);
       <div class="card-content">
         <div class="content">
           ${mapAggregationInput}
+          ${(map_aggregate == "Building Level") ? "button" : ""}
           ${(map_aggregate == "Building Level") ? ""
             : html`${playButton} ${morphFactorInput}`}
           <!-- ${html`${playButton} ${morphFactorInput}`} -->
@@ -645,7 +640,7 @@ const glyphmapType = Generators.input(glyphmapTypeInput);
 ```js
 // --- map aggregation ---
 const mapAggregationInput = Inputs.radio(["LSOA Level", "Building Level"], {
-  label: "Map Aggregated at",
+  label: "Level of Detail",
   value: "LSOA Level",
 });
 const map_aggregate = Generators.input(mapAggregationInput);
@@ -1027,7 +1022,7 @@ const data =
   selectedInterventionIndex === null
     ? stackedRecap?.buildings ?? buildingsData
     : flatData;
-console.log(">> DATA DATA DATA", data);
+// console.log(">> DATA DATA DATA", data);
 ```
 
 ```js
@@ -1117,6 +1112,24 @@ function createTableHeader(fill, headerText) {
 
 ```js
 const tableFormat = createTableFormat(data);
+```
+
+```js
+const ObsTable = Inputs.table(data, {
+  columns: tableColumns,
+  format: tableFormat,
+  layout: "auto",
+});
+// Object.assign(ObsTable, {
+//   oninput: (event) => event.isTrusted && event.stopImmediatePropagation(),
+//   onchange: (event) => event.currentTarget.dispatchEvent(new Event("input")),
+// });
+
+// Listening to change events
+ObsTable.addEventListener("change", (event) => {
+  console.log("Table changed:", event); // Access the event target
+});
+const selectedRow = Generators.input(ObsTable);
 ```
 
 <!-- ---------------- Sortable Table ---------------- -->
@@ -1635,9 +1648,9 @@ const morphGlyphMap = createMorphGlyphMap(1000, 800);
 
 ```js
 function createGlyphMap(map_aggregate, { width, height }) {
-  // console.log(width, height);
+  console.log(width, height);
   if (map_aggregate == "Building Level") {
-    return createLeafletMap(data, width, height);
+    return createLeafletMap(data, width, height).leafletContainer;
   } else if (map_aggregate == "LSOA Level") {
     return morphGlyphMap;
   }
@@ -1650,9 +1663,11 @@ function createLeafletMap(data, width, height) {
   const leafletContainer = document.createElement("div");
   document.body.appendChild(leafletContainer);
 
+  // console.log(">> Create Leaflet Map with... ", width, height);
+
   const mapInstance = new LeafletMap(leafletContainer, {
-    width: "800px",
-    height: "800px",
+    width: width,
+    height: "600px",
     tooltipFormatter: (props) => `<strong>${props.id}</strong>`,
   });
 
@@ -1672,8 +1687,37 @@ function createLeafletMap(data, width, height) {
     },
   });
 
-  return leafletContainer;
+  return { leafletContainer, mapInstance };
 }
 
 // display(leafletContainer);
+```
+
+```js
+// Fly to coordinate
+// await map.flyTo({ x: -122.4194, y: 37.7749 });
+```
+
+```js
+// get last element of the selectedRow if more than one columns are selected,
+// else return the first element
+function getSelectedRow() {
+  if (selectedRow.length > 1) {
+    return selectedRow[selectedRow.length - 1];
+  } else {
+    return selectedRow[0];
+  }
+}
+
+// if (selectedRow) {
+//   await mapInstance.flyTo({
+//     x: getSelectedRow().x,
+//     y: getSelectedRow().y,
+//   });
+// } else {
+//   console.log("No selected row");
+//   mapInstance.zoomtoDataBounds();
+// }
+
+// display([getSelectedRow().x, getSelectedRow().y]);
 ```

@@ -11,7 +11,7 @@ export class LeafletMap {
       width: "100%",
       height: "400px",
       clusterRadius: 40,
-      maxZoom: 18,
+      maxZoom: 20,
       minZoom: 3,
       minPoints: 3,
       defaultTile: "Carto Positron Light NoLabel",
@@ -34,15 +34,26 @@ export class LeafletMap {
     this.tileDictionary = { ...tileDictionary };
     this.overlayLayers = new Map(); // Store overlay layers for layer control
     this.layerControl = null;
+    // Add bounds property
+    this.dataBounds = null;
 
     this._initializeMap();
   }
 
   // Initialize the map
   _initializeMap() {
+    const width =
+      typeof this.options.width === "number"
+        ? `${this.options.width}px`
+        : this.options.width;
+    const height =
+      typeof this.options.height === "number"
+        ? `${this.options.height}px`
+        : this.options.height;
+
     // Set container dimensions
-    this.container.style.width = this.options.width;
-    this.container.style.height = this.options.height;
+    this.container.style.width = width;
+    this.container.style.height = height;
 
     // Create map instance
     this.map = L.map(this.container, {
@@ -274,11 +285,13 @@ export class LeafletMap {
     }
 
     const geoJsonData = this._toGeoJSON(data);
+    this.dataBounds = this._calculateBounds(geoJsonData);
     const cluster = this._initializeCluster(geoJsonData, options);
     const layer = L.layerGroup().addTo(this.map);
 
     this.layers.set(layerId, layer);
     this.clusters.set(layerId, cluster);
+    this.overlayLayers.set(layerId, layer); // Add to overlay layers for control
 
     // Add update listener if not already added
     if (!this.eventListeners.has(layerId)) {
@@ -288,6 +301,7 @@ export class LeafletMap {
     }
 
     this._updateMarkers(layerId);
+    this._updateLayerControl(); // Update layer control
 
     // Fit bounds if specified
     if (options.fitBounds !== false && data.length > 0) {
@@ -304,6 +318,7 @@ export class LeafletMap {
     }
 
     const geoJsonData = this._toGeoJSON(data);
+    this.dataBounds = this._calculateBounds(geoJsonData);
     const cluster = this._initializeCluster(geoJsonData, options);
 
     this.clusters.set(layerId, cluster);
@@ -324,6 +339,8 @@ export class LeafletMap {
       layer.remove();
       this.layers.delete(layerId);
       this.clusters.delete(layerId);
+      this.overlayLayers.delete(layerId); // Remove from overlay layers
+      this._updateLayerControl(); // Update layer control
     }
 
     if (updateFn) {
@@ -435,6 +452,19 @@ export class LeafletMap {
     this._updateLayerControl();
   }
 
+  flyTo(center, zoom) {
+    return new Promise((resolve) => {
+      this.map.flyTo([center.y, center.x], zoom || this.options.maxZoom, {
+        duration: 2, // Animation duration in seconds
+        easeLinearity: 0.5,
+      });
+
+      this.map.once("moveend", () => {
+        resolve();
+      });
+    });
+  }
+
   // Clean up
   destroy() {
     // Remove all event listeners
@@ -454,6 +484,37 @@ export class LeafletMap {
 
     // Remove the map
     this.map.remove();
+  }
+
+  // Calculate bounds from GeoJSON data
+  _calculateBounds(geoJsonData) {
+    const coordinates = geoJsonData.map(
+      (feature) => feature.geometry.coordinates
+    );
+
+    const bounds = L.latLngBounds(
+      coordinates.map((coord) => [coord[1], coord[0]])
+    );
+    return bounds;
+  }
+
+  // Public method to zoom to data bounds
+  zoomToDataBounds(animate = true) {
+    if (!this.dataBounds || !this.dataBounds.isValid()) {
+      return false;
+    }
+
+    if (animate) {
+      this.map.flyToBounds(this.dataBounds, {
+        padding: [50, 50],
+        duration: 1,
+      });
+    } else {
+      this.map.fitBounds(this.dataBounds, {
+        padding: [50, 50],
+      });
+    }
+    return true;
   }
 }
 
