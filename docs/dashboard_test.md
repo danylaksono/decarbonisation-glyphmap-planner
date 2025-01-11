@@ -1418,7 +1418,7 @@ function valueDiscretiser(geomLookup) {
 console.log(">> Initialize the GlyphMap Specification...");
 console.log("Sample x y from Data in Glyph", [data[0].x, data[0].y]);
 const glyphMapSpec = {
-  coordType: "notmercator",
+  coordType: map_aggregate == "Building Level" ? "mercator" : "notmercator",
   initialBB: transformCoordinates(turf.bbox(regular_geodata)),
   // if map_aggregate == "Building Level", use Individual data. otherwise use Aggregated data
   data:
