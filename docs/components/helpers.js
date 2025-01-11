@@ -402,5 +402,64 @@ export function applyTransformationToShapes(geographicShapes) {
   );
 }
 
-// check to see if it works
-// display(transformCoordinates([547764, 180871]));
+// export function normaliseData(data, keysToNormalise) {
+//   // Create a D3 linear scale for each key to be normalized
+//   const scales = keysToNormalise.map((key) =>
+//     d3
+//       .scaleLinear()
+//       .domain(d3.extent(data, (d) => d[key])) // Set domain based on actual data range
+//       .range([0, 100])
+//   );
+
+//   // Normalize the data using the scales
+//   const normalisedData = data.map((d) => ({
+//     ...d, // Keep original properties
+//     ...keysToNormalise.reduce(
+//       (acc, key) => ({
+//         ...acc,
+//         [key]: scales[keysToNormalise.indexOf(key)](d[key]),
+//       }),
+//       {}
+//     ),
+//   }));
+
+//   return normalisedData;
+// }
+
+export function normalisebyGroup(data, keysToNormalise, groupByKeys = []) {
+  // If groupByKeys is provided, group the data first
+  const groupedData =
+    groupByKeys.length > 0
+      ? d3.group(data, (...keys) => keys.map(String))
+      : [null, data];
+
+  // Create a D3 linear scale for each key to be normalized within each group
+  const scales = {};
+  groupedData.forEach(([groupKey, groupData]) => {
+    scales[groupKey || "ungrouped"] = keysToNormalise.map((key) =>
+      d3
+        .scaleLinear()
+        .domain(d3.extent(groupData, (d) => d[key])) // Set domain based on actual data range within the group
+        .range([0, 100])
+    );
+  });
+
+  // Normalize the data using the scales
+  const normalisedData = data.map((d) => {
+    const groupKey = groupByKeys.map((key) => d[key]).join(",");
+    const scalesForGroup = scales[groupKey] || scales["ungrouped"];
+
+    return {
+      ...d, // Keep original properties
+      ...keysToNormalise.reduce(
+        (acc, key, index) => ({
+          ...acc,
+          [key]: scalesForGroup[index](d[key]),
+        }),
+        {}
+      ),
+    };
+  });
+
+  return normalisedData;
+}

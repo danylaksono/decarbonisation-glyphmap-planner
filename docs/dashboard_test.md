@@ -17,9 +17,6 @@ const flubber = require("flubber@0.4");
 import { require } from "npm:d3-require";
 import { Mutable } from "npm:@observablehq/stdlib";
 import * as turf from "@turf/turf";
-// import polylabel from "https://cdn.jsdelivr.net/npm/polylabel@2.0.1/+esm";
-// import { supercluster } from "npm:supercluster";
-
 import * as bulmaToast from "npm:bulma-toast";
 import * as bulmaQuickview from "npm:bulma-quickview@2.0.0/dist/js/bulma-quickview.js";
 
@@ -57,7 +54,7 @@ import {
   getFromSession,
   transformCoordinates,
   transformGeometry,
-  applyTransformationToShapes,
+  // applyTransformationToShapes,
 } from "./components/helpers.js";
 ```
 
@@ -65,10 +62,7 @@ import {
 const proj = new OSGB();
 ```
 
-<!-- <script src="https://unpkg.com/supercluster@8.0.0/dist/supercluster.min.js"></script> -->
-<!-- <script src="https://unpkg.com/polylabel@1.0.0/polylabel.min.js"></script> -->
-
-<!-- ---------------- Data ---------------- -->
+<!-- ---------------- Loading Raw Data ---------------- -->
 
 ```sql id=oxford_data
   SELECT DISTINCT
@@ -290,11 +284,11 @@ const [allocations, setAllocations] = useState([]);
       <div class="card-content">
         <div class="content">
           ${mapAggregationInput}
-          ${(map_aggregate == "Building Level") ? "button" : ""}
+          ${(map_aggregate == "Building Level") ? toggleGridmaps : ""}
           ${(map_aggregate == "Building Level") ? ""
             : html`${playButton} ${morphFactorInput}`}
           <!-- ${html`${playButton} ${morphFactorInput}`} -->
-          ${resize((width, height) => createGlyphMap(map_aggregate, {width, height}))}
+          ${resize((width, height) => createGlyphMap(map_aggregate, width, height))}
         </div>
       </div>
     </div>
@@ -678,6 +672,12 @@ const flip_budget = Generators.input(flipButtonInput);
 const playButton = html`<button class="btn edit" style="margin-top: 5px;">
   <i class="fas fa-play fa-large"></i>&nbsp;
 </button>`;
+```
+
+```js
+// toggle between raw building data and gridded glyphmaps
+const toggleGridmaps = Inputs.toggle({ label: "Gridmaps?", value: false });
+const toggle_grids = Generators.input(toggleGridmaps);
 ```
 
 ```js
@@ -1324,6 +1324,7 @@ const cartogramGeodataLsoaWgs84 = clone;
 
 ```js
 // Create a lookup table for the key data - geography
+// this is already aggregated by LSOA in EnrichGeoData
 console.log(">> Create lookup tables...");
 const keydata = _.keyBy(
   regular_geodata_withproperties.features.map((feat) => {
@@ -1415,16 +1416,23 @@ function valueDiscretiser(geomLookup) {
 
 ```js
 console.log(">> Initialize the GlyphMap Specification...");
+console.log("Sample x y from Data in Glyph", [data[0].x, data[0].y]);
 const glyphMapSpec = {
   coordType: "notmercator",
   initialBB: transformCoordinates(turf.bbox(regular_geodata)),
-  data: Object.values(keydata),
-  getLocationFn: (row) => regularGeodataLookup[row.code]?.centroid,
+  // if map_aggregate == "Building Level", use Individual data. otherwise use Aggregated data
+  data:
+    map_aggregate === "Building Level"
+      ? Object.values(data)
+      : Object.values(keydata),
+  getLocationFn: (row) =>
+    map_aggregate == "Building Level"
+      ? [row.x, row.y] // from individual building data
+      : regularGeodataLookup[row.code]?.centroid, // aggregated LSOA's centroid
   discretisationShape: "grid",
   interactiveCellSize: true,
   interactiveZoomPan: true,
   mapType: "CartoPositron",
-  // mapType: "StamenTonerLite",
   cellSize: 30,
 
   width: 500,
@@ -1443,70 +1451,75 @@ const glyphMapSpec = {
 
     aggrFn: (cell, row, weight, global, panel) => {
       // console.log("  >> Data aggregation in GlyphMap...", row.data);
+      if (!cell.records) cell.records = []; //if the cell doesn't currently have a records property, make one
+      cell.records.push(row);
+
       // console.log("aggrFn", row);
-      if (cell.building_area) {
-        // Update existing values
-        cell.building_area += row.data.properties.building_area;
-        cell.data.costs.ashp +=
-          row.data.properties.ashp_labour + row.data.properties.ashp_material;
-        cell.data.costs.pv +=
-          row.data.properties.pv_labour + row.data.properties.pv_material;
-        cell.data.costs.gshp +=
-          row.data.properties.gshp_labour + row.data.properties.gshp_material;
-        cell.data.carbon.ashp += row.data.properties.heat_demand;
-        cell.data.carbon.pv += row.data.properties.pv_generation;
-        cell.data.carbon.gshp += row.data.properties.gshp_size;
-      } else {
-        cell.building_area = row.data.properties.building_area;
-        // Initialize data structure
-        cell.data = {
-          costs: {
-            ashp:
-              row.data.properties.ashp_labour +
-              row.data.properties.ashp_material,
-            pv: row.data.properties.pv_labour + row.data.properties.pv_material,
-            gshp:
-              row.data.properties.gshp_labour +
-              row.data.properties.gshp_material,
-          },
-          carbon: {
-            ashp: row.data.properties.heat_demand,
-            pv: row.data.properties.pv_generation,
-            gshp: row.data.properties.gshp_size,
-          },
-        };
-      }
+      // if (cell.building_area) {
+      //   // Update existing values
+      //   cell.building_area += row.data.properties.building_area;
+      //   cell.data.costs.ashp +=
+      //     row.data.properties.ashp_labour + row.data.properties.ashp_material;
+      //   cell.data.costs.pv +=
+      //     row.data.properties.pv_labour + row.data.properties.pv_material;
+      //   cell.data.costs.gshp +=
+      //     row.data.properties.gshp_labour + row.data.properties.gshp_material;
+      //   cell.data.carbon.ashp += row.data.properties.heat_demand;
+      //   cell.data.carbon.pv += row.data.properties.pv_generation;
+      //   cell.data.carbon.gshp += row.data.properties.gshp_size;
+      // } else {
+      //   cell.building_area = row.data.properties.building_area;
+      //   // Initialize data structure
+      //   cell.data = {
+      //     costs: {
+      //       ashp:
+      //         row.data.properties.ashp_labour +
+      //         row.data.properties.ashp_material,
+      //       pv: row.data.properties.pv_labour + row.data.properties.pv_material,
+      //       gshp:
+      //         row.data.properties.gshp_labour +
+      //         row.data.properties.gshp_material,
+      //     },
+      //     carbon: {
+      //       ashp: row.data.properties.heat_demand,
+      //       pv: row.data.properties.pv_generation,
+      //       gshp: row.data.properties.gshp_size,
+      //     },
+      //   };
+      // }
 
       // --- Normalization ---
       // Create arrays for costs and carbon for normalization
-      let costsData = Object.entries(cell.data.costs).map(([key, value]) => ({
-        key,
-        value,
-      }));
-      let carbonData = Object.entries(cell.data.carbon).map(([key, value]) => ({
-        key,
-        value,
-      }));
+      // let costsData = Object.entries(cell.data.costs).map(([key, value]) => ({
+      //   key,
+      //   value,
+      // }));
+      // let carbonData = Object.entries(cell.data.carbon).map(([key, value]) => ({
+      //   key,
+      //   value,
+      // }));
 
-      // Normalize costs and carbon data separately
-      costsData = normaliseData(costsData, ["value"]);
-      carbonData = normaliseData(carbonData, ["value"]);
+      // // Normalize costs and carbon data separately
+      // costsData = normaliseData(costsData, ["value"]);
+      // carbonData = normaliseData(carbonData, ["value"]);
 
-      // Update cell.data with normalized values
-      cell.data.costs = costsData.reduce((acc, { key, value }) => {
-        acc[key] = value;
-        return acc;
-      }, {});
-      cell.data.carbon = carbonData.reduce((acc, { key, value }) => {
-        acc[key] = value;
-        return acc;
-      }, {});
+      // // Update cell.data with normalized values
+      // cell.data.costs = costsData.reduce((acc, { key, value }) => {
+      //   acc[key] = value;
+      //   return acc;
+      // }, {});
+      // cell.data.carbon = carbonData.reduce((acc, { key, value }) => {
+      //   acc[key] = value;
+      //   return acc;
+      // }, {});
     },
 
     postAggrFn: (cells, cellSize, global, panel) => {
-      //add cell interaction
-      let canvas = d3.select(panel).select("canvas").node();
+      // data normalisation
+      console.log(">>>> no of aggregated data in glyph: ", cells);
 
+      // Prepare cell interaction
+      let canvas = d3.select(panel).select("canvas").node();
       canvas.addEventListener("click", function (evt) {
         //check which cell the click was in
         const rect = canvas.getBoundingClientRect();
@@ -1565,19 +1578,16 @@ const glyphMapSpec = {
         ctx.stroke();
       }
 
-      //draw a radial glyph -> change the array to real data (between 0 and 1)
-      // drawRadialMultivariateGlyph([0.5, 0.1, 0.9, 0.3], x, y, cellSize, ctx);
-      let rg = new RadialGlyph([
-        cell.data.carbon.ashp,
-        cell.data.carbon.pv,
-        cell.data.carbon.gshp,
-        cell.data.costs.ashp,
-        cell.data.costs.pv,
-        cell.data.costs.gshp,
-      ]);
-      rg.draw(ctx, x, y, cellSize / 2);
-
-      // console.log("boundary", boundary);
+      //draw a radial glyph
+      // let rg = new RadialGlyph([
+      //   cell.data.carbon.ashp,
+      //   cell.data.carbon.pv,
+      //   cell.data.carbon.gshp,
+      //   cell.data.costs.ashp,
+      //   cell.data.costs.pv,
+      //   cell.data.costs.gshp,
+      // ]);
+      // rg.draw(ctx, x, y, cellSize / 2);
     },
 
     postDrawFn: (cells, cellSize, ctx, global, panel) => {},
@@ -1622,6 +1632,7 @@ const glyphMapSpec = {
 ```
 
 ```js
+// extend the glyphMapSpec
 const glyphMapSpecWgs84 = {
   ...glyphMapSpec,
   coordType: "mercator",
@@ -1647,13 +1658,39 @@ const morphGlyphMap = createMorphGlyphMap(1000, 800);
 ```
 
 ```js
-function createGlyphMap(map_aggregate, { width, height }) {
-  console.log(width, height);
+function createGlyphMap(map_aggregate, width, height) {
+  // console.log(width, height);
   if (map_aggregate == "Building Level") {
-    return createLeafletMap(data, width, height).leafletContainer;
+    if (toggle_grids) {
+      return glyphMap({
+        ...glyphMapSpec,
+      });
+    } else {
+      return createLeafletMap(data, width, height).leafletContainer;
+    }
   } else if (map_aggregate == "LSOA Level") {
     return morphGlyphMap;
   }
+}
+```
+
+```js
+function interactiveDrawFn(mode) {
+  return function drawFn(cell, x, y, cellSize, ctx, global, panel) {
+    if (!cell) return;
+    const padding = 2;
+
+    ctx.globalAlpha = 1;
+  };
+}
+```
+
+```js
+{
+  // glyphMode;
+  // decarbonisationGlyph.setGlyph({
+  //   drawFn: interactiveDrawFn(glyphMode),
+  // });
 }
 ```
 
@@ -1667,7 +1704,7 @@ function createLeafletMap(data, width, height) {
 
   const mapInstance = new LeafletMap(leafletContainer, {
     width: width,
-    height: "600px",
+    height: height || "600px",
     tooltipFormatter: (props) => `<strong>${props.id}</strong>`,
   });
 
@@ -1693,10 +1730,7 @@ function createLeafletMap(data, width, height) {
 // display(leafletContainer);
 ```
 
-```js
-// Fly to coordinate
-// await map.flyTo({ x: -122.4194, y: 37.7749 });
-```
+<!-- ----------------  Link Table to Leaflet Map  ---------------- -->
 
 ```js
 // get last element of the selectedRow if more than one columns are selected,
