@@ -162,9 +162,9 @@ export const enrichGeoData = function (
   geoJSON,
   joinColumn = "lsoa_code",
   geoJSONJoinColumn = "code",
-  aggregations = {}
+  aggregations = {},
+  normalize = true // Flag to enable or disable normalization
 ) {
-  // console.log("enrichGeoData called with data:", buildingData);
   // 1. Group building data by join column
   const groupedData = buildingData.reduce((acc, item) => {
     const code = item[joinColumn];
@@ -210,14 +210,40 @@ export const enrichGeoData = function (
     }
   }
 
-  // 3. Create new GeoJSON with merged data
+  // 3. Normalize aggregated data if enabled
+  let normalizedAggregatedData = aggregatedData;
+  if (normalize) {
+    // Flatten aggregatedData to prepare it for normalization
+    const flattenedData = Object.entries(aggregatedData).map(
+      ([code, values]) => ({
+        code,
+        ...values,
+      })
+    );
+
+    // Determine numeric keys for normalization
+    const numericKeys = getNumericKeys(flattenedData);
+
+    // Normalize the flattened data
+    const normalizedData = normaliseData(flattenedData, numericKeys);
+
+    // Transform back to grouped structure
+    normalizedAggregatedData = normalizedData.reduce((acc, item) => {
+      const { code, ...rest } = item;
+      acc[code] = rest;
+      return acc;
+    }, {});
+  }
+
+  // 4. Create new GeoJSON with merged and normalized data
   return {
     ...geoJSON,
     features: geoJSON.features.map((feature) => ({
       ...feature,
       properties: {
         ...feature.properties,
-        ...(aggregatedData[feature.properties[geoJSONJoinColumn]] || {}),
+        ...(normalizedAggregatedData[feature.properties[geoJSONJoinColumn]] ||
+          {}),
       },
     })),
   };
@@ -245,6 +271,11 @@ export function normaliseData(data, keysToNormalise) {
   }));
 
   return normalisedData;
+}
+
+function getNumericKeys(data) {
+  const sample = data[0];
+  return Object.keys(sample).filter((key) => typeof sample[key] === "number");
 }
 
 export function insideCell(c, x, y) {
@@ -440,7 +471,7 @@ export function normalisebyGroup(data, keysToNormalise, groupByKeys = []) {
       d3
         .scaleLinear()
         .domain(d3.extent(groupData, (d) => d[key])) // Set domain based on actual data range within the group
-        .range([0, 100])
+        .range([0, 1])
     );
   });
 

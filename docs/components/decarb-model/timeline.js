@@ -466,7 +466,7 @@ export function createTimelineInterface(
       .attr("x", width / 2)
       .attr("y", height / 2)
       .attr("text-anchor", "middle")
-      .text("Add data to start");
+      .text("Add new intervention to start");
   }
 
   // ---------------------- STYLES ---------------------- //

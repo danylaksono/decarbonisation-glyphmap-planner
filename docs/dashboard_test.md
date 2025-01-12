@@ -54,6 +54,7 @@ import {
   getFromSession,
   transformCoordinates,
   transformGeometry,
+  normalisebyGroup,
   // applyTransformationToShapes,
 } from "./components/helpers.js";
 ```
@@ -315,7 +316,7 @@ const [allocations, setAllocations] = useState([]);
         </div>
         <!-- Total Budget -->
         <div class="field">
-          <label class="label">Total Budget</label>
+          <label class="label">Total Budget (in thousand £)</label>
           <div class="control">
             ${totalBudgetInput}
             <!-- <input id="totalBudgetInput" class="input" type="number" placeholder="Enter total budget" required> -->
@@ -399,20 +400,22 @@ cancelButton.addEventListener("click", () => {
 ### Interventions
 
 ```js
+display(html`<p>"DATA DATA DATA"</p>`);
+display(data);
 // --- Analyze Stacked Results ---
-display(html`<p>"Stacked Recap Summary:"</p>`);
+display(html`<p>"Stacked Recap.Summary:"</p>`);
 display(stackedRecap.summary);
 
-display(html`<p>"Stacked Recap Yearly Summary:"</p>`);
+display(html`<p>"Stacked Recap.YearlySummary:"</p>`);
 display(stackedRecap.yearlySummary);
 
-display(html`<p>"Stacked Recap Buildings:"</p>`);
+display(html`<p>"Stacked Recap.Buildings:"</p>`);
 display(stackedRecap.buildings);
 
-display(html`<p>"Stacked Recap Intervened Buildings:"</p>`);
+display(html`<p>"Stacked Recap.IntervenedBuildings:"</p>`);
 display(stackedRecap.intervenedBuildings);
 
-display(html`<p>"List of Intervention Results:"</p>`);
+display(html`<p>"List of Intervention Results recap:"</p>`);
 display(stackedRecap.recap);
 
 display(html`<p>"Selected Intervention"</p>`);
@@ -425,8 +428,8 @@ display(
 
 ```js
 display(html`<p>"Grouped Intervention"</p>`);
-const groupedAll = MiniDecarbModel.group(data, ["lsoa", "interventionYear"]);
-display(groupedAll);
+const groupedData = MiniDecarbModel.group(data, ["lsoa", "interventionYear"]);
+display(groupedData);
 ```
 
 <!-- ---------------- Intervention Managers ---------------- -->
@@ -461,15 +464,15 @@ const listOfTech = {
       savingsKey: "gshp_size",
     },
   },
-  Insulation: {
-    name: "Insulation",
-    config: {
-      suitabilityKey: "insulation_rating",
-      labourKey: "insulation_cwall_labour",
-      materialKey: "insulation_cwall_materials",
-      savingsKey: "insulation_cwall",
-    },
-  },
+  // Insulation: {
+  //   name: "Insulation",
+  //   config: {
+  //     suitabilityKey: "insulation_rating",
+  //     labourKey: "insulation_cwall_labour",
+  //     materialKey: "insulation_cwall_materials",
+  //     savingsKey: "insulation_cwall",
+  //   },
+  // },
 };
 
 // --- Create an InterventionManager instance ---
@@ -480,15 +483,12 @@ const manager = new InterventionManager(buildingsData, listOfTech);
 
 ```js
 // --- technology ---
-const techsInput = Inputs.select(
-  ["PV", "ASHP", "GSHP", "Insulation", "Optimise All"],
-  {
-    // label: html`<b>Technology</b>`,
-    value: "ASHP",
-    // submit: true,
-    // disabled: selectedIntervention ? true : false,
-  }
-);
+const techsInput = Inputs.select(["PV", "ASHP", "GSHP", "Optimise All"], {
+  // label: html`<b>Technology</b>`,
+  value: "ASHP",
+  // submit: true,
+  // disabled: selectedIntervention ? true : false,
+});
 // techsInput.style["max-width"] = "300px";
 Object.assign(techsInput, {
   oninput: (event) => event.isTrusted && event.stopImmediatePropagation(),
@@ -704,8 +704,11 @@ addInterventionBtn.addEventListener("click", () => {
 
 ```js
 const getNumericBudget = (value) => {
+  // console.log("getNumericBudget", value);
   // Remove commas and parse the value as a number
-  return parseFloat(value.replace(/,/g, "").replace(/£/g, ""));
+  let budget = parseFloat(value.replace(/,/g, "").replace(/£/g, ""));
+  // console.log("budget in billions", budget * 1e6);
+  return budget * 1000;
 };
 ```
 
@@ -1435,10 +1438,10 @@ function glyphMapSpec(width = 800, height = 600) {
     interactiveCellSize: true,
     interactiveZoomPan: true,
     mapType: "CartoPositron",
-    cellSize: 30,
+    cellSize: 50,
 
-    width: width || 500,
-    height: height || 500,
+    width: width || 800,
+    height: height || 600,
 
     customMap: {
       scaleParams: [],
@@ -1459,7 +1462,7 @@ function glyphMapSpec(width = 800, height = 600) {
 
       postAggrFn: (cells, cellSize, global, panel) => {
         // data normalisation
-        console.log(">>>> no of aggregated data in glyph: ", cells);
+        // console.log(">>>> no of aggregated data in glyph: ", cells);
 
         // Prepare cell interaction
         let canvas = d3.select(panel).select("canvas").node();
@@ -1483,19 +1486,19 @@ function glyphMapSpec(width = 800, height = 600) {
         global.pathGenerator = d3.geoPath().context(ctx);
         global.colourScalePop = d3
           .scaleSequential(d3.interpolateBlues)
-          .domain([0, d3.max(cells.map((row) => row.building_area))]);
-
-        //draw a coloured polygon
-        // ctx.beginPath();
-        // ctx.rect(0, 0, panel.getWidth(), panel.getHeight());
-        // const colour = d3.color("#fff");
-        // colour.opacity = morph_factor;
-        // ctx.fillStyle = colour;
-        // ctx.fill();
+          .domain([0, 1]);
+        // .domain([0, d3.max(cells.map((row) => row.building_area))]);
       },
 
       drawFn: (cell, x, y, cellSize, ctx, global, panel) => {
-        // console.log("  >> Data at cell", cell.data);
+        const cellData = cell.records[0].data.properties;
+        // const cellData = normalisebyGroup(cell.records[0].data.properties, [
+        //   "ashp_suitability",
+        //   "ashp_size",
+        //   "ashp_total",
+        // ]);
+        // console.log("  >> Data at cell", cellData);
+
         const boundary = cell.getBoundary(0);
         if (boundary[0] != boundary[boundary.length - 1]) {
           boundary.push(boundary[0]);
@@ -1504,7 +1507,8 @@ function glyphMapSpec(width = 800, height = 600) {
 
         ctx.beginPath();
         global.pathGenerator(boundaryFeat);
-        ctx.fillStyle = global.colourScalePop(cell.building_area);
+        ctx.fillStyle = "rgba(90, 179, 243, 0.92)";
+        // ctx.fillStyle = global.colourScalePop(cell.building_area);
         ctx.fill();
 
         ctx.lineWidth = 0.2;
@@ -1522,24 +1526,22 @@ function glyphMapSpec(width = 800, height = 600) {
         }
 
         //draw a radial glyph
-        // let rg = new RadialGlyph([
-        //   cell.data.carbon.ashp,
-        //   cell.data.carbon.pv,
-        //   cell.data.carbon.gshp,
-        //   cell.data.costs.ashp,
-        //   cell.data.costs.pv,
-        //   cell.data.costs.gshp,
-        // ]);
-        // rg.draw(ctx, x, y, cellSize / 2);
+        let rg = new RadialGlyph([
+          cellData.ashp_suitability, // potential
+          cellData.ashp_size, // potential
+          cellData.ashp_total, // costs
+        ]);
+        rg.draw(ctx, x, y, cellSize / 2);
       },
 
       postDrawFn: (cells, cellSize, ctx, global, panel) => {},
 
       tooltipTextFn: (cell) => {
         if (cell) {
-          console.log("cell on tooltip", cell);
-          setDetailOnDemand(cell.data);
-          return `Total Building Area: ${cell.building_area.toFixed(2)} m^2`;
+          // console.log("cell on tooltip", cell);
+          console.log("cell on tooltip", cell.records[0].code);
+          // setDetailOnDemand(cell.data);
+          // return `Total Building Area: ${cell.building_area.toFixed(2)} m^2`;
         } else {
           return "no data";
         }
