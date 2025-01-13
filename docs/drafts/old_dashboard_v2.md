@@ -16,13 +16,16 @@ const flubber = require("flubber@0.4");
 
 import { require } from "npm:d3-require";
 import { Mutable } from "npm:@observablehq/stdlib";
+import * as turf from "@turf/turf";
 // import { supercluster } from "npm:supercluster";
+
+import * as bulmaToast from "npm:bulma-toast";
+import * as bulmaQuickview from "npm:bulma-quickview@2.0.0/dist/js/bulma-quickview.js";
 
 import {
   TimeGlyph,
   GlyphCollection,
 } from "./components/glyph-designs/timeGlyph.js";
-import * as turf from "@turf/turf";
 import { RadialGlyph } from "./components/radialglyph.js";
 import {
   glyphMap,
@@ -30,26 +33,20 @@ import {
   _drawCellBackground,
 } from "./components/gridded-glyphmaps/index.min.js";
 import { OSGB } from "./components/osgb/index.js";
-import { Model } from "./components/model.js";
-import { BudgetAllocator } from "./components/budgetAllocator.js";
-import { MiniDecarbModel } from "./components/miniDecarbModel.js";
+import { BudgetAllocator } from "./components/decarb-model/budget-allocator.js";
+import {
+  InterventionManager,
+  MiniDecarbModel,
+} from "./components/decarb-model/mini-decarbonisation.js";
+import { createTimelineInterface } from "./components/decarb-model/timeline.js";
+
 import { createTable } from "./components/sorterTable.js";
-import { createTimelineInterface } from "./components/timeline.js";
-import { YearPicker } from "./components/yearpicker/yearpicker.js";
 import {
   inferTypes,
   enrichGeoData,
   normaliseData,
+  insideCell,
 } from "./components/helpers.js";
-import {
-  downloadBoundaries,
-  joinCensusDataToGeoJSON,
-  convertGridCsvToGeoJson,
-  context2d,
-} from "./components/utils.js";
-
-import * as bulmaToast from "npm:bulma-toast";
-import * as bulmaQuickview from "npm:bulma-quickview@2.0.0/dist/js/bulma-quickview.js";
 ```
 
 ```js
@@ -125,8 +122,8 @@ const buildingsData = [...oxford_data];
 ```
 
 ```js
-// const flatData = buildingsData.map((p) => ({ ...p }));
-// const flatData = buildingsData.map((p) => Object.assign({}, p));
+// const flatData = buildingsData.map((p) => ({ ...p })); // very slow
+// const flatData = buildingsData.map((p) => Object.assign({}, p)); // even slower
 const allColumns = Object.keys(buildingsData[0]);
 console.log(">>  Loading Data Done");
 ```
@@ -160,6 +157,7 @@ const [allocations, setAllocations] = useState([]); // list of budget allocation
 const [selectedIntervention, setSelectedIntervention] = useState(null); // selected intervention in timeline
 // const [selectedInterventionIndex, setSelectedInterventionIndex] = useState(null); // selected intervention index
 const [detailOnDemand, setDetailOnDemand] = useState(null); // detail on demand on map
+const [currentConfig, setCurrentConfig] = useState({}); // current configuration
 ```
 
 <!-------- Stylesheets -------->
@@ -183,17 +181,19 @@ const [detailOnDemand, setDetailOnDemand] = useState(null); // detail on demand 
               <div id="timeline-panel">
                 ${createTimelineInterface(
                 interventions,
-                () => {},
+                (change) => {
+                  console.log("timeline change", change);
+                },
                 (click) => {
                   selectIntervention(click);
-                  console.log("clicked block", interventions[click]);
+                  console.log("timeline clicked block", interventions[click]);
                 },
                 450,
                 200
               )}
               </div> <!-- timeline panel -->
               <nav id="timeline-buttons">
-                <button id="openQuickviewButton"  data-show="quickview" class="btn" aria-label="Add">
+                <button id="openQuickviewButton" data-show="quickview" class="btn" aria-label="Add">
                   <i class="fas fa-plus"></i>
                 </button>
                 <button class="btn edit" aria-label="Edit">
@@ -203,15 +203,24 @@ const [detailOnDemand, setDetailOnDemand] = useState(null); // detail on demand 
                   onclick=${(e) => {
                     e.stopPropagation();
                     console.log("clicked block", e);
+                    console.log(">>> selectedIntervention ID", results[selectedIntervention.index].interventionId);
                 }}>
                 <i class="fas fa-trash" style="color:red;"></i>
               </button>`}
-                <button class="btn move-up" aria-label="Move Up">
-                  <i class="fas fa-arrow-up"></i>
-                </button>
-                <button class="btn move-down" aria-label="Move Down">
-                  <i class="fas fa-arrow-down"></i>
-                </button>
+              ${html`<button class="btn move-up" aria-label="Move Up"
+                  onclick=${(e) => {
+                    e.stopPropagation();
+                    reorderIntervention(interventions, selectedIntervention.index, "up");
+                }}>
+                <i class="fas fa-arrow-up"></i>
+              </button>`}
+                ${html`<button class="btn move-down" aria-label="Move Down"
+                  onclick=${(e) => {
+                    e.stopPropagation();
+                    reorderIntervention(interventions, selectedIntervention.index, "down");
+                }}>
+                <i class="fas fa-arrow-down"></i>
+              </button>`}
               </nav>
             </div> <!-- graph container -->
           </div>
@@ -225,8 +234,8 @@ const [detailOnDemand, setDetailOnDemand] = useState(null); // detail on demand 
           </header>
           <div class="card-content">
             <div class="content">
-              ${table.getNode()}
-              <div>No. of intervened buildings: ${JSON.stringify(stackedResults.summary.intervenedCount)}</div>
+              <!-- ${table.getNode()} -->
+              <!-- <div>No. of intervened buildings: ${JSON.stringify(stackedResults.summary.intervenedCount)}</div> -->
             </div>
           </div>
         </div>
@@ -243,7 +252,7 @@ const [detailOnDemand, setDetailOnDemand] = useState(null); // detail on demand 
           ${(map_aggregate == "Building Level") ? ""
             : html`${playButton} ${morphFactorInput}`}
           <!-- ${html`${playButton} ${morphFactorInput}`} -->
-          ${resize((width, height) => createGlyphMap(map_aggregate, {width, height}))}
+          <!-- ${resize((width, height) => createGlyphMap(map_aggregate, {width, height}))} -->
         </div>
       </div>
     </div>
@@ -321,14 +330,14 @@ const [detailOnDemand, setDetailOnDemand] = useState(null); // detail on demand 
         </div>
         <!-- visual budget allocator  -->
         <div class="field">
-          ${svg}
+          ${budgetVisualiser}
         </div>
       </form>
     </div>
   </div>
   <footer class="quickview-footer">
-    <button class="button is-success" id="addInterventionBtn">Add New Intervention</button>
     <button class="button is-light" id="cancelButton">Cancel</button>
+    <button class="button is-success" id="addInterventionBtn">Add New Intervention</button>
   </footer>
 </div>
 
@@ -349,33 +358,118 @@ closeQuickviewButton.addEventListener("click", () => {
 cancelButton.addEventListener("click", () => {
   quickviewDefault.classList.remove("is-active");
 });
+```
 
-// Add New Intervention button logic
-const addInterventionBtn = document.getElementById("addInterventionBtn");
-addInterventionBtn.addEventListener("click", () => {
-  console.log("  total_budget ... ", getNumericBudget(total_budget));
-  console.log("  start_year ... ", start_year);
-  console.log("  project_length ... ", project_length);
-  console.log("  flip_budget ... ", flip_budget);
+### Interventions
 
-  setAllocations(lastAllocation);
-  // console.log("  .. lastAllocation", lastAllocation);
+```js
+// --- Analyze Stacked Results ---
+display(html`<p>"Stacked Recap Summary:"</p>`);
+display(stackedRecap.summary);
 
-  // console.log("  .. allocations", allocations);
+display(html`<p>"Stacked Recap Yearly Summary:"</p>`);
+display(stackedRecap.yearlySummary);
 
-  addNewIntervention(start_year, technology, allocations);
+display(html`<p>"Stacked Recap Buildings:"</p>`);
+display(stackedRecap.buildings);
 
-  // alert("Intervention Added!");
-  console.log("  Allocations added: ", allocations);
-  quickviewDefault.classList.remove("is-active"); // Close quickview after submission
-});
+display(html`<p>"Stacked Recap Intervened Buildings:"</p>`);
+display(stackedRecap.intervenedBuildings);
+
+display(html`<p>"List of Intervention Results:"</p>`);
+display(stackedRecap.recap);
 ```
 
 ```js
-console.log(">> Preparing Interventions...");
+// update timeline drawing
+// function updateTimeline() {
+//   const timelinePanel = document.getElementById("timeline-panel");
+//   timelinePanel.innerHTML = "";
+//   timelinePanel.appendChild(
+//     createTimelineInterface(
+//       interventions,
+//       (change) => {
+//         console.log("timeline change", change);
+//       },
+//       (click) => {
+//         selectIntervention(click);
+//         console.log("timeline clicked block", interventions[click]);
+//       },
+//       450,
+//       200
+//     )
+//   );
+// }
+```
+
+<!-- ---------------- Intervention Managers ---------------- -->
+
+```js
+// --- Define the list of technologies ---
+const listOfTech = {
+  ASHP: {
+    name: "ASHP",
+    config: {
+      suitabilityKey: "ashp_suitability",
+      labourKey: "ashp_labour",
+      materialKey: "ashp_material",
+      savingsKey: "heat_demand",
+    },
+  },
+  PV: {
+    name: "PV",
+    config: {
+      suitabilityKey: "pv_suitability",
+      labourKey: "pv_labour",
+      materialKey: "pv_material",
+      savingsKey: "pv_generation",
+    },
+  },
+  GSHP: {
+    name: "GSHP",
+    config: {
+      suitabilityKey: "gshp_suitability",
+      labourKey: "gshp_labour",
+      materialKey: "gshp_material",
+      savingsKey: "gshp_size",
+    },
+  },
+  Insulation: {
+    name: "Insulation",
+    config: {
+      suitabilityKey: "insulation_rating",
+      labourKey: "insulation_cwall_labour",
+      materialKey: "insulation_cwall_materials",
+      savingsKey: "insulation_cwall",
+    },
+  },
+};
+
+// --- Create an InterventionManager instance ---
+const manager = new InterventionManager(buildingsData, listOfTech);
+```
+
+```js
+function triggerModelRun() {
+  console.log(">> Triggering Model Run...");
+
+  // --- Run the interventions ---
+  const recaps = manager.runInterventions();
+}
+```
+
+```js
+console.log(">> Stacked Result from Model Run...");
+
+// --- Get the stacked results ---
+const stackedRecap = manager.getStackedResults();
+```
+
+```js
+console.log(">> Select Interventions...");
 // for dealing with selected list items
 let selectedInterventionIndex = null; // Track the selected intervention index
-// console.log("selectedInterventionIndex: ", selectedInterventionIndex);
+// // console.log("selectedInterventionIndex: ", selectedInterventionIndex);
 
 function selectIntervention(index) {
   // Update the selected index
@@ -391,7 +485,10 @@ function selectIntervention(index) {
   const selectedItem = document.querySelector(
     `#interventions-list li:nth-child(${index + 1})`
   );
-  setSelectedIntervention(results[selectedInterventionIndex]);
+  setSelectedIntervention({
+    ...results[selectedInterventionIndex],
+    index: selectedInterventionIndex,
+  });
   // console.log("selectedItem: ", results[selectedInterventionIndex]);
   // setSelectedIntervention(selectedItem);
   if (selectedItem) selectedItem.classList.add("selected");
@@ -407,18 +504,9 @@ if (interventions.length === 0) {
 <!-- ---------------- Input form declarations ---------------- -->
 
 ```js
-console.log(">> Creating input forms...");
-// list of decarb technologies
+// --- technology ---
 const techsInput = Inputs.select(
-  [
-    "PV",
-    "ASHP",
-    "GSHP",
-    "Insulation - Cavity Wall",
-    "Insulation - External Wall",
-    "Insulation - Roof",
-    "Insulation - Under Floor",
-  ],
+  ["PV", "ASHP", "GSHP", "Insulation", "Optimise All"],
   {
     // label: html`<b>Technology</b>`,
     value: "ASHP",
@@ -433,17 +521,14 @@ Object.assign(techsInput, {
 });
 const technology = Generators.input(techsInput);
 // display(techsInput);
+```
 
-// Total Budget
-// const totalBudgetInput = Inputs.number({
-//   // label: html`<b>Total Budget</b>`,
-//   placeholder: "Available Budget in GBP",
-//   value: 100_000_000,
-// });
+```js
+// --- total budget ---
 const totalBudgetInput = html`<input
   id="totalBudgetInput"
   class="input"
-  value="10,000,000"
+  value="10,000"
   type="text"
   placeholder="Enter total budget"
 />`;
@@ -472,18 +557,10 @@ totalBudgetInput.addEventListener("focus", (event) => {
   // Remove formatting to allow direct editing
   event.target.value = event.target.value.replace(/,/g, "").replace(/£/g, "");
 });
+```
 
-// Start Year
-// const startYearInput = Inputs.text({
-//   label: html`<b>Start Year</b>`,
-//   placeholder: "Starting year?",
-//   disabled: selectedIntervention ? true : false,
-//   value: selectedIntervention
-//     ? Number(Object.keys(selectedIntervention.yearlyStats)[0])
-//     : 2024,
-//   // submit: html`<button class="create-btn" style="color:white;">Submit</button>`,
-// });
-// startYearInput.style["max-width"] = "300px";
+```js
+// --- start year ---
 const startYearInput = html`<input
   class="input"
   type="number"
@@ -499,14 +576,10 @@ Object.assign(startYearInput, {
 });
 // console.log("startYearInput.style", startYearInput.columns);
 const start_year = Generators.input(startYearInput);
+```
 
-// Project Length
-// const projectLengthInput = Inputs.range([0, 10], {
-//   // label: html`<b>Project length in years</b>`,
-//   step: 1,
-//   value: 5,
-// });
-// projectLengthInput.number.style["max-width"] = "60px";
+```js
+// --- project length ---
 const projectLengthInput = html`<input
   id="projectLengthInput"
   class="slider is-fullwidth"
@@ -522,8 +595,10 @@ Object.assign(projectLengthInput, {
   onchange: (event) => event.currentTarget.dispatchEvent(new Event("input")),
 });
 const project_length = Generators.input(projectLengthInput);
+```
 
-// Allocation Type
+```js
+// --- allocation type ---
 const allocationTypeInput = Inputs.radio(["linear", "sqrt", "exp", "cubic"], {
   // label: html`<b>Allocation Type</b>`,
   value: "linear",
@@ -533,7 +608,10 @@ Object.assign(allocationTypeInput, {
   onchange: (event) => event.currentTarget.dispatchEvent(new Event("input")),
 });
 const allocation_type = Generators.input(allocationTypeInput);
+```
 
+```js
+// --- building priority ---
 const priorityInput = Inputs.form([
   Inputs.select([...allColumns, "None"], {
     label: html`<b>Sorting Priority</b>`,
@@ -547,7 +625,10 @@ const priorityInput = Inputs.form([
   }),
 ]);
 const priority_input = Generators.input(priorityInput);
+```
 
+```js
+// --- building filter ---
 const filterInput = Inputs.form([
   Inputs.select([...allColumns, "None"], {
     label: html`<b>Filter Column</b>`,
@@ -561,7 +642,10 @@ const filterInput = Inputs.form([
   }),
 ]);
 const filter_input = Generators.input(filterInput);
+```
 
+```js
+// --- glyphmap type ---
 const glyphmapTypeInput = Inputs.radio(
   ["Interventions", "Decarbonisation Time series"],
   {
@@ -570,13 +654,19 @@ const glyphmapTypeInput = Inputs.radio(
   }
 );
 const glyphmapType = Generators.input(glyphmapTypeInput);
+```
 
+```js
+// --- map aggregation ---
 const mapAggregationInput = Inputs.radio(["LSOA Level", "Building Level"], {
   label: "Map Aggregated at",
   value: "LSOA Level",
 });
 const map_aggregate = Generators.input(mapAggregationInput);
+```
 
+```js
+// --- morph factor ---
 const morphFactorInput = html`<input
   style="width: 100%; max-width:450px;"
   type="range"
@@ -590,19 +680,54 @@ Object.assign(morphFactorInput, {
   onchange: (event) => event.currentTarget.dispatchEvent(new Event("input")),
 });
 const morph_factor = Generators.input(morphFactorInput);
+```
 
-//  flip button
-const flipButtonInput = Inputs.toggle({ label: "Flip", value: true });
+```js
+// --- flip button ---
+const flipButtonInput = Inputs.toggle({ label: "Flip", value: false });
 Object.assign(flipButtonInput, {
   // oninput: (event) => event.isTrusted && event.stopImmediatePropagation(),
   onchange: (event) => event.currentTarget.dispatchEvent(new Event("input")),
 });
 const flip_budget = Generators.input(flipButtonInput);
+```
 
-// play button
+```js
+// --- play button ---
 const playButton = html`<button class="btn edit" style="margin-top: 10px;">
   <i class="fas fa-play"></i>&nbsp;
 </button>`;
+```
+
+```js
+// Debounced version of addNewIntervention
+const debouncedAddNewIntervention = _.debounce((formData) => {
+  console.log("Adding new intervention with data:", formData);
+  addNewIntervention(formData);
+}, 1000);
+```
+
+```js
+// ----------------- QuickView Event Listeners -----------------
+const addInterventionBtn = document.getElementById("addInterventionBtn");
+
+// Add New Intervention button logic
+addInterventionBtn.addEventListener("click", () => {
+  console.log("Intervention button clicked");
+
+  const formData = {
+    id: techsInput.value + "_" + startYearInput.value.toString(),
+    initialYear: startYearInput.value,
+    rolloverBudget: 0,
+    optimizationStrategy: "tech-first",
+    tech: techsInput.value,
+    priorities: [],
+  };
+
+  console.log(">> Prepared FormData:", formData);
+  debouncedAddNewIntervention(formData);
+  quickviewDefault.classList.remove("is-active"); // Close quickview after submission
+});
 ```
 
 ```js
@@ -628,10 +753,10 @@ document
 ```js
 console.log(">> Budget Allocator...");
 
-console.log("  .. total_budget", getNumericBudget(total_budget));
-console.log("  .. start_year", start_year);
-console.log("  .. project_length", project_length);
-console.log("  .. flip_budget", flip_budget);
+// console.log("  .. total_budget", getNumericBudget(total_budget));
+// console.log("  .. start_year", start_year);
+// console.log("  .. project_length", project_length);
+// console.log("  .. flip_budget", flip_budget);
 
 // Budget Allocator
 const allocator = new BudgetAllocator(
@@ -639,53 +764,44 @@ const allocator = new BudgetAllocator(
   Number(start_year),
   Number(project_length)
 );
-```
 
-```js
 let initialAllocations;
 if (allocation_type === "linear") {
   initialAllocations = allocator.allocateLinear();
 } else {
   initialAllocations = allocator.allocateCustom(
     allocation_type,
-    { exponent: 2 },
+    { exponent: 4 },
     flip_budget
   );
 }
 ```
 
-<!-- get budget allocations -->
-
 ```js
-const { svg, getAllocations } = allocator.visualise(
+const budgetVisualiser = allocator.visualise(
   initialAllocations,
   (changes) => {
-    console.log("data changed:", changes);
+    // console.log("data changed:", changes);
     setSelected(changes);
   },
   400,
   200
 );
-// display(results);
 ```
 
 ```js
-const lastAllocation = selected ? getAllocations(selected) : initialAllocations;
-// set allocation based on custom graph
-// allocation_type;
-// const allocations = selected ? getAllocations(selected) : initialAllocations;
+setAllocations(allocator.getAllocations());
 ```
 
 ```js
 // store intervention results
 let interventions = getIntervention;
+console.log(">> Interventions:", interventions);
 let results = getResults;
 ```
 
-<!-- dealing with observable input reactivity -->
-
 ```js
-// dealing with observable input reactivity
+// <!-- dealing with observable input reactivity -->
 // two ways Obs input
 function set(input, value) {
   input.value = value;
@@ -746,79 +862,93 @@ console.log(">> Loading intervention functions...");
 // >> Some functions related to creating and managing interventions
 
 // create config template
-function createConfigTemplate(start_year, allocations) {
+function createConfigTemplate(startyear, budgetallocation, techs) {
+  console.log(">> Creating config template...");
+  // setAllocations(allocator.recap().allocations);
   return {
-    initial_year: Number(start_year),
-    duration: allocations.length,
-    rolledover_budget: 0,
-    yearly_budgets: allocations.map((item) => item.budget),
-    tech: {},
+    id: techs + "_" + startyear.toString(),
+    initialYear: Number(startyear),
+    rolloverBudget: 0,
+    yearlyBudgets: budgetallocation.map((item) => item.budget),
+    optimizationStrategy: "tech-first",
+    tech: techs,
     priorities: [],
     filters: [],
   };
 }
+```
 
+```js
 // add new intervention
 function addIntervention(
   techConfig,
-  start_year,
+  // start_year,
   allocation,
   filters = [],
   priorities = []
 ) {
-  const config = createConfigTemplate(start_year, allocation);
-  // console.log("configuration sent", config);
+  // const config = createConfigTemplate(allocation);
+  // console.log("allocation configuration sent", config);
 
-  config.tech = {
-    name: techConfig.name,
-    config: techConfig.config,
-  };
+  // config.tech = {
+  //   name: techConfig.name,
+  //   config: techConfig.config,
+  // };
 
   // console.log("techConfig Name", techConfig);
 
   // Apply filters and priorities - append to existing
-  config.filters = [...(config.filters || []), ...filters];
-  config.priorities = [...(config.priorities || []), ...priorities];
+  // config.filters = [...(config.filters || []), ...filters];
+  // config.priorities = [...(config.priorities || []), ...priorities];
 
-  const newIntervention = { ...config, id: Date.now() };
-  setIntervention([...interventions, newIntervention]);
-  const modelResult = runModel(newIntervention, buildingsData);
-  setResults([...results, modelResult]);
-  console.log("Intervention added:", config);
-  // close the modal
-  // document.getElementById("interventionModal").style.display = "none";
+  // Create new intervention
+  // const newIntervention = { ...config, id: Date.now() };
+  // setIntervention([...interventions, newIntervention]); // Update interventions
+
+  // Run the model and store the results
+  const modelResult = null; // runModel(newIntervention, buildingsData);
+
+  // setResults([...results, modelResult]);
+  // console.log("Intervention added:", interventions);
 }
+```
 
+```js
+function randomFunction() {
+  console.log("=================Random function called!");
+  // console.log("allocation", view(theallocation));
+}
+// return randomFunction();
+```
+
+```js
 // handle form submission: add new intervention
-function addNewIntervention(start_year, technology, allocations) {
-  const new_start_year = start_year;
-  const new_tech = technology;
-  const new_allocations = allocations;
+function addNewIntervention(data) {
+  const newAllocation = allocations;
+  console.log({ ...data, yearlyBudgets: newAllocation });
+  console.log("newAllocation", newAllocation);
+}
+```
 
-  // if result exist, take the remaining budget from the latest year
-  // and add it to this first year budget
-  if (results.length > 0) {
-    const latestResult = results[results.length - 1];
-    new_allocations[0].budget += latestResult.remainingBudget;
+```js
+// Reorder intervention
+function reorderIntervention(array, index, direction) {
+  if (direction === "up" && index > 0) {
+    // Swap with the previous item
+    [array[index - 1], array[index]] = [array[index], array[index - 1]];
+  } else if (direction === "down" && index < array.length - 1) {
+    // Swap with the next item
+    [array[index], array[index + 1]] = [array[index + 1], array[index]];
+  }
+  console.log("Interventions reordered:", array);
+  // updateTimeline();
+
+  // Update the InterventionManager with the new order
+  if (manager) {
+    manager.setInterventionOrder(array); // Pass the new order to the manager
   }
 
-  // Retrieve techConfig from the selected technology
-  const techConfig = listOfTech[new_tech];
-  // console.log("techConfig", techConfig);
-
-  // Example filters and priorities
-  // const filters = [(b) => b.properties["substation_headroom"] >= 500];
-  // const priorities = [{ name: "substation_capacity_rating", order: "asc" }];
-  const filters = [];
-  const priorities = [];
-
-  addIntervention(
-    techConfig,
-    new_start_year,
-    new_allocations,
-    filters,
-    priorities
-  );
+  return array;
 }
 
 // remove intervention
@@ -828,254 +958,11 @@ function removeIntervention(index) {
 
     // when intervention is removed, remove the corresponding results
     setResults(results.filter((_, i) => i !== index));
+    // updateTimeline();
   } else {
     console.log("Invalid index.");
   }
 }
-
-// Modify current intervention
-function modifyIntervention(
-  index,
-  newTechConfig = null,
-  newStartYear = null,
-  newAllocations = null,
-  newFilters = null,
-  newPriorities = null
-) {
-  // Validate index
-  if (index < 0 || index >= interventions.length) {
-    console.error("Invalid intervention index");
-    return;
-  }
-
-  // Get existing intervention
-  const intervention = { ...interventions[index] };
-
-  // Update values if provided
-  if (newTechConfig) {
-    intervention.tech = {
-      name: newTechConfig.name,
-      config: newTechConfig.config,
-    };
-  }
-
-  if (newStartYear) {
-    intervention.initial_year = Number(newStartYear);
-  }
-
-  if (newAllocations) {
-    intervention.yearly_budgets = newAllocations.map((item) => item.budget);
-    intervention.duration = newAllocations.length;
-  }
-
-  if (newFilters) {
-    intervention.filters = [...newFilters];
-  }
-
-  if (newPriorities) {
-    intervention.priorities = [...newPriorities];
-  }
-
-  // Update interventions array
-  const updatedInterventions = [...interventions];
-  updatedInterventions[index] = intervention;
-  setIntervention(updatedInterventions);
-
-  // Re-run model and update results
-  const modelResult = runModel(intervention, buildingsData);
-  const updatedResults = [...results];
-  updatedResults[index] = modelResult;
-  setResults(updatedResults);
-
-  console.log("Intervention modified:", intervention);
-}
-
-// stack results from getRecap() method
-function stackResults(results) {
-  const buildingMap = new Map();
-  const yearlySummary = {}; // Object to store the overall yearly summary
-
-  // Collect and merge all buildings from all results
-  results.forEach((result) => {
-    // Process yearlyStats for overall summary
-    Object.entries(result.yearlyStats).forEach(([year, stats]) => {
-      if (!yearlySummary[year]) {
-        yearlySummary[year] = {
-          budgetSpent: 0,
-          buildingsIntervened: 0,
-          totalCarbonSaved: 0, // Initialize carbon saved
-          technologies: new Set(),
-        };
-      }
-
-      yearlySummary[year].budgetSpent += stats.budgetSpent;
-      yearlySummary[year].buildingsIntervened += stats.buildingsIntervened;
-      yearlySummary[year].technologies.add(result.techName); // Add the technology
-
-      // Accumulate total carbon saved from intervened buildings for this year
-      stats.intervenedBuildings.forEach((building) => {
-        yearlySummary[year].totalCarbonSaved += building.carbonSaved || 0;
-      });
-    });
-
-    result.allBuildings.forEach((building) => {
-      if (!buildingMap.has(building.id)) {
-        const { properties, ...rest } = building; // Destructure properties and other fields
-        buildingMap.set(building.id, {
-          ...rest,
-          ...properties, // Flatten properties here
-          isIntervened: false,
-          totalCost: 0,
-          totalCarbonSaved: 0,
-          interventionHistory: [],
-          interventionYears: [],
-          interventionTechs: [],
-        });
-      }
-    });
-
-    // Process interventions
-    result.intervenedBuildings.forEach((building) => {
-      const target = buildingMap.get(building.id);
-      const intervention = {
-        tech: result.techName,
-        year: building.interventionYear,
-        cost: building.interventionCost,
-        carbonSaved: building.carbonSaved,
-        interventionID: result.interventionId,
-      };
-
-      target.isIntervened = true;
-      target.totalCost += building.interventionCost;
-      target.totalCarbonSaved += building.carbonSaved;
-      target.interventionHistory.push(intervention);
-      target.interventionYears.push(building.interventionYear);
-      if (!target.interventionTechs.includes(result.techName)) {
-        target.interventionTechs.push(result.techName);
-      }
-    });
-  });
-
-  // Finalize the yearly summary
-  Object.values(yearlySummary).forEach((yearData) => {
-    yearData.technologies = Array.from(yearData.technologies); // Convert Set to Array
-  });
-
-  const buildings = Array.from(buildingMap.values());
-  const summary = {
-    totalBuildings: buildings.length,
-    intervenedCount: buildings.filter((b) => b.isIntervened).length,
-    untouchedCount: buildings.filter((b) => !b.isIntervened).length,
-    totalCost: buildings.reduce((sum, b) => sum + b.totalCost, 0),
-    totalCarbonSaved: buildings.reduce((sum, b) => sum + b.totalCarbonSaved, 0),
-    uniqueTechs: [
-      ...new Set(buildings.flatMap((b) => b.interventionTechs).filter(Boolean)),
-    ],
-    interventionYearRange: buildings.some((b) => b.interventionYears.length)
-      ? [
-          Math.min(...buildings.flatMap((b) => b.interventionYears)),
-          Math.max(...buildings.flatMap((b) => b.interventionYears)),
-        ]
-      : null,
-  };
-
-  return {
-    buildings,
-    summary,
-    yearlySummary, // Add the overall yearly summary
-    intervenedBuildings: buildings.filter((b) => b.isIntervened),
-    untouchedBuildings: buildings.filter((b) => !b.isIntervened),
-  };
-}
-
-const stackedResults = stackResults(results);
-
-// console.log("stackedResults", stackedResults);
-```
-
-```js
-console.log(">> Loading model tech configuration...");
-
-let config = {
-  initial_year: 0, // Number(start_year),
-  rolledover_budget: 0,
-  yearly_budgets: allocations.map((item) => item.budget),
-  tech: {},
-  priorities: [],
-};
-
-const listOfTech = {
-  ASHP: {
-    name: "ASHP",
-    config: {
-      suitabilityKey: "ashp_suitability",
-      labourKey: "ashp_labour",
-      materialKey: "ashp_material",
-      savingsKey: "heat_demand",
-    },
-  },
-  PV: {
-    name: "PV",
-    config: {
-      suitabilityKey: "pv_suitability",
-      labourKey: "pv_labour",
-      materialKey: "pv_material",
-      savingsKey: "solar_generation",
-    },
-  },
-  GSHP: {
-    name: "GSHP",
-    config: {
-      suitabilityKey: "gshp_suitability",
-      labourKey: "gshp_labour",
-      materialKey: "gshp_material",
-      savingsKey: "gshp_size",
-    },
-  },
-  Insulation: {
-    name: "Insulation",
-    config: {
-      suitabilityKey: "insulation_rating",
-      labourKey: "insulation_cwall_labour",
-      materialKey: "insulation_cwall_materials",
-      savingsKey: "insulation_cwall",
-    },
-  },
-};
-
-function addTechConfig(techConfig) {
-  config.tech = {
-    name: techConfig.name,
-    config: techConfig.config,
-  };
-}
-
-function addPriority(name, order = "asc") {
-  const newPriority = {
-    name: name,
-    order: order,
-  };
-
-  config.priorities.push(newPriority);
-}
-
-function runModel(config, buildings) {
-  const model = new MiniDecarbModel(config, buildings);
-  model.runModel();
-  return model.getRecap();
-}
-
-// update config here
-// addTechConfig(listOfTech.ASHP);
-// // addPriority("substation_headroom", "asc");
-```
-
-```js
-// console.log("selectedIntervention", selectedIntervention);
-// console.log(
-//   "selectedIntervention year",
-//   Object.keys(selectedIntervention.yearlyStats)[0]
-// );
 ```
 
 <!-- ---------------- Sortable Table ---------------- -->
@@ -1116,18 +1003,15 @@ const cols = [
 
 ```js
 console.log(">> Create sortable table...");
-const tableData = selectedIntervention
-  ? stackedResults.buildings
-  : buildingsData;
+const tableData = null;
+// const tableData = selectedIntervention
+//   ? stackedResults.buildings
+//   : buildingsData;
 
-const table = new createTable(tableData, cols, (changes) => {
-  console.log("Table changed:", changes);
-  setSelected(changes.selection);
-});
-```
-
-```js
-// console.log("Test inferring data types", tableData);
+// const table = new createTable(tableData, cols, (changes) => {
+//   console.log("Table changed:", changes);
+//   setSelected(changes.selection);
+// });
 ```
 
 <!-- ---------------- Glyph Maps ---------------- -->
@@ -1337,74 +1221,6 @@ function drawDetailOnDemand(width, height) {
 
   return canvas;
 }
-```
-
-```js
-function drawRadialMultivariateGlyph(normalisedData, x, y, size, ctx) {
-  let angle = (2 * Math.PI) / normalisedData.length;
-  let centerX = x;
-  let centerY = y;
-  let radius = size / 2;
-  // console.log(radius);
-
-  //get a colour palette
-  let colors = d3
-    .scaleOrdinal(d3.schemeTableau10)
-    .domain(d3.range(normalisedData.length));
-
-  normalisedData.map((d, i) => {
-    drawPieSlice(
-      ctx,
-      centerX,
-      centerY,
-      radius * 0.9,
-      angle * (i + 0.1),
-      angle * (i + 0.9),
-      "rgba(0,0,0,0.05)"
-    );
-    drawPieSlice(
-      ctx,
-      centerX,
-      centerY,
-      radius * Math.sqrt(d) * 0.95,
-      angle * (i + 0.1),
-      angle * (i + 0.9),
-      colors(i)
-    );
-  });
-}
-```
-
-```js
-function drawPieSlice(ctx, cx, cy, r, angleStart, angleEnd, color) {
-  ctx.beginPath();
-  ctx.moveTo(cx, cy);
-  ctx.arc(cx, cy, r, angleStart, angleEnd);
-  ctx.lineTo(cx, cy);
-  ctx.fillStyle = color;
-  ctx.fill();
-}
-```
-
-```js
-// joining attributes to geodata
-// const regular_geodata_withproperties = joinCensusDataToGeoJSON(
-//   [...flatData],
-//   regular_geodata
-// );
-// const cartogram_geodata_withproperties = joinCensusDataToGeoJSON(
-//   [...flatData],
-//   cartogram_geodata
-// );
-// console.log("regular_geodata_withproperties", regular_geodata_withproperties);
-// console.log(
-//   "cartogram_geodata_withproperties",
-//   cartogram_geodata_withproperties
-// );
-```
-
-```js
-// console.log("Flat Data", flatData);
 ```
 
 ```js
@@ -1844,93 +1660,9 @@ function applyTransformationToShapes(geographicShapes) {
 function createGlyphMap(map_aggregate, { width, height }) {
   // console.log(width, height);
   if (map_aggregate == "Building Level") {
-    return createLeafletMap(selected, width, height);
+    return null; //createLeafletMap(selected, width, height);
   } else if (map_aggregate == "LSOA Level") {
     return morphGlyphMap;
   }
 }
 ```
-
-```js
-function insideCell(c, x, y) {
-  // console.log(x + " " + y  + " " + c.getXCentre() + " " + c.getYCentre() + " " + c.getCellSize());
-  if (
-    x >= c.getXCentre() - c.getCellSize() &&
-    x <= c.getXCentre() + c.getCellSize() &&
-    y >= c.getYCentre() - c.getCellSize() &&
-    y <= c.getYCentre() + c.getCellSize()
-  )
-    return true;
-  return false;
-}
-```
-
-```js
-console.log(">> Convert to GeoJSON...");
-
-function convertToGeoJSON(objects) {
-  return {
-    type: "FeatureCollection",
-    features: objects.map((obj) => ({
-      type: "Feature",
-      geometry: {
-        type: "Point",
-        coordinates: [obj.data.x, obj.data.y],
-      },
-      properties: { ...obj.data },
-    })),
-  };
-}
-
-// const mapCluster = convertToGeoJSON(selected);
-// console.log("mapcluster", mapCluster);
-// console.log("selectedIntervention", selected);
-```
-
-```js
-function createLeafletMap(data, width = 600, height = 400) {
-  // Create the map container div
-  const mapDiv = document.createElement("div");
-  mapDiv.style.width = `${width}px`;
-  mapDiv.style.height = `${height}px`;
-  mapDiv.id = "leafletMap"; // Unique ID for Leaflet to hook onto
-
-  // Append the mapDiv to the body or another container if desired
-  document.body.appendChild(mapDiv);
-
-  // Initialize the Leaflet map
-  const map = L.map(mapDiv.id).setView([0, 0], 2); // Default view (centered on the world)
-
-  // Add a tile layer (you can choose others like OpenStreetMap)
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    attribution: "© OpenStreetMap contributors",
-  }).addTo(map);
-
-  // Add markers for each data point
-  if (Array.isArray(data) && data.length > 0) {
-    const latLngs = [];
-    data.forEach(({ x, y }) => {
-      if (typeof x === "number" && typeof y === "number") {
-        const marker = L.marker([y, x]).addTo(map);
-        latLngs.push([y, x]);
-      }
-    });
-
-    // Adjust the map view to fit all markers
-    if (latLngs.length > 0) {
-      const bounds = L.latLngBounds(latLngs);
-      map.fitBounds(bounds);
-    }
-  } else {
-    console.warn("No valid data points to display on the map.");
-  }
-
-  return mapDiv;
-}
-```
-
-```js
-// createLeafletMap(selected);
-```
-
-<!-- <div id="mapContainer"></div> -->

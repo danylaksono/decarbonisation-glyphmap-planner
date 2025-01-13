@@ -8,7 +8,7 @@ sql:
 ---
 
 ```js
-import { BudgetAllocator } from "./../components/budgetAllocator.js";
+import { BudgetAllocator } from "./../components/decarb-model/budget-allocator.js";
 import { MiniDecarbModel } from "./../components/miniDecarbModel.js";
 ```
 
@@ -154,7 +154,7 @@ if (allocationType === "linear") {
 // linear allocation
 // const linearAllocation = allocator.allocateLinear();
 // display(linearAllocation);
-const { svg, getAllocations } = allocator.visualise(
+const svg = allocator.visualise(
   initialAllocations,
   (changes) => {
     // console.log("data changed:", changes);
@@ -168,9 +168,13 @@ display(svg);
 
 ```js
 allocationType;
-const allocations = selected ? getAllocations(selected) : initialAllocations;
-// display(selected);
-// display(allocations);
+const setAllocations = _.debounce(() => {
+  const allocations = allocator.getAllocations();
+  console.log("@allocations", allocations);
+  // Use allocations as needed
+}, 3000); // 1 second delay
+
+setAllocations();
 ```
 
 ## Test New Model
@@ -894,3 +898,17 @@ renderSelectableList(items, "selectableList", "output", handleSelected);
   <ul id="selectableList"></ul>
   <div id="output">Selected ID: None</div>
 </div>
+
+```js
+// const modelConfig = {
+//   optimizationStrategy: 'carbon-first',
+//   technologies: [
+//     {name: 'PV', config: {...}},
+//     {name: 'ASHP', config: {...}},
+//     // ... other technologies
+//   ],
+//   // ... other config options
+// };
+
+// const model = new MiniDecarbModel(modelConfig, buildings);
+```
