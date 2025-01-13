@@ -55,6 +55,7 @@ import {
   transformCoordinates,
   transformGeometry,
   normalisebyGroup,
+  aggregateValues,
   // applyTransformationToShapes,
 } from "./components/helpers.js";
 ```
@@ -1031,7 +1032,7 @@ const data =
 ```js
 // Table Data
 const excludedColumns = ["properties", "x", "y", "score"]; // columns to exclude from the table
-const customOrder = ["id", "lsoa", "msoa", "isIntervened"]; // custom order for columns
+const customOrder = ["id", "lsoa", "msoa", "isIntervened", "EPC_Rating"]; // custom order for columns
 // const customOrder2 = ["id", "lsoa", "score"]; // custom order for columns
 // const tableColumns = customOrder2;
 
@@ -1418,6 +1419,20 @@ function valueDiscretiser(geomLookup) {
 ```
 
 ```js
+const glyphVariables = [
+  "ashp_suitability",
+  "ashp_size",
+  "ashp_total",
+  "gshp_suitability",
+  "gshp_size",
+  "gshp_total",
+  "pv_suitability",
+  "pv_generation",
+  "pv_total",
+];
+```
+
+```js
 console.log(">> Initialize the GlyphMap Specification...");
 // console.log("Sample x y from Data in Glyph", [data[0].x, data[0].y]);
 function glyphMapSpec(width = 800, height = 600) {
@@ -1451,18 +1466,44 @@ function glyphMapSpec(width = 800, height = 600) {
       },
 
       preAggrFn: (cells, cellSize, global, panel) => {
-        // console.log("global", global);
+        // console.log("preaggregate cells", cells);
       },
 
       aggrFn: (cell, row, weight, global, panel) => {
-        // console.log("  >> Data aggregation in GlyphMap...", row.data);
+        // console.log("  >> Data aggregation in GlyphMap...", row);
         if (!cell.records) cell.records = []; //if the cell doesn't currently have a records property, make one
         cell.records.push(row);
+
+        // aggregate data into cell.data
       },
 
       postAggrFn: (cells, cellSize, global, panel) => {
         // data normalisation
-        // console.log(">>>> no of aggregated data in glyph: ", cells);
+        // const normalData = normaliseData(cells, glyphVariables);
+
+        for (const cell of cells) {
+          // console.log("cell record", cell.records);
+          cell.data = {};
+          if (cell.records && map_aggregate === "Building Level") {
+            // aggregate data for each cell
+            cell.data = aggregateValues(cell.records, glyphVariables, "sum");
+          }
+        }
+
+        // Normalisation
+        const dataArray = cells.map((cell) => cell.data);
+        const normalisedData = normaliseData(dataArray, glyphVariables);
+        // Map normalized data back to cells
+        const normalisedCells = cells.map((cell, index) => ({
+          ...cell,
+          data: normalisedData[index],
+        }));
+
+        // Update cells with normalized data
+        cells.forEach((cell, index) => {
+          cell.data = normalisedData[index];
+        });
+        // console.log(">>>> cells data ", normalisedCells);
 
         // Prepare cell interaction
         let canvas = d3.select(panel).select("canvas").node();
@@ -1491,13 +1532,9 @@ function glyphMapSpec(width = 800, height = 600) {
       },
 
       drawFn: (cell, x, y, cellSize, ctx, global, panel) => {
-        const cellData = cell.records[0].data.properties;
-        // const cellData = normalisebyGroup(cell.records[0].data.properties, [
-        //   "ashp_suitability",
-        //   "ashp_size",
-        //   "ashp_total",
-        // ]);
-        // console.log("  >> Data at cell", cellData);
+        const cellData = cell.records[0].data?.properties
+          ? cell.records[0].data.properties
+          : cell.data; // when map_aggregate == "Building Level", use individual data
 
         const boundary = cell.getBoundary(0);
         if (boundary[0] != boundary[boundary.length - 1]) {
@@ -1538,9 +1575,10 @@ function glyphMapSpec(width = 800, height = 600) {
 
       tooltipTextFn: (cell) => {
         if (cell) {
-          // console.log("cell on tooltip", cell);
-          console.log("cell on tooltip", cell.records[0].code);
+          console.log("cell on tooltip", cell.data);
+          // console.log("cell on tooltip", cell.records[0].code);
           // setDetailOnDemand(cell.data);
+          return cell.data.ashp_total;
           // return `Total Building Area: ${cell.building_area.toFixed(2)} m^2`;
         } else {
           return "no data";

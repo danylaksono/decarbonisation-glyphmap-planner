@@ -57,113 +57,13 @@ export function inferTypes(data) {
   }
 }
 
-// export const enrichGeoData = function (
-//   buildingData,
-//   geoJSON,
-//   joinColumn = "lsoa_code",
-//   geoJSONJoinColumn = "code",
-//   aggregations = {}
-// ) {
-//   // 1. Group building data by LSOA code
-//   const groupedData = buildingData.reduce((acc, item) => {
-//     const code = item[joinColumn];
-//     if (!acc[code]) {
-//       acc[code] = [];
-//     }
-//     acc[code].push(item);
-//     return acc;
-//   }, {});
-
-//   // 2. Infer data types using your inferTypes function
-//   const dataTypes = inferTypes(buildingData);
-
-//   // 3. Aggregate building data for each LSOA
-//   const aggregatedData = {};
-//   for (const code in groupedData) {
-//     aggregatedData[code] = {};
-//     const buildingsInLSOA = groupedData[code];
-
-//     for (const column in aggregations) {
-//       const aggregationType = aggregations[column];
-//       const values = buildingsInLSOA.map((building) => building[column]);
-
-//       if (dataTypes[column] === "Quantitative") {
-//         // Handle numerical aggregations (sum, mean, etc.) as before
-//         switch (aggregationType) {
-//           case "sum":
-//             aggregatedData[code][column] = values.reduce((a, b) => a + b, 0);
-//             break;
-//           case "mean":
-//             aggregatedData[code][column] =
-//               values.reduce((a, b) => a + b, 0) / values.length;
-//             break;
-//           // Add more numerical aggregations as needed (e.g., min, max, median)
-//           case "count":
-//             aggregatedData[code][column] = values.length;
-//             break;
-//           default:
-//             console.warn(
-//               `Unsupported aggregation type: ${aggregationType} for numerical column: ${column}`
-//             );
-//         }
-//       } else {
-//         // Handle categorical/ordinal aggregations
-//         if (aggregationType === "count") {
-//           // Count occurrences of each unique value
-//           const counts = values.reduce((acc, val) => {
-//             acc[val] = (acc[val] || 0) + 1;
-//             return acc;
-//           }, {});
-
-//           // Store the counts for each unique value as separate properties
-//           for (const [val, count] of Object.entries(counts)) {
-//             aggregatedData[code][`${column}_${val}`] = count;
-//           }
-//         } else if (typeof aggregationType === "object") {
-//           // Handle custom conditions like counting specific values
-//           for (const [conditionName, conditionValue] of Object.entries(
-//             aggregationType
-//           )) {
-//             const count = values.filter((val) => val === conditionValue).length;
-//             aggregatedData[code][`${column}_${conditionName}`] = count;
-//           }
-//         } else {
-//           console.warn(
-//             `Unsupported aggregation type: ${aggregationType} for categorical column: ${column}`
-//           );
-//         }
-//       }
-//     }
-//   }
-
-//   // 4. Create a deep copy of the original GeoJSON
-//   const newGeoJSON = JSON.parse(JSON.stringify(geoJSON));
-
-//   // 5. Iterate through features and add aggregated data
-//   newGeoJSON.features = newGeoJSON.features.map((feature) => {
-//     const code = feature.properties[geoJSONJoinColumn];
-//     const aggregatedItem = aggregatedData[code];
-
-//     if (aggregatedItem) {
-//       feature.properties = {
-//         ...feature.properties,
-//         ...aggregatedItem,
-//       };
-//     }
-
-//     return feature;
-//   });
-
-//   return newGeoJSON;
-// };
-
 export const enrichGeoData = function (
   buildingData,
   geoJSON,
   joinColumn = "lsoa_code",
   geoJSONJoinColumn = "code",
   aggregations = {},
-  normalize = true // Flag to enable or disable normalization
+  normalize = true // Flag to enable or disable normalisation
 ) {
   // 1. Group building data by join column
   const groupedData = buildingData.reduce((acc, item) => {
@@ -249,6 +149,67 @@ export const enrichGeoData = function (
   };
 };
 
+function getNumericKeys(data) {
+  if (!Array.isArray(data) || data.length === 0) return [];
+  const sample = data[0];
+  if (typeof sample !== "object" || sample === null) return [];
+  return Object.keys(sample).filter((key) => typeof sample[key] === "number");
+}
+
+export function aggregateValues(
+  data,
+  selectedParameters = getNumericKeys(data), // Default to numeric keys if not provided
+  aggregationType = "mean"
+) {
+  if (!Array.isArray(data) || data.length === 0) {
+    throw new Error("Data must be a non-empty array.");
+  }
+
+  const aggregates = {};
+
+  // Map the aggregation type to the corresponding D3 function
+  const aggregationFunctions = {
+    mean: d3.mean,
+    sum: d3.sum,
+    min: d3.min,
+    max: d3.max,
+    extent: d3.extent,
+  };
+
+  const aggregationFn = aggregationFunctions[aggregationType];
+
+  if (!aggregationFn) {
+    throw new Error(`Unsupported aggregation type: ${aggregationType}`);
+  }
+
+  // Validate selected parameters
+  // console.log("selectedParameters:", selectedParameters);
+
+  if (!Array.isArray(selectedParameters) || selectedParameters.length === 0) {
+    throw new Error("Selected parameters must be a non-empty array.");
+  }
+
+  for (const parameter of selectedParameters) {
+    const values = data
+      .map((d) =>
+        typeof d[parameter] === "boolean"
+          ? d[parameter]
+            ? 1
+            : 0 // Convert boolean to 1 or 0
+          : d[parameter]
+      )
+      .filter((v) => v != null); // Filter out null/undefined
+    if (values.length === 0) {
+      // Handle cases where there are no valid values for the parameter
+      aggregates[parameter] = null;
+    } else {
+      aggregates[parameter] = aggregationFn(values);
+    }
+  }
+
+  return aggregates;
+}
+
 export function normaliseData(data, keysToNormalise) {
   // Create a D3 linear scale for each key to be normalized
   const scales = keysToNormalise.map((key) =>
@@ -273,10 +234,10 @@ export function normaliseData(data, keysToNormalise) {
   return normalisedData;
 }
 
-function getNumericKeys(data) {
-  const sample = data[0];
-  return Object.keys(sample).filter((key) => typeof sample[key] === "number");
-}
+// function getNumericKeys(data) {
+//   const sample = data[0];
+//   return Object.keys(sample).filter((key) => typeof sample[key] === "number");
+// }
 
 export function insideCell(c, x, y) {
   // console.log(x + " " + y  + " " + c.getXCentre() + " " + c.getYCentre() + " " + c.getCellSize());
