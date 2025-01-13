@@ -24,6 +24,7 @@ import {
   TimeGlyph,
   GlyphCollection,
 } from "./components/glyph-designs/timeGlyph.js";
+import { StreamGraphGlyph } from "./components/glyph-designs/mirrorTimeGlyph.js";
 import { RadialGlyph } from "./components/radialglyph.js";
 import {
   glyphMap,
@@ -430,6 +431,64 @@ display(
 display(html`<p>"Grouped Intervention"</p>`);
 const groupedData = MiniDecarbModel.group(data, ["lsoa", "interventionYear"]);
 display(groupedData);
+```
+
+```js
+display(html`<p>"Transformed Grouped Intervention"</p>`);
+const timelineDataArray = [
+  "interventionCost",
+  "carbonSaved",
+  "numInterventions",
+];
+
+const transformedGroupedData = transformInterventionData(
+  groupedData,
+  "E01035740",
+  timelineDataArray
+);
+display(transformedGroupedData);
+```
+
+```js
+function transformInterventionData(data, lsoaCode, fields) {
+  // Get the specific LSOA data
+  const lsoaData = data[lsoaCode];
+  if (!lsoaData?.children) {
+    return [];
+  }
+
+  // Transform the data
+  return Object.entries(lsoaData.children).map(([year, interventions]) => {
+    // Initialize yearData with the year
+    const yearData = { year };
+
+    // Initialize selected fields with 0
+    fields.forEach((field) => {
+      yearData[field] = 0;
+    });
+
+    // Aggregate data from all interventions in the year
+    interventions.forEach((intervention) => {
+      // console.log(">>> transforming interventions", intervention);
+      if (intervention) {
+        fields.forEach((field) => {
+          if (intervention[field] !== undefined) {
+            yearData[field] += intervention[field];
+          }
+        });
+      }
+    });
+
+    // round all numerical values to 2 decimal places
+    Object.keys(yearData).forEach((key) => {
+      if (typeof yearData[key] === "number") {
+        yearData[key] = Math.round(yearData[key] * 100) / 100;
+      }
+    });
+
+    return yearData;
+  });
+}
 ```
 
 <!-- ---------------- Intervention Managers ---------------- -->
@@ -1500,11 +1559,19 @@ function glyphMapSpec(width = 800, height = 600) {
         // const normalData = normaliseData(cells, glyphVariables);
 
         for (const cell of cells) {
-          // console.log("cell record", cell.records);
           cell.data = {};
-          if (cell.records && map_aggregate === "Building Level") {
+
+          if (cell.records && map_aggregate === "LSOA Level") {
+            cell.data = transformInterventionData(
+              groupedData,
+              cell.records[0].code,
+              timelineDataArray
+            );
+          } else if (cell.records && map_aggregate === "Building Level") {
             // aggregate data for each cell
             cell.data = aggregateValues(cell.records, glyphVariables, "sum");
+          } else {
+            cell.data = {};
           }
         }
 
@@ -1516,6 +1583,8 @@ function glyphMapSpec(width = 800, height = 600) {
           ...cell,
           data: normalisedData[index],
         }));
+
+        // transformInterventionData
 
         // Update cells with normalized data
         cells.forEach((cell, index) => {
@@ -1555,6 +1624,10 @@ function glyphMapSpec(width = 800, height = 600) {
           ? cell.records[0].data.properties
           : cell.data; // when map_aggregate == "Building Level", use individual data
 
+        // console.log("cell data to draw >>>", cellData);
+        // let timeData = cell.data[0];
+        // console.log("timeData", timeData);
+
         const boundary = cell.getBoundary(0);
         if (boundary[0] != boundary[boundary.length - 1]) {
           boundary.push(boundary[0]);
@@ -1581,12 +1654,24 @@ function glyphMapSpec(width = 800, height = 600) {
           ctx.stroke();
         }
 
-        //draw a radial glyph
-        // let rg = new RadialGlyph([
-        //   cellData.ashp_suitability, // potential
-        //   cellData.ashp_size, // potential
-        //   cellData.ashp_total, // costs
-        // ]);
+        // if (map_aggregate === "Building Level") {
+        //   let rg = new RadialGlyph(
+        //     glyphVariables.map((key) => cellData[key]),
+        //     glyphColours
+        //   );
+        //   rg.draw(ctx, x, y, cellSize / 2);
+        // } else if (map_aggregate === "LSOA Level") {
+        //   console.log;
+        //   // format config for streamgraph
+        //   let customConfig = {
+        //     upwardKeys: ["carbonSaved"],
+        //     downwardKeys: ["interventionCost"],
+        //   };
+
+        //   let tg = new StreamGraphGlyph(timeData, "year", null, customConfig);
+        //   tg.draw(ctx, x, y, cellSize / 2);
+        // }
+
         let rg = new RadialGlyph(
           glyphVariables.map((key) => cellData[key]),
           glyphColours
