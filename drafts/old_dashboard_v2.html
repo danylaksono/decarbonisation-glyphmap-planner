@@ -4,223 +4,181 @@
 <title>Decarbonisation Planner | Decarbonisation Glyphmap Planner</title>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Source+Serif+Pro:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&amp;display=swap" crossorigin>
-<link rel="preload" as="style" href="./_observablehq/theme-air,near-midnight.css">
-<link rel="preload" as="style" href="./_observablehq/stdlib/inputs.css">
-<link rel="preload" as="style" href="./_npm/leaflet@1.9.4/dist/leaflet.css">
+<link rel="preload" as="style" href="../_observablehq/theme-air,near-midnight.css">
+<link rel="preload" as="style" href="../_observablehq/stdlib/inputs.css">
 <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css2?family=Source+Serif+Pro:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&amp;display=swap" crossorigin>
-<link rel="stylesheet" type="text/css" href="./_observablehq/theme-air,near-midnight.css">
-<link rel="stylesheet" type="text/css" href="./_observablehq/stdlib/inputs.css">
-<link rel="stylesheet" type="text/css" href="./_npm/leaflet@1.9.4/dist/leaflet.css">
-<link rel="modulepreload" href="./_observablehq/client.js">
-<link rel="modulepreload" href="./_observablehq/runtime.js">
-<link rel="modulepreload" href="./_observablehq/stdlib.js">
-<link rel="modulepreload" href="./_npm/d3-require@1.3.0/_esm.js">
-<link rel="modulepreload" href="./_import/components/glyph-designs/timeGlyph.30b74103.js">
-<link rel="modulepreload" href="./_node/@turf/turf@7.1.0/index.js">
-<link rel="modulepreload" href="./_import/components/radialglyph.e10c9304.js">
-<link rel="modulepreload" href="./_import/components/gridded-glyphmaps/index.min.f034b425.js">
-<link rel="modulepreload" href="./_import/components/osgb/index.1d2476df.js">
-<link rel="modulepreload" href="./_import/components/model.0139f19a.js">
-<link rel="modulepreload" href="./_import/components/budgetAllocator.a51fe3dd.js">
-<link rel="modulepreload" href="./_import/components/miniDecarbModel.f54b29e1.js">
-<link rel="modulepreload" href="./_import/components/sorterTable.b455407f.js">
-<link rel="modulepreload" href="./_import/components/timeline.55a12b84.js">
-<link rel="modulepreload" href="./_import/components/yearpicker/yearpicker.84e70975.js">
-<link rel="modulepreload" href="./_import/components/helpers.ff512595.js">
-<link rel="modulepreload" href="./_import/components/utils.ca7eec9b.js">
-<link rel="modulepreload" href="./_npm/bulma-toast@2.4.4/_esm.js">
-<link rel="modulepreload" href="./_npm/bulma-quickview@2.0.0/dist/js/bulma-quickview.js">
-<link rel="modulepreload" href="./_npm/d3@7.9.0/_esm.js">
-<link rel="modulepreload" href="./_import/components/osgb/ellipsoid.1ac4eba6.js">
-<link rel="modulepreload" href="./_npm/topojson-client@3.1.0/_esm.js">
-<link rel="modulepreload" href="./_npm/lodash@4.17.21/_esm.js">
-<link rel="modulepreload" href="./_observablehq/stdlib/duckdb.js">
-<link rel="modulepreload" href="./_npm/htl@0.3.1/_esm.js">
-<link rel="modulepreload" href="./_observablehq/stdlib/inputs.js">
-<link rel="modulepreload" href="./_npm/leaflet@1.9.4/_esm.js">
-<link rel="modulepreload" href="./_npm/@duckdb/duckdb-wasm@1.28.0/_esm.js">
-<link rel="modulepreload" href="./_npm/isoformat@0.2.1/_esm.js">
-<link rel="modulepreload" href="./_node/@turf/along@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/angle@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/area@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/bbox@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/bbox-clip@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/bbox-polygon@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/bearing@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/bezier-spline@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/boolean-clockwise@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/boolean-concave@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/boolean-contains@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/boolean-crosses@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/boolean-disjoint@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/boolean-equal@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/boolean-intersects@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/boolean-overlap@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/boolean-parallel@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/boolean-point-in-polygon@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/boolean-point-on-line@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/boolean-touches@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/boolean-valid@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/boolean-within@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/buffer@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/center@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/center-mean@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/center-median@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/center-of-mass@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/centroid@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/circle@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/clean-coords@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/clone@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/clusters@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/clusters-dbscan@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/clusters-kmeans@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/collect@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/combine@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/concave@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/convex@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/destination@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/difference@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/dissolve@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/distance@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/distance-weight@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/ellipse@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/envelope@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/explode@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/flatten@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/flip@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/geojson-rbush@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/great-circle@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/helpers@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/hex-grid@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/interpolate@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/intersect@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/invariant@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/isobands@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/isolines@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/kinks@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/length@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/line-arc@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/line-chunk@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/line-intersect@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/line-offset@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/line-overlap@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/line-segment@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/line-slice@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/line-slice-along@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/line-split@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/line-to-polygon@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/mask@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/meta@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/midpoint@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/moran-index@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/nearest-neighbor-analysis@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/nearest-point@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/nearest-point-on-line@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/nearest-point-to-line@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/planepoint@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/point-grid@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/point-on-feature@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/points-within-polygon@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/point-to-line-distance@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/polygonize@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/polygon-smooth@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/polygon-tangents@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/polygon-to-line@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/projection@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/quadrat-analysis@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/random@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/rectangle-grid@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/rewind@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/rhumb-bearing@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/rhumb-destination@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/rhumb-distance@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/sample@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/sector@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/shortest-path@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/simplify@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/square@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/square-grid@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/standard-deviational-ellipse@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/tag@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/tesselate@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/tin@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/transform-rotate@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/transform-scale@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/transform-translate@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/triangle-grid@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/truncate@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/union@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/unkink-polygon@7.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/voronoi@7.1.0/index.js">
-<link rel="modulepreload" href="./_npm/d3-array@3.2.4/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-axis@3.0.0/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-brush@3.0.0/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-chord@3.0.1/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-color@3.1.0/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-contour@4.0.2/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-delaunay@6.0.4/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-dispatch@3.0.1/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-drag@3.0.0/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-dsv@3.0.1/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-ease@3.0.1/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-fetch@3.0.1/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-force@3.0.0/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-format@3.1.0/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-geo@3.1.1/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-hierarchy@3.1.2/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-interpolate@3.0.1/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-path@3.1.0/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-polygon@3.0.1/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-quadtree@3.0.1/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-random@3.0.1/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-scale@4.0.2/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-scale-chromatic@3.1.0/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-selection@3.0.0/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-shape@3.2.0/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-time@3.1.0/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-time-format@4.1.0/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-timer@3.0.1/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-transition@3.0.1/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-zoom@3.0.0/_esm.js">
-<link rel="modulepreload" href="./_npm/apache-arrow@18.1.0/_esm.js">
-<link rel="modulepreload" href="./_node/geojson-equality-ts@1.0.2/index.js">
-<link rel="modulepreload" href="./_node/point-in-polygon-hao@1.1.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/jsts@2.7.1/index.js">
-<link rel="modulepreload" href="./_node/d3-geo@1.7.1/index.js">
-<link rel="modulepreload" href="./_node/rbush@3.0.1/index.js">
-<link rel="modulepreload" href="./_node/skmeans@0.9.7/index.js">
-<link rel="modulepreload" href="./_node/topojson-client@3.1.0/index.js">
-<link rel="modulepreload" href="./_node/topojson-server@3.0.1/index.js">
-<link rel="modulepreload" href="./_node/concaveman@1.2.1/index.js">
-<link rel="modulepreload" href="./_node/polygon-clipping@0.15.7/index.js">
-<link rel="modulepreload" href="./_node/marchingsquares@1.3.3/index.js">
-<link rel="modulepreload" href="./_node/sweepline-intersections@1.5.0/index.js">
-<link rel="modulepreload" href="./_node/fast-deep-equal@3.1.3/index.js">
-<link rel="modulepreload" href="./_node/earcut@2.2.4/index.js">
-<link rel="modulepreload" href="./_node/d3-voronoi@1.1.2/index.js">
-<link rel="modulepreload" href="./_npm/internmap@2.0.3/_esm.js">
-<link rel="modulepreload" href="./_npm/delaunator@5.0.1/_esm.js">
-<link rel="modulepreload" href="./_npm/tslib@2.8.1/_esm.js">
-<link rel="modulepreload" href="./_npm/flatbuffers@24.12.23/_esm.js">
-<link rel="modulepreload" href="./_node/d3-array@1.2.4/index.js">
-<link rel="modulepreload" href="./_node/tinyqueue@2.0.3/index.js">
-<link rel="modulepreload" href="./_node/point-in-polygon@1.1.0/index.js">
-<link rel="modulepreload" href="./_node/robust-predicates@2.0.4/umd/orient2d.min.js">
-<link rel="modulepreload" href="./_npm/robust-predicates@3.0.2/_esm.js">
+<link rel="stylesheet" type="text/css" href="../_observablehq/theme-air,near-midnight.css">
+<link rel="stylesheet" type="text/css" href="../_observablehq/stdlib/inputs.css">
+<link rel="modulepreload" href="../_observablehq/client.js">
+<link rel="modulepreload" href="../_observablehq/runtime.js">
+<link rel="modulepreload" href="../_observablehq/stdlib.js">
+<link rel="modulepreload" href="../_npm/d3-require@1.3.0/_esm.js">
+<link rel="modulepreload" href="../_node/@turf/turf@7.1.0/index.js">
+<link rel="modulepreload" href="../_npm/bulma-toast@2.4.4/_esm.js">
+<link rel="modulepreload" href="../_npm/bulma-quickview@2.0.0/dist/js/bulma-quickview.js">
+<link rel="modulepreload" href="./components/glyph-designs/timeGlyph.js">
+<link rel="modulepreload" href="./components/radialglyph.js">
+<link rel="modulepreload" href="./components/gridded-glyphmaps/index.min.js">
+<link rel="modulepreload" href="./components/osgb/index.js">
+<link rel="modulepreload" href="./components/decarb-model/budget-allocator.js">
+<link rel="modulepreload" href="./components/decarb-model/mini-decarbonisation.js">
+<link rel="modulepreload" href="./components/decarb-model/timeline.js">
+<link rel="modulepreload" href="./components/sorterTable.js">
+<link rel="modulepreload" href="./components/helpers.js">
+<link rel="modulepreload" href="../_npm/lodash@4.17.21/_esm.js">
+<link rel="modulepreload" href="../_observablehq/stdlib/duckdb.js">
+<link rel="modulepreload" href="../_npm/htl@0.3.1/_esm.js">
+<link rel="modulepreload" href="../_observablehq/stdlib/inputs.js">
+<link rel="modulepreload" href="../_npm/@duckdb/duckdb-wasm@1.28.0/_esm.js">
+<link rel="modulepreload" href="../_npm/isoformat@0.2.1/_esm.js">
+<link rel="modulepreload" href="../_node/@turf/along@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/angle@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/area@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/bbox@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/bbox-clip@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/bbox-polygon@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/bearing@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/bezier-spline@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/boolean-clockwise@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/boolean-concave@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/boolean-contains@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/boolean-crosses@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/boolean-disjoint@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/boolean-equal@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/boolean-intersects@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/boolean-overlap@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/boolean-parallel@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/boolean-point-in-polygon@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/boolean-point-on-line@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/boolean-touches@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/boolean-valid@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/boolean-within@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/buffer@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/center@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/center-mean@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/center-median@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/center-of-mass@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/centroid@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/circle@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/clean-coords@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/clone@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/clusters@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/clusters-dbscan@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/clusters-kmeans@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/collect@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/combine@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/concave@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/convex@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/destination@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/difference@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/dissolve@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/distance@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/distance-weight@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/ellipse@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/envelope@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/explode@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/flatten@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/flip@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/geojson-rbush@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/great-circle@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/helpers@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/hex-grid@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/interpolate@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/intersect@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/invariant@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/isobands@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/isolines@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/kinks@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/length@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/line-arc@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/line-chunk@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/line-intersect@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/line-offset@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/line-overlap@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/line-segment@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/line-slice@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/line-slice-along@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/line-split@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/line-to-polygon@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/mask@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/meta@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/midpoint@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/moran-index@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/nearest-neighbor-analysis@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/nearest-point@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/nearest-point-on-line@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/nearest-point-to-line@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/planepoint@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/point-grid@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/point-on-feature@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/points-within-polygon@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/point-to-line-distance@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/polygonize@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/polygon-smooth@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/polygon-tangents@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/polygon-to-line@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/projection@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/quadrat-analysis@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/random@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/rectangle-grid@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/rewind@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/rhumb-bearing@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/rhumb-destination@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/rhumb-distance@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/sample@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/sector@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/shortest-path@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/simplify@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/square@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/square-grid@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/standard-deviational-ellipse@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/tag@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/tesselate@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/tin@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/transform-rotate@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/transform-scale@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/transform-translate@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/triangle-grid@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/truncate@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/union@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/unkink-polygon@7.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/voronoi@7.1.0/index.js">
+<link rel="modulepreload" href="../_npm/apache-arrow@18.1.0/_esm.js">
+<link rel="modulepreload" href="../_node/geojson-equality-ts@1.0.2/index.js">
+<link rel="modulepreload" href="../_node/point-in-polygon-hao@1.1.0/index.js">
+<link rel="modulepreload" href="../_node/@turf/jsts@2.7.1/index.js">
+<link rel="modulepreload" href="../_node/d3-geo@1.7.1/index.js">
+<link rel="modulepreload" href="../_node/rbush@3.0.1/index.js">
+<link rel="modulepreload" href="../_node/skmeans@0.9.7/index.js">
+<link rel="modulepreload" href="../_node/topojson-client@3.1.0/index.js">
+<link rel="modulepreload" href="../_node/topojson-server@3.0.1/index.js">
+<link rel="modulepreload" href="../_node/concaveman@1.2.1/index.js">
+<link rel="modulepreload" href="../_node/polygon-clipping@0.15.7/index.js">
+<link rel="modulepreload" href="../_node/marchingsquares@1.3.3/index.js">
+<link rel="modulepreload" href="../_node/sweepline-intersections@1.5.0/index.js">
+<link rel="modulepreload" href="../_node/fast-deep-equal@3.1.3/index.js">
+<link rel="modulepreload" href="../_node/earcut@2.2.4/index.js">
+<link rel="modulepreload" href="../_node/d3-voronoi@1.1.2/index.js">
+<link rel="modulepreload" href="../_npm/tslib@2.8.1/_esm.js">
+<link rel="modulepreload" href="../_npm/flatbuffers@24.12.23/_esm.js">
+<link rel="modulepreload" href="../_node/d3-array@1.2.4/index.js">
+<link rel="modulepreload" href="../_node/tinyqueue@2.0.3/index.js">
+<link rel="modulepreload" href="../_node/point-in-polygon@1.1.0/index.js">
+<link rel="modulepreload" href="../_node/robust-predicates@2.0.4/umd/orient2d.min.js">
 <script type="module">
 
-import {define} from "./_observablehq/client.js";
-import {registerFile, FileAttachment} from "./_observablehq/stdlib.js";
-import {registerTable} from "./_observablehq/stdlib/duckdb.js";
+import {define} from "../_observablehq/client.js";
+import {registerFile, FileAttachment} from "../_observablehq/stdlib.js";
+import {registerTable} from "../_observablehq/stdlib/duckdb.js";
 
-registerFile("./data/oxford_decarbonisation_data.parquet", {"name":"./data/oxford_decarbonisation_data.parquet","path":"./_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1735077472446});
-registerFile("./data/oxford_lsoa_boundary.geojson", {"name":"./data/oxford_lsoa_boundary.geojson","mimeType":"application/geo+json","path":"./_file/data/oxford_lsoa_boundary.50c731e8.geojson","lastModified":1735077472454});
-registerFile("./data/oxford_lsoas_cartogram.json", {"name":"./data/oxford_lsoas_cartogram.json","mimeType":"application/json","path":"./_file/data/oxford_lsoas_cartogram.a72fa2b8.json","lastModified":1735077472454});
-registerFile("./data/oxford_lsoas_regular.json", {"name":"./data/oxford_lsoas_regular.json","mimeType":"application/json","path":"./_file/data/oxford_lsoas_regular.e1c36e7e.json","lastModified":1735077472454});
+registerFile("./data/oxford_decarbonisation_data.parquet", {"name":"./data/oxford_decarbonisation_data.parquet","path":"./data/oxford_decarbonisation_data.parquet"});
+registerFile("./data/oxford_lsoa_boundary.geojson", {"name":"./data/oxford_lsoa_boundary.geojson","mimeType":"application/geo+json","path":"./data/oxford_lsoa_boundary.geojson"});
+registerFile("./data/oxford_lsoas_cartogram.json", {"name":"./data/oxford_lsoas_cartogram.json","mimeType":"application/json","path":"./data/oxford_lsoas_cartogram.json"});
+registerFile("./data/oxford_lsoas_regular.json", {"name":"./data/oxford_lsoas_regular.json","mimeType":"application/json","path":"./data/oxford_lsoas_regular.json"});
 registerTable("oxford", FileAttachment("./data/oxford_decarbonisation_data.parquet"));
 
-define({id: "cd8e6073", outputs: ["d3","flubber","require","Mutable","TimeGlyph","GlyphCollection","turf","RadialGlyph","glyphMap","createDiscretiserValue","_drawCellBackground","OSGB","Model","BudgetAllocator","MiniDecarbModel","createTable","createTimelineInterface","YearPicker","inferTypes","enrichGeoData","normaliseData","downloadBoundaries","joinCensusDataToGeoJSON","convertGridCsvToGeoJson","context2d","bulmaToast","bulmaQuickview"], body: async () => {
-const [{require}, {Mutable}, {TimeGlyph, GlyphCollection}, turf, {RadialGlyph}, {glyphMap, createDiscretiserValue, _drawCellBackground}, {OSGB}, {Model}, {BudgetAllocator}, {MiniDecarbModel}, {createTable}, {createTimelineInterface}, {YearPicker}, {inferTypes, enrichGeoData, normaliseData}, {downloadBoundaries, joinCensusDataToGeoJSON, convertGridCsvToGeoJson, context2d}, bulmaToast, bulmaQuickview] = await Promise.all([import("./_npm/d3-require@1.3.0/_esm.js"), import("./_observablehq/stdlib.js"), import("./_import/components/glyph-designs/timeGlyph.30b74103.js"), import("./_node/@turf/turf@7.1.0/index.js"), import("./_import/components/radialglyph.e10c9304.js"), import("./_import/components/gridded-glyphmaps/index.min.f034b425.js"), import("./_import/components/osgb/index.1d2476df.js"), import("./_import/components/model.0139f19a.js"), import("./_import/components/budgetAllocator.a51fe3dd.js"), import("./_import/components/miniDecarbModel.f54b29e1.js"), import("./_import/components/sorterTable.b455407f.js"), import("./_import/components/timeline.55a12b84.js"), import("./_import/components/yearpicker/yearpicker.84e70975.js"), import("./_import/components/helpers.ff512595.js"), import("./_import/components/utils.ca7eec9b.js"), import("./_npm/bulma-toast@2.4.4/_esm.js"), import("./_npm/bulma-quickview@2.0.0/dist/js/bulma-quickview.js")]);
+define({id: "c8c42950", outputs: ["d3","flubber","require","Mutable","turf","bulmaToast","bulmaQuickview","TimeGlyph","GlyphCollection","RadialGlyph","glyphMap","createDiscretiserValue","_drawCellBackground","OSGB","BudgetAllocator","InterventionManager","MiniDecarbModel","createTimelineInterface","createTable","inferTypes","enrichGeoData","normaliseData","insideCell"], body: async () => {
+const [{require}, {Mutable}, turf, bulmaToast, bulmaQuickview, {TimeGlyph, GlyphCollection}, {RadialGlyph}, {glyphMap, createDiscretiserValue, _drawCellBackground}, {OSGB}, {BudgetAllocator}, {InterventionManager, MiniDecarbModel}, {createTimelineInterface}, {createTable}, {inferTypes, enrichGeoData, normaliseData, insideCell}] = await Promise.all([import("../_npm/d3-require@1.3.0/_esm.js"), import("../_observablehq/stdlib.js"), import("../_node/@turf/turf@7.1.0/index.js"), import("../_npm/bulma-toast@2.4.4/_esm.js"), import("../_npm/bulma-quickview@2.0.0/dist/js/bulma-quickview.js"), import("./components/glyph-designs/timeGlyph.js"), import("./components/radialglyph.js"), import("./components/gridded-glyphmaps/index.min.js"), import("./components/osgb/index.js"), import("./components/decarb-model/budget-allocator.js"), import("./components/decarb-model/mini-decarbonisation.js"), import("./components/decarb-model/timeline.js"), import("./components/sorterTable.js"), import("./components/helpers.js")]);
 console.log(">> Importing libraries...");
 const d3 = require("d3", "d3-geo-projection");
 const flubber = require("flubber@0.4");
@@ -229,7 +187,8 @@ const flubber = require("flubber@0.4");
 
 
 
-return {d3,flubber,require,Mutable,TimeGlyph,GlyphCollection,turf,RadialGlyph,glyphMap,createDiscretiserValue,_drawCellBackground,OSGB,Model,BudgetAllocator,MiniDecarbModel,createTable,createTimelineInterface,YearPicker,inferTypes,enrichGeoData,normaliseData,downloadBoundaries,joinCensusDataToGeoJSON,convertGridCsvToGeoJson,context2d,bulmaToast,bulmaQuickview};
+
+return {d3,flubber,require,Mutable,turf,bulmaToast,bulmaQuickview,TimeGlyph,GlyphCollection,RadialGlyph,glyphMap,createDiscretiserValue,_drawCellBackground,OSGB,BudgetAllocator,InterventionManager,MiniDecarbModel,createTimelineInterface,createTable,inferTypes,enrichGeoData,normaliseData,insideCell};
 }});
 
 define({id: "5dd85f8f", inputs: ["OSGB"], outputs: ["proj"], body: (OSGB) => {
@@ -303,9 +262,9 @@ const buildingsData = [...oxford_data];
 return {buildingsData};
 }});
 
-define({id: "748ec0a5", inputs: ["buildingsData"], outputs: ["allColumns"], body: (buildingsData) => {
-// const flatData = buildingsData.map((p) => ({ ...p }));
-// const flatData = buildingsData.map((p) => Object.assign({}, p));
+define({id: "59d4d98d", inputs: ["buildingsData"], outputs: ["allColumns"], body: (buildingsData) => {
+// const flatData = buildingsData.map((p) => ({ ...p })); // very slow
+// const flatData = buildingsData.map((p) => Object.assign({}, p)); // even slower
 const allColumns = Object.keys(buildingsData[0]);
 console.log(">>  Loading Data Done");
 return {allColumns};
@@ -326,7 +285,7 @@ const cartogram_geodata = FileAttachment(
 return {lsoa_boundary,regular_geodata,cartogram_geodata};
 }});
 
-define({id: "284f4640", inputs: ["Mutable"], outputs: ["useState","selected","setSelected","getIntervention","setIntervention","getResults","setResults","allocations","setAllocations","selectedIntervention","setSelectedIntervention","detailOnDemand","setDetailOnDemand"], body: (Mutable) => {
+define({id: "574d2177", inputs: ["Mutable"], outputs: ["useState","selected","setSelected","getIntervention","setIntervention","getResults","setResults","allocations","setAllocations","selectedIntervention","setSelectedIntervention","detailOnDemand","setDetailOnDemand","currentConfig","setCurrentConfig"], body: (Mutable) => {
 function useState(value) {
   const state = Mutable(value);
   const setState = (value) => (state.value = value);
@@ -339,17 +298,20 @@ const [allocations, setAllocations] = useState([]); // list of budget allocation
 const [selectedIntervention, setSelectedIntervention] = useState(null); // selected intervention in timeline
 // const [selectedInterventionIndex, setSelectedInterventionIndex] = useState(null); // selected intervention index
 const [detailOnDemand, setDetailOnDemand] = useState(null); // detail on demand on map
-return {useState,selected,setSelected,getIntervention,setIntervention,getResults,setResults,allocations,setAllocations,selectedIntervention,setSelectedIntervention,detailOnDemand,setDetailOnDemand};
+const [currentConfig, setCurrentConfig] = useState({}); // current configuration
+return {useState,selected,setSelected,getIntervention,setIntervention,getResults,setResults,allocations,setAllocations,selectedIntervention,setSelectedIntervention,detailOnDemand,setDetailOnDemand,currentConfig,setCurrentConfig};
 }});
 
-define({id: "56ecdf5c", mode: "inline", inputs: ["createTimelineInterface","interventions","selectIntervention","display"], body: async (createTimelineInterface,interventions,selectIntervention,display) => {
+define({id: "13b1f959", mode: "inline", inputs: ["createTimelineInterface","interventions","selectIntervention","display"], body: async (createTimelineInterface,interventions,selectIntervention,display) => {
 display(await(
 createTimelineInterface(
                 interventions,
-                () => {},
+                (change) => {
+                  console.log("timeline change", change);
+                },
                 (click) => {
                   selectIntervention(click);
-                  console.log("clicked block", interventions[click]);
+                  console.log("timeline clicked block", interventions[click]);
                 },
                 450,
                 200
@@ -357,27 +319,40 @@ createTimelineInterface(
 ))
 }});
 
-define({id: "dbfed8d3", mode: "inline", inputs: ["html","display"], body: async (html,display) => {
+define({id: "c75d8c77", mode: "inline", inputs: ["html","results","selectedIntervention","display"], body: async (html,results,selectedIntervention,display) => {
 display(await(
 html`<button class="btn erase" aria-label="Delete"
                   onclick=${(e) => {
                     e.stopPropagation();
                     console.log("clicked block", e);
+                    console.log(">>> selectedIntervention ID", results[selectedIntervention.index].interventionId);
                 }}>
                 <i class="fas fa-trash" style="color:red;"></i>
               </button>`
 ))
 }});
 
-define({id: "27617c0d", mode: "inline", inputs: ["table","display"], body: async (table,display) => {
+define({id: "c4ae763a", mode: "inline", inputs: ["html","reorderIntervention","interventions","selectedIntervention","display"], body: async (html,reorderIntervention,interventions,selectedIntervention,display) => {
 display(await(
-table.getNode()
+html`<button class="btn move-up" aria-label="Move Up"
+                  onclick=${(e) => {
+                    e.stopPropagation();
+                    reorderIntervention(interventions, selectedIntervention.index, "up");
+                }}>
+                <i class="fas fa-arrow-up"></i>
+              </button>`
 ))
 }});
 
-define({id: "740517ab", mode: "inline", inputs: ["stackedResults","display"], body: async (stackedResults,display) => {
+define({id: "af323b52", mode: "inline", inputs: ["html","reorderIntervention","interventions","selectedIntervention","display"], body: async (html,reorderIntervention,interventions,selectedIntervention,display) => {
 display(await(
-JSON.stringify(stackedResults.summary.intervenedCount)
+html`<button class="btn move-down" aria-label="Move Down"
+                  onclick=${(e) => {
+                    e.stopPropagation();
+                    reorderIntervention(interventions, selectedIntervention.index, "down");
+                }}>
+                <i class="fas fa-arrow-down"></i>
+              </button>`
 ))
 }});
 
@@ -385,12 +360,6 @@ define({id: "90abdcf0", mode: "inline", inputs: ["map_aggregate","html","playBut
 display(await(
 (map_aggregate == "Building Level") ? ""
             : html`${playButton} ${morphFactorInput}`
-))
-}});
-
-define({id: "b4672042", mode: "inline", inputs: ["resize","createGlyphMap","map_aggregate","display"], body: async (resize,createGlyphMap,map_aggregate,display) => {
-display(await(
-resize((width, height) => createGlyphMap(map_aggregate, {width, height}))
 ))
 }});
 
@@ -436,13 +405,13 @@ flipButtonInput
 ))
 }});
 
-define({id: "acdb1373", mode: "inline", inputs: ["svg","display"], body: async (svg,display) => {
+define({id: "1efc45eb", mode: "inline", inputs: ["budgetVisualiser","display"], body: async (budgetVisualiser,display) => {
 display(await(
-svg
+budgetVisualiser
 ))
 }});
 
-define({id: "9867f7d3", inputs: ["getNumericBudget","total_budget","start_year","project_length","flip_budget","setAllocations","lastAllocation","addNewIntervention","technology","allocations"], outputs: ["openQuickviewButton","closeQuickviewButton","quickviewDefault","cancelButton","addInterventionBtn"], body: (getNumericBudget,total_budget,start_year,project_length,flip_budget,setAllocations,lastAllocation,addNewIntervention,technology,allocations) => {
+define({id: "8c10b9a9", outputs: ["openQuickviewButton","closeQuickviewButton","quickviewDefault","cancelButton"], body: () => {
 const openQuickviewButton = document.getElementById("openQuickviewButton");
 const closeQuickviewButton = document.getElementById("closeQuickviewButton");
 const quickviewDefault = document.getElementById("quickviewDefault");
@@ -459,34 +428,118 @@ closeQuickviewButton.addEventListener("click", () => {
 cancelButton.addEventListener("click", () => {
   quickviewDefault.classList.remove("is-active");
 });
-
-// Add New Intervention button logic
-const addInterventionBtn = document.getElementById("addInterventionBtn");
-addInterventionBtn.addEventListener("click", () => {
-  console.log("  total_budget ... ", getNumericBudget(total_budget));
-  console.log("  start_year ... ", start_year);
-  console.log("  project_length ... ", project_length);
-  console.log("  flip_budget ... ", flip_budget);
-
-  setAllocations(lastAllocation);
-  // console.log("  .. lastAllocation", lastAllocation);
-
-  // console.log("  .. allocations", allocations);
-
-  addNewIntervention(start_year, technology, allocations);
-
-  // alert("Intervention Added!");
-  console.log("  Allocations added: ", allocations);
-  quickviewDefault.classList.remove("is-active"); // Close quickview after submission
-});
-return {openQuickviewButton,closeQuickviewButton,quickviewDefault,cancelButton,addInterventionBtn};
+return {openQuickviewButton,closeQuickviewButton,quickviewDefault,cancelButton};
 }});
 
-define({id: "e4bf7cfa", inputs: ["setSelectedIntervention","results","interventions"], outputs: ["selectedInterventionIndex","selectIntervention"], body: (setSelectedIntervention,results,interventions) => {
-console.log(">> Preparing Interventions...");
+define({id: "9f4e0594", inputs: ["display","html","stackedRecap"], body: (display,html,stackedRecap) => {
+// --- Analyze Stacked Results ---
+display(html`<p>"Stacked Recap Summary:"</p>`);
+display(stackedRecap.summary);
+
+display(html`<p>"Stacked Recap Yearly Summary:"</p>`);
+display(stackedRecap.yearlySummary);
+
+display(html`<p>"Stacked Recap Buildings:"</p>`);
+display(stackedRecap.buildings);
+
+display(html`<p>"Stacked Recap Intervened Buildings:"</p>`);
+display(stackedRecap.intervenedBuildings);
+
+display(html`<p>"List of Intervention Results:"</p>`);
+display(stackedRecap.recap);
+}});
+
+define({id: "28ec8315", body: () => {
+// update timeline drawing
+// function updateTimeline() {
+//   const timelinePanel = document.getElementById("timeline-panel");
+//   timelinePanel.innerHTML = "";
+//   timelinePanel.appendChild(
+//     createTimelineInterface(
+//       interventions,
+//       (change) => {
+//         console.log("timeline change", change);
+//       },
+//       (click) => {
+//         selectIntervention(click);
+//         console.log("timeline clicked block", interventions[click]);
+//       },
+//       450,
+//       200
+//     )
+//   );
+// }
+}});
+
+define({id: "182bc22d", inputs: ["InterventionManager","buildingsData"], outputs: ["listOfTech","manager"], body: (InterventionManager,buildingsData) => {
+// --- Define the list of technologies ---
+const listOfTech = {
+  ASHP: {
+    name: "ASHP",
+    config: {
+      suitabilityKey: "ashp_suitability",
+      labourKey: "ashp_labour",
+      materialKey: "ashp_material",
+      savingsKey: "heat_demand",
+    },
+  },
+  PV: {
+    name: "PV",
+    config: {
+      suitabilityKey: "pv_suitability",
+      labourKey: "pv_labour",
+      materialKey: "pv_material",
+      savingsKey: "pv_generation",
+    },
+  },
+  GSHP: {
+    name: "GSHP",
+    config: {
+      suitabilityKey: "gshp_suitability",
+      labourKey: "gshp_labour",
+      materialKey: "gshp_material",
+      savingsKey: "gshp_size",
+    },
+  },
+  Insulation: {
+    name: "Insulation",
+    config: {
+      suitabilityKey: "insulation_rating",
+      labourKey: "insulation_cwall_labour",
+      materialKey: "insulation_cwall_materials",
+      savingsKey: "insulation_cwall",
+    },
+  },
+};
+
+// --- Create an InterventionManager instance ---
+const manager = new InterventionManager(buildingsData, listOfTech);
+return {listOfTech,manager};
+}});
+
+define({id: "5515fe73", inputs: ["manager"], outputs: ["triggerModelRun"], body: (manager) => {
+function triggerModelRun() {
+  console.log(">> Triggering Model Run...");
+
+  // --- Run the interventions ---
+  const recaps = manager.runInterventions();
+}
+return {triggerModelRun};
+}});
+
+define({id: "fe796886", inputs: ["manager"], outputs: ["stackedRecap"], body: (manager) => {
+console.log(">> Stacked Result from Model Run...");
+
+// --- Get the stacked results ---
+const stackedRecap = manager.getStackedResults();
+return {stackedRecap};
+}});
+
+define({id: "a9866eb8", inputs: ["setSelectedIntervention","results","interventions"], outputs: ["selectedInterventionIndex","selectIntervention"], body: (setSelectedIntervention,results,interventions) => {
+console.log(">> Select Interventions...");
 // for dealing with selected list items
 let selectedInterventionIndex = null; // Track the selected intervention index
-// console.log("selectedInterventionIndex: ", selectedInterventionIndex);
+// // console.log("selectedInterventionIndex: ", selectedInterventionIndex);
 
 function selectIntervention(index) {
   // Update the selected index
@@ -502,7 +555,10 @@ function selectIntervention(index) {
   const selectedItem = document.querySelector(
     `#interventions-list li:nth-child(${index + 1})`
   );
-  setSelectedIntervention(results[selectedInterventionIndex]);
+  setSelectedIntervention({
+    ...results[selectedInterventionIndex],
+    index: selectedInterventionIndex,
+  });
   // console.log("selectedItem: ", results[selectedInterventionIndex]);
   // setSelectedIntervention(selectedItem);
   if (selectedItem) selectedItem.classList.add("selected");
@@ -516,19 +572,10 @@ if (interventions.length === 0) {
 return {selectedInterventionIndex,selectIntervention};
 }});
 
-define({id: "b281575d", inputs: ["Inputs","Event","Generators","html","allColumns"], outputs: ["techsInput","technology","totalBudgetInput","total_budget","startYearInput","start_year","projectLengthInput","project_length","allocationTypeInput","allocation_type","priorityInput","priority_input","filterInput","filter_input","glyphmapTypeInput","glyphmapType","mapAggregationInput","map_aggregate","morphFactorInput","morph_factor","flipButtonInput","flip_budget","playButton"], body: (Inputs,Event,Generators,html,allColumns) => {
-console.log(">> Creating input forms...");
-// list of decarb technologies
+define({id: "0b9a73f1", inputs: ["Inputs","Event","Generators"], outputs: ["techsInput","technology"], body: (Inputs,Event,Generators) => {
+// --- technology ---
 const techsInput = Inputs.select(
-  [
-    "PV",
-    "ASHP",
-    "GSHP",
-    "Insulation - Cavity Wall",
-    "Insulation - External Wall",
-    "Insulation - Roof",
-    "Insulation - Under Floor",
-  ],
+  ["PV", "ASHP", "GSHP", "Insulation", "Optimise All"],
   {
     // label: html`<b>Technology</b>`,
     value: "ASHP",
@@ -543,17 +590,15 @@ Object.assign(techsInput, {
 });
 const technology = Generators.input(techsInput);
 // display(techsInput);
+return {techsInput,technology};
+}});
 
-// Total Budget
-// const totalBudgetInput = Inputs.number({
-//   // label: html`<b>Total Budget</b>`,
-//   placeholder: "Available Budget in GBP",
-//   value: 100_000_000,
-// });
+define({id: "9ede9b07", inputs: ["html","Event","Generators"], outputs: ["totalBudgetInput","total_budget"], body: (html,Event,Generators) => {
+// --- total budget ---
 const totalBudgetInput = html`<input
   id="totalBudgetInput"
   class="input"
-  value="10,000,000"
+  value="10,000"
   type="text"
   placeholder="Enter total budget"
 />`;
@@ -582,18 +627,11 @@ totalBudgetInput.addEventListener("focus", (event) => {
   // Remove formatting to allow direct editing
   event.target.value = event.target.value.replace(/,/g, "").replace(/£/g, "");
 });
+return {totalBudgetInput,total_budget};
+}});
 
-// Start Year
-// const startYearInput = Inputs.text({
-//   label: html`<b>Start Year</b>`,
-//   placeholder: "Starting year?",
-//   disabled: selectedIntervention ? true : false,
-//   value: selectedIntervention
-//     ? Number(Object.keys(selectedIntervention.yearlyStats)[0])
-//     : 2024,
-//   // submit: html`<button class="create-btn" style="color:white;">Submit</button>`,
-// });
-// startYearInput.style["max-width"] = "300px";
+define({id: "4c01225c", inputs: ["html","Event","Generators"], outputs: ["startYearInput","start_year"], body: (html,Event,Generators) => {
+// --- start year ---
 const startYearInput = html`<input
   class="input"
   type="number"
@@ -609,14 +647,11 @@ Object.assign(startYearInput, {
 });
 // console.log("startYearInput.style", startYearInput.columns);
 const start_year = Generators.input(startYearInput);
+return {startYearInput,start_year};
+}});
 
-// Project Length
-// const projectLengthInput = Inputs.range([0, 10], {
-//   // label: html`<b>Project length in years</b>`,
-//   step: 1,
-//   value: 5,
-// });
-// projectLengthInput.number.style["max-width"] = "60px";
+define({id: "c364df46", inputs: ["html","Event","Generators"], outputs: ["projectLengthInput","project_length"], body: (html,Event,Generators) => {
+// --- project length ---
 const projectLengthInput = html`<input
   id="projectLengthInput"
   class="slider is-fullwidth"
@@ -632,8 +667,11 @@ Object.assign(projectLengthInput, {
   onchange: (event) => event.currentTarget.dispatchEvent(new Event("input")),
 });
 const project_length = Generators.input(projectLengthInput);
+return {projectLengthInput,project_length};
+}});
 
-// Allocation Type
+define({id: "95795c9c", inputs: ["Inputs","Event","Generators"], outputs: ["allocationTypeInput","allocation_type"], body: (Inputs,Event,Generators) => {
+// --- allocation type ---
 const allocationTypeInput = Inputs.radio(["linear", "sqrt", "exp", "cubic"], {
   // label: html`<b>Allocation Type</b>`,
   value: "linear",
@@ -643,7 +681,11 @@ Object.assign(allocationTypeInput, {
   onchange: (event) => event.currentTarget.dispatchEvent(new Event("input")),
 });
 const allocation_type = Generators.input(allocationTypeInput);
+return {allocationTypeInput,allocation_type};
+}});
 
+define({id: "538836e5", inputs: ["Inputs","allColumns","html","Generators"], outputs: ["priorityInput","priority_input"], body: (Inputs,allColumns,html,Generators) => {
+// --- building priority ---
 const priorityInput = Inputs.form([
   Inputs.select([...allColumns, "None"], {
     label: html`<b>Sorting Priority</b>`,
@@ -657,7 +699,11 @@ const priorityInput = Inputs.form([
   }),
 ]);
 const priority_input = Generators.input(priorityInput);
+return {priorityInput,priority_input};
+}});
 
+define({id: "002f30fa", inputs: ["Inputs","allColumns","html","Generators"], outputs: ["filterInput","filter_input"], body: (Inputs,allColumns,html,Generators) => {
+// --- building filter ---
 const filterInput = Inputs.form([
   Inputs.select([...allColumns, "None"], {
     label: html`<b>Filter Column</b>`,
@@ -671,7 +717,11 @@ const filterInput = Inputs.form([
   }),
 ]);
 const filter_input = Generators.input(filterInput);
+return {filterInput,filter_input};
+}});
 
+define({id: "ac287d14", inputs: ["Inputs","Generators"], outputs: ["glyphmapTypeInput","glyphmapType"], body: (Inputs,Generators) => {
+// --- glyphmap type ---
 const glyphmapTypeInput = Inputs.radio(
   ["Interventions", "Decarbonisation Time series"],
   {
@@ -680,13 +730,21 @@ const glyphmapTypeInput = Inputs.radio(
   }
 );
 const glyphmapType = Generators.input(glyphmapTypeInput);
+return {glyphmapTypeInput,glyphmapType};
+}});
 
+define({id: "41a6e8aa", inputs: ["Inputs","Generators"], outputs: ["mapAggregationInput","map_aggregate"], body: (Inputs,Generators) => {
+// --- map aggregation ---
 const mapAggregationInput = Inputs.radio(["LSOA Level", "Building Level"], {
   label: "Map Aggregated at",
   value: "LSOA Level",
 });
 const map_aggregate = Generators.input(mapAggregationInput);
+return {mapAggregationInput,map_aggregate};
+}});
 
+define({id: "9aebd956", inputs: ["html","Event","Generators"], outputs: ["morphFactorInput","morph_factor"], body: (html,Event,Generators) => {
+// --- morph factor ---
 const morphFactorInput = html`<input
   style="width: 100%; max-width:450px;"
   type="range"
@@ -700,20 +758,59 @@ Object.assign(morphFactorInput, {
   onchange: (event) => event.currentTarget.dispatchEvent(new Event("input")),
 });
 const morph_factor = Generators.input(morphFactorInput);
+return {morphFactorInput,morph_factor};
+}});
 
-//  flip button
-const flipButtonInput = Inputs.toggle({ label: "Flip", value: true });
+define({id: "5cf7509f", inputs: ["Inputs","Event","Generators"], outputs: ["flipButtonInput","flip_budget"], body: (Inputs,Event,Generators) => {
+// --- flip button ---
+const flipButtonInput = Inputs.toggle({ label: "Flip", value: false });
 Object.assign(flipButtonInput, {
   // oninput: (event) => event.isTrusted && event.stopImmediatePropagation(),
   onchange: (event) => event.currentTarget.dispatchEvent(new Event("input")),
 });
 const flip_budget = Generators.input(flipButtonInput);
+return {flipButtonInput,flip_budget};
+}});
 
-// play button
+define({id: "7010ae28", inputs: ["html"], outputs: ["playButton"], body: (html) => {
+// --- play button ---
 const playButton = html`<button class="btn edit" style="margin-top: 10px;">
   <i class="fas fa-play"></i>&nbsp;
 </button>`;
-return {techsInput,technology,totalBudgetInput,total_budget,startYearInput,start_year,projectLengthInput,project_length,allocationTypeInput,allocation_type,priorityInput,priority_input,filterInput,filter_input,glyphmapTypeInput,glyphmapType,mapAggregationInput,map_aggregate,morphFactorInput,morph_factor,flipButtonInput,flip_budget,playButton};
+return {playButton};
+}});
+
+define({id: "41689082", inputs: ["_","addNewIntervention"], outputs: ["debouncedAddNewIntervention"], body: (_,addNewIntervention) => {
+// Debounced version of addNewIntervention
+const debouncedAddNewIntervention = _.debounce((formData) => {
+  console.log("Adding new intervention with data:", formData);
+  addNewIntervention(formData);
+}, 1000);
+return {debouncedAddNewIntervention};
+}});
+
+define({id: "42d422e4", inputs: ["techsInput","startYearInput","debouncedAddNewIntervention","quickviewDefault"], outputs: ["addInterventionBtn"], body: (techsInput,startYearInput,debouncedAddNewIntervention,quickviewDefault) => {
+// ----------------- QuickView Event Listeners -----------------
+const addInterventionBtn = document.getElementById("addInterventionBtn");
+
+// Add New Intervention button logic
+addInterventionBtn.addEventListener("click", () => {
+  console.log("Intervention button clicked");
+
+  const formData = {
+    id: techsInput.value + "_" + startYearInput.value.toString(),
+    initialYear: startYearInput.value,
+    rolloverBudget: 0,
+    optimizationStrategy: "tech-first",
+    tech: techsInput.value,
+    priorities: [],
+  };
+
+  console.log(">> Prepared FormData:", formData);
+  debouncedAddNewIntervention(formData);
+  quickviewDefault.classList.remove("is-active"); // Close quickview after submission
+});
+return {addInterventionBtn};
 }});
 
 define({id: "897df559", outputs: ["getNumericBudget"], body: () => {
@@ -735,13 +832,13 @@ document
   });
 }});
 
-define({id: "e4372507", inputs: ["getNumericBudget","total_budget","start_year","project_length","flip_budget","BudgetAllocator"], outputs: ["allocator"], body: (getNumericBudget,total_budget,start_year,project_length,flip_budget,BudgetAllocator) => {
+define({id: "6d64c30b", inputs: ["BudgetAllocator","getNumericBudget","total_budget","start_year","project_length","allocation_type","flip_budget"], outputs: ["allocator","initialAllocations"], body: (BudgetAllocator,getNumericBudget,total_budget,start_year,project_length,allocation_type,flip_budget) => {
 console.log(">> Budget Allocator...");
 
-console.log("  .. total_budget", getNumericBudget(total_budget));
-console.log("  .. start_year", start_year);
-console.log("  .. project_length", project_length);
-console.log("  .. flip_budget", flip_budget);
+// console.log("  .. total_budget", getNumericBudget(total_budget));
+// console.log("  .. start_year", start_year);
+// console.log("  .. project_length", project_length);
+// console.log("  .. flip_budget", flip_budget);
 
 // Budget Allocator
 const allocator = new BudgetAllocator(
@@ -749,54 +846,47 @@ const allocator = new BudgetAllocator(
   Number(start_year),
   Number(project_length)
 );
-return {allocator};
-}});
 
-define({id: "1daa6c7f", inputs: ["allocation_type","allocator","flip_budget"], outputs: ["initialAllocations"], body: (allocation_type,allocator,flip_budget) => {
 let initialAllocations;
 if (allocation_type === "linear") {
   initialAllocations = allocator.allocateLinear();
 } else {
   initialAllocations = allocator.allocateCustom(
     allocation_type,
-    { exponent: 2 },
+    { exponent: 4 },
     flip_budget
   );
 }
-return {initialAllocations};
+return {allocator,initialAllocations};
 }});
 
-define({id: "48f97485", inputs: ["allocator","initialAllocations","setSelected"], outputs: ["svg","getAllocations"], body: (allocator,initialAllocations,setSelected) => {
-const { svg, getAllocations } = allocator.visualise(
+define({id: "db66add3", inputs: ["allocator","initialAllocations","setSelected"], outputs: ["budgetVisualiser"], body: (allocator,initialAllocations,setSelected) => {
+const budgetVisualiser = allocator.visualise(
   initialAllocations,
   (changes) => {
-    console.log("data changed:", changes);
+    // console.log("data changed:", changes);
     setSelected(changes);
   },
   400,
   200
 );
-// display(results);
-return {svg,getAllocations};
+return {budgetVisualiser};
 }});
 
-define({id: "8a20bd1f", inputs: ["selected","getAllocations","initialAllocations"], outputs: ["lastAllocation"], body: (selected,getAllocations,initialAllocations) => {
-const lastAllocation = selected ? getAllocations(selected) : initialAllocations;
-// set allocation based on custom graph
-// allocation_type;
-// const allocations = selected ? getAllocations(selected) : initialAllocations;
-return {lastAllocation};
+define({id: "a8fcea58", inputs: ["setAllocations","allocator"], body: (setAllocations,allocator) => {
+setAllocations(allocator.getAllocations());
 }});
 
-define({id: "def3b8eb", inputs: ["getIntervention","getResults"], outputs: ["interventions","results"], body: (getIntervention,getResults) => {
+define({id: "f1a65a53", inputs: ["getIntervention","getResults"], outputs: ["interventions","results"], body: (getIntervention,getResults) => {
 // store intervention results
 let interventions = getIntervention;
+console.log(">> Interventions:", interventions);
 let results = getResults;
 return {interventions,results};
 }});
 
-define({id: "ab161dff", inputs: ["Event"], outputs: ["set"], body: (Event) => {
-// dealing with observable input reactivity
+define({id: "eacc9ef7", inputs: ["Event"], outputs: ["set"], body: (Event) => {
+// <!-- dealing with observable input reactivity -->
 // two ways Obs input
 function set(input, value) {
   input.value = value;
@@ -848,84 +938,102 @@ playButton.addEventListener("click", () => {
 return {playing,direction,animationFrame,animate};
 }});
 
-define({id: "817b00a5", inputs: ["setIntervention","interventions","runModel","buildingsData","setResults","results","listOfTech"], outputs: ["createConfigTemplate","addIntervention","addNewIntervention","removeIntervention","modifyIntervention","stackResults","stackedResults"], body: (setIntervention,interventions,runModel,buildingsData,setResults,results,listOfTech) => {
+define({id: "00ccce10", outputs: ["createConfigTemplate"], body: () => {
 console.log(">> Loading intervention functions...");
 // >> Some functions related to creating and managing interventions
 
 // create config template
-function createConfigTemplate(start_year, allocations) {
+function createConfigTemplate(startyear, budgetallocation, techs) {
+  console.log(">> Creating config template...");
+  // setAllocations(allocator.recap().allocations);
   return {
-    initial_year: Number(start_year),
-    duration: allocations.length,
-    rolledover_budget: 0,
-    yearly_budgets: allocations.map((item) => item.budget),
-    tech: {},
+    id: techs + "_" + startyear.toString(),
+    initialYear: Number(startyear),
+    rolloverBudget: 0,
+    yearlyBudgets: budgetallocation.map((item) => item.budget),
+    optimizationStrategy: "tech-first",
+    tech: techs,
     priorities: [],
     filters: [],
   };
 }
+return {createConfigTemplate};
+}});
 
+define({id: "d94755cf", outputs: ["addIntervention"], body: () => {
 // add new intervention
 function addIntervention(
   techConfig,
-  start_year,
+  // start_year,
   allocation,
   filters = [],
   priorities = []
 ) {
-  const config = createConfigTemplate(start_year, allocation);
-  // console.log("configuration sent", config);
+  // const config = createConfigTemplate(allocation);
+  // console.log("allocation configuration sent", config);
 
-  config.tech = {
-    name: techConfig.name,
-    config: techConfig.config,
-  };
+  // config.tech = {
+  //   name: techConfig.name,
+  //   config: techConfig.config,
+  // };
 
   // console.log("techConfig Name", techConfig);
 
   // Apply filters and priorities - append to existing
-  config.filters = [...(config.filters || []), ...filters];
-  config.priorities = [...(config.priorities || []), ...priorities];
+  // config.filters = [...(config.filters || []), ...filters];
+  // config.priorities = [...(config.priorities || []), ...priorities];
 
-  const newIntervention = { ...config, id: Date.now() };
-  setIntervention([...interventions, newIntervention]);
-  const modelResult = runModel(newIntervention, buildingsData);
-  setResults([...results, modelResult]);
-  console.log("Intervention added:", config);
-  // close the modal
-  // document.getElementById("interventionModal").style.display = "none";
+  // Create new intervention
+  // const newIntervention = { ...config, id: Date.now() };
+  // setIntervention([...interventions, newIntervention]); // Update interventions
+
+  // Run the model and store the results
+  const modelResult = null; // runModel(newIntervention, buildingsData);
+
+  // setResults([...results, modelResult]);
+  // console.log("Intervention added:", interventions);
 }
+return {addIntervention};
+}});
 
+define({id: "1c1829a2", outputs: ["randomFunction"], body: () => {
+function randomFunction() {
+  console.log("=================Random function called!");
+  // console.log("allocation", view(theallocation));
+}
+// return randomFunction();
+return {randomFunction};
+}});
+
+define({id: "f0c4a326", inputs: ["allocations"], outputs: ["addNewIntervention"], body: (allocations) => {
 // handle form submission: add new intervention
-function addNewIntervention(start_year, technology, allocations) {
-  const new_start_year = start_year;
-  const new_tech = technology;
-  const new_allocations = allocations;
+function addNewIntervention(data) {
+  const newAllocation = allocations;
+  console.log({ ...data, yearlyBudgets: newAllocation });
+  console.log("newAllocation", newAllocation);
+}
+return {addNewIntervention};
+}});
 
-  // if result exist, take the remaining budget from the latest year
-  // and add it to this first year budget
-  if (results.length > 0) {
-    const latestResult = results[results.length - 1];
-    new_allocations[0].budget += latestResult.remainingBudget;
+define({id: "c1a23c8b", inputs: ["manager","interventions","setIntervention","setResults","results"], outputs: ["reorderIntervention","removeIntervention"], body: (manager,interventions,setIntervention,setResults,results) => {
+// Reorder intervention
+function reorderIntervention(array, index, direction) {
+  if (direction === "up" && index > 0) {
+    // Swap with the previous item
+    [array[index - 1], array[index]] = [array[index], array[index - 1]];
+  } else if (direction === "down" && index < array.length - 1) {
+    // Swap with the next item
+    [array[index], array[index + 1]] = [array[index + 1], array[index]];
+  }
+  console.log("Interventions reordered:", array);
+  // updateTimeline();
+
+  // Update the InterventionManager with the new order
+  if (manager) {
+    manager.setInterventionOrder(array); // Pass the new order to the manager
   }
 
-  // Retrieve techConfig from the selected technology
-  const techConfig = listOfTech[new_tech];
-  // console.log("techConfig", techConfig);
-
-  // Example filters and priorities
-  // const filters = [(b) => b.properties["substation_headroom"] >= 500];
-  // const priorities = [{ name: "substation_capacity_rating", order: "asc" }];
-  const filters = [];
-  const priorities = [];
-
-  addIntervention(
-    techConfig,
-    new_start_year,
-    new_allocations,
-    filters,
-    priorities
-  );
+  return array;
 }
 
 // remove intervention
@@ -935,256 +1043,12 @@ function removeIntervention(index) {
 
     // when intervention is removed, remove the corresponding results
     setResults(results.filter((_, i) => i !== index));
+    // updateTimeline();
   } else {
     console.log("Invalid index.");
   }
 }
-
-// Modify current intervention
-function modifyIntervention(
-  index,
-  newTechConfig = null,
-  newStartYear = null,
-  newAllocations = null,
-  newFilters = null,
-  newPriorities = null
-) {
-  // Validate index
-  if (index < 0 || index >= interventions.length) {
-    console.error("Invalid intervention index");
-    return;
-  }
-
-  // Get existing intervention
-  const intervention = { ...interventions[index] };
-
-  // Update values if provided
-  if (newTechConfig) {
-    intervention.tech = {
-      name: newTechConfig.name,
-      config: newTechConfig.config,
-    };
-  }
-
-  if (newStartYear) {
-    intervention.initial_year = Number(newStartYear);
-  }
-
-  if (newAllocations) {
-    intervention.yearly_budgets = newAllocations.map((item) => item.budget);
-    intervention.duration = newAllocations.length;
-  }
-
-  if (newFilters) {
-    intervention.filters = [...newFilters];
-  }
-
-  if (newPriorities) {
-    intervention.priorities = [...newPriorities];
-  }
-
-  // Update interventions array
-  const updatedInterventions = [...interventions];
-  updatedInterventions[index] = intervention;
-  setIntervention(updatedInterventions);
-
-  // Re-run model and update results
-  const modelResult = runModel(intervention, buildingsData);
-  const updatedResults = [...results];
-  updatedResults[index] = modelResult;
-  setResults(updatedResults);
-
-  console.log("Intervention modified:", intervention);
-}
-
-// stack results from getRecap() method
-function stackResults(results) {
-  const buildingMap = new Map();
-  const yearlySummary = {}; // Object to store the overall yearly summary
-
-  // Collect and merge all buildings from all results
-  results.forEach((result) => {
-    // Process yearlyStats for overall summary
-    Object.entries(result.yearlyStats).forEach(([year, stats]) => {
-      if (!yearlySummary[year]) {
-        yearlySummary[year] = {
-          budgetSpent: 0,
-          buildingsIntervened: 0,
-          totalCarbonSaved: 0, // Initialize carbon saved
-          technologies: new Set(),
-        };
-      }
-
-      yearlySummary[year].budgetSpent += stats.budgetSpent;
-      yearlySummary[year].buildingsIntervened += stats.buildingsIntervened;
-      yearlySummary[year].technologies.add(result.techName); // Add the technology
-
-      // Accumulate total carbon saved from intervened buildings for this year
-      stats.intervenedBuildings.forEach((building) => {
-        yearlySummary[year].totalCarbonSaved += building.carbonSaved || 0;
-      });
-    });
-
-    result.allBuildings.forEach((building) => {
-      if (!buildingMap.has(building.id)) {
-        const { properties, ...rest } = building; // Destructure properties and other fields
-        buildingMap.set(building.id, {
-          ...rest,
-          ...properties, // Flatten properties here
-          isIntervened: false,
-          totalCost: 0,
-          totalCarbonSaved: 0,
-          interventionHistory: [],
-          interventionYears: [],
-          interventionTechs: [],
-        });
-      }
-    });
-
-    // Process interventions
-    result.intervenedBuildings.forEach((building) => {
-      const target = buildingMap.get(building.id);
-      const intervention = {
-        tech: result.techName,
-        year: building.interventionYear,
-        cost: building.interventionCost,
-        carbonSaved: building.carbonSaved,
-        interventionID: result.interventionId,
-      };
-
-      target.isIntervened = true;
-      target.totalCost += building.interventionCost;
-      target.totalCarbonSaved += building.carbonSaved;
-      target.interventionHistory.push(intervention);
-      target.interventionYears.push(building.interventionYear);
-      if (!target.interventionTechs.includes(result.techName)) {
-        target.interventionTechs.push(result.techName);
-      }
-    });
-  });
-
-  // Finalize the yearly summary
-  Object.values(yearlySummary).forEach((yearData) => {
-    yearData.technologies = Array.from(yearData.technologies); // Convert Set to Array
-  });
-
-  const buildings = Array.from(buildingMap.values());
-  const summary = {
-    totalBuildings: buildings.length,
-    intervenedCount: buildings.filter((b) => b.isIntervened).length,
-    untouchedCount: buildings.filter((b) => !b.isIntervened).length,
-    totalCost: buildings.reduce((sum, b) => sum + b.totalCost, 0),
-    totalCarbonSaved: buildings.reduce((sum, b) => sum + b.totalCarbonSaved, 0),
-    uniqueTechs: [
-      ...new Set(buildings.flatMap((b) => b.interventionTechs).filter(Boolean)),
-    ],
-    interventionYearRange: buildings.some((b) => b.interventionYears.length)
-      ? [
-          Math.min(...buildings.flatMap((b) => b.interventionYears)),
-          Math.max(...buildings.flatMap((b) => b.interventionYears)),
-        ]
-      : null,
-  };
-
-  return {
-    buildings,
-    summary,
-    yearlySummary, // Add the overall yearly summary
-    intervenedBuildings: buildings.filter((b) => b.isIntervened),
-    untouchedBuildings: buildings.filter((b) => !b.isIntervened),
-  };
-}
-
-const stackedResults = stackResults(results);
-
-// console.log("stackedResults", stackedResults);
-return {createConfigTemplate,addIntervention,addNewIntervention,removeIntervention,modifyIntervention,stackResults,stackedResults};
-}});
-
-define({id: "0540ea38", inputs: ["allocations","MiniDecarbModel"], outputs: ["config","listOfTech","addTechConfig","addPriority","runModel"], body: (allocations,MiniDecarbModel) => {
-console.log(">> Loading model tech configuration...");
-
-let config = {
-  initial_year: 0, // Number(start_year),
-  rolledover_budget: 0,
-  yearly_budgets: allocations.map((item) => item.budget),
-  tech: {},
-  priorities: [],
-};
-
-const listOfTech = {
-  ASHP: {
-    name: "ASHP",
-    config: {
-      suitabilityKey: "ashp_suitability",
-      labourKey: "ashp_labour",
-      materialKey: "ashp_material",
-      savingsKey: "heat_demand",
-    },
-  },
-  PV: {
-    name: "PV",
-    config: {
-      suitabilityKey: "pv_suitability",
-      labourKey: "pv_labour",
-      materialKey: "pv_material",
-      savingsKey: "solar_generation",
-    },
-  },
-  GSHP: {
-    name: "GSHP",
-    config: {
-      suitabilityKey: "gshp_suitability",
-      labourKey: "gshp_labour",
-      materialKey: "gshp_material",
-      savingsKey: "gshp_size",
-    },
-  },
-  Insulation: {
-    name: "Insulation",
-    config: {
-      suitabilityKey: "insulation_rating",
-      labourKey: "insulation_cwall_labour",
-      materialKey: "insulation_cwall_materials",
-      savingsKey: "insulation_cwall",
-    },
-  },
-};
-
-function addTechConfig(techConfig) {
-  config.tech = {
-    name: techConfig.name,
-    config: techConfig.config,
-  };
-}
-
-function addPriority(name, order = "asc") {
-  const newPriority = {
-    name: name,
-    order: order,
-  };
-
-  config.priorities.push(newPriority);
-}
-
-function runModel(config, buildings) {
-  const model = new MiniDecarbModel(config, buildings);
-  model.runModel();
-  return model.getRecap();
-}
-
-// update config here
-// addTechConfig(listOfTech.ASHP);
-// // addPriority("substation_headroom", "asc");
-return {config,listOfTech,addTechConfig,addPriority,runModel};
-}});
-
-define({id: "81c82f44", body: () => {
-// console.log("selectedIntervention", selectedIntervention);
-// console.log(
-//   "selectedIntervention year",
-//   Object.keys(selectedIntervention.yearlyStats)[0]
-// );
+return {reorderIntervention,removeIntervention};
 }});
 
 define({id: "15b870e4", outputs: ["cols"], body: () => {
@@ -1222,21 +1086,18 @@ const cols = [
 return {cols};
 }});
 
-define({id: "246d7836", inputs: ["selectedIntervention","stackedResults","buildingsData","createTable","cols","setSelected"], outputs: ["tableData","table"], body: (selectedIntervention,stackedResults,buildingsData,createTable,cols,setSelected) => {
+define({id: "77ea3ee0", outputs: ["tableData"], body: () => {
 console.log(">> Create sortable table...");
-const tableData = selectedIntervention
-  ? stackedResults.buildings
-  : buildingsData;
+const tableData = null;
+// const tableData = selectedIntervention
+//   ? stackedResults.buildings
+//   : buildingsData;
 
-const table = new createTable(tableData, cols, (changes) => {
-  console.log("Table changed:", changes);
-  setSelected(changes.selection);
-});
-return {tableData,table};
-}});
-
-define({id: "9d2f17ea", body: () => {
-// console.log("Test inferring data types", tableData);
+// const table = new createTable(tableData, cols, (changes) => {
+//   console.log("Table changed:", changes);
+//   setSelected(changes.selection);
+// });
+return {tableData};
 }});
 
 define({id: "a3995ffc", inputs: ["turf","lsoa_boundary","tableData","normaliseData","d3","insideCell","RadialGlyph","setDetailOnDemand"], outputs: ["glyphMapSpecBasic"], body: (turf,lsoa_boundary,tableData,normaliseData,d3,insideCell,RadialGlyph,setDetailOnDemand) => {
@@ -1447,76 +1308,6 @@ function drawDetailOnDemand(width, height) {
   return canvas;
 }
 return {drawDetailOnDemand};
-}});
-
-define({id: "246c80d3", inputs: ["d3","drawPieSlice"], outputs: ["drawRadialMultivariateGlyph"], body: (d3,drawPieSlice) => {
-function drawRadialMultivariateGlyph(normalisedData, x, y, size, ctx) {
-  let angle = (2 * Math.PI) / normalisedData.length;
-  let centerX = x;
-  let centerY = y;
-  let radius = size / 2;
-  // console.log(radius);
-
-  //get a colour palette
-  let colors = d3
-    .scaleOrdinal(d3.schemeTableau10)
-    .domain(d3.range(normalisedData.length));
-
-  normalisedData.map((d, i) => {
-    drawPieSlice(
-      ctx,
-      centerX,
-      centerY,
-      radius * 0.9,
-      angle * (i + 0.1),
-      angle * (i + 0.9),
-      "rgba(0,0,0,0.05)"
-    );
-    drawPieSlice(
-      ctx,
-      centerX,
-      centerY,
-      radius * Math.sqrt(d) * 0.95,
-      angle * (i + 0.1),
-      angle * (i + 0.9),
-      colors(i)
-    );
-  });
-}
-return {drawRadialMultivariateGlyph};
-}});
-
-define({id: "9d040433", outputs: ["drawPieSlice"], body: () => {
-function drawPieSlice(ctx, cx, cy, r, angleStart, angleEnd, color) {
-  ctx.beginPath();
-  ctx.moveTo(cx, cy);
-  ctx.arc(cx, cy, r, angleStart, angleEnd);
-  ctx.lineTo(cx, cy);
-  ctx.fillStyle = color;
-  ctx.fill();
-}
-return {drawPieSlice};
-}});
-
-define({id: "413407ea", body: () => {
-// joining attributes to geodata
-// const regular_geodata_withproperties = joinCensusDataToGeoJSON(
-//   [...flatData],
-//   regular_geodata
-// );
-// const cartogram_geodata_withproperties = joinCensusDataToGeoJSON(
-//   [...flatData],
-//   cartogram_geodata
-// );
-// console.log("regular_geodata_withproperties", regular_geodata_withproperties);
-// console.log(
-//   "cartogram_geodata_withproperties",
-//   cartogram_geodata_withproperties
-// );
-}});
-
-define({id: "d5bdb4c8", body: () => {
-// console.log("Flat Data", flatData);
 }});
 
 define({id: "4f6b1aeb", inputs: ["enrichGeoData","buildingsData","regular_geodata","cartogram_geodata"], outputs: ["aggregations","regular_geodata_withproperties","cartogram_geodata_withproperties"], body: (enrichGeoData,buildingsData,regular_geodata,cartogram_geodata) => {
@@ -1963,11 +1754,11 @@ function applyTransformationToShapes(geographicShapes) {
 return {transformCoordinates,transformGeometry,applyTransformationToShapes};
 }});
 
-define({id: "74abbf70", inputs: ["createLeafletMap","selected","morphGlyphMap"], outputs: ["createGlyphMap"], body: (createLeafletMap,selected,morphGlyphMap) => {
+define({id: "65137962", inputs: ["morphGlyphMap"], outputs: ["createGlyphMap"], body: (morphGlyphMap) => {
 function createGlyphMap(map_aggregate, { width, height }) {
   // console.log(width, height);
   if (map_aggregate == "Building Level") {
-    return createLeafletMap(selected, width, height);
+    return null; //createLeafletMap(selected, width, height);
   } else if (map_aggregate == "LSOA Level") {
     return morphGlyphMap;
   }
@@ -1975,110 +1766,25 @@ function createGlyphMap(map_aggregate, { width, height }) {
 return {createGlyphMap};
 }});
 
-define({id: "520e6d60", outputs: ["insideCell"], body: () => {
-function insideCell(c, x, y) {
-  // console.log(x + " " + y  + " " + c.getXCentre() + " " + c.getYCentre() + " " + c.getCellSize());
-  if (
-    x >= c.getXCentre() - c.getCellSize() &&
-    x <= c.getXCentre() + c.getCellSize() &&
-    y >= c.getYCentre() - c.getCellSize() &&
-    y <= c.getYCentre() + c.getCellSize()
-  )
-    return true;
-  return false;
-}
-return {insideCell};
-}});
-
-define({id: "989658e6", outputs: ["convertToGeoJSON"], body: () => {
-console.log(">> Convert to GeoJSON...");
-
-function convertToGeoJSON(objects) {
-  return {
-    type: "FeatureCollection",
-    features: objects.map((obj) => ({
-      type: "Feature",
-      geometry: {
-        type: "Point",
-        coordinates: [obj.data.x, obj.data.y],
-      },
-      properties: { ...obj.data },
-    })),
-  };
-}
-
-// const mapCluster = convertToGeoJSON(selected);
-// console.log("mapcluster", mapCluster);
-// console.log("selectedIntervention", selected);
-return {convertToGeoJSON};
-}});
-
-define({id: "310bd41b", inputs: ["L"], outputs: ["createLeafletMap"], body: (L) => {
-function createLeafletMap(data, width = 600, height = 400) {
-  // Create the map container div
-  const mapDiv = document.createElement("div");
-  mapDiv.style.width = `${width}px`;
-  mapDiv.style.height = `${height}px`;
-  mapDiv.id = "leafletMap"; // Unique ID for Leaflet to hook onto
-
-  // Append the mapDiv to the body or another container if desired
-  document.body.appendChild(mapDiv);
-
-  // Initialize the Leaflet map
-  const map = L.map(mapDiv.id).setView([0, 0], 2); // Default view (centered on the world)
-
-  // Add a tile layer (you can choose others like OpenStreetMap)
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    attribution: "© OpenStreetMap contributors",
-  }).addTo(map);
-
-  // Add markers for each data point
-  if (Array.isArray(data) && data.length > 0) {
-    const latLngs = [];
-    data.forEach(({ x, y }) => {
-      if (typeof x === "number" && typeof y === "number") {
-        const marker = L.marker([y, x]).addTo(map);
-        latLngs.push([y, x]);
-      }
-    });
-
-    // Adjust the map view to fit all markers
-    if (latLngs.length > 0) {
-      const bounds = L.latLngBounds(latLngs);
-      map.fitBounds(bounds);
-    }
-  } else {
-    console.warn("No valid data points to display on the map.");
-  }
-
-  return mapDiv;
-}
-return {createLeafletMap};
-}});
-
-define({id: "406365da", body: () => {
-// createLeafletMap(selected);
-}});
-
 </script>
 <div id="observablehq-center">
 <main id="observablehq-main" class="observablehq">
 <!-- ------------ Imports ------------ -->
-<div class="observablehq observablehq--block"><!--:cd8e6073:--></div>
+<div class="observablehq observablehq--block"><!--:c8c42950:--></div>
 <div class="observablehq observablehq--block"><!--:5dd85f8f:--></div>
 <script src="https://unpkg.com/supercluster@8.0.0/dist/supercluster.min.js"></script>
 <!-- ---------------- Data ---------------- -->
 <div class="observablehq observablehq--block"><!--:ab885abd:--></div>
 <div class="observablehq observablehq--block"><!--:a8708139:--></div>
-<div class="observablehq observablehq--block"><!--:748ec0a5:--></div>
+<div class="observablehq observablehq--block"><!--:59d4d98d:--></div>
 <div class="observablehq observablehq--block"><!--:74ca6350:--></div>
 <!-- ------------ Getter-Setter ------------ -->
-<div class="observablehq observablehq--block"><!--:284f4640:--></div>
+<div class="observablehq observablehq--block"><!--:574d2177:--></div>
 <!-------- Stylesheets -------->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css">
-<link rel="stylesheet" href="./_file/styles/bulma-quickview.min.c71603a5.css">
+<link rel="stylesheet" href="./styles/bulma-quickview.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-<link rel="stylesheet" href="./_file/styles/dashboard.cca020ca.css">
+<link rel="stylesheet" href="./styles/dashboard.css">
 <!-- ---------------- HTML Layout ---------------- -->
 <div class="grid-container" style="padding:2px; height:100vh;">
   <div id="left-panel" style="overflow-x:hidden; overflow-y:hidden; height:96vh;">
@@ -2091,7 +1797,7 @@ define({id: "406365da", body: () => {
           <div class="content">
             <div id="graph-container">
               <div id="timeline-panel">
-                <observablehq-loading></observablehq-loading><!--:56ecdf5c:-->
+                <observablehq-loading></observablehq-loading><!--:13b1f959:-->
               </div> <!-- timeline panel -->
               <nav id="timeline-buttons">
                 <button id="openQuickviewButton" data-show="quickview" class="btn" aria-label="Add">
@@ -2100,13 +1806,9 @@ define({id: "406365da", body: () => {
                 <button class="btn edit" aria-label="Edit">
                   <i class="fas fa-edit" style="color:green;"></i>
                 </button>
-                <observablehq-loading></observablehq-loading><!--:dbfed8d3:-->
-                <button class="btn move-up" aria-label="Move Up">
-                  <i class="fas fa-arrow-up"></i>
-                </button>
-                <button class="btn move-down" aria-label="Move Down">
-                  <i class="fas fa-arrow-down"></i>
-                </button>
+                <observablehq-loading></observablehq-loading><!--:c75d8c77:-->
+              <observablehq-loading></observablehq-loading><!--:c4ae763a:-->
+                <observablehq-loading></observablehq-loading><!--:af323b52:-->
               </nav>
             </div> <!-- graph container -->
           </div>
@@ -2120,8 +1822,8 @@ define({id: "406365da", body: () => {
           </header>
           <div class="card-content">
             <div class="content">
-              <observablehq-loading></observablehq-loading><!--:27617c0d:-->
-              <div>No. of intervened buildings: <observablehq-loading></observablehq-loading><!--:740517ab:--></div>
+              <!-- ${table.getNode()} -->
+              <!-- <div>No. of intervened buildings: ${JSON.stringify(stackedResults.summary.intervenedCount)}</div> -->
             </div>
           </div>
         </div>
@@ -2137,7 +1839,7 @@ define({id: "406365da", body: () => {
           <!-- ${mapAggregationInput} -->
           <observablehq-loading></observablehq-loading><!--:90abdcf0:-->
           <!-- ${html`${playButton} ${morphFactorInput}`} -->
-          <observablehq-loading></observablehq-loading><!--:b4672042:-->
+          <!-- ${resize((width, height) => createGlyphMap(map_aggregate, {width, height}))} -->
         </div>
       </div>
     </div>
@@ -2214,50 +1916,64 @@ define({id: "406365da", body: () => {
         </div>
         <!-- visual budget allocator  -->
         <div class="field">
-          <observablehq-loading></observablehq-loading><!--:acdb1373:-->
+          <observablehq-loading></observablehq-loading><!--:1efc45eb:-->
         </div>
       </form>
     </div>
   </div>
   <footer class="quickview-footer">
-    <button class="button is-success" id="addInterventionBtn">Add New Intervention</button>
     <button class="button is-light" id="cancelButton">Cancel</button>
+    <button class="button is-success" id="addInterventionBtn">Add New Intervention</button>
   </footer>
 </div>
-<div class="observablehq observablehq--block"><!--:9867f7d3:--></div>
-<div class="observablehq observablehq--block"><!--:e4bf7cfa:--></div>
+<div class="observablehq observablehq--block"><!--:8c10b9a9:--></div>
+<h3 id="interventions" tabindex="-1"><a class="observablehq-header-anchor" href="#interventions">Interventions</a></h3>
+<div class="observablehq observablehq--block"><!--:9f4e0594:--></div>
+<div class="observablehq observablehq--block"><!--:28ec8315:--></div>
+<!-- ---------------- Intervention Managers ---------------- -->
+<div class="observablehq observablehq--block"><!--:182bc22d:--></div>
+<div class="observablehq observablehq--block"><!--:5515fe73:--></div>
+<div class="observablehq observablehq--block"><!--:fe796886:--></div>
+<div class="observablehq observablehq--block"><!--:a9866eb8:--></div>
 <!-- ---------------- Input form declarations ---------------- -->
-<div class="observablehq observablehq--block"><!--:b281575d:--></div>
+<div class="observablehq observablehq--block"><!--:0b9a73f1:--></div>
+<div class="observablehq observablehq--block"><!--:9ede9b07:--></div>
+<div class="observablehq observablehq--block"><!--:4c01225c:--></div>
+<div class="observablehq observablehq--block"><!--:c364df46:--></div>
+<div class="observablehq observablehq--block"><!--:95795c9c:--></div>
+<div class="observablehq observablehq--block"><!--:538836e5:--></div>
+<div class="observablehq observablehq--block"><!--:002f30fa:--></div>
+<div class="observablehq observablehq--block"><!--:ac287d14:--></div>
+<div class="observablehq observablehq--block"><!--:41a6e8aa:--></div>
+<div class="observablehq observablehq--block"><!--:9aebd956:--></div>
+<div class="observablehq observablehq--block"><!--:5cf7509f:--></div>
+<div class="observablehq observablehq--block"><!--:7010ae28:--></div>
+<div class="observablehq observablehq--block"><!--:41689082:--></div>
+<div class="observablehq observablehq--block"><!--:42d422e4:--></div>
 <div class="observablehq observablehq--block"><!--:897df559:--></div>
 <div class="observablehq observablehq--block"><!--:3ae9d712:--></div>
 <!--------------- Budget Allocator ---------------->
-<div class="observablehq observablehq--block"><!--:e4372507:--></div>
-<div class="observablehq observablehq--block"><!--:1daa6c7f:--></div>
-<!-- get budget allocations -->
-<div class="observablehq observablehq--block"><!--:48f97485:--></div>
-<div class="observablehq observablehq--block"><!--:8a20bd1f:--></div>
-<div class="observablehq observablehq--block"><!--:def3b8eb:--></div>
-<!-- dealing with observable input reactivity -->
-<div class="observablehq observablehq--block"><!--:ab161dff:--></div>
+<div class="observablehq observablehq--block"><!--:6d64c30b:--></div>
+<div class="observablehq observablehq--block"><!--:db66add3:--></div>
+<div class="observablehq observablehq--block"><!--:a8fcea58:--></div>
+<div class="observablehq observablehq--block"><!--:f1a65a53:--></div>
+<div class="observablehq observablehq--block"><!--:eacc9ef7:--></div>
 <!-- morph animation logic -->
 <div class="observablehq observablehq--block"><!--:1f8950a6:--></div>
 <!-- ---------------- Functions ---------------- -->
 <!-- Intervention functions -->
-<div class="observablehq observablehq--block"><!--:817b00a5:--></div>
-<div class="observablehq observablehq--block"><!--:0540ea38:--></div>
-<div class="observablehq observablehq--block"><!--:81c82f44:--></div>
+<div class="observablehq observablehq--block"><!--:00ccce10:--></div>
+<div class="observablehq observablehq--block"><!--:d94755cf:--></div>
+<div class="observablehq observablehq--block"><!--:1c1829a2:--></div>
+<div class="observablehq observablehq--block"><!--:f0c4a326:--></div>
+<div class="observablehq observablehq--block"><!--:c1a23c8b:--></div>
 <!-- ---------------- Sortable Table ---------------- -->
 <div class="observablehq observablehq--block"><!--:15b870e4:--></div>
-<div class="observablehq observablehq--block"><!--:246d7836:--></div>
-<div class="observablehq observablehq--block"><!--:9d2f17ea:--></div>
+<div class="observablehq observablehq--block"><!--:77ea3ee0:--></div>
 <!-- ---------------- Glyph Maps ---------------- -->
 <div class="observablehq observablehq--block"><!--:a3995ffc:--></div>
 <div class="observablehq observablehq--block"><!--:44c9b4b4:--></div>
 <div class="observablehq observablehq--block"><!--:32c3d982:--></div>
-<div class="observablehq observablehq--block"><!--:246c80d3:--></div>
-<div class="observablehq observablehq--block"><!--:9d040433:--></div>
-<div class="observablehq observablehq--block"><!--:413407ea:--></div>
-<div class="observablehq observablehq--block"><!--:d5bdb4c8:--></div>
 <div class="observablehq observablehq--block"><!--:4f6b1aeb:--></div>
 <div class="observablehq observablehq--block"><!--:f88d8b52:--></div>
 <div class="observablehq observablehq--block"><!--:eb4cc5c5:--></div>
@@ -2270,11 +1986,6 @@ define({id: "406365da", body: () => {
 <div class="observablehq observablehq--block"><!--:bbe0b721:--></div>
 <div class="observablehq observablehq--block"><!--:0d35bbe4:--></div>
 <div class="observablehq observablehq--block"><!--:e38f4f2a:--></div>
-<div class="observablehq observablehq--block"><!--:74abbf70:--></div>
-<div class="observablehq observablehq--block"><!--:520e6d60:--></div>
-<div class="observablehq observablehq--block"><!--:989658e6:--></div>
-<div class="observablehq observablehq--block"><!--:310bd41b:--></div>
-<div class="observablehq observablehq--block"><!--:406365da:--></div>
-<!-- <div id="mapContainer"></div> -->
+<div class="observablehq observablehq--block"><!--:65137962:--></div>
 </main>
 </div>

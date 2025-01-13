@@ -12,9 +12,10 @@
 <link rel="modulepreload" href="../_observablehq/client.js">
 <link rel="modulepreload" href="../_observablehq/runtime.js">
 <link rel="modulepreload" href="../_observablehq/stdlib.js">
-<link rel="modulepreload" href="../_import/components/budgetAllocator.a51fe3dd.js">
-<link rel="modulepreload" href="../_import/components/miniDecarbModel.f54b29e1.js">
+<link rel="modulepreload" href="../_import/components/decarb-model/budget-allocator.5c9a0a07.js">
+<link rel="modulepreload" href="../_import/components/miniDecarbModel.8cfae499.js">
 <link rel="modulepreload" href="../_npm/d3@7.9.0/_esm.js">
+<link rel="modulepreload" href="../_npm/lodash@4.17.21/_esm.js">
 <link rel="modulepreload" href="../_observablehq/stdlib/duckdb.js">
 <link rel="modulepreload" href="../_npm/htl@0.3.1/_esm.js">
 <link rel="modulepreload" href="../_observablehq/stdlib/inputs.js">
@@ -65,11 +66,11 @@ import {define} from "../_observablehq/client.js";
 import {registerFile, FileAttachment} from "../_observablehq/stdlib.js";
 import {registerTable} from "../_observablehq/stdlib/duckdb.js";
 
-registerFile("./../data/oxford_decarbonisation_data.parquet", {"name":"./../data/oxford_decarbonisation_data.parquet","path":"../_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1735077472446});
+registerFile("./../data/oxford_decarbonisation_data.parquet", {"name":"./../data/oxford_decarbonisation_data.parquet","path":"../_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1736763011778});
 registerTable("oxford", FileAttachment("../data/oxford_decarbonisation_data.parquet"));
 
-define({id: "bda9fba7", outputs: ["BudgetAllocator","MiniDecarbModel"], body: async () => {
-const [{BudgetAllocator}, {MiniDecarbModel}] = await Promise.all([import("../_import/components/budgetAllocator.a51fe3dd.js"), import("../_import/components/miniDecarbModel.f54b29e1.js")]);
+define({id: "5ffecf52", outputs: ["BudgetAllocator","MiniDecarbModel"], body: async () => {
+const [{BudgetAllocator}, {MiniDecarbModel}] = await Promise.all([import("../_import/components/decarb-model/budget-allocator.5c9a0a07.js"), import("../_import/components/miniDecarbModel.8cfae499.js")]);
 
 return {BudgetAllocator,MiniDecarbModel};
 }});
@@ -198,7 +199,7 @@ const allocator = new BudgetAllocator(
 return {allocator};
 }});
 
-define({id: "758db784", inputs: ["allocationType","allocator","setSelected","display"], outputs: ["initialAllocations","svg","getAllocations"], body: (allocationType,allocator,setSelected,display) => {
+define({id: "92be0a30", inputs: ["allocationType","allocator","setSelected","display"], outputs: ["initialAllocations","svg"], body: (allocationType,allocator,setSelected,display) => {
 let initialAllocations;
 if (allocationType === "linear") {
   initialAllocations = allocator.allocateLinear();
@@ -213,7 +214,7 @@ if (allocationType === "linear") {
 // linear allocation
 // const linearAllocation = allocator.allocateLinear();
 // display(linearAllocation);
-const { svg, getAllocations } = allocator.visualise(
+const svg = allocator.visualise(
   initialAllocations,
   (changes) => {
     // console.log("data changed:", changes);
@@ -223,15 +224,19 @@ const { svg, getAllocations } = allocator.visualise(
   200
 );
 display(svg);
-return {initialAllocations,svg,getAllocations};
+return {initialAllocations,svg};
 }});
 
-define({id: "79b75dc9", inputs: ["allocationType","selected","getAllocations","initialAllocations"], outputs: ["allocations"], body: (allocationType,selected,getAllocations,initialAllocations) => {
+define({id: "c5de2839", inputs: ["allocationType","_","allocator"], outputs: ["setAllocations"], body: (allocationType,_,allocator) => {
 allocationType;
-const allocations = selected ? getAllocations(selected) : initialAllocations;
-// display(selected);
-// display(allocations);
-return {allocations};
+const setAllocations = _.debounce(() => {
+  const allocations = allocator.getAllocations();
+  console.log("@allocations", allocations);
+  // Use allocations as needed
+}, 3000); // 1 second delay
+
+setAllocations();
+return {setAllocations};
 }});
 
 define({id: "2872498c", inputs: ["getIntervention","getResults"], outputs: ["interventions","results"], body: (getIntervention,getResults) => {
@@ -922,10 +927,24 @@ renderSelectableList(items, "selectableList", "output", handleSelected);
 return {renderSelectableList,handleSelected};
 }});
 
+define({id: "8cc3a3f9", body: () => {
+// const modelConfig = {
+//   optimizationStrategy: 'carbon-first',
+//   technologies: [
+//     {name: 'PV', config: {...}},
+//     {name: 'ASHP', config: {...}},
+//     // ... other technologies
+//   ],
+//   // ... other config options
+// };
+
+// const model = new MiniDecarbModel(modelConfig, buildings);
+}});
+
 </script>
 <div id="observablehq-center">
 <main id="observablehq-main" class="observablehq">
-<div class="observablehq observablehq--block"><!--:bda9fba7:--></div>
+<div class="observablehq observablehq--block"><!--:5ffecf52:--></div>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 <link rel="stylesheet" href="../_file/styles/custom.6c594bd1.css">
 <div class="observablehq observablehq--block"><!--:e055fc36:--></div>
@@ -935,8 +954,8 @@ return {renderSelectableList,handleSelected};
 <h2 id="budget-allocator" tabindex="-1"><a class="observablehq-header-anchor" href="#budget-allocator">Budget Allocator</a></h2>
 <div class="observablehq observablehq--block"><!--:5c004f34:--></div>
 <div class="observablehq observablehq--block"><!--:cc54eba5:--></div>
-<div class="observablehq observablehq--block"><!--:758db784:--></div>
-<div class="observablehq observablehq--block"><!--:79b75dc9:--></div>
+<div class="observablehq observablehq--block"><!--:92be0a30:--></div>
+<div class="observablehq observablehq--block"><!--:c5de2839:--></div>
 <h2 id="test-new-model" tabindex="-1"><a class="observablehq-header-anchor" href="#test-new-model">Test New Model</a></h2>
 <div class="observablehq observablehq--block"><!--:2872498c:--></div>
 <div class="observablehq observablehq--block"><!--:8c301406:--></div>
@@ -992,5 +1011,6 @@ return {renderSelectableList,handleSelected};
   <ul id="selectableList"></ul>
   <div id="output">Selected ID: None</div>
 </div>
+<div class="observablehq observablehq--block"><!--:8cc3a3f9:--></div>
 </main>
 </div>

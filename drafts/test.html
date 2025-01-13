@@ -5,21 +5,16 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Source+Serif+Pro:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&amp;display=swap" crossorigin>
 <link rel="preload" as="style" href="../_observablehq/theme-air,near-midnight.css">
-<link rel="preload" as="style" href="../_observablehq/stdlib/inputs.css">
 <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css2?family=Source+Serif+Pro:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&amp;display=swap" crossorigin>
 <link rel="stylesheet" type="text/css" href="../_observablehq/theme-air,near-midnight.css">
-<link rel="stylesheet" type="text/css" href="../_observablehq/stdlib/inputs.css">
 <link rel="modulepreload" href="../_observablehq/client.js">
 <link rel="modulepreload" href="../_observablehq/runtime.js">
 <link rel="modulepreload" href="../_observablehq/stdlib.js">
-<link rel="modulepreload" href="../_import/components/glyph-designs/timeGlyph.30b74103.js">
+<link rel="modulepreload" href="../_import/components/glyph-designs/timeGlyph.a1969fec.js">
 <link rel="modulepreload" href="../_import/components/decarbonisationModel.ce39898f.js">
 <link rel="modulepreload" href="../_npm/d3@7.9.0/_esm.js">
 <link rel="modulepreload" href="../_observablehq/stdlib/duckdb.js">
-<link rel="modulepreload" href="../_npm/htl@0.3.1/_esm.js">
-<link rel="modulepreload" href="../_observablehq/stdlib/inputs.js">
 <link rel="modulepreload" href="../_npm/@duckdb/duckdb-wasm@1.28.0/_esm.js">
-<link rel="modulepreload" href="../_npm/isoformat@0.2.1/_esm.js">
 <link rel="modulepreload" href="../_npm/d3-array@3.2.4/_esm.js">
 <link rel="modulepreload" href="../_npm/d3-axis@3.0.0/_esm.js">
 <link rel="modulepreload" href="../_npm/d3-brush@3.0.0/_esm.js">
@@ -62,32 +57,13 @@ import {define} from "../_observablehq/client.js";
 import {registerFile, FileAttachment} from "../_observablehq/stdlib.js";
 import {registerTable} from "../_observablehq/stdlib/duckdb.js";
 
-registerFile("./../data/oxford_decarbonisation_data.parquet", {"name":"./../data/oxford_decarbonisation_data.parquet","path":"../_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1735077472446});
+registerFile("./../data/oxford_decarbonisation_data.parquet", {"name":"./../data/oxford_decarbonisation_data.parquet","path":"../_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1736763011778});
 registerTable("oxford", FileAttachment("../data/oxford_decarbonisation_data.parquet"));
 
 define({id: "7cc7faba", outputs: ["TimeGlyph","GlyphCollection","DecarbonisationModel"], body: async () => {
-const [{TimeGlyph, GlyphCollection}, {DecarbonisationModel}] = await Promise.all([import("../_import/components/glyph-designs/timeGlyph.30b74103.js"), import("../_import/components/decarbonisationModel.ce39898f.js")]);
+const [{TimeGlyph, GlyphCollection}, {DecarbonisationModel}] = await Promise.all([import("../_import/components/glyph-designs/timeGlyph.a1969fec.js"), import("../_import/components/decarbonisationModel.ce39898f.js")]);
 // import { Model } from "./components/model.js";
 return {TimeGlyph,GlyphCollection,DecarbonisationModel};
-}});
-
-define({id: "606566ca", body: () => {
-// const n = html`<input
-//   style="width: 800px;"
-//   type="range"
-//   step="0.1"
-//   min="0"
-//   max="1"
-// />`;
-}});
-
-define({id: "5132a93d", body: () => {
-// const nn = Generators.input(n);
-// display(n);
-}});
-
-define({id: "fad6bd7b", body: () => {
-// display(nn);
 }});
 
 define({id: "d22197ed", inputs: ["sql"], outputs: ["oxford_data"], body: async (sql) => {
@@ -146,12 +122,12 @@ const newBuildings = [...oxford_data];
 return {newBuildings};
 }});
 
-define({id: "7a1c2213", inputs: ["overall_budget"], outputs: ["modelSpec"], body: (overall_budget) => {
+define({id: "79acebbe", outputs: ["modelSpec"], body: () => {
 // model specifications
 const modelSpec = {
   initial_year: 2024,
-  target_years: 5,
-  overall_budget: overall_budget || 50_000_000,
+  target_years: 2,
+  overall_budget:  50_000,
   uncapped_mode: false,
   technologies: [
     {
@@ -165,7 +141,7 @@ const modelSpec = {
         suitabilityKey: "pv_suitability",
         labourKey: "pv_labour",
         materialKey: "pv_material",
-        savingsKey: "pv_generation", // assuming 1kWh = 1kg CO2
+        savingsKey: "pv_generation",
       },
     },
     {
@@ -179,7 +155,7 @@ const modelSpec = {
         suitabilityKey: "ashp_suitability",
         labourKey: "ashp_labour",
         materialKey: "ashp_material",
-        savingsKey: "heat_demand", // assuming full heat demand offset
+        savingsKey: "heat_demand",
       },
     },
   ],
@@ -217,7 +193,7 @@ display(model.getFinalStats());
 return {model};
 }});
 
-define({id: "97f07bba", inputs: ["DecarbonisationModel","modelSpec","newBuildings"], outputs: ["uncappedModel"], body: (DecarbonisationModel,modelSpec,newBuildings) => {
+define({id: "300bf53e", inputs: ["DecarbonisationModel","modelSpec","newBuildings","display"], outputs: ["uncappedModel"], body: (DecarbonisationModel,modelSpec,newBuildings,display) => {
 // testing uncapped
 const uncappedModel = new DecarbonisationModel(
   {
@@ -228,7 +204,7 @@ const uncappedModel = new DecarbonisationModel(
   newBuildings
 );
 
-// uncappedModel.runModel();
+uncappedModel.runModel();
 
 // console.log(
 //   "Yearly Interventions in 2024:",
@@ -241,458 +217,20 @@ const uncappedModel = new DecarbonisationModel(
 // // Get final stats
 // console.log(uncappedModel.getFinalStats());
 
-// display(uncappedModel.getFinalStats());
+display(uncappedModel.getFinalStats());
 return {uncappedModel};
-}});
-
-define({id: "19988ddf", inputs: ["Mutable"], outputs: ["useState","config","setConfig","slider","setSlider"], body: (Mutable) => {
-function useState(value) {
-  const state = Mutable(value);
-  const setState = (value) => (state.value = value);
-  return [state, setState];
-}
-const [config, setConfig] = useState({});
-const [slider, setSlider] = useState(0);
-return {useState,config,setConfig,slider,setSlider};
-}});
-
-define({id: "a6fee4b8", inputs: ["Inputs","Event","display"], outputs: ["overallBudgetInput"], body: (Inputs,Event,display) => {
-// Overall Budget
-const overallBudgetInput = Inputs.range([0, 100_000_000], {
-  label: "Overall Buget",
-  step: 500_000,
-  value: 50_000_000,
-});
-overallBudgetInput.number.style["max-width"] = "60px";
-Object.assign(overallBudgetInput, {
-  oninput: (event) => event.isTrusted && event.stopImmediatePropagation(),
-  onchange: (event) => event.currentTarget.dispatchEvent(new Event("input")),
-});
-display(overallBudgetInput);
-return {overallBudgetInput};
-}});
-
-define({id: "65764c13", inputs: ["Generators","overallBudgetInput"], outputs: ["overall_budget"], body: (Generators,overallBudgetInput) => {
-const overall_budget = Generators.input(overallBudgetInput);
-return {overall_budget};
-}});
-
-define({id: "92440add", mode: "inline", inputs: ["overall_budget","display"], body: async (overall_budget,display) => {
-display(await(
-overall_budget
-))
-}});
-
-define({id: "b9a4b229", inputs: ["html","Generators"], outputs: ["techNameInput","tech_name","techAllocationInput","tech_allocation","techSuitabilityKeyInput","tech_suitabilityKey","techLabourKeyInput","tech_labourKey","techMaterialKeyInput","tech_materialKey","techSavingsKeyInput","tech_savingsKey"], body: (html,Generators) => {
-// Technology Name
-const techNameInput = html`<input
-  type="text"
-  placeholder="Technology Name"
-  style="max-width: 300px;"
-/>`;
-const tech_name = Generators.input(techNameInput);
-
-// Allocation
-const techAllocationInput = html`<input
-  type="range"
-  min="0"
-  max="1"
-  step="0.1"
-  placeholder="Allocation"
-  style="max-width: 300px;"
-/>`;
-const tech_allocation = Generators.input(techAllocationInput);
-
-// Suitability Key
-const techSuitabilityKeyInput = html`<input
-  type="text"
-  placeholder="Suitability Key"
-  style="max-width: 300px;"
-/>`;
-const tech_suitabilityKey = Generators.input(techSuitabilityKeyInput);
-
-// Labour Key
-const techLabourKeyInput = html`<input
-  type="text"
-  placeholder="Labour Key"
-  style="max-width: 300px;"
-/>`;
-const tech_labourKey = Generators.input(techLabourKeyInput);
-
-// Material Key
-const techMaterialKeyInput = html`<input
-  type="text"
-  placeholder="Material Key"
-  style="max-width: 300px;"
-/>`;
-const tech_materialKey = Generators.input(techMaterialKeyInput);
-
-// Savings Key
-const techSavingsKeyInput = html`<input
-  type="text"
-  placeholder="Savings Key"
-  style="max-width: 300px;"
-/>`;
-const tech_savingsKey = Generators.input(techSavingsKeyInput);
-return {techNameInput,tech_name,techAllocationInput,tech_allocation,techSuitabilityKeyInput,tech_suitabilityKey,techLabourKeyInput,tech_labourKey,techMaterialKeyInput,tech_materialKey,techSavingsKeyInput,tech_savingsKey};
-}});
-
-define({id: "cbf84dd1", inputs: ["html","tech_name","tech_allocation","tech_suitabilityKey","tech_labourKey","tech_materialKey","tech_savingsKey","display"], outputs: ["technologies","addTechnologyButton"], body: (html,tech_name,tech_allocation,tech_suitabilityKey,tech_labourKey,tech_materialKey,tech_savingsKey,display) => {
-let technologies = [];
-const addTechnologyButton = html`<button>Add Technology</button>`;
-addTechnologyButton.onclick = () => {
-  const newTechnology = {
-    name: tech_name,
-    allocation: tech_allocation,
-    config: {
-      suitabilityKey: tech_suitabilityKey,
-      labourKey: tech_labourKey,
-      materialKey: tech_materialKey,
-      savingsKey: tech_savingsKey,
-    },
-  };
-
-  technologies.push(newTechnology);
-
-  // Log to check the technologies array is updated
-  console.log("Technologies:", technologies);
-};
-display(addTechnologyButton);
-return {technologies,addTechnologyButton};
-}});
-
-define({id: "437e2ff2", mode: "inline", inputs: ["techsInput","display"], body: async (techsInput,display) => {
-display(await(
-techsInput
-))
-}});
-
-define({id: "a4ca7b63", mode: "inline", inputs: ["totalBudgetInput","display"], body: async (totalBudgetInput,display) => {
-display(await(
-totalBudgetInput
-))
-}});
-
-define({id: "c73bfedc", mode: "inline", inputs: ["startYearInput","display"], body: async (startYearInput,display) => {
-display(await(
-startYearInput
-))
-}});
-
-define({id: "580b039d", mode: "inline", inputs: ["projectLengthInput","display"], body: async (projectLengthInput,display) => {
-display(await(
-projectLengthInput
-))
-}});
-
-define({id: "92cf87a9", mode: "inline", inputs: ["allocationTypeInput","display"], body: async (allocationTypeInput,display) => {
-display(await(
-allocationTypeInput
-))
-}});
-
-define({id: "acdb1373", mode: "inline", inputs: ["svg","display"], body: async (svg,display) => {
-display(await(
-svg
-))
-}});
-
-define({id: "30f103b3", mode: "inline", inputs: ["html","addNewIntervention","display"], body: async (html,addNewIntervention,display) => {
-display(await(
-html`
-          <button class="create-btn" type="button" onclick=${addNewIntervention}>
-            Add New Intervention
-          </button>
-        `
-))
-}});
-
-define({id: "bf05c5ec", outputs: ["btn","modal"], body: () => {
-let btn = document.querySelector("[data-show-modal]");
-let modal = document.querySelector("dialog");
-
-// Show the modal
-btn.addEventListener("click", function () {
-  modal.showModal();
-});
-return {btn,modal};
-}});
-
-define({id: "f70388a6", inputs: ["html","Event"], outputs: ["morphFactorInput"], body: (html,Event) => {
-// Create the slider input
-const morphFactorInput = html`<input
-  style="width: 100%; max-width: 450px;"
-  type="range"
-  value="0"
-  step="0.05"
-  min="0"
-  max="1"
-/>`;
-Object.assign(morphFactorInput, {
-  oninput: (event) => event.isTrusted && event.stopImmediatePropagation(),
-  onchange: (event) => event.currentTarget.dispatchEvent(new Event("input")),
-});
-return {morphFactorInput};
-}});
-
-define({id: "5bc31a2d", inputs: ["Generators","morphFactorInput"], outputs: ["morph_factor"], body: (Generators,morphFactorInput) => {
-const morph_factor = Generators.input(morphFactorInput);
-return {morph_factor};
-}});
-
-define({id: "63ede662", inputs: ["html"], outputs: ["playButton"], body: (html) => {
-// Create the play button
-const playButton = html`<button style="margin-top: 10px;">Play</button>`;
-return {playButton};
-}});
-
-define({id: "a712ff69", inputs: ["display","html","playButton","morphFactorInput"], body: (display,html,playButton,morphFactorInput) => {
-// Append the slider and button to the view
-display(html`${playButton} ${morphFactorInput}`);
-}});
-
-define({id: "ec38bc6f", inputs: ["set","morphFactorInput","playButton"], outputs: ["playing","direction","animationFrame","animate"], body: (set,morphFactorInput,playButton) => {
-// Animation logic
-let playing = false; // Track play/pause state
-let direction = 1; // Controls the animation direction (0 to 1 or 1 to 0)
-let animationFrame; // Stores the requestAnimationFrame ID
-
-
-function animate(currentValue) {
-  // Increment or decrement the value
-  let newValue = currentValue + 0.01 * direction;
-
-  // Reverse direction if boundaries are reached
-  if (newValue >= 1 || newValue <= 0) {
-    direction *= -1;
-    newValue = Math.max(0, Math.min(1, newValue)); // Clamp value between 0 and 1
-  }
-
-  // Update the slider and dispatch the "input" event for reactivity
-  set(morphFactorInput, newValue);
-
-  if (playing) {
-    animationFrame = requestAnimationFrame(() => animate(newValue)); // Pass the updated value
-  }
-}
-
-// Button click event listener
-playButton.addEventListener("click", () => {
-  playing = !playing; // Toggle play/pause state
-  playButton.textContent = playing ? "Pause" : "Play";
-
-  if (playing) {
-    // Start the animation with the current slider value
-    const currentValue = parseFloat(morphFactorInput.value);
-    requestAnimationFrame(() => animate(currentValue));
-  } else {
-    cancelAnimationFrame(animationFrame); // Stop the animation
-  }
-});
-return {playing,direction,animationFrame,animate};
-}});
-
-define({id: "bdde2a3c", mode: "inline", inputs: ["morph_factor","display"], body: async (morph_factor,display) => {
-display(await(
-morph_factor
-))
-}});
-
-define({id: "c5974221", inputs: ["Event"], outputs: ["set"], body: (Event) => {
-function set(input, value) {
-  input.value = value;
-  input.dispatchEvent(new Event("input", { bubbles: true }));
-  // console.log("input value:", input.value);
-}
-return {set};
-}});
-
-define({id: "f1ee3146", inputs: ["display","morph_factor"], body: (display,morph_factor) => {
-// set(morphFactorInput, 0.5);
-display(morph_factor);
-}});
-
-define({id: "89ad0798", inputs: ["display","Inputs","set","morphFactorInput"], body: (display,Inputs,set,morphFactorInput) => {
-display(
-  Inputs.button([
-    ["Set to 0", () => set(morphFactorInput, 0)],
-    ["Set to 1", () => set(morphFactorInput, 1)],
-  ])
-);
 }});
 
 </script>
 <div id="observablehq-center">
 <main id="observablehq-main" class="observablehq">
 <div class="observablehq observablehq--block"><!--:7cc7faba:--></div>
-<!-- ## Test UI -->
-<!-- <label for="decarbonisation-slider">Decarbonisation Progress:</label> -->
-<div class="observablehq observablehq--block"><!--:606566ca:--></div>
-<div class="observablehq observablehq--block"><!--:5132a93d:--></div>
-<div class="observablehq observablehq--block"><!--:fad6bd7b:--></div>
 <h2 id="test-new-model" tabindex="-1"><a class="observablehq-header-anchor" href="#test-new-model">Test New Model</a></h2>
 <div class="observablehq observablehq--block"><!--:d22197ed:--></div>
 <div class="observablehq observablehq--block"><!--:e990e608:--></div>
-<div class="observablehq observablehq--block"><!--:7a1c2213:--></div>
+<div class="observablehq observablehq--block"><!--:79acebbe:--></div>
 <div class="observablehq observablehq--block"><!--:3ab11a0a:--></div>
 <h2 id="uncapped-model" tabindex="-1"><a class="observablehq-header-anchor" href="#uncapped-model">Uncapped Model</a></h2>
-<div class="observablehq observablehq--block"><!--:97f07bba:--></div>
-<h2 id="test-ui" tabindex="-1"><a class="observablehq-header-anchor" href="#test-ui">Test UI</a></h2>
-<div class="observablehq observablehq--block"><!--:19988ddf:--></div>
-<div class="observablehq observablehq--block"><!--:a6fee4b8:--></div>
-<div class="observablehq observablehq--block"><!--:65764c13:--></div>
-<p><observablehq-loading></observablehq-loading><!--:92440add:--></p>
-<div class="observablehq observablehq--block"><!--:b9a4b229:--></div>
-<!--
-```js
-// Initial Year
-const initialYearInput = html`<input type="number" min="2023" max="2030" value="2024" style="max-width: 300px;" />`;
-const initial_year = Generators.input(initialYearInput);
-
-// Target Years
-const targetYearsInput = html`<input type="range" min="1" max="20" step="1" value="5" style="max-width: 300px;" />`;
-const target_years = Generators.input(targetYearsInput);
-
-// Overall Budget
-const overallBudgetInput = html`<input type="range" min="1000000" max="100000000" step="500000" value="50000000" style="max-width: 300px;" />`;
-const overall_budget = Generators.input(overallBudgetInput);
-
-// Uncapped Mode Checkbox
-const uncappedModeInput = html`<input type="checkbox" />`;
-const uncapped_mode = Generators.input(uncappedModeInput);
-```
-
-```js
-// PV Technology Allocation
-const pvAllocationInput = html`<input type="range" min="0" max="1" step="0.1" value="0.4" style="max-width: 300px;" />`;
-const pv_allocation = Generators.input(pvAllocationInput);
-
-// PV Suitability Key
-const pvSuitabilityKeyInput = html`<input type="text" value="pv_suitability" style="max-width: 300px;" />`;
-const pv_suitabilityKey = Generators.input(pvSuitabilityKeyInput);
-
-// ASHP Technology Allocation
-const ashpAllocationInput = html`<input type="range" min="0" max="1" step="0.1" value="0.6" style="max-width: 300px;" />`;
-const ashp_allocation = Generators.input(ashpAllocationInput);
-
-// ASHP Suitability Key
-const ashpSuitabilityKeyInput = html`<input type="text" value="ashp_suitability" style="max-width: 300px;" />`;
-const ashp_suitabilityKey = Generators.input(ashpSuitabilityKeyInput);
-
-```
-
-
-```js
-// Priority Rule Attribute Selector
-const priorityAttrInput = html`<select style="max-width: 300px;">
-  <option value="deprivation_index">Deprivation Index</option>
-  <option value="fuel_poverty">Fuel Poverty</option>
-</select>`;
-const priority_attribute = Generators.input(priorityAttrInput);
-
-// Priority Rule Order Selector
-const priorityOrderInput = html`<select style="max-width: 300px;">
-  <option value="asc">Ascending</option>
-  <option value="desc">Descending</option>
-</select>`;
-const priority_order = Generators.input(priorityOrderInput);
-
-```
-
-
-```js
-function* modelSpecv2() {
-  while (true) {
-    yield {
-      initial_year,
-      target_years,
-      overall_budget,
-      uncapped_mode,
-      technologies: [
-        {
-          name: "PV",
-          allocation: pv_allocation,
-          config: {
-            suitabilityKey: pv_suitabilityKey,
-          },
-        },
-        {
-          name: "ASHP",
-          allocation: ashp_allocation,
-          config: {
-            suitabilityKey: ashp_suitabilityKey,
-            // add more later
-          },
-        },
-      ],
-      priorityRules: [
-        { attribute: priority_attribute, order: priority_order },
-      ]
-    };
-  }
-}
-
-``` -->
-<!-- <div>
-  <h3>Model Specification</h3>
-  <label>Initial Year: ${initialYearInput}</label><br>
-  <label>Target Years: ${targetYearsInput} ${target_years}</label><br>
-  <label>Overall Budget: ${overallBudgetInput} ${overall_budget}</label><br>
-  <label>Uncapped Mode: ${uncappedModeInput}</label><br>
-
-  <h4>Technologies</h4>
-  <h5>PV</h5>
-  <label>Allocation: ${pvAllocationInput}</label><br>
-  <label>Suitability Key: ${pvSuitabilityKeyInput}</label><br>
-
-  <h5>ASHP</h5>
-  <label>Allocation: ${ashpAllocationInput}</label><br>
-  <label>Suitability Key: ${ashpSuitabilityKeyInput}</label><br>
-
-  <h4>Priority Rules</h4>
-  <label>Attribute: ${priorityAttrInput}</label><br>
-  <label>Order: ${priorityOrderInput}</label><br>
-</div> -->
-<div class="observablehq observablehq--block"><!--:cbf84dd1:--></div>
-<!-------- MODAL -------->
-<dialog>
-    <div id="project-properties" class="card">
-      <div class="form-group">
-        <observablehq-loading></observablehq-loading><!--:437e2ff2:-->
-      </div>
-      <div class="form-group">
-        <observablehq-loading></observablehq-loading><!--:a4ca7b63:-->
-      </div>
-      <div class="form-group">
-        <div style="display:flex; flex-direction: row; align-items: center; min-height: 25.5px; gap: 60px;">
-          <span><b>Start Year</b></span> <observablehq-loading></observablehq-loading><!--:c73bfedc:-->
-        </div>
-      </div>
-      <div class="form-group">
-        <label for="total-budget">Project length (years):</label>
-        <observablehq-loading></observablehq-loading><!--:580b039d:-->
-      </div>
-      <div class="form-group">
-        <label for="total-budget">Budget Allocation Type:</label>
-        <observablehq-loading></observablehq-loading><!--:92cf87a9:-->
-      </div>
-      <observablehq-loading></observablehq-loading><!--:acdb1373:-->
-      <div class="form-group">
-        <observablehq-loading></observablehq-loading><!--:30f103b3:-->
-      </div>
-    </div>
-</dialog>
-<p><button data-show-modal="">Show Modal</button></p>
-<div class="observablehq observablehq--block"><!--:bf05c5ec:--></div>
-<h2 id="play-button" tabindex="-1"><a class="observablehq-header-anchor" href="#play-button">Play button</a></h2>
-<div class="observablehq observablehq--block"><!--:f70388a6:--></div>
-<div class="observablehq observablehq--block"><!--:5bc31a2d:--></div>
-<div class="observablehq observablehq--block"><!--:63ede662:--></div>
-<div class="observablehq observablehq--block"><!--:a712ff69:--></div>
-<div class="observablehq observablehq--block"><!--:ec38bc6f:--></div>
-<h2><observablehq-loading></observablehq-loading><!--:bdde2a3c:--></h2>
-<div class="observablehq observablehq--block"><!--:c5974221:--></div>
-<div class="observablehq observablehq--block"><!--:f1ee3146:--></div>
-<div class="observablehq observablehq--block"><!--:89ad0798:--></div>
+<div class="observablehq observablehq--block"><!--:300bf53e:--></div>
 </main>
 </div>

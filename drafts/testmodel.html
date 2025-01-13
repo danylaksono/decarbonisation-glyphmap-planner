@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Test New Model | Decarbonisation Glyphmap Planner</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Source+Serif+Pro:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&amp;display=swap" crossorigin>
+<link rel="preload" as="style" href="../_observablehq/theme-air,near-midnight.css">
+<link rel="preload" as="style" href="../_npm/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css2?family=Source+Serif+Pro:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&amp;display=swap" crossorigin>
+<link rel="stylesheet" type="text/css" href="../_observablehq/theme-air,near-midnight.css">
+<link rel="stylesheet" type="text/css" href="../_npm/leaflet@1.9.4/dist/leaflet.css">
+<link rel="modulepreload" href="../_observablehq/client.js">
+<link rel="modulepreload" href="../_observablehq/runtime.js">
+<link rel="modulepreload" href="../_observablehq/stdlib.js">
+<link rel="modulepreload" href="../_npm/leaflet@1.9.4/_esm.js">
+<link rel="modulepreload" href="../_import/components/glyph-designs/timeGlyph.a1969fec.js">
+<link rel="modulepreload" href="../_import/components/decarb-model/mini-decarbonisation.46bd522e.js">
+<link rel="modulepreload" href="../_import/components/leaflet/leaflet-map.498e936b.js">
+<link rel="modulepreload" href="../_npm/d3@7.9.0/_esm.js">
+<link rel="modulepreload" href="../_import/components/decarb-model/priority-queue.aea4e806.js">
+<link rel="modulepreload" href="../_import/components/leaflet/basemaps.e55f05f5.js">
+<link rel="modulepreload" href="../_npm/supercluster@8.0.1/_esm.js">
+<link rel="modulepreload" href="../_observablehq/stdlib/duckdb.js">
+<link rel="modulepreload" href="../_npm/htl@0.3.1/_esm.js">
+<link rel="modulepreload" href="../_npm/@duckdb/duckdb-wasm@1.28.0/_esm.js">
+<link rel="modulepreload" href="../_npm/d3-array@3.2.4/_esm.js">
+<link rel="modulepreload" href="../_npm/d3-axis@3.0.0/_esm.js">
+<link rel="modulepreload" href="../_npm/d3-brush@3.0.0/_esm.js">
+<link rel="modulepreload" href="../_npm/d3-chord@3.0.1/_esm.js">
+<link rel="modulepreload" href="../_npm/d3-color@3.1.0/_esm.js">
+<link rel="modulepreload" href="../_npm/d3-contour@4.0.2/_esm.js">
+<link rel="modulepreload" href="../_npm/d3-delaunay@6.0.4/_esm.js">
+<link rel="modulepreload" href="../_npm/d3-dispatch@3.0.1/_esm.js">
+<link rel="modulepreload" href="../_npm/d3-drag@3.0.0/_esm.js">
+<link rel="modulepreload" href="../_npm/d3-dsv@3.0.1/_esm.js">
+<link rel="modulepreload" href="../_npm/d3-ease@3.0.1/_esm.js">
+<link rel="modulepreload" href="../_npm/d3-fetch@3.0.1/_esm.js">
+<link rel="modulepreload" href="../_npm/d3-force@3.0.0/_esm.js">
+<link rel="modulepreload" href="../_npm/d3-format@3.1.0/_esm.js">
+<link rel="modulepreload" href="../_npm/d3-geo@3.1.1/_esm.js">
+<link rel="modulepreload" href="../_npm/d3-hierarchy@3.1.2/_esm.js">
+<link rel="modulepreload" href="../_npm/d3-interpolate@3.0.1/_esm.js">
+<link rel="modulepreload" href="../_npm/d3-path@3.1.0/_esm.js">
+<link rel="modulepreload" href="../_npm/d3-polygon@3.0.1/_esm.js">
+<link rel="modulepreload" href="../_npm/d3-quadtree@3.0.1/_esm.js">
+<link rel="modulepreload" href="../_npm/d3-random@3.0.1/_esm.js">
+<link rel="modulepreload" href="../_npm/d3-scale@4.0.2/_esm.js">
+<link rel="modulepreload" href="../_npm/d3-scale-chromatic@3.1.0/_esm.js">
+<link rel="modulepreload" href="../_npm/d3-selection@3.0.0/_esm.js">
+<link rel="modulepreload" href="../_npm/d3-shape@3.2.0/_esm.js">
+<link rel="modulepreload" href="../_npm/d3-time@3.1.0/_esm.js">
+<link rel="modulepreload" href="../_npm/d3-time-format@4.1.0/_esm.js">
+<link rel="modulepreload" href="../_npm/d3-timer@3.0.1/_esm.js">
+<link rel="modulepreload" href="../_npm/d3-transition@3.0.1/_esm.js">
+<link rel="modulepreload" href="../_npm/d3-zoom@3.0.0/_esm.js">
+<link rel="modulepreload" href="../_npm/kdbush@4.0.2/_esm.js">
+<link rel="modulepreload" href="../_npm/apache-arrow@18.1.0/_esm.js">
+<link rel="modulepreload" href="../_npm/internmap@2.0.3/_esm.js">
+<link rel="modulepreload" href="../_npm/delaunator@5.0.1/_esm.js">
+<link rel="modulepreload" href="../_npm/tslib@2.8.1/_esm.js">
+<link rel="modulepreload" href="../_npm/flatbuffers@24.12.23/_esm.js">
+<link rel="modulepreload" href="../_npm/robust-predicates@3.0.2/_esm.js">
+<script type="module">
+
+import {define} from "../_observablehq/client.js";
+import {registerFile, FileAttachment} from "../_observablehq/stdlib.js";
+import {registerTable} from "../_observablehq/stdlib/duckdb.js";
+
+registerFile("./../data/oxford_decarbonisation_data.parquet", {"name":"./../data/oxford_decarbonisation_data.parquet","path":"../_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1736763011778});
+registerTable("oxford", FileAttachment("../data/oxford_decarbonisation_data.parquet"));
+
+define({id: "800c160e", outputs: ["L","TimeGlyph","GlyphCollection","InterventionManager","MiniDecarbModel","LeafletMap"], body: async () => {
+const [L, {TimeGlyph, GlyphCollection}, {InterventionManager, MiniDecarbModel}, {LeafletMap}] = await Promise.all([import("../_npm/leaflet@1.9.4/_esm.js"), import("../_import/components/glyph-designs/timeGlyph.a1969fec.js"), import("../_import/components/decarb-model/mini-decarbonisation.46bd522e.js"), import("../_import/components/leaflet/leaflet-map.498e936b.js")]);
+
+return {L,TimeGlyph,GlyphCollection,InterventionManager,MiniDecarbModel,LeafletMap};
+}});
+
+define({id: "6e25fed2", outputs: ["context2d"], body: () => {
+function context2d(width, height, dpi = devicePixelRatio) {
+  const canvas = document.createElement("canvas");
+  canvas.width = width * dpi;
+  canvas.height = height * dpi;
+  canvas.style = `width: ${width}px;`;
+  const context = canvas.getContext("2d");
+  context.scale(dpi, dpi);
+  return context;
+}
+return {context2d};
+}});
+
+define({id: "d7a9f714", inputs: ["sql"], outputs: ["oxford_data"], body: async (sql) => {
+const oxford_data = await sql`  SELECT DISTINCT
+    "UPRN" AS id,
+    "LSOA code" AS lsoa,
+    "MSOA code" AS msoa,
+    "xcoord" AS x,
+    "ycoord" AS y,
+    "Air Source Heat Pump Potential_Building Size (m^2)" AS building_area,
+    "Air Source Heat Pump Potential_Garden Area (m^2)" AS garden_area,
+    "Air Source Heat Pump Potential_Overall Suitability Rating" AS ashp_suitability,
+    "Air Source Heat Pump Potential_Recommended Heat Pump Size [kW]" AS ashp_size,
+    "Low Carbon Technology Costs_Air Source Heat Pump - Labour" AS ashp_labour,
+    "Low Carbon Technology Costs_Air Source Heat Pump - Material" AS ashp_material,
+    "Low Carbon Technology Costs_Air Source Heat Pump - Total" AS ashp_total,
+    "Domestic Ground Source Heat Pump Potential_Overall Suitability Rating" AS gshp_suitability,
+    "Domestic Ground Source Heat Pump Potential_Recommended Heat Pump Size [kW]" AS gshp_size,
+    "Low Carbon Technology Costs_Ground Source Heat Pump - Labour" AS gshp_labour,
+    "Low Carbon Technology Costs_Ground Source Heat Pump - Materials" AS gshp_material,
+    "Low Carbon Technology Costs_Ground Source Heat Pump - Total" AS gshp_total,
+    "Domestic Heat Demand_Annual Heat Demand (kWh)" AS heat_demand,
+    "Domestic Insulation Potential_EPC Rating" AS insulation_rating,
+    "Domestic Insulation Potential_Insulation - Cavity Wall" AS insulation_cwall,
+    "Low Carbon Technology Costs_Insulation - Cavity Wall - Labour" AS insulation_cwall_labour,
+    "Low Carbon Technology Costs_Insulation - Cavity Wall  - Materials" AS insulation_cwall_materials,
+    "Low Carbon Technology Costs_Insulation - Cavity Wall - Total" AS insulation_cwall_total,
+    "Domestic Insulation Potential_Insulation - External Wall" AS insulation_ewall,
+    "Low Carbon Technology Costs_Insulation - External Wall - Labour" AS insulation_ewall_labour,
+    "Low Carbon Technology Costs_Insulation - External Wall - Material" AS insulation_ewall_materials,
+    "Low Carbon Technology Costs_Insulation - External Wall - Total" AS insulation_ewall_total,
+    "Domestic Insulation Potential_Insulation - Roof" AS insulation_roof,
+    "Low Carbon Technology Costs_Insulation - Loft - Labour" AS insulation_roof_labour,
+    "Low Carbon Technology Costs_Insulation - Loft - Material" AS insulation_roof_materials,
+    "Low Carbon Technology Costs_Insulation - Loft - Total" AS insulation_roof_total,
+    "Domestic Insulation Potential_Insulation - Under Floor" AS insulation_floor,
+    "Low Carbon Technology Costs_Insulation - Under Floor - Labour" AS insulation_floor_labour,
+    "Low Carbon Technology Costs_Insulation - Under Floor - Material" AS insulation_floor_materials,
+    "Low Carbon Technology Costs_Insulation - Under Floor- Total" AS insulation_floor_total,
+    "Domestic PV Potential_Overall Suitability" AS pv_suitability,
+    "Domestic PV Potential_Recommended Array Size [kW]" AS pv_size,
+    "Domestic PV Potential_Annual Generation [kWh]" AS pv_generation,
+    "Low Carbon Technology Costs_Rooftop PV - Labour" AS pv_labour,
+    "Low Carbon Technology Costs_Rooftop PV - Materials" AS pv_material,
+    "Low Carbon Technology Costs_Rooftop PV - Total" AS pv_total,
+    "Substation Name" AS substation_name,
+    "Substation - CapacityRating" AS substation_capacity_rating,
+    "Substation - Peakload" AS substation_peakload,
+    "Substation - Headroom" AS substation_headroom,
+    "Substation - % headroom" AS substation_headroom_pct,
+    "Substation - Demand_rag" AS substation_demand
+FROM oxford b
+WHERE "substation_headroom" >= 1000;`;
+return {oxford_data};
+}});
+
+define({id: "e990e608", inputs: ["oxford_data"], outputs: ["newBuildings"], body: (oxford_data) => {
+const newBuildings = [...oxford_data];
+return {newBuildings};
+}});
+
+define({id: "74a46275", outputs: ["listOfTech","config1","config2","config3"], body: () => {
+console.log("this SPECIFICATION cell is called");
+// model specifications
+const listOfTech = {
+  ASHP: {
+    name: "ASHP",
+    config: {
+      suitabilityKey: "ashp_suitability",
+      labourKey: "ashp_labour",
+      materialKey: "ashp_material",
+      savingsKey: "heat_demand",
+    },
+  },
+  PV: {
+    name: "PV",
+    config: {
+      suitabilityKey: "pv_suitability",
+      labourKey: "pv_labour",
+      materialKey: "pv_material",
+      savingsKey: "pv_generation",
+    },
+  },
+  GSHP: {
+    name: "GSHP",
+    config: {
+      suitabilityKey: "gshp_suitability",
+      labourKey: "gshp_labour",
+      materialKey: "gshp_material",
+      savingsKey: "gshp_size",
+    },
+  },
+  Insulation: {
+    name: "Insulation",
+    config: {
+      suitabilityKey: "insulation_rating",
+      labourKey: "insulation_cwall_labour",
+      materialKey: "insulation_cwall_materials",
+      savingsKey: "insulation_cwall",
+    },
+  },
+};
+
+// --- Define Different Configurations ---
+
+// Config 1: Tech-first, focus on ASHP, prioritize fuel poverty
+const config1 = {
+  id: Date.now(),
+  initialYear: 2024,
+  rolloverBudget: 0,
+  yearlyBudgets: [500000, 5000, 5000],
+  optimizationStrategy: "tech-first",
+  tech: "ASHP", // Use the tech name as a string
+  priorities: [],
+};
+
+// Config 2: Carbon-first, consider ASHP and PV, prioritize multi-deprivation
+const config2 = {
+  modelId: Date.now(),
+  initialYear: 2024,
+  rolloverBudget: 0,
+  yearlyBudgets: [60000, 6000, 6000],
+  optimizationStrategy: "carbon-first",
+  technologies: ["ASHP", "PV"], // Use an array of tech names
+  priorities: [],
+};
+
+// Config 3: Tech-first, focus on Insulation, no specific priority
+const config3 = {
+  id: Date.now(),
+  initialYear: 2026,
+  rolloverBudget: 0,
+  yearlyBudgets: [9000, 7000, 4000],
+  optimizationStrategy: "tech-first",
+  tech: "PV",
+  priorities: [],
+};
+return {listOfTech,config1,config2,config3};
+}});
+
+define({id: "dff51016", inputs: ["InterventionManager","newBuildings","listOfTech","config1","config3"], outputs: ["manager","recaps","stackedRecap"], body: (InterventionManager,newBuildings,listOfTech,config1,config3) => {
+console.log("this INTERVENTION cell is called");
+// --- Create an InterventionManager instance ---
+const manager = new InterventionManager(newBuildings, listOfTech);
+
+// --- Add interventions ---
+manager.addIntervention(config1);
+manager.addIntervention(config3);
+// manager.addIntervention(config2);
+
+// --- Change the order of interventions ---
+// manager.setInterventionOrder([1, 0]);
+
+// --- Run the interventions ---
+const recaps = manager.runInterventions();
+
+// --- Get the stacked results ---
+const stackedRecap = manager.getStackedResults();
+return {manager,recaps,stackedRecap};
+}});
+
+define({id: "35688cd1", inputs: ["manager","display"], outputs: ["newResults"], body: (manager,display) => {
+const newResults = manager.modifyAndRunIntervention(0, {
+  yearlyBudgets: [5000, 0, 0],
+});
+display(newResults);
+return {newResults};
+}});
+
+define({id: "94e2872f", inputs: ["display","html","recaps","stackedRecap","MiniDecarbModel"], outputs: ["groupedAll"], body: (display,html,recaps,stackedRecap,MiniDecarbModel) => {
+console.log("this ANALYZE cell is called");
+// --- Analyze Stacked Results ---
+display(html`<p>"RECAPS"</p>`);
+display(recaps);
+
+// --- Analyze Stacked Results ---
+display(html`<p>"Stacked Recap Summary:"</p>`);
+display(stackedRecap.summary);
+
+display(html`<p>"Stacked Recap Yearly Summary:"</p>`);
+display(stackedRecap.yearlySummary);
+
+display(html`<p>"Stacked Recap Buildings:"</p>`);
+display(stackedRecap.buildings);
+
+display(html`<p>"Stacked Recap Intervened Buildings:"</p>`);
+display(stackedRecap.intervenedBuildings);
+
+display(html`<p>"List of Intervention Results:"</p>`);
+display(stackedRecap.recap);
+
+display(html`<p>"Grouped Intervention"</p>`);
+const groupedAll = MiniDecarbModel.group(stackedRecap.intervenedBuildings, [
+  "lsoa",
+  "interventionYear",
+]);
+display(groupedAll);
+return {groupedAll};
+}});
+
+define({id: "22c7e45d", body: () => {
+// timeglyph
+// const tgData = {
+//   ASHP: [0.2, 0.3, 0.4, 0.5, 0.6], // Values for category "ASHP" over 5 time steps
+//   PV: [0.1, 0.2, 0.1, 0.15, 0.2], // Values for category "PV" over the same time steps
+//   Wind: [0.05, 0.1, 0.15, 0.1, 0.05], // Another category "Wind"
+// };
+
+// const data1 = {
+//   ASHP: [0.2, 0.3, 0.4],
+//   PV: [0.1, 0.2, 0.1],
+// };
+
+// const data2 = {
+//   ASHP: [0.3, 0.4, 0.5],
+//   PV: [0.2, 0.3, 0.2],
+// };
+
+// const tg = new TimeGlyph(tgData);
+// const tg2 = new TimeGlyph(data1);
+// const tg3 = new TimeGlyph(data2);
+}});
+
+define({id: "0521a05a", body: () => {
+// const [w, h] = [600, 600];
+// const ctx = context2d(w, h);
+// const canvas = ctx.canvas;
+// ctx.fillStyle = "lightgrey";
+// ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+// const x = 200;
+// const y = 200;
+
+// const collection = new GlyphCollection();
+
+// collection.add(tg2);
+// collection.add(tg3);
+
+// collection.recalculate();
+
+// display(canvas);
+// tg2.draw(ctx, x, y, 200, 200);
+// tg3.draw(ctx, x + 210, y, 200, 200);
+}});
+
+define({id: "05aa37cd", inputs: ["LeafletMap","stackedRecap","display"], outputs: ["container","mapInstance","buildingsData"], body: (LeafletMap,stackedRecap,display) => {
+const container = document.createElement("div");
+document.body.appendChild(container);
+
+const mapInstance = new LeafletMap(container, {
+  width: "800px",
+  height: "600px",
+  tooltipFormatter: (props) => `<strong>${props.id}</strong>`,
+});
+
+// Add a data layer
+const buildingsData = [
+  { x: 110.123, y: -7.231231, name: "Building A" },
+  { x: 110.223, y: -7.231251, name: "Building B" },
+];
+
+mapInstance.addLayer("buildings", stackedRecap.buildings, {
+  clusterRadius: 50,
+  fitBounds: true,
+});
+
+display(container);
+// Later, update the layer
+// mapInstance.updateLayer("buildings", newData);
+
+// // Toggle layer visibility
+// mapInstance.setLayerVisibility("buildings", false);
+
+// // Clean up
+// mapInstance.destroy();
+return {container,mapInstance,buildingsData};
+}});
+
+</script>
+<div id="observablehq-center">
+<main id="observablehq-main" class="observablehq">
+<div class="observablehq observablehq--block"><!--:800c160e:--></div>
+<div class="observablehq observablehq--block"><!--:6e25fed2:--></div>
+<h2 id="test-new-model" tabindex="-1"><a class="observablehq-header-anchor" href="#test-new-model">Test New Model</a></h2>
+<div class="observablehq observablehq--block"><!--:d7a9f714:--></div>
+<div class="observablehq observablehq--block"><!--:e990e608:--></div>
+<div class="observablehq observablehq--block"><!--:74a46275:--></div>
+<div class="observablehq observablehq--block"><!--:dff51016:--></div>
+<h3 id="modify-and-run-intervention" tabindex="-1"><a class="observablehq-header-anchor" href="#modify-and-run-intervention">Modify and Run Intervention</a></h3>
+<div class="observablehq observablehq--block"><!--:35688cd1:--></div>
+<h3 id="model-outputs" tabindex="-1"><a class="observablehq-header-anchor" href="#model-outputs">Model Outputs</a></h3>
+<div class="observablehq observablehq--block"><!--:94e2872f:--></div>
+<h2 id="glyphs" tabindex="-1"><a class="observablehq-header-anchor" href="#glyphs">Glyphs</a></h2>
+<div class="observablehq observablehq--block"><!--:22c7e45d:--></div>
+<div class="observablehq observablehq--block"><!--:0521a05a:--></div>
+<div class="observablehq observablehq--block"><!--:05aa37cd:--></div>
+</main>
+</div>
