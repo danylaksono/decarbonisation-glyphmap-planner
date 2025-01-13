@@ -286,9 +286,8 @@ const [allocations, setAllocations] = useState([]);
       <div class="card-content">
         <div class="content">
           ${mapAggregationInput}
-          ${(map_aggregate == "Building Level") ? toggleGridmaps : ""}
-          ${(map_aggregate == "Building Level") ? ""
-            : html`${playButton} ${morphFactorInput}`}
+          ${(map_aggregate === "Building Level") ? toggleGridmaps : ""}
+          ${(map_aggregate === "LSOA Level") ? html`${playButton} ${morphFactorInput}` : ""}
           <!-- ${html`${playButton} ${morphFactorInput}`} -->
           ${resize((width, height) => createGlyphMap(map_aggregate, width, height))}
         </div>
@@ -504,7 +503,7 @@ const technology = Generators.input(techsInput);
 const totalBudgetInput = html`<input
   id="totalBudgetInput"
   class="input"
-  value="10,000"
+  value="100"
   type="text"
   placeholder="Enter total budget"
 />`;
@@ -634,10 +633,13 @@ const glyphmapType = Generators.input(glyphmapTypeInput);
 
 ```js
 // --- map aggregation ---
-const mapAggregationInput = Inputs.radio(["LSOA Level", "Building Level"], {
-  label: "Level of Detail",
-  value: "LSOA Level",
-});
+const mapAggregationInput = Inputs.radio(
+  ["LA Level", "LSOA Level", "Building Level"],
+  {
+    label: "Level of Detail",
+    value: "LSOA Level",
+  }
+);
 const map_aggregate = Generators.input(mapAggregationInput);
 ```
 
@@ -1430,6 +1432,22 @@ const glyphVariables = [
   "pv_generation",
   "pv_total",
 ];
+const glyphColours = [
+  // ashp = bluish
+  "#1E90FF", // ashp_suitability: DodgerBlue
+  "#4682B4", // ashp_size: SteelBlue
+  "#5F9EA0", // ashp_total: CadetBlue
+
+  // gshp = orangeish
+  "#FFA500", // gshp_suitability: Orange
+  "#FF8C00", // gshp_size: DarkOrange
+  "#FFD700", // gshp_total: Gold
+
+  // pv = greenish
+  "#32CD32", // pv_suitability: LimeGreen
+  "#228B22", // pv_generation: ForestGreen
+  "#006400", // pv_total: DarkGreen
+];
 ```
 
 ```js
@@ -1525,9 +1543,10 @@ function glyphMapSpec(width = 800, height = 600) {
         }
 
         global.pathGenerator = d3.geoPath().context(ctx);
-        global.colourScalePop = d3
-          .scaleSequential(d3.interpolateBlues)
-          .domain([0, 1]);
+        global.colourScalePop = "#cccccc";
+        // global.colourScalePop = d3
+        //   .scaleSequential(d3.interpolateBlues)
+        //   .domain([0, 1]);
         // .domain([0, d3.max(cells.map((row) => row.building_area))]);
       },
 
@@ -1544,7 +1563,7 @@ function glyphMapSpec(width = 800, height = 600) {
 
         ctx.beginPath();
         global.pathGenerator(boundaryFeat);
-        ctx.fillStyle = "rgba(90, 179, 243, 0.92)";
+        ctx.fillStyle = "#efefef";
         // ctx.fillStyle = global.colourScalePop(cell.building_area);
         ctx.fill();
 
@@ -1563,11 +1582,15 @@ function glyphMapSpec(width = 800, height = 600) {
         }
 
         //draw a radial glyph
-        let rg = new RadialGlyph([
-          cellData.ashp_suitability, // potential
-          cellData.ashp_size, // potential
-          cellData.ashp_total, // costs
-        ]);
+        // let rg = new RadialGlyph([
+        //   cellData.ashp_suitability, // potential
+        //   cellData.ashp_size, // potential
+        //   cellData.ashp_total, // costs
+        // ]);
+        let rg = new RadialGlyph(
+          glyphVariables.map((key) => cellData[key]),
+          glyphColours
+        );
         rg.draw(ctx, x, y, cellSize / 2);
       },
 
@@ -1578,7 +1601,17 @@ function glyphMapSpec(width = 800, height = 600) {
           console.log("cell on tooltip", cell.data);
           // console.log("cell on tooltip", cell.records[0].code);
           // setDetailOnDemand(cell.data);
-          return cell.data.ashp_total;
+          // return cell.data.ashp_total;
+          return glyphVariables
+            .map((key) => {
+              const label = key.replace(/_/g, " ").toUpperCase();
+              const value = cell.data[key].toFixed(2);
+              return `<div class="tooltip-row">
+                <span class="label">${label}:</span>
+                <span class="value">${value}</span>
+              </div>`;
+            })
+            .join("");
           // return `Total Building Area: ${cell.building_area.toFixed(2)} m^2`;
         } else {
           return "no data";
@@ -1654,6 +1687,8 @@ function createGlyphMap(map_aggregate, width, height) {
     }
   } else if (map_aggregate == "LSOA Level") {
     return morphGlyphMap;
+  } else if (map_aggregate == "LA Level") {
+    return createOverallPlot(normalisedYearlyRecap);
   }
 }
 ```
@@ -1738,4 +1773,235 @@ function getSelectedRow() {
 // }
 
 // display([getSelectedRow().x, getSelectedRow().y]);
+```
+
+<!-- ----------------  Main Plot  ---------------- -->
+
+```js
+selectedInterventionIndex;
+// Step 1: Transform recap object into an array for easier processing
+const recapArray = Object.entries(stackedRecap.yearlySummary).map(
+  ([year, values]) => ({
+    year: Number(year),
+    ...values,
+  })
+);
+
+// Step 2: Normalize the data
+let keysToNormalise = [
+  "budgetSpent",
+  "buildingsIntervened",
+  "totalCarbonSaved",
+];
+const normalisedYearlyRecap = normaliseData(recapArray, keysToNormalise);
+console.log(">> Normalised Recap", normalisedYearlyRecap);
+```
+
+```js
+const overallPlot = Plot.plot({
+  width: 800,
+  height: 400,
+  x: {
+    label: "Year",
+  },
+  y: {
+    label: "Normalized Value",
+    domain: [0, 1],
+  },
+  marks: [
+    Plot.line(
+      normalisedYearlyRecap.flatMap((d) => [
+        { year: d.year, value: d.budgetSpent, category: "Budget Spent" },
+        {
+          year: d.year,
+          value: d.buildingsIntervened,
+          category: "Buildings Intervened",
+        },
+        {
+          year: d.year,
+          value: d.totalCarbonSaved,
+          category: "Total Carbon Saved",
+        },
+      ]),
+      {
+        x: "year",
+        y: "value",
+        stroke: "category",
+        strokeWidth: 2,
+      }
+    ),
+    Plot.ruleY([0]),
+  ],
+  color: {
+    legend: true,
+    label: "Metrics",
+  },
+});
+
+display(createOverallPlot(normalisedYearlyRecap));
+```
+
+```js
+function createOverallPlot(data, width = 900, height = 600) {
+  // Set up margins and dimensions
+  const margin = { top: 20, right: 150, bottom: 60, left: 60 };
+  const innerWidth = width - margin.left - margin.right;
+  const innerHeight = height - margin.top - margin.bottom;
+
+  // Create a div container for the chart
+  const container = document.createElement("div");
+  container.style.position = "relative";
+  container.style.width = `${width}px`;
+  container.style.height = `${height}px`;
+
+  if (data == null) {
+    return "add intervention to start";
+  }
+
+  // Create SVG container
+  const svg = d3
+    .select(container)
+    .append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+  const chart = svg
+    .append("g")
+    .attr("transform", `translate(${margin.left},${margin.top})`);
+
+  // Extract unique years
+  const years = [...new Set(data.map((d) => d.year))];
+
+  // Define scales
+  const xScale = d3
+    .scaleBand()
+    .domain(years)
+    .range([0, innerWidth])
+    .padding(0.1);
+
+  const yScale = d3
+    .scaleLinear()
+    .domain([0, 3]) // Normalized values
+    .range([innerHeight, 0]);
+
+  const colorScale = d3
+    .scaleOrdinal()
+    .domain(["Budget Spent", "Buildings Intervened", "Total Carbon Saved"])
+    .range(["#4C78A8", "#F58518", "#E45756"]);
+
+  // Flatten data into a long format for stacking
+  const longData = data.flatMap((d) => [
+    { year: d.year, value: d.budgetSpent, category: "Budget Spent" },
+    {
+      year: d.year,
+      value: d.buildingsIntervened,
+      category: "Buildings Intervened",
+    },
+    { year: d.year, value: d.totalCarbonSaved, category: "Total Carbon Saved" },
+  ]);
+
+  // Group data by category
+  const stack = d3
+    .stack()
+    .keys(["Budget Spent", "Buildings Intervened", "Total Carbon Saved"])
+    .value((group, key) => group.find((d) => d.category === key)?.value || 0);
+
+  const stackedData = stack(d3.group(longData, (d) => d.year).values());
+
+  // Define area generator
+  const area = d3
+    .area()
+    .x((d, i) => xScale(years[i]) + xScale.bandwidth() / 2)
+    .y0((d) => yScale(d[0]))
+    .y1((d) => yScale(d[1]))
+    .curve(d3.curveMonotoneX);
+
+  // Add x-axis
+  chart
+    .append("g")
+    .attr("transform", `translate(0,${innerHeight})`)
+    .call(d3.axisBottom(xScale).tickFormat(d3.format("d")))
+    .selectAll("text")
+    .style("text-anchor", "middle");
+
+  // Add y-axis
+  chart.append("g").call(d3.axisLeft(yScale));
+
+  // Add areas
+  chart
+    .selectAll(".area")
+    .data(stackedData)
+    .join("path")
+    .attr("class", "area")
+    .attr("fill", (d) => colorScale(d.key))
+    .attr("d", area);
+
+  // Add tooltips
+  const tooltip = d3
+    .select(container)
+    .append("div")
+    .style("position", "absolute")
+    .style("visibility", "hidden")
+    .style("background", "rgba(169, 151, 151, 0.7)")
+    .style("color", "#fff")
+    .style("padding", "5px")
+    .style("border-radius", "4px")
+    .style("font-size", "12px");
+
+  chart
+    .selectAll(".area")
+    .on("mousemove", function (event, d) {
+      const [x] = d3.pointer(event, this); // Get x position
+      const yearIndex = Math.floor((x / innerWidth) * years.length); // Calculate year index
+      const year = years[yearIndex]; // Get year from index
+
+      if (yearIndex >= 0 && yearIndex < d.length) {
+        const segment = d[yearIndex]; // Get the stack segment for the year
+        const category = d.key; // Get the category (e.g., "Budget Spent")
+        const value = segment[1] - segment[0]; // Calculate value from stacked data
+
+        tooltip
+          .html(
+            `<strong>Year:</strong> ${year}<br><strong>Category:</strong> ${category}<br><strong>Value:</strong> ${value.toFixed(
+              2
+            )}`
+          )
+          .style("top", `${event.offsetY - 30}px`)
+          .style("left", `${event.offsetX + 10}px`)
+          .style("visibility", "visible");
+      }
+    })
+    .on("mouseout", function () {
+      tooltip.style("visibility", "hidden");
+    });
+
+  // Add legend
+  const legend = svg
+    .append("g")
+    .attr(
+      "transform",
+      `translate(${width - margin.right + 10}, ${margin.top})`
+    );
+
+  legend
+    .selectAll("rect")
+    .data(colorScale.domain())
+    .join("rect")
+    .attr("x", 0)
+    .attr("y", (d, i) => i * 20)
+    .attr("width", 15)
+    .attr("height", 15)
+    .attr("fill", (d) => colorScale(d));
+
+  legend
+    .selectAll("text")
+    .data(colorScale.domain())
+    .join("text")
+    .attr("x", 20)
+    .attr("y", (d, i) => i * 20 + 12)
+    .text((d) => d)
+    .style("font-size", "12px");
+
+  return container;
+}
 ```
