@@ -1688,7 +1688,12 @@ function createGlyphMap(map_aggregate, width, height) {
   } else if (map_aggregate == "LSOA Level") {
     return morphGlyphMap;
   } else if (map_aggregate == "LA Level") {
-    return createOverallPlot(normalisedYearlyRecap);
+    try {
+      return createOverallPlot(yearlySummaryArray);
+    } catch (error) {
+      // console.error("Error in createOverallPlot:", error);
+      return {};
+    }
   }
 }
 ```
@@ -1780,12 +1785,12 @@ function getSelectedRow() {
 ```js
 selectedInterventionIndex;
 // Step 1: Transform recap object into an array for easier processing
-const recapArray = Object.entries(stackedRecap.yearlySummary).map(
-  ([year, values]) => ({
-    year: Number(year),
-    ...values,
-  })
-);
+const yearlySummaryArray = stackedRecap.yearlySummary
+  ? Object.entries(stackedRecap.yearlySummary).map(([year, values]) => ({
+      year: Number(year),
+      ...values,
+    }))
+  : null;
 
 // Step 2: Normalize the data
 let keysToNormalise = [
@@ -1793,72 +1798,80 @@ let keysToNormalise = [
   "buildingsIntervened",
   "totalCarbonSaved",
 ];
-const normalisedYearlyRecap = normaliseData(recapArray, keysToNormalise);
-console.log(">> Normalised Recap", normalisedYearlyRecap);
-```
-
-```js
-const overallPlot = Plot.plot({
-  width: 800,
-  height: 400,
-  x: {
-    label: "Year",
-  },
-  y: {
-    label: "Normalized Value",
-    domain: [0, 1],
-  },
-  marks: [
-    Plot.line(
-      normalisedYearlyRecap.flatMap((d) => [
-        { year: d.year, value: d.budgetSpent, category: "Budget Spent" },
-        {
-          year: d.year,
-          value: d.buildingsIntervened,
-          category: "Buildings Intervened",
-        },
-        {
-          year: d.year,
-          value: d.totalCarbonSaved,
-          category: "Total Carbon Saved",
-        },
-      ]),
-      {
-        x: "year",
-        y: "value",
-        stroke: "category",
-        strokeWidth: 2,
-      }
-    ),
-    Plot.ruleY([0]),
-  ],
-  color: {
-    legend: true,
-    label: "Metrics",
-  },
-});
-
-display(createOverallPlot(normalisedYearlyRecap));
+// const normalisedYearlyRecap = normaliseData(
+//   yearlySummaryArray,
+//   keysToNormalise
+// );
+// console.log(">> Normalised Recap", normalisedYearlyRecap);
 ```
 
 ```js
 function createOverallPlot(data, width = 900, height = 600) {
-  // Set up margins and dimensions
-  const margin = { top: 20, right: 150, bottom: 60, left: 60 };
+  const margin = { top: 30, right: 150, bottom: 120, left: 80 };
   const innerWidth = width - margin.left - margin.right;
   const innerHeight = height - margin.top - margin.bottom;
 
-  // Create a div container for the chart
+  // Create container with message styling
   const container = document.createElement("div");
   container.style.position = "relative";
   container.style.width = `${width}px`;
   container.style.height = `${height}px`;
+  container.style.display = "flex";
+  container.style.alignItems = "center";
+  container.style.justifyContent = "center";
+  container.style.fontFamily = "Arial, sans-serif";
+  container.style.fontSize = "16px";
+  container.style.color = "#666";
 
-  if (data == null) {
-    return "add intervention to start";
+  // Comprehensive data validation
+  if (!data) {
+    container.textContent = "Please provide intervention data";
+    return container;
   }
 
-  // Create SVG container
+  if (!Array.isArray(data)) {
+    container.textContent = "Data must be an array";
+    return container;
+  }
+
+  if (data.length === 0) {
+    container.textContent = "Please add intervention data to start";
+    return container;
+  }
+
+  // Check if data has required properties
+  const requiredFields = [
+    "year",
+    "budgetSpent",
+    "buildingsIntervened",
+    "totalCarbonSaved",
+  ];
+  const invalidItems = data.filter(
+    (item) =>
+      !item ||
+      typeof item !== "object" ||
+      !requiredFields.every((field) => {
+        if (field === "year") {
+          return Number.isInteger(item[field]);
+        }
+        return typeof item[field] === "number" && !isNaN(item[field]);
+      })
+  );
+
+  if (invalidItems.length > 0) {
+    container.textContent =
+      "Invalid data format. Each data point must include: year (integer), budgetSpent (number), buildingsIntervened (number), and totalCarbonSaved (number)";
+    return container;
+  }
+
+  // Clear container styles used for error messages
+  container.style.display = "block";
+  container.style.alignItems = "";
+  container.style.justifyContent = "";
+  container.style.fontFamily = "";
+  container.style.fontSize = "";
+  container.style.color = "";
+
   const svg = d3
     .select(container)
     .append("svg")
@@ -1869,27 +1882,8 @@ function createOverallPlot(data, width = 900, height = 600) {
     .append("g")
     .attr("transform", `translate(${margin.left},${margin.top})`);
 
-  // Extract unique years
-  const years = [...new Set(data.map((d) => d.year))];
+  const years = [...new Set(data.map((d) => d.year))].sort((a, b) => a - b);
 
-  // Define scales
-  const xScale = d3
-    .scaleBand()
-    .domain(years)
-    .range([0, innerWidth])
-    .padding(0.1);
-
-  const yScale = d3
-    .scaleLinear()
-    .domain([0, 3]) // Normalized values
-    .range([innerHeight, 0]);
-
-  const colorScale = d3
-    .scaleOrdinal()
-    .domain(["Budget Spent", "Buildings Intervened", "Total Carbon Saved"])
-    .range(["#4C78A8", "#F58518", "#E45756"]);
-
-  // Flatten data into a long format for stacking
   const longData = data.flatMap((d) => [
     { year: d.year, value: d.budgetSpent, category: "Budget Spent" },
     {
@@ -1900,32 +1894,56 @@ function createOverallPlot(data, width = 900, height = 600) {
     { year: d.year, value: d.totalCarbonSaved, category: "Total Carbon Saved" },
   ]);
 
-  // Group data by category
+  const stackedMaxValue = data.reduce(
+    (max, d) => Math.max(max, d.budgetSpent + d.totalCarbonSaved),
+    0
+  );
+
+  const maxBuildingsIntervened = d3.max(data, (d) => d.buildingsIntervened);
+
+  const xScale = d3
+    .scaleBand()
+    .domain(years)
+    .range([0, innerWidth])
+    .padding(0.1);
+
+  const yScale = d3
+    .scaleLinear()
+    .domain([0, stackedMaxValue * 1.1])
+    .range([innerHeight, 0]);
+
+  const yScaleRight = d3
+    .scaleLinear()
+    .domain([0, maxBuildingsIntervened * 1.1])
+    .range([innerHeight, 0]);
+
+  const colorScale = d3
+    .scaleOrdinal()
+    .domain(["Budget Spent", "Buildings Intervened", "Total Carbon Saved"])
+    .range([
+      "#2C699A", // Darker blue for budget
+      "#E63946", // Bright red for buildings line
+      "#2D936C", // Forest green for carbon savings
+    ]);
+
   const stack = d3
     .stack()
-    .keys(["Budget Spent", "Buildings Intervened", "Total Carbon Saved"])
+    .keys(["Budget Spent", "Total Carbon Saved"])
     .value((group, key) => group.find((d) => d.category === key)?.value || 0);
 
-  const stackedData = stack(d3.group(longData, (d) => d.year).values());
+  // Group data safely
+  const groupedData = Array.from(
+    d3.group(longData, (d) => d.year),
+    ([key, value]) => value
+  );
+  const stackedData = stack(groupedData);
 
-  // Define area generator
   const area = d3
     .area()
     .x((d, i) => xScale(years[i]) + xScale.bandwidth() / 2)
     .y0((d) => yScale(d[0]))
     .y1((d) => yScale(d[1]))
     .curve(d3.curveMonotoneX);
-
-  // Add x-axis
-  chart
-    .append("g")
-    .attr("transform", `translate(0,${innerHeight})`)
-    .call(d3.axisBottom(xScale).tickFormat(d3.format("d")))
-    .selectAll("text")
-    .style("text-anchor", "middle");
-
-  // Add y-axis
-  chart.append("g").call(d3.axisLeft(yScale));
 
   // Add areas
   chart
@@ -1934,41 +1952,113 @@ function createOverallPlot(data, width = 900, height = 600) {
     .join("path")
     .attr("class", "area")
     .attr("fill", (d) => colorScale(d.key))
-    .attr("d", area);
+    .attr("d", area)
+    .attr("opacity", 0.8);
 
-  // Add tooltips
+  // Add line
+  const line = d3
+    .line()
+    .x((d) => xScale(d.year) + xScale.bandwidth() / 2)
+    .y((d) => yScaleRight(d.buildingsIntervened))
+    .curve(d3.curveMonotoneX);
+
+  chart
+    .append("path")
+    .datum(data)
+    .attr("class", "line")
+    .attr("fill", "none")
+    .attr("stroke", colorScale("Buildings Intervened"))
+    .attr("stroke-width", 3.5)
+    .attr("opacity", 0.9)
+    .attr("d", line)
+    .raise();
+
+  // Add axes
+  chart
+    .append("g")
+    .attr("transform", `translate(0,${innerHeight})`)
+    .call(d3.axisBottom(xScale).tickFormat(d3.format("d")))
+    .selectAll("text")
+    .style("text-anchor", "middle");
+
+  chart
+    .append("g")
+    .call(d3.axisLeft(yScale))
+    .append("text")
+    .attr("transform", "rotate(-90)")
+    .attr("y", -60)
+    .attr("x", -innerHeight / 2)
+    .attr("fill", "black")
+    .attr("text-anchor", "middle")
+    .text("Budget & Carbon Saved");
+
+  chart
+    .append("g")
+    .attr("transform", `translate(${innerWidth}, 0)`)
+    .call(d3.axisRight(yScaleRight))
+    .append("text")
+    .attr("transform", "rotate(-90)")
+    .attr("y", 50)
+    .attr("x", -innerHeight / 2)
+    .attr("fill", "black")
+    .attr("text-anchor", "middle")
+    .text("Buildings Intervened");
+
+  // Add tooltip
   const tooltip = d3
     .select(container)
     .append("div")
     .style("position", "absolute")
     .style("visibility", "hidden")
-    .style("background", "rgba(169, 151, 151, 0.7)")
-    .style("color", "#fff")
-    .style("padding", "5px")
+    .style("background", "rgba(255, 255, 255, 0.9)")
+    .style("border", "1px solid #ddd")
+    .style("color", "#333")
+    .style("padding", "8px")
     .style("border-radius", "4px")
-    .style("font-size", "12px");
+    .style("font-size", "12px")
+    .style("box-shadow", "2px 2px 6px rgba(0, 0, 0, 0.1)");
 
-  chart
-    .selectAll(".area")
-    .on("mousemove", function (event, d) {
-      const [x] = d3.pointer(event, this); // Get x position
-      const yearIndex = Math.floor((x / innerWidth) * years.length); // Calculate year index
-      const year = years[yearIndex]; // Get year from index
+  // Add invisible overlay for tooltip
+  const overlay = chart.append("g").attr("class", "overlay");
 
-      if (yearIndex >= 0 && yearIndex < d.length) {
-        const segment = d[yearIndex]; // Get the stack segment for the year
-        const category = d.key; // Get the category (e.g., "Budget Spent")
-        const value = segment[1] - segment[0]; // Calculate value from stacked data
+  overlay
+    .selectAll("rect")
+    .data(years)
+    .join("rect")
+    .attr("x", (d) => xScale(d))
+    .attr("y", 0)
+    .attr("width", xScale.bandwidth())
+    .attr("height", innerHeight)
+    .attr("fill", "none")
+    .attr("pointer-events", "all")
+    .on("mousemove", function (event, year) {
+      const rect = container.getBoundingClientRect();
+      const mouseX = event.clientX - rect.left;
+      const mouseY = event.clientY - rect.top;
+      const yearData = data.find((d) => d.year === year);
 
+      if (yearData) {
         tooltip
-          .html(
-            `<strong>Year:</strong> ${year}<br><strong>Category:</strong> ${category}<br><strong>Value:</strong> ${value.toFixed(
-              2
-            )}`
-          )
-          .style("top", `${event.offsetY - 30}px`)
-          .style("left", `${event.offsetX + 10}px`)
-          .style("visibility", "visible");
+          .style("visibility", "visible")
+          .style("left", `${mouseX + margin.left - 100}px`)
+          .style("top", `${mouseY - 80}px`).html(`
+            <strong>Year:</strong> ${year}<br>
+            <span style="color: ${colorScale(
+              "Budget Spent"
+            )}"><strong>Budget Spent:</strong> ${yearData.budgetSpent.toFixed(
+          2
+        )}</span><br>
+            <span style="color: ${colorScale(
+              "Total Carbon Saved"
+            )}"><strong>Carbon Saved:</strong> ${yearData.totalCarbonSaved.toFixed(
+          2
+        )}</span><br>
+            <span style="color: ${colorScale(
+              "Buildings Intervened"
+            )}"><strong>Buildings:</strong> ${
+          yearData.buildingsIntervened
+        }</span>
+          `);
       }
     })
     .on("mouseout", function () {
@@ -1980,15 +2070,17 @@ function createOverallPlot(data, width = 900, height = 600) {
     .append("g")
     .attr(
       "transform",
-      `translate(${width - margin.right + 10}, ${margin.top})`
+      `translate(${margin.left}, ${height - margin.bottom + 50})`
     );
+
+  const legendSpacing = innerWidth / 3;
 
   legend
     .selectAll("rect")
     .data(colorScale.domain())
     .join("rect")
-    .attr("x", 0)
-    .attr("y", (d, i) => i * 20)
+    .attr("x", (d, i) => i * legendSpacing)
+    .attr("y", 0)
     .attr("width", 15)
     .attr("height", 15)
     .attr("fill", (d) => colorScale(d));
@@ -1997,11 +2089,177 @@ function createOverallPlot(data, width = 900, height = 600) {
     .selectAll("text")
     .data(colorScale.domain())
     .join("text")
-    .attr("x", 20)
-    .attr("y", (d, i) => i * 20 + 12)
+    .attr("x", (d, i) => i * legendSpacing + 20)
+    .attr("y", 12)
     .text((d) => d)
     .style("font-size", "12px");
 
   return container;
 }
+
+// function createOverallPlot(data, width = 900, height = 600) {
+//   // Set up margins and dimensions
+//   const margin = { top: 20, right: 150, bottom: 60, left: 60 };
+//   const innerWidth = width - margin.left - margin.right;
+//   const innerHeight = height - margin.top - margin.bottom;
+
+//   // Create a div container for the chart
+//   const container = document.createElement("div");
+//   container.style.position = "relative";
+//   container.style.width = `${width}px`;
+//   container.style.height = `${height}px`;
+
+//   if (data == null) {
+//     return "add intervention to start";
+//   }
+
+//   // Create SVG container
+//   const svg = d3
+//     .select(container)
+//     .append("svg")
+//     .attr("width", width)
+//     .attr("height", height);
+
+//   const chart = svg
+//     .append("g")
+//     .attr("transform", `translate(${margin.left},${margin.top})`);
+
+//   // Extract unique years
+//   const years = [...new Set(data.map((d) => d.year))];
+
+//   // Flatten data into a long format for stacking
+//   const longData = data.flatMap((d) => [
+//     { year: d.year, value: d.budgetSpent, category: "Budget Spent" },
+//     {
+//       year: d.year,
+//       value: d.buildingsIntervened,
+//       category: "Buildings Intervened",
+//     },
+//     { year: d.year, value: d.totalCarbonSaved, category: "Total Carbon Saved" },
+//   ]);
+
+//   // Calculate the maximum value from the data
+//   const maxValue = d3.max(longData, (d) => d.value);
+
+//   // Define scales
+//   const xScale = d3
+//     .scaleBand()
+//     .domain(years)
+//     .range([0, innerWidth])
+//     .padding(0.1);
+
+//   const yScale = d3
+//     .scaleLinear()
+//     .domain([0, maxValue]) // Adjust domain based on data
+//     .range([innerHeight, 0]);
+
+//   const colorScale = d3
+//     .scaleOrdinal()
+//     .domain(["Budget Spent", "Buildings Intervened", "Total Carbon Saved"])
+//     .range(["#4C78A8", "#F58518", "#E45756"]);
+
+//   // Group data by category
+//   const stack = d3
+//     .stack()
+//     .keys(["Budget Spent", "Buildings Intervened", "Total Carbon Saved"])
+//     .value((group, key) => group.find((d) => d.category === key)?.value || 0);
+
+//   const stackedData = stack(d3.group(longData, (d) => d.year).values());
+
+//   // Define area generator
+//   const area = d3
+//     .area()
+//     .x((d, i) => xScale(years[i]) + xScale.bandwidth() / 2)
+//     .y0((d) => yScale(d[0]))
+//     .y1((d) => yScale(d[1]))
+//     .curve(d3.curveMonotoneX);
+
+//   // Add x-axis
+//   chart
+//     .append("g")
+//     .attr("transform", `translate(0,${innerHeight})`)
+//     .call(d3.axisBottom(xScale).tickFormat(d3.format("d")))
+//     .selectAll("text")
+//     .style("text-anchor", "middle");
+
+//   // Add y-axis
+//   chart.append("g").call(d3.axisLeft(yScale));
+
+//   // Add areas
+//   chart
+//     .selectAll(".area")
+//     .data(stackedData)
+//     .join("path")
+//     .attr("class", "area")
+//     .attr("fill", (d) => colorScale(d.key))
+//     .attr("d", area);
+
+//   // Add tooltips
+//   const tooltip = d3
+//     .select(container)
+//     .append("div")
+//     .style("position", "absolute")
+//     .style("visibility", "hidden")
+//     .style("background", "rgba(169, 151, 151, 0.7)")
+//     .style("color", "#fff")
+//     .style("padding", "5px")
+//     .style("border-radius", "4px")
+//     .style("font-size", "12px");
+
+//   chart
+//     .selectAll(".area")
+//     .on("mousemove", function (event, d) {
+//       const [x] = d3.pointer(event, this); // Get x position
+//       const yearIndex = Math.floor((x / innerWidth) * years.length); // Calculate year index
+//       const year = years[yearIndex]; // Get year from index
+
+//       if (yearIndex >= 0 && yearIndex < d.length) {
+//         const segment = d[yearIndex]; // Get the stack segment for the year
+//         const category = d.key; // Get the category (e.g., "Budget Spent")
+//         const value = segment[1] - segment[0]; // Calculate value from stacked data
+
+//         tooltip
+//           .html(
+//             `<strong>Year:</strong> ${year}<br><strong>Category:</strong> ${category}<br><strong>Value:</strong> ${value.toFixed(
+//               2
+//             )}`
+//           )
+//           .style("top", `${event.offsetY - 30}px`)
+//           .style("left", `${event.offsetX + 10}px`)
+//           .style("visibility", "visible");
+//       }
+//     })
+//     .on("mouseout", function () {
+//       tooltip.style("visibility", "hidden");
+//     });
+
+//   // Add legend
+//   const legend = svg
+//     .append("g")
+//     .attr(
+//       "transform",
+//       `translate(${width - margin.right + 10}, ${margin.top})`
+//     );
+
+//   legend
+//     .selectAll("rect")
+//     .data(colorScale.domain())
+//     .join("rect")
+//     .attr("x", 0)
+//     .attr("y", (d, i) => i * 20)
+//     .attr("width", 15)
+//     .attr("height", 15)
+//     .attr("fill", (d) => colorScale(d));
+
+//   legend
+//     .selectAll("text")
+//     .data(colorScale.domain())
+//     .join("text")
+//     .attr("x", 20)
+//     .attr("y", (d, i) => i * 20 + 12)
+//     .text((d) => d)
+//     .style("font-size", "12px");
+
+//   return container;
+// }
 ```
