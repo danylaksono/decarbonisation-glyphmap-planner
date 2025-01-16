@@ -1625,7 +1625,7 @@ function glyphMapSpec(width = 800, height = 600) {
           : cell.data; // when map_aggregate == "Building Level", use individual data
 
         // console.log("cell data to draw >>>", cellData);
-        // let timeData = cell.data[0];
+        let timeData = cell.data[0];
         // console.log("timeData", timeData);
 
         const boundary = cell.getBoundary(0);
