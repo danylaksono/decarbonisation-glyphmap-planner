@@ -429,27 +429,50 @@ export class sorterTable {
       }
     });
 
-    this.dataInd.map((v, i) => (this.data[v].tabindex = i));
+    // this.dataInd.map((v, i) => (this.data[v].tabindex = i));
 
-    this.dataInd.sort((a, b) => {
-      let scoreA = 0;
-      Object.keys(sorts).map(
-        (col) =>
-          (scoreA +=
-            this.compoundSorting[col].weight *
-            sorts[col][this.data[a].tabindex])
-      );
-      let scoreB = 0;
-      Object.keys(sorts).map(
-        (col) =>
-          (scoreB +=
-            this.compoundSorting[col].weight *
-            sorts[col][this.data[b].tabindex])
-      );
-      return scoreA - scoreB;
+    // this.dataInd.sort((a, b) => {
+    //   let scoreA = 0;
+    //   Object.keys(sorts).map(
+    //     (col) =>
+    //       (scoreA +=
+    //         this.compoundSorting[col].weight *
+    //         sorts[col][this.data[a].tabindex])
+    //   );
+    //   let scoreB = 0;
+    //   Object.keys(sorts).map(
+    //     (col) =>
+    //       (scoreB +=
+    //         this.compoundSorting[col].weight *
+    //         sorts[col][this.data[b].tabindex])
+    //   );
+    //   return scoreA - scoreB;
+    // });
+
+    // this.dataInd.map((v, i) => delete this.data[v].tabindex);
+
+    // DEBUG: Create a separate Map to store tab indices
+    const tabIndices = new Map();
+    this.dataInd.forEach((v, i) => {
+      tabIndices.set(v, i); // Associate data index 'v' with tab index 'i'
     });
 
-    this.dataInd.map((v, i) => delete this.data[v].tabindex);
+    //  use tabIndices to access the tab index for each row during sorting
+    this.dataInd.sort((a, b) => {
+      let scoreA = 0;
+      Object.keys(sorts).forEach((col) => {
+        scoreA +=
+          this.compoundSorting[col].weight * sorts[col][tabIndices.get(a)];
+      });
+
+      let scoreB = 0;
+      Object.keys(sorts).forEach((col) => {
+        scoreB +=
+          this.compoundSorting[col].weight * sorts[col][tabIndices.get(b)];
+      });
+
+      return scoreA - scoreB;
+    });
 
     this.createTable();
 

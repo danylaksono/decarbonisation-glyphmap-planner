@@ -1671,7 +1671,10 @@ function glyphMapSpec(width = 800, height = 600) {
         //   let tg = new StreamGraphGlyph(timeData, "year", null, customConfig);
         //   tg.draw(ctx, x, y, cellSize / 2);
         // }
-
+        console.log(
+          "Drawn in order >>>",
+          glyphVariables.map((key) => cellData[key])
+        );
         let rg = new RadialGlyph(
           glyphVariables.map((key) => cellData[key]),
           glyphColours

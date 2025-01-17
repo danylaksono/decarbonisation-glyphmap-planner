@@ -9,59 +9,6 @@ sql:
 
 # Table experiments
 
-```js
-display(1 + 2);
-```
-
-<!--
-```js
-const modelData = FileAttachment("./data/result_gdf_admin.geojson").json();
-```
-
-```js
-    const buildings = modelData.features.map( (b,index) => ({
-    building_id : index,
-    lsoa : b.properties["LSOA code"],
-    msoa : b.properties["MSOA code"],
-    building_area : b.properties["Air Source Heat Pump Potential_Building Size (m^2)"],
-    garden_area : b.properties["Air Source Heat Pump Potential_Garden Area (m^2)"],
-    ashp_suitability : b.properties["Air Source Heat Pump Potential_Overall Suitability Rating"],
-    ashp_size : b.properties["Air Source Heat Pump Potential_Recommended Heat Pump Size [kW]"],
-    ashp_labour : b.properties["Low Carbon Technology Costs_Air Source Heat Pump - Labour"],
-    ashp_material : b.properties["Low Carbon Technology Costs_Air Source Heat Pump - Material"],
-    ashp_total : b.properties["Low Carbon Technology Costs_Air Source Heat Pump - Total"],
-    gshp_suitability : b.properties["Domestic Ground Source Heat Pump Potential_Overall Suitability Rating"],
-    gshp_size : b.properties["Domestic Ground Source Heat Pump Potential_Recommended Heat Pump Size [kW]"],
-    gshp_labour : b.properties["Low Carbon Technology Costs_Ground Source Heat Pump - Labour"],
-    gshp_material : b.properties["Low Carbon Technology Costs_Ground Source Heat Pump - Materials"],
-    gshp_total : b.properties["Low Carbon Technology Costs_Ground Source Heat Pump - Total"],
-    heat_demand : b.properties["Domestic Heat Demand_Annual Heat Demand (kWh)"],
-    insulation_rating :  b.properties["Domestic Insulation Potential_EPC Rating"],
-    insulation_cwall: b.properties["Domestic Insulation Potential_Insulation - Cavity Wall"],
-    insulation_cwall_labour : b.properties["Low Carbon Technology Costs_Insulation - Cavity Wall - Labour"],
-    insulation_cwall_materials : b.properties["Low Carbon Technology Costs_Insulation - Cavity Wall  - Materials"],
-    insulation_cwall_total : b.properties["Low Carbon Technology Costs_Insulation - Cavity Wall - Total"],
-    insulation_ewall : b.properties["Domestic Insulation Potential_Insulation - External Wall"],
-    insulation_ewall_labour : b.properties["Low Carbon Technology Costs_Insulation - External Wall - Labour"],
-    insulation_ewall_materials : b.properties["Low Carbon Technology Costs_Insulation - External Wall - Material"],
-    insulation_ewall_total : b.properties["Low Carbon Technology Costs_Insulation - External Wall - Total"],
-    insulation_roof : b.properties["Domestic Insulation Potential_Insulation - Roof"],
-    insulation_roof_labour : b.properties["Low Carbon Technology Costs_Insulation - Loft - Labour"],
-    insulation_roof_materials : b.properties["Low Carbon Technology Costs_Insulation - Loft - Material"],
-    insulation_roof_total : b.properties["Low Carbon Technology Costs_Insulation - Loft - Total"],
-    insulation_floor : b.properties["Domestic Insulation Potential_Insulation - Under Floor"],
-    insulation_floor_labour : b.properties["Low Carbon Technology Costs_Insulation - Under Floor - Labour"],
-    insulation_floor_materials : b.properties["Low Carbon Technology Costs_Insulation - Under Floor - Material"],
-    insulation_floor_total : b.properties["Low Carbon Technology Costs_Insulation - Under Floor- Total"],
-    pv_suitability : b.properties["Domestic PV Potential_Overall Suitability"],
-    pv_size : b.properties["Domestic PV Potential_Recommended Array Size [kW]"],
-    pv_generation : b.properties["Domestic PV Potential_Annual Generation [kWh]"],
-    pv_labour : b.properties["Low Carbon Technology Costs_Rooftop PV - Labour"],
-    pv_material : b.properties["Low Carbon Technology Costs_Rooftop PV - Materials"],
-    pv_total : b.properties["Low Carbon Technology Costs_Rooftop PV - Total"],
-    }));
-``` -->
-
 ```sql id=oxford_data
   SELECT DISTINCT
     "UPRN" AS id,

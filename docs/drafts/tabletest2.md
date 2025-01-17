@@ -8,8 +8,8 @@ sql:
 ---
 
 ```js
-import { createTable } from "./../components/sorterTable.js";
-// import { sorterTable } from "./../components/sorterTableClass.js";
+// import { createTable } from "./../components/sorterTable.js";
+import { sorterTable } from "./../components/sorterTableClass.js";
 ```
 
 # Table Experiments 2
@@ -61,12 +61,13 @@ import { createTable } from "./../components/sorterTable.js";
     "Substation - Headroom" AS substation_headroom,
     "Substation - % headroom" AS substation_headroom_pct,
     "Substation - Demand_rag" AS substation_demand
-FROM oxford b;
+FROM oxford b
+WHERE substation_peakload >= 500;
 ```
 
 ```js
 const buildings = [...oxford_data];
-const flattenned = buildings.map((p) => ({ ...p }));
+// const flattenned = buildings.map((p) => ({ ...p }));
 // display(buildings);
 // display(flattenned);
 ```
@@ -110,16 +111,20 @@ const [selected, setSelected] = useState({});
 ```js
 // const table = new createTable(buildings, cols, () => {});
 
-const table = new createTable(
-  buildings.map((p) => ({ ...p })),
-  cols,
-  (changes) => {
-    console.log("Table changed:", changes);
-    setSelected(changes.selection);
-  }
-);
+// const table = new createTable(
+//   buildings.map((p) => ({ ...p })),
+//   cols,
+//   (changes) => {
+//     console.log("Table changed:", changes);
+//     setSelected(changes.selection);
+//   }
+// );
 
 // const table = sorter_table.createTable(buildings, cols, () => {});
+```
+
+```js
+const table = new sorterTable(buildings, cols, tableChanged);
 ```
 
 ```js
@@ -127,5 +132,28 @@ display(table.getNode());
 ```
 
 ```js
+function tableChanged(event) {
+  console.log("Table changed:", event);
+
+  if (event.type === "filter") {
+    console.log("Filtered indices:", event.indeces);
+    console.log("Filter rule:", event.rule);
+  }
+
+  if (event.type === "sort") {
+    console.log("Sorted indices:", event.indeces);
+    console.log("Sort criteria:", event.sort);
+  }
+
+  if (event.type === "selection") {
+    console.log("Selected rows:", event.selection);
+    setSelected(event.selection);
+    console.log("Selection rule:", event.rule);
+  }
+}
+```
+
+```js
+html`Selected`;
 display(selected);
 ```
