@@ -1,7 +1,7 @@
 import * as d3 from "npm:d3";
 
 export class sorterTable {
-  constructor(data, columnNames, changed) {
+  constructor(data, columnNames, changed, options = {}) {
     this.data = data;
     // this.columns = columns;
 
@@ -36,6 +36,19 @@ export class sorterTable {
       0.9, 0.95, 0.96, 0.97, 0.98, 0.99, 1,
     ];
     this.columnTypes = {};
+    this.cellRenderers = {}; // Custom cell renderers
+    if (options.cellRenderers) {
+      for (const [columnName, renderer] of Object.entries(
+        options.cellRenderers
+      )) {
+        if (columnNames.includes(columnName)) {
+          this.cellRenderers[columnName] = renderer;
+        } else {
+          console.warn(`No column found for cell renderer: ${columnName}`);
+        }
+      }
+    }
+
     this.createHeader();
     this.createTable();
   }
@@ -476,9 +489,27 @@ export class sorterTable {
       tr.style.color = "grey";
       this.tBody.appendChild(tr);
 
+      // this.columns.map((c) => {
+      //   let td = document.createElement("td");
+      //   td.innerText = this.data[d][c.column];
+      //   tr.appendChild(td);
+      //   td.style.color = "inherit";
+      //   td.style.fontWidth = "inherit";
+      // });
+
       this.columns.map((c) => {
         let td = document.createElement("td");
-        td.innerText = this.data[d][c.column];
+
+        // Use custom renderer if available for this column
+        if (typeof this.cellRenderers[c.column] === "function") {
+          td.innerHTML = ""; // Clear default content
+          td.appendChild(
+            this.cellRenderers[c.column](this.data[d][c.column], this.data[d])
+          ); // Call the renderer
+        } else {
+          td.innerText = this.data[d][c.column]; // Default: Set text content
+        }
+
         tr.appendChild(td);
         td.style.color = "inherit";
         td.style.fontWidth = "inherit";

@@ -116,11 +116,14 @@ const columns = [
   "insulation_ewall",
   "pv_generation",
   "ashp_size",
+  "substation_demand",
 ];
 ```
 
 ```js
-const table = new sorterTable(buildings, columns, tableChanged);
+const table = new sorterTable(buildings, columns, tableChanged, {
+  cellRenderers,
+});
 ```
 
 ```js
@@ -166,4 +169,117 @@ sortButton.addEventListener("click", () => {
   ageSortCtrl.setDirection("down");
   table.sortChanged(ageSortCtrl);
 });
+```
+
+```js
+// Create a color scale (example)
+const colorScale = d3
+  .scaleLinear()
+  .domain([0, d3.max(buildings, (d) => d.pv_generation)]) // Assuming 'value' is the column for sparkbar
+  .range(["lightblue", "blue"]);
+display(colorScale(1000));
+```
+
+```js
+// Define cell renderers
+const cellRenderers = {
+  pv_generation: sparkbar(
+    d3.max(buildings, (d) => d.value),
+    colorScale
+  ), // Sparkbar for 'value' column
+  ashp_size: (data) => {
+    const span = document.createElement("span");
+    span.innerText = data >= 180 ? "More" : "Less";
+    return span;
+  }, // Categorical renderer for 'ashp' column
+  // city: (city, rowData) => {
+  //   const a = document.createElement('a');
+  //   a.href = `https://www.google.com/maps/place/${encodeURIComponent(city)}`;
+  //   a.target = '_blank';
+  //   a.innerText = city;
+  //   return a;
+  // } // Link renderer for 'city' column
+};
+```
+
+```js
+function sparkbar(max, colorScale, alpha = 0.6) {
+  return (x, rowData) => {
+    console.log("Rendering sparkbar for:", x, rowData);
+    // Now takes 'x' (cell value) and 'rowData' (entire row)
+    const color = d3.color(colorScale(x));
+    color.opacity = alpha;
+    const div = document.createElement("div");
+    div.style.background = color;
+    div.style.width = `${(100 * x) / max}%`;
+    div.style.float = "right";
+    div.style.paddingRight = "3px";
+    div.style.boxSizing = "border-box";
+    div.style.overflow = "visible";
+    div.style.display = "flex";
+    div.style.justifyContent = "end";
+    div.innerText = x.toLocaleString("en");
+    return div;
+  };
+}
+```
+
+```js
+function sparkarea(data, rowData, options = {}) {
+  const {
+    width = 240,
+    height = 20,
+    fillColor = "#faa",
+    strokeColor = "red",
+  } = options;
+
+  // Extract x and y values from the data (assuming your data has a 'history' property)
+  const X = data.map((d) => d.date); // Assuming 'date' property for x-axis
+  const Y = data.map((d) => d.value); // Assuming 'value' property for y-axis
+
+  // Handle cases where there is not enough data for an area chart
+  if (X.length < 2 || Y.length < 2) {
+    const message = document.createElement("div");
+    message.innerText = "Not enough data";
+    return message;
+  }
+
+  const x = d3
+    .scaleTime() // Use scaleTime for dates
+    .domain(d3.extent(X))
+    .range([0, width]);
+  const y = d3.scaleLinear().domain(d3.extent(Y)).range([height, 0]);
+
+  const area = d3
+    .area()
+    .x((d, i) => x(X[i]))
+    .y1((d, i) => y(Y[i]))
+    .y0(height)
+    .defined((d, i) => !isNaN(X[i]) && !isNaN(Y[i]));
+
+  // Create the SVG element
+  const svg = d3
+    .create("svg")
+    .attr("width", width)
+    .attr("height", height)
+    .style("vertical-align", "middle")
+    .style("margin", "-3px 0")
+    .node(); // Get the actual SVG element
+
+  // Add the area path
+  d3.select(svg).append("path").attr("fill", fillColor).attr("d", area(data));
+
+  // Add the outline path
+  d3.select(svg)
+    .append("path")
+    .attr("fill", "none")
+    .attr("stroke", strokeColor)
+    .attr("d", area.lineY1()(data));
+
+  // Create a container div
+  const container = document.createElement("div");
+  container.appendChild(svg);
+
+  return container;
+}
 ```
