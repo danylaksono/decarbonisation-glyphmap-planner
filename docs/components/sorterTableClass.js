@@ -1,9 +1,15 @@
 import * as d3 from "npm:d3";
 
 export class sorterTable {
-  constructor(data, columns, changed) {
+  constructor(data, columnNames, changed) {
     this.data = data;
-    this.columns = columns;
+    // this.columns = columns;
+
+    // Automatically create column definitions with type inference
+    this.columns = columnNames.map((colName) => ({ column: colName }));
+    console.log("Initial columns:", this.columns);
+    this.inferColumnTypesAndThresholds(data);
+
     this.changed = changed;
     this.dataInd = d3.range(data.length);
     this.sortControllers = [];
@@ -34,13 +40,87 @@ export class sorterTable {
   }
 
   setColumnType(columnName, type) {
+    if (!columnName) {
+      console.error("Invalid columnName:", columnName);
+      return;
+    }
     this.columnTypes[columnName] = type;
+    console.log("Setting column type:", this.columnTypes);
   }
 
   getColumnType(columnName) {
     if (columnName in this.columnTypes) return this.columnTypes[columnName];
     return null;
   }
+
+  inferColumnTypesAndThresholds(data) {
+    const getType = (data, column) => {
+      for (const d of data) {
+        const value = d[column];
+        if (value === undefined) {
+          // Check for undefined
+          console.warn(`Value undefined for column: ${column}`);
+          continue;
+        }
+        if (value == null) continue;
+        if (typeof value === "number") return "continuous";
+        if (value instanceof Date) return "date";
+        return "ordinal";
+      }
+      // if all are null, return ordinal
+      return "ordinal";
+    };
+
+    const calculateThresholds = (data, column, numBins = 10) => {
+      // const values = data.map((d) => d[column]).filter((v) => v != null);
+      const values = data
+        .map((d) => d[column])
+        .filter((v) => v != null && v !== undefined);
+      const min = d3.min(values);
+      const max = d3.max(values);
+
+      // Simple equal-width binning (you can use more sophisticated methods)
+      const binWidth = (max - min) / numBins;
+      const thresholds = d3.range(1, numBins).map((i) => min + i * binWidth);
+      return thresholds;
+    };
+
+    console.log("Columns before type inference:", this.columns);
+
+    if (!this.columnTypes) {
+      this.columnTypes = {}; // Ensure it's initialized
+    }
+
+    this.columns.forEach((colDef) => {
+      // console.log("Column Definition:", colDef);
+      const colName = colDef.column;
+      const type = getType(data, colName);
+      console.log("Column Type:", type);
+
+      if (type === "continuous") {
+        colDef.thresholds = calculateThresholds(data, colName);
+      } else if (type === "ordinal") {
+        colDef.nominals = [...new Set(data.map((d) => d[colName]))]; // Get unique values
+      } else if (type === "date") {
+        //you can define specific logic for date type later.
+      }
+
+      console.log("setting column type:", colName, type);
+      this.setColumnType(colName, type); // Store the inferred type
+    });
+  }
+
+  // getType(data, column) {
+  //   for (const d of data) {
+  //     const value = d[column];
+  //     if (value == null) continue;
+  //     if (typeof value === "number") return "continuous";
+  //     if (value instanceof Date) return "date";
+  //     return "ordinal";
+  //   }
+  //   // if all are null, return ordinal
+  //   return "ordinal";
+  // }
 
   shiftCol(col, dir) {
     let colIndex = this.columns.findIndex((c) => c.column == col);
@@ -245,6 +325,7 @@ export class sorterTable {
     if (this.tHead != null) this.table.removeChild(this.tHead);
 
     this.sortControllers = [];
+    this.visControllers = []; // Initialize visControllers
 
     this.tHead = document.createElement("thead");
     this.table.appendChild(this.tHead);
@@ -272,12 +353,16 @@ export class sorterTable {
       td = document.createElement("td");
       td.setAttribute("colspan", 3);
       row.appendChild(td);
+
+      // Correctly create and use visCtrl here:
       let visCtrl = new HistogramController(
         this.dataInd.map((i) => this.data[i][c.column]),
-        c
+        this.getColumnType(c.column) === "continuous"
+          ? { thresholds: c.thresholds }
+          : { nominals: c.nominals }
       );
-      this.visControllers.push(visCtrl);
-      td.appendChild(visCtrl.getNode());
+      this.visControllers.push(visCtrl); // Add visCtrl to the visControllers array
+      td.appendChild(visCtrl.getNode()); // Append visCtrl's node to the table cell
 
       row = document.createElement("tr");
       ctrlTable.append(row);
@@ -300,6 +385,73 @@ export class sorterTable {
       row.appendChild(td);
     });
   }
+
+  // createHeader() {
+  //   if (this.tHead != null) this.table.removeChild(this.tHead);
+
+  //   this.sortControllers = [];
+
+  //   this.tHead = document.createElement("thead");
+  //   this.table.appendChild(this.tHead);
+  //   let tr = document.createElement("tr");
+  //   this.tHead.append(tr);
+
+  //   let visCtrl = new HistogramController(
+  //     this.dataInd.map((i) => this.data[i][c.column]),
+  //     this.getColumnType(c.column) === "continuous"
+  //       ? { thresholds: c.thresholds }
+  //       : { nominals: c.nominals } // Pass thresholds or nominals based on inferred type
+  //   );
+
+  //   this.columns.map((c) => {
+  //     let th = document.createElement("th");
+  //     tr.appendChild(th);
+
+  //     let ctrlTable = document.createElement("table");
+  //     ctrlTable.style.margin = "0px";
+  //     th.appendChild(ctrlTable);
+
+  //     let row = document.createElement("tr");
+  //     ctrlTable.append(row);
+  //     let td = document.createElement("td");
+  //     row.appendChild(td);
+  //     td.innerText = c.column;
+  //     td.setAttribute("colspan", 3);
+
+  //     row = document.createElement("tr");
+  //     ctrlTable.append(row);
+
+  //     td = document.createElement("td");
+  //     td.setAttribute("colspan", 3);
+  //     row.appendChild(td);
+  //     let visCtrl = new HistogramController(
+  //       this.dataInd.map((i) => this.data[i][c.column]),
+  //       c
+  //     );
+  //     this.visControllers.push(visCtrl);
+  //     td.appendChild(visCtrl.getNode());
+
+  //     row = document.createElement("tr");
+  //     ctrlTable.append(row);
+
+  //     td = document.createElement("td");
+  //     row.appendChild(td);
+  //     td.appendChild(
+  //       new ColShiftController((dir) => this.shiftCol(c, dir)).getNode()
+  //     );
+  //     td = document.createElement("td");
+  //     row.appendChild(td);
+  //     let sortCtrl = new SortController(c.column, (controller) =>
+  //       this.sortChanged(controller)
+  //     );
+  //     this.sortControllers.push(sortCtrl);
+  //     td.appendChild(sortCtrl.getNode());
+
+  //     td = document.createElement("td");
+  //     td.style.width = "100%";
+  //     row.appendChild(td);
+  //   });
+  // }
 
   createTable() {
     if (this.tBody != null) this.table.removeChild(this.tBody);
@@ -787,11 +939,6 @@ function HistogramController(data, binrules) {
         indeces: b.map((v) => v.index),
       }));
     } else if ("ordinals" in binrules || "nominals" in binrules) {
-      //I'll use d3.rollup but need to captur the data indeces in each
-      //category, not jut their counts
-
-      // const frequency = d3.rollup(data, v => v.length, d => d);
-
       const frequency = d3.rollup(
         data,
         (values) => ({
@@ -800,19 +947,65 @@ function HistogramController(data, binrules) {
         }),
         (d) => d.value
       );
+
       // Prepare the data as an array of bins
-      if ("ordinals" in binrules)
-        bins = binrules.ordinals.map((v) => ({
+      const binType = "ordinals" in binrules ? "ordinals" : "nominals";
+
+      if (binType in binrules && Array.isArray(binrules[binType])) {
+        bins = binrules[binType].map((v) => ({
           category: v,
           count: frequency.get(v) != null ? frequency.get(v).count : 0,
           indeces: frequency.get(v) != null ? frequency.get(v).indeces : [],
         }));
-      else
+      } else {
+        // Handle cases where binrules[binType] is not a valid array
         bins = Array.from(frequency, ([key, value]) => ({
           category: key,
           count: value.count,
           indeces: value.indeces,
         }));
+      }
+
+      // if (binType in binrules)
+      //   bins = binrules[binType].map((v) => ({
+      //     category: v,
+      //     count: frequency.get(v) != null ? frequency.get(v).count : 0,
+      //     indeces: frequency.get(v) != null ? frequency.get(v).indeces : [],
+      //   }));
+      // else
+      //   bins = Array.from(frequency, ([key, value]) => ({
+      //     category: key,
+      //     count: value.count,
+      //     indeces: value.indeces,
+      //   }));
+
+      // } else if ("ordinals" in binrules || "nominals" in binrules) {
+      //   //I'll use d3.rollup but need to captur the data indeces in each
+      //   //category, not jut their counts
+
+      //   // const frequency = d3.rollup(data, v => v.length, d => d);
+
+      //   const frequency = d3.rollup(
+      //     data,
+      //     (values) => ({
+      //       count: values.length,
+      //       indeces: values.map((v) => v.index),
+      //     }),
+      //     (d) => d.value
+      //   );
+      //   // Prepare the data as an array of bins
+      //   if ("ordinals" in binrules)
+      //     bins = binrules.ordinals.map((v) => ({
+      //       category: v,
+      //       count: frequency.get(v) != null ? frequency.get(v).count : 0,
+      //       indeces: frequency.get(v) != null ? frequency.get(v).indeces : [],
+      //     }));
+      //   else
+      //     bins = Array.from(frequency, ([key, value]) => ({
+      //       category: key,
+      //       count: value.count,
+      //       indeces: value.indeces,
+      //     }));
     }
 
     //add the bin index to each bin

@@ -62,7 +62,7 @@ import { sorterTable } from "./../components/sorterTableClass.js";
     "Substation - % headroom" AS substation_headroom_pct,
     "Substation - Demand_rag" AS substation_demand
 FROM oxford b
-WHERE substation_peakload >= 500;
+WHERE substation_peakload >= 500 AND pv_generation is not null;
 ```
 
 ```js
@@ -73,30 +73,30 @@ const buildings = [...oxford_data];
 ```
 
 ```js
-const cols = [
-  { column: "lsoa", nominals: null },
-  {
-    column: "insulation_rating",
-    ordinals: ["Unknown", "A", "B", "C", "D", "E", "F", "G"],
-  },
-  {
-    column: "insulation_ewall",
-    // ordinals: null,
-    nominals: null,
-    // ordinals: ["Unknown", "A", "B", "C", "D", "E", "F", "G"],
-  },
-  {
-    column: "pv_generation",
-    thresholds: [
-      0, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 20000,
-      30000, 40000, 50000,
-    ],
-  },
-  {
-    column: "ashp_size",
-    thresholds: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30, 40, 50],
-  },
-];
+// const cols = [
+//   { column: "lsoa", nominals: null },
+//   {
+//     column: "insulation_rating",
+//     ordinals: ["Unknown", "A", "B", "C", "D", "E", "F", "G"],
+//   },
+//   {
+//     column: "insulation_ewall",
+//     // ordinals: null,
+//     nominals: null,
+//     // ordinals: ["Unknown", "A", "B", "C", "D", "E", "F", "G"],
+//   },
+//   {
+//     column: "pv_generation",
+//     thresholds: [
+//       0, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 20000,
+//       30000, 40000, 50000,
+//     ],
+//   },
+//   {
+//     column: "ashp_size",
+//     thresholds: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30, 40, 50],
+//   },
+// ];
 ```
 
 ```js
@@ -109,22 +109,16 @@ const [selected, setSelected] = useState({});
 ```
 
 ```js
-// const table = new createTable(buildings, cols, () => {});
-
-// const table = new createTable(
-//   buildings.map((p) => ({ ...p })),
-//   cols,
-//   (changes) => {
-//     console.log("Table changed:", changes);
-//     setSelected(changes.selection);
-//   }
-// );
-
-// const table = sorter_table.createTable(buildings, cols, () => {});
+const columns = [
+  "insulation_rating",
+  "insulation_ewall",
+  "pv_generation",
+  "ashp_size",
+];
 ```
 
 ```js
-const table = new sorterTable(buildings, cols, tableChanged);
+const table = new sorterTable(buildings, columns, tableChanged);
 ```
 
 ```js
