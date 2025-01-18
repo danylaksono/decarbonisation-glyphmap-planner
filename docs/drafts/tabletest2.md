@@ -110,6 +110,8 @@ const [selected, setSelected] = useState({});
 
 ```js
 const columns = [
+  "id",
+  "lsoa",
   "insulation_rating",
   "insulation_ewall",
   "pv_generation",
@@ -150,4 +152,18 @@ function tableChanged(event) {
 ```js
 html`Selected`;
 display(selected);
+```
+
+```js
+const sortButton = document.createElement("button");
+sortButton.textContent = "Sort by LSOA (Descending)";
+document.body.appendChild(sortButton);
+
+sortButton.addEventListener("click", () => {
+  const ageSortCtrl = table.sortControllers.find(
+    (ctrl) => ctrl.getColumn() === "lsoa"
+  );
+  ageSortCtrl.setDirection("down");
+  table.sortChanged(ageSortCtrl);
+});
 ```

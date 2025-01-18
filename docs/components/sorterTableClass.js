@@ -347,6 +347,29 @@ export class sorterTable {
       td.innerText = c.column;
       td.setAttribute("colspan", 3);
 
+      // Make the column name clickable for sorting
+      td = row.firstChild; // Get the first <td> (the one with the column name)
+      td.style.cursor = "pointer"; // Make the cursor indicate it's clickable
+      td.addEventListener("click", () => {
+        // Find the sort controller for this column
+        const sortCtrl = this.sortControllers.find(
+          (ctrl) => ctrl.getColumn() === c.column
+        );
+
+        // Toggle the sort direction
+        if (
+          sortCtrl.getDirection() === "none" ||
+          sortCtrl.getDirection() === "down"
+        ) {
+          sortCtrl.setDirection("up");
+        } else {
+          sortCtrl.setDirection("down");
+        }
+
+        // Trigger the sort
+        this.sortChanged(sortCtrl);
+      });
+
       row = document.createElement("tr");
       ctrlTable.append(row);
 
@@ -742,6 +765,23 @@ function SortController(colName, update) {
 
   let sorting = "none";
   this.getDirection = () => sorting;
+
+  // toggle sorting direction
+  this.setDirection = (newDirection) => {
+    sorting = newDirection;
+
+    // Update the triangle colors based on the new direction
+    if (sorting === "up") {
+      leftTriangle.setAttribute("fill", "black");
+      rightTriangle.setAttribute("fill", "grey");
+    } else if (sorting === "down") {
+      leftTriangle.setAttribute("fill", "grey");
+      rightTriangle.setAttribute("fill", "black");
+    } else {
+      leftTriangle.setAttribute("fill", "grey");
+      rightTriangle.setAttribute("fill", "grey");
+    }
+  };
 
   this.getColumn = () => colName;
 
