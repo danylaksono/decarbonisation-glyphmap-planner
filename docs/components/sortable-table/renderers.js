@@ -274,3 +274,172 @@ function ratingRenderer(rating, rowData, maxRating = 5) {
 
   return container;
 }
+
+// ================ Custom Renderers ================
+
+function barChartRenderer(data, rowData, options = {}) {
+  // Example usage in cellRenderers:
+  //   const cellRenderers = {
+  //     sales: (data, rowData) =>
+  //       barChartRenderer(data, rowData, { barColor: "skyblue" }),
+  //   };
+  const { width = 150, height = 50, barColor = "steelblue" } = options;
+
+  const x = d3
+    .scaleBand()
+    .domain(data.map((d) => d.quarter)) // Assuming 'quarter' property for x-axis labels
+    .range([0, width])
+    .padding(0.1);
+
+  const y = d3
+    .scaleLinear()
+    .domain([0, d3.max(data, (d) => d.value)]) // Assuming 'value' property for bar height
+    .range([height, 0]);
+
+  const svg = d3
+    .create("svg")
+    .attr("width", width)
+    .attr("height", height)
+    .attr("viewBox", [0, 0, width, height])
+    .style("overflow", "visible");
+
+  svg
+    .selectAll(".bar")
+    .data(data)
+    .enter()
+    .append("rect")
+    .attr("class", "bar")
+    .attr("x", (d) => x(d.quarter))
+    .attr("y", (d) => y(d.value))
+    .attr("width", x.bandwidth())
+    .attr("height", (d) => height - y(d.value))
+    .attr("fill", barColor);
+
+  // Add x-axis labels (optional)
+  svg
+    .append("g")
+    .attr("transform", `translate(0, ${height})`)
+    .call(d3.axisBottom(x).tickSizeOuter(0))
+    .selectAll("text")
+    .style("text-anchor", "middle")
+    .style("font-size", "10px");
+
+  const container = document.createElement("div");
+  container.appendChild(svg.node());
+  return container;
+}
+
+function pieChartRenderer(data, rowData, options = {}) {
+  // Example usage in cellRenderers:
+  //   const cellRenderers = {
+  //     area: (data, rowData) =>
+  //       pieChartRenderer(data, rowData, {
+  //         width: 60,
+  //         height: 60,
+  //         innerRadius: 10, // Create a donut chart
+  //         colors: d3.schemeSet3, // Use a different color scheme
+  //       }),
+  //   };
+  const {
+    width = 50,
+    height = 50,
+    innerRadius = 0,
+    outerRadius = Math.min(width, height) / 2,
+    colors = d3.schemeCategory10,
+  } = options;
+
+  const pie = d3
+    .pie()
+    .value((d) => d.value)
+    .sort(null); // sort data for a consistent pie chart look
+
+  const arc = d3.arc().innerRadius(innerRadius).outerRadius(outerRadius);
+
+  const svg = d3
+    .create("svg")
+    .attr("width", width)
+    .attr("height", height)
+    .attr("viewBox", [-width / 2, -height / 2, width, height])
+    .style("overflow", "visible");
+
+  const colorScale = d3.scaleOrdinal(colors); // Create a color scale
+
+  svg
+    .selectAll(".arc")
+    .data(pie(data)) // Pass the data to the pie layout
+    .enter()
+    .append("path")
+    .attr("class", "arc")
+    .attr("d", arc) // Use the arc generator to create the path data
+    .attr("fill", (d) => colorScale(d.data.quarter)) // Use color scale based on quarter
+    .attr("stroke", "white")
+    .style("stroke-width", "1px");
+
+  // Add labels (optional)
+  svg
+    .selectAll(".label")
+    .data(pie(data))
+    .enter()
+    .append("text")
+    .attr("class", "label")
+    .attr("transform", (d) => `translate(${arc.centroid(d)})`)
+    .attr("text-anchor", "middle")
+    .style("font-size", "8px")
+    .text((d) => d.data.quarter);
+
+  const container = document.createElement("div");
+  container.appendChild(svg.node());
+  return container;
+}
+
+function barChartCanvasRenderer(data, rowData, options = {}) {
+  // Example usage in cellRenderers:
+  //   const cellRenderers = {
+  //     sales: (data, rowData) =>
+  //       barChartCanvasRenderer(data, rowData, { barColor: "orange" }),
+  //   };
+  const {
+    width = 150,
+    height = 50,
+    barColor = "steelblue",
+    backgroundColor = "white",
+  } = options;
+
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d");
+
+  // Clear the canvas
+  ctx.fillStyle = backgroundColor;
+  ctx.fillRect(0, 0, width, height);
+
+  const x = d3
+    .scaleBand()
+    .domain(data.map((d) => d.quarter))
+    .range([0, width])
+    .padding(0.1);
+
+  const y = d3
+    .scaleLinear()
+    .domain([0, d3.max(data, (d) => d.value)])
+    .range([height, 0]);
+
+  // Draw bars
+  data.forEach((d) => {
+    ctx.fillStyle = barColor;
+    ctx.fillRect(x(d.quarter), y(d.value), x.bandwidth(), height - y(d.value));
+  });
+
+  // Add x-axis labels (optional)
+  ctx.fillStyle = "black";
+  ctx.textAlign = "center";
+  ctx.font = "10px sans-serif";
+  data.forEach((d) => {
+    ctx.fillText(d.quarter, x(d.quarter) + x.bandwidth() / 2, height - 2);
+  });
+
+  const container = document.createElement("div");
+  container.appendChild(canvas);
+  return container;
+}
