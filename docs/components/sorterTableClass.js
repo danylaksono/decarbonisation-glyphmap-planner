@@ -11,6 +11,7 @@ export class sorterTable {
     this.inferColumnTypesAndThresholds(data);
 
     this.changed = changed;
+    this._isUndoing = false;
     this.dataInd = d3.range(data.length);
     this.sortControllers = [];
     this.visControllers = [];
@@ -110,44 +111,57 @@ export class sorterTable {
     });
   }
 
-  // getType(data, column) {
-  //   for (const d of data) {
-  //     const value = d[column];
-  //     if (value == null) continue;
-  //     if (typeof value === "number") return "continuous";
-  //     if (value instanceof Date) return "date";
-  //     return "ordinal";
-  //   }
-  //   // if all are null, return ordinal
-  //   return "ordinal";
-  // }
+  // Shift column position using visController
+  shiftCol(columnName, dir) {
+    console.log("Shifting column:", columnName, "direction:", dir);
 
-  shiftCol(col, dir) {
-    let colIndex = this.columns.findIndex((c) => c.column == col);
+    let colIndex = this.columns.findIndex((c) => c.column === columnName);
+    console.log("Found column at index:", colIndex);
+
     const targetIndex = dir === "left" ? colIndex - 1 : colIndex + 1;
+    console.log("Target index:", targetIndex);
 
     if (targetIndex >= 0 && targetIndex < this.columns.length) {
-      this.history.push({ type: "shiftcol", col: col, dir: dir });
-
-      for (let row of this.table.rows) {
-        const cell1 = row.cells[colIndex];
-        const cell2 = row.cells[targetIndex];
-
-        if (dir == "left") row.insertBefore(cell1, cell2);
-        else row.insertBefore(cell2, cell1);
+      if (!this._isUndoing) {
+        this.history.push({
+          type: "shiftcol",
+          columnName: columnName,
+          dir: dir,
+          fromIndex: colIndex,
+          toIndex: targetIndex,
+        });
       }
 
-      let sw = this.columns[colIndex];
-      this.columns[colIndex] = this.columns[targetIndex];
-      this.columns[targetIndex] = sw;
+      // Store the elements to be moved
+      const columnsToMove = {
+        column: this.columns[colIndex],
+        visController: this.visControllers[colIndex],
+        sortController: this.sortControllers[colIndex],
+      };
 
-      sw = this.sortControllers[colIndex];
-      this.sortControllers[colIndex] = this.sortControllers[targetIndex];
-      this.sortControllers[targetIndex] = sw;
+      // Remove elements from original positions
+      this.columns.splice(colIndex, 1);
+      this.visControllers.splice(colIndex, 1);
+      this.sortControllers.splice(colIndex, 1);
 
-      sw = this.visControllers[colIndex];
-      this.visControllers[colIndex] = this.visControllers[targetIndex];
-      this.visControllers[targetIndex] = sw;
+      // Insert elements at new positions
+      this.columns.splice(targetIndex, 0, columnsToMove.column);
+      this.visControllers.splice(targetIndex, 0, columnsToMove.visController);
+      this.sortControllers.splice(targetIndex, 0, columnsToMove.sortController);
+
+      // Recreate the table and header
+      this.createHeader();
+      this.createTable();
+
+      // Update data in visualization controllers
+      this.visControllers.forEach((vc, idx) => {
+        if (vc && vc.updateData && this.columns[idx]) {
+          const columnData = this.dataInd.map(
+            (i) => this.data[i][this.columns[idx].column]
+          );
+          vc.updateData(columnData);
+        }
+      });
     }
   }
 
@@ -178,7 +192,7 @@ export class sorterTable {
       if (u.type === "filter" || u.type === "sort") {
         this.dataInd = u.data;
         this.createTable();
-        this.visControllers.map((vc, vci) =>
+        this.visControllers.forEach((vc, vci) =>
           vc.updateData(
             this.dataInd.map((i) => this.data[i][this.columns[vci].column])
           )
@@ -189,7 +203,10 @@ export class sorterTable {
           sort: this.compoundSorting,
         });
       } else if (u.type === "shiftcol") {
-        this.shiftCol(u.col, u.dir === "left" ? "right" : "left");
+        this._isUndoing = true;
+        const reverseDir = u.dir === "left" ? "right" : "left";
+        this.shiftCol(u.columnName, reverseDir);
+        this._isUndoing = false;
       }
     }
   }
@@ -322,17 +339,19 @@ export class sorterTable {
   }
 
   createHeader() {
-    if (this.tHead != null) this.table.removeChild(this.tHead);
+    if (this.tHead != null) {
+      this.table.removeChild(this.tHead);
+    }
 
     this.sortControllers = [];
-    this.visControllers = []; // Initialize visControllers
+    this.visControllers = [];
 
     this.tHead = document.createElement("thead");
     this.table.appendChild(this.tHead);
     let tr = document.createElement("tr");
     this.tHead.append(tr);
 
-    this.columns.map((c) => {
+    this.columns.forEach((c) => {
       let th = document.createElement("th");
       tr.appendChild(th);
 
@@ -340,6 +359,7 @@ export class sorterTable {
       ctrlTable.style.margin = "0px";
       th.appendChild(ctrlTable);
 
+      // Column name row
       let row = document.createElement("tr");
       ctrlTable.append(row);
       let td = document.createElement("td");
@@ -347,54 +367,56 @@ export class sorterTable {
       td.innerText = c.column;
       td.setAttribute("colspan", 3);
 
-      // Make the column name clickable for sorting
-      td = row.firstChild; // Get the first <td> (the one with the column name)
-      td.style.cursor = "pointer"; // Make the cursor indicate it's clickable
+      // Make column name clickable for sorting
+      td.style.cursor = "pointer";
       td.addEventListener("click", () => {
-        // Find the sort controller for this column
         const sortCtrl = this.sortControllers.find(
           (ctrl) => ctrl.getColumn() === c.column
         );
-
-        // Toggle the sort direction
-        if (
-          sortCtrl.getDirection() === "none" ||
-          sortCtrl.getDirection() === "down"
-        ) {
-          sortCtrl.setDirection("up");
-        } else {
-          sortCtrl.setDirection("down");
+        if (sortCtrl) {
+          if (
+            sortCtrl.getDirection() === "none" ||
+            sortCtrl.getDirection() === "down"
+          ) {
+            sortCtrl.setDirection("up");
+          } else {
+            sortCtrl.setDirection("down");
+          }
+          this.sortChanged(sortCtrl);
         }
-
-        // Trigger the sort
-        this.sortChanged(sortCtrl);
       });
 
+      // Visualization row
       row = document.createElement("tr");
       ctrlTable.append(row);
-
       td = document.createElement("td");
       td.setAttribute("colspan", 3);
       row.appendChild(td);
 
-      // Correctly create and use visCtrl here:
+      // Create and add visualization controller
       let visCtrl = new HistogramController(
         this.dataInd.map((i) => this.data[i][c.column]),
         this.getColumnType(c.column) === "continuous"
           ? { thresholds: c.thresholds }
           : { nominals: c.nominals }
       );
-      this.visControllers.push(visCtrl); // Add visCtrl to the visControllers array
-      td.appendChild(visCtrl.getNode()); // Append visCtrl's node to the table cell
+      this.visControllers.push(visCtrl);
+      td.appendChild(visCtrl.getNode());
 
+      // Controls row
       row = document.createElement("tr");
       ctrlTable.append(row);
 
+      // Shift controller cell
       td = document.createElement("td");
       row.appendChild(td);
-      td.appendChild(
-        new ColShiftController((dir) => this.shiftCol(c, dir)).getNode()
+      const shiftCtrl = new ColShiftController(
+        c.column,
+        (columnName, direction) => this.shiftCol(columnName, direction)
       );
+      td.appendChild(shiftCtrl.getNode());
+
+      // Sort controller cell
       td = document.createElement("td");
       row.appendChild(td);
       let sortCtrl = new SortController(c.column, (controller) =>
@@ -403,78 +425,12 @@ export class sorterTable {
       this.sortControllers.push(sortCtrl);
       td.appendChild(sortCtrl.getNode());
 
+      // Spacer cell
       td = document.createElement("td");
       td.style.width = "100%";
       row.appendChild(td);
     });
   }
-
-  // createHeader() {
-  //   if (this.tHead != null) this.table.removeChild(this.tHead);
-
-  //   this.sortControllers = [];
-
-  //   this.tHead = document.createElement("thead");
-  //   this.table.appendChild(this.tHead);
-  //   let tr = document.createElement("tr");
-  //   this.tHead.append(tr);
-
-  //   let visCtrl = new HistogramController(
-  //     this.dataInd.map((i) => this.data[i][c.column]),
-  //     this.getColumnType(c.column) === "continuous"
-  //       ? { thresholds: c.thresholds }
-  //       : { nominals: c.nominals } // Pass thresholds or nominals based on inferred type
-  //   );
-
-  //   this.columns.map((c) => {
-  //     let th = document.createElement("th");
-  //     tr.appendChild(th);
-
-  //     let ctrlTable = document.createElement("table");
-  //     ctrlTable.style.margin = "0px";
-  //     th.appendChild(ctrlTable);
-
-  //     let row = document.createElement("tr");
-  //     ctrlTable.append(row);
-  //     let td = document.createElement("td");
-  //     row.appendChild(td);
-  //     td.innerText = c.column;
-  //     td.setAttribute("colspan", 3);
-
-  //     row = document.createElement("tr");
-  //     ctrlTable.append(row);
-
-  //     td = document.createElement("td");
-  //     td.setAttribute("colspan", 3);
-  //     row.appendChild(td);
-  //     let visCtrl = new HistogramController(
-  //       this.dataInd.map((i) => this.data[i][c.column]),
-  //       c
-  //     );
-  //     this.visControllers.push(visCtrl);
-  //     td.appendChild(visCtrl.getNode());
-
-  //     row = document.createElement("tr");
-  //     ctrlTable.append(row);
-
-  //     td = document.createElement("td");
-  //     row.appendChild(td);
-  //     td.appendChild(
-  //       new ColShiftController((dir) => this.shiftCol(c, dir)).getNode()
-  //     );
-  //     td = document.createElement("td");
-  //     row.appendChild(td);
-  //     let sortCtrl = new SortController(c.column, (controller) =>
-  //       this.sortChanged(controller)
-  //     );
-  //     this.sortControllers.push(sortCtrl);
-  //     td.appendChild(sortCtrl.getNode());
-
-  //     td = document.createElement("td");
-  //     td.style.width = "100%";
-  //     row.appendChild(td);
-  //   });
-  // }
 
   createTable() {
     if (this.tBody != null) this.table.removeChild(this.tBody);
@@ -603,26 +559,6 @@ export class sorterTable {
         sorts[col][sortedCol[i]] = rank;
       }
     });
-
-    // this.dataInd.map((v, i) => (this.data[v].tabindex = i));
-
-    // this.dataInd.sort((a, b) => {
-    //   let scoreA = 0;
-    //   Object.keys(sorts).map(
-    //     (col) =>
-    //       (scoreA +=
-    //         this.compoundSorting[col].weight *
-    //         sorts[col][this.data[a].tabindex])
-    //   );
-    //   let scoreB = 0;
-    //   Object.keys(sorts).map(
-    //     (col) =>
-    //       (scoreB +=
-    //         this.compoundSorting[col].weight *
-    //         sorts[col][this.data[b].tabindex])
-    //   );
-    //   return scoreA - scoreB;
-    // });
 
     // this.dataInd.map((v, i) => delete this.data[v].tabindex);
 
@@ -790,23 +726,21 @@ function SortController(colName, update) {
   return this;
 }
 
-function ColShiftController(update) {
+function ColShiftController(columnName, update) {
   let controller = this;
-
   let div = document.createElement("div");
 
   //CREATE SVG
   let svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   svg.setAttribute("width", 20);
   svg.setAttribute("height", 10);
-  // svg.setAttribute("style", "border: 1px solid black; background-color: #f0f0f0");
   div.appendChild(svg);
 
   const leftTriangle = createTriangle("0,5 9,0 9,10", "grey", () =>
-    update("left")
+    update(columnName, "left")
   );
   const rightTriangle = createTriangle("11,0 11,10 20,5", "grey", () =>
-    update("right")
+    update(columnName, "right")
   );
 
   // Add triangles to SVG
@@ -817,6 +751,34 @@ function ColShiftController(update) {
 
   return this;
 }
+
+// function ColShiftController(update) {
+//   let controller = this;
+
+//   let div = document.createElement("div");
+
+//   //CREATE SVG
+//   let svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+//   svg.setAttribute("width", 20);
+//   svg.setAttribute("height", 10);
+//   // svg.setAttribute("style", "border: 1px solid black; background-color: #f0f0f0");
+//   div.appendChild(svg);
+
+//   const leftTriangle = createTriangle("0,5 9,0 9,10", "grey", () =>
+//     update("left")
+//   );
+//   const rightTriangle = createTriangle("11,0 11,10 20,5", "grey", () =>
+//     update("right")
+//   );
+
+//   // Add triangles to SVG
+//   svg.appendChild(leftTriangle);
+//   svg.appendChild(rightTriangle);
+
+//   this.getNode = () => div;
+
+//   return this;
+// }
 
 function createTriangle(points, color, action) {
   const triangle = document.createElementNS(
@@ -1005,47 +967,6 @@ function HistogramController(data, binrules) {
           indeces: value.indeces,
         }));
       }
-
-      // if (binType in binrules)
-      //   bins = binrules[binType].map((v) => ({
-      //     category: v,
-      //     count: frequency.get(v) != null ? frequency.get(v).count : 0,
-      //     indeces: frequency.get(v) != null ? frequency.get(v).indeces : [],
-      //   }));
-      // else
-      //   bins = Array.from(frequency, ([key, value]) => ({
-      //     category: key,
-      //     count: value.count,
-      //     indeces: value.indeces,
-      //   }));
-
-      // } else if ("ordinals" in binrules || "nominals" in binrules) {
-      //   //I'll use d3.rollup but need to captur the data indeces in each
-      //   //category, not jut their counts
-
-      //   // const frequency = d3.rollup(data, v => v.length, d => d);
-
-      //   const frequency = d3.rollup(
-      //     data,
-      //     (values) => ({
-      //       count: values.length,
-      //       indeces: values.map((v) => v.index),
-      //     }),
-      //     (d) => d.value
-      //   );
-      //   // Prepare the data as an array of bins
-      //   if ("ordinals" in binrules)
-      //     bins = binrules.ordinals.map((v) => ({
-      //       category: v,
-      //       count: frequency.get(v) != null ? frequency.get(v).count : 0,
-      //       indeces: frequency.get(v) != null ? frequency.get(v).indeces : [],
-      //     }));
-      //   else
-      //     bins = Array.from(frequency, ([key, value]) => ({
-      //       category: key,
-      //       count: value.count,
-      //       indeces: value.indeces,
-      //     }));
     }
 
     //add the bin index to each bin
