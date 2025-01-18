@@ -150,8 +150,9 @@ export class sorterTable {
       this.sortControllers.splice(targetIndex, 0, columnsToMove.sortController);
 
       // Recreate the table and header
-      this.createHeader();
-      this.createTable();
+      this.rebuildTable();
+      // this.createHeader();
+      // this.createTable();
 
       // Update data in visualization controllers
       this.visControllers.forEach((vc, idx) => {
@@ -209,6 +210,11 @@ export class sorterTable {
         this._isUndoing = false;
       }
     }
+  }
+
+  rebuildTable() {
+    this.createHeader();
+    this.createTable();
   }
 
   // getSelection() {
@@ -312,8 +318,18 @@ export class sorterTable {
   }
 
   clearSelection() {
-    if (this.tBody != null)
-      this.tBody.querySelectorAll("tr").forEach((tr) => this.unselectRow(tr));
+    this.selectedRows.clear(); // Clear the Set of selected rows
+    // Also, visually deselect all rows in the table
+    if (this.tBody) {
+      this.tBody.querySelectorAll("tr").forEach((tr) => {
+        this.unselectRow(tr);
+        tr.selected = false;
+        tr.style.fontWeight = "normal";
+        tr.style.color = "grey";
+      });
+    }
+    // if (this.tBody != null)
+    //   this.tBody.querySelectorAll("tr").forEach((tr) => this.unselectRow(tr));
   }
 
   selectRow(tr) {
@@ -400,6 +416,7 @@ export class sorterTable {
           ? { thresholds: c.thresholds }
           : { nominals: c.nominals }
       );
+      visCtrl.table = this; // Set the table reference!
       this.visControllers.push(visCtrl);
       td.appendChild(visCtrl.getNode());
 
@@ -887,7 +904,7 @@ function HistogramController(data, binrules) {
   this.updateData = (d) => setData(d);
 
   function setData(dd) {
-    console.log("dd:", dd);
+    // console.log("dd:", dd);
 
     div.innerHTML = "";
 
@@ -971,7 +988,7 @@ function HistogramController(data, binrules) {
 
     //add the bin index to each bin
     bins.map((bin, i) => (bin.index = i));
-    console.log("bins: ", bins);
+    // console.log("bins: ", bins);
 
     // Define the y scale (based on bin counts)
     const y = d3
@@ -1008,7 +1025,11 @@ function HistogramController(data, binrules) {
       .attr("height", height) // Stretch to full height
       .attr("fill", "transparent") // Make invisible
       .on("mouseover", (event, d) => {
-        d3.select(event.currentTarget.previousSibling).attr("fill", "purple"); // Change color on hover for the actual bar
+        // d3.select(event.currentTarget.previousSibling).attr("fill", "purple"); // Change color on hover for the actual bar
+
+        if (!d.selected) {
+          d3.select(event.currentTarget.previousSibling).attr("fill", "purple");
+        }
 
         svg
           .selectAll(".label")
@@ -1023,21 +1044,79 @@ function HistogramController(data, binrules) {
           .text(d.category + ": " + d.count); // Display the value in the label
       })
       .on("mouseout", (event, d) => {
-        d3.select(event.currentTarget.previousSibling).attr(
-          "fill",
-          "steelblue"
-        ); // Revert color on mouseout
+        if (!d.selected) {
+          d3.select(event.currentTarget.previousSibling).attr(
+            "fill",
+            "steelblue"
+          );
+        }
+
+        // d3.select(event.currentTarget.previousSibling).attr(
+        //   "fill",
+        //   "steelblue"
+        // ); // Revert color on mouseout
 
         svg.selectAll(".label").remove();
       })
       .on("click", (event, d) => {
-        d3.select(event.currentTarget.previousSibling).attr("fill", "orange"); // Revert color on mouseout
+        // Toggle the selected state
+        d.selected = !d.selected;
 
+        // Update highlight based on selection state
+        if (d.selected) {
+          d3.select(event.currentTarget.previousSibling).attr("fill", "orange");
+        } else {
+          d3.select(event.currentTarget.previousSibling).attr(
+            "fill",
+            "steelblue"
+          );
+        }
+
+        // d3.select(event.currentTarget.previousSibling).attr("fill", "orange"); // Revert color on mouseout
         console.log("histo select:", bins[d.index].indeces);
+
+        // Select the corresponding rows in the table
+        // Assuming 'controller.table' references the sorterTable instance
+        if (controller.table) {
+          // Only clear selection if this bar is being unselected
+          if (!d.selected) {
+            controller.table.clearSelection();
+          }
+
+          bins[d.index].indeces.forEach((rowIndex) => {
+            const tr = controller.table.tBody.querySelector(
+              `tr:nth-child(${rowIndex + 1})`
+            );
+            if (tr) {
+              if (d.selected) {
+                controller.table.selectRow(tr);
+              } else {
+                controller.table.unselectRow(tr);
+              }
+            }
+          });
+          controller.table.selectionUpdated();
+        }
+        // if (controller.table) {
+        //   controller.table.clearSelection();
+        //   bins[d.index].indeces.forEach((rowIndex) => {
+        //     const tr = controller.table.tBody.querySelector(
+        //       `tr:nth-child(${rowIndex + 1})`
+        //     );
+        //     if (tr) {
+        //       controller.table.selectRow(tr);
+        //     }
+        //   });
+        // }
+        // // Inform sorterTable about the selection change
+        // controller.table.selectionUpdated();
       });
   }
 
   setData(data);
+
+  // set from sorterTable
+  this.table = null;
 
   this.getNode = () => div;
   return this;
