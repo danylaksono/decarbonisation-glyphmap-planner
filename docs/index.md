@@ -20,6 +20,7 @@ import * as turf from "@turf/turf";
 import * as bulmaToast from "npm:bulma-toast";
 import * as bulmaQuickview from "npm:bulma-quickview@2.0.0/dist/js/bulma-quickview.js";
 
+import { sorterTable } from "./components/sorterTableClass.js";
 import {
   TimeGlyph,
   GlyphCollection,
@@ -1117,9 +1118,49 @@ const tableColumns = Object.keys(data[0])
 ```
 
 ```js
+function tableChanged(event) {
+  console.log("Table changed:", event);
+
+  if (event.type === "filter") {
+    console.log("Filtered indices:", event.indeces);
+    console.log("Filter rule:", event.rule);
+  }
+
+  if (event.type === "sort") {
+    console.log("Sorted indices:", event.indeces);
+    console.log("Sort criteria:", event.sort);
+  }
+
+  if (event.type === "selection") {
+    console.log("Selected rows:", event.selection);
+    setSelected(event.selection);
+    console.log("Selection rule:", event.rule);
+  }
+}
+```
+
+```js
+// Define cell renderers
+// const cellRenderers = {
+//   pv_generation: (value, rowData) => {
+//     const max = d3.max(data, (d) => d.pv_generation); // Calculate max dynamically
+//     return sparkbar(max, colorScale)(value, rowData); // Call sparkbar with calculated max
+//   },
+//   ashp_size: (data) => {
+//     const span = document.createElement("span");
+//     span.innerText = data >= 180 ? "More" : "Less";
+//     return span;
+//   },
+// };
+```
+
+```js
 // test table
-html`<h1>Summarize</h1>`;
-// display(SummarizeColumn(data, "lsoa"));
+const table = new sorterTable(data, tableColumns, tableChanged);
+```
+
+```js
+display(table.getNode());
 ```
 
 ```js

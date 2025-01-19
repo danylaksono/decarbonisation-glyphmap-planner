@@ -1361,14 +1361,15 @@ function HistogramController(data, binrules) {
         // Select the corresponding rows in the table
         // Assuming 'controller.table' references the sorterTable instance
         if (controller.table) {
-          // Only clear selection if this bar is being unselected
           if (!d.selected) {
             controller.table.clearSelection();
           }
 
           bins[d.index].indeces.forEach((rowIndex) => {
+            // Use the dataInd array to get the correct data index
+            const actualIndex = controller.table.dataInd[rowIndex];
             const tr = controller.table.tBody.querySelector(
-              `tr:nth-child(${rowIndex + 1})`
+              `tr:nth-child(${actualIndex + 1})`
             );
             if (tr) {
               if (d.selected) {
