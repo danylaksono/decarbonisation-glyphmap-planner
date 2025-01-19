@@ -56,7 +56,9 @@ export class sorterTable {
       for (const [columnName, renderer] of Object.entries(
         options.cellRenderers
       )) {
-        if (columnNames.includes(columnName)) {
+        // Find the column object that matches the renderer's column name
+        const column = this.columns.find((col) => col.column === columnName);
+        if (column) {
           this.cellRenderers[columnName] = renderer;
         } else {
           console.warn(`No column found for cell renderer: ${columnName}`);
