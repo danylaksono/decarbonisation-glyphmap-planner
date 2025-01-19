@@ -3,13 +3,14 @@ import * as d3 from "npm:d3";
 export class sorterTable {
   constructor(data, columnNames, changed, options = {}) {
     this.data = data;
-    // this.columns = columns;
 
+    // create table element
     this.table = document.createElement("table");
     this.table.classList.add("sorter-table");
 
     // Automatically create column definitions with type inference
     this.columns = columnNames.map((colName) => ({ column: colName }));
+    this.initialColumns = columnNames.map((colName) => ({ column: colName }));
     console.log("Initial columns:", this.columns);
     this.inferColumnTypesAndThresholds(data);
 
@@ -56,8 +57,31 @@ export class sorterTable {
         ? options.showDefaultControls
         : true;
 
+    this.options = {
+      containerHeight: options.height || "400px",
+      containerWidth: options.width || "100%",
+      rowsPerPage: options.rowsPerPage || 50,
+      loadMoreThreshold: options.loadMoreThreshold || 200,
+    };
+
+    Object.assign(this.table.style, {
+      width: "100%",
+      borderCollapse: "collapse",
+      // border: "1px solid #ddd",
+      fontFamily: "Arial, sans-serif",
+      fontSize: "14px",
+    });
+
     this.createHeader();
     this.createTable();
+
+    this.table.addEventListener("mousedown", (event) => {
+      if (event.shiftKey) {
+        this.shiftDown = true;
+      } else {
+        this.shiftDown = false;
+      }
+    });
   }
 
   setColumnType(columnName, type) {
@@ -392,6 +416,7 @@ export class sorterTable {
     this.columns.forEach((c) => {
       let th = document.createElement("th");
       headerRow.appendChild(th);
+      th.style.textAlign = "center";
 
       // --- Column Name ---
       let nameSpan = document.createElement("span");
@@ -459,6 +484,13 @@ export class sorterTable {
       this.visControllers.push(visCtrl);
       visTd.appendChild(visCtrl.getNode());
     });
+
+    // Add sticky positioning to thead
+    this.tHead.style.position = "sticky";
+    this.tHead.style.top = "0";
+    this.tHead.style.backgroundColor = "#ffffff"; // Ensure header is opaque
+    this.tHead.style.zIndex = "1"; // Keep header above table content
+    this.tHead.style.boxShadow = "0 2px 2px rgba(0,0,0,0.1)";
   }
 
   createTable() {
@@ -474,39 +506,35 @@ export class sorterTable {
   addTableRows(howMany) {
     this.addingRows = true;
 
-    let min = this.lastLineAdded;
-    let max = this.lastLineAdded + howMany;
-    this.dataInd.map((d, row) => {
-      if (row <= min || row > max) {
-        return;
-      }
+    let min = this.lastLineAdded + 1; // Corrected: Start from the next line
+    let max = Math.min(min + howMany - 1, this.dataInd.length - 1); // Corrected: Use Math.min to avoid exceeding dataInd.length
 
-      this.lastLineAdded++;
+    for (let row = min; row <= max; row++) {
+      let dataIndex = this.dataInd[row - 1]; // Adjust index for dataInd
+      if (dataIndex === undefined) continue;
 
       let tr = document.createElement("tr");
       tr.selected = false;
-      tr.style.color = "grey";
+      Object.assign(tr.style, {
+        color: "grey",
+        borderBottom: "1px solid #ddd",
+      });
       this.tBody.appendChild(tr);
 
-      // this.columns.map((c) => {
-      //   let td = document.createElement("td");
-      //   td.innerText = this.data[d][c.column];
-      //   tr.appendChild(td);
-      //   td.style.color = "inherit";
-      //   td.style.fontWidth = "inherit";
-      // });
-
-      this.columns.map((c) => {
+      this.columns.forEach((c) => {
         let td = document.createElement("td");
 
         // Use custom renderer if available for this column
         if (typeof this.cellRenderers[c.column] === "function") {
-          td.innerHTML = ""; // Clear default content
+          td.innerHTML = "";
           td.appendChild(
-            this.cellRenderers[c.column](this.data[d][c.column], this.data[d])
-          ); // Call the renderer
+            this.cellRenderers[c.column](
+              this.data[dataIndex][c.column],
+              this.data[dataIndex]
+            )
+          );
         } else {
-          td.innerText = this.data[d][c.column]; // Default: Set text content
+          td.innerText = this.data[dataIndex][c.column]; // Default: Set text content
         }
 
         tr.appendChild(td);
@@ -514,27 +542,27 @@ export class sorterTable {
         td.style.fontWidth = "inherit";
       });
 
+      // Add event listeners for row selection
       tr.addEventListener("click", (event) => {
         let rowIndex = this.getRowIndex(tr);
-
+        console.log("Row index clicked:", rowIndex);
         if (this.shiftDown) {
           let s = this.getSelection().map((s) => s.index);
           if (s.length == 0) s = [rowIndex];
-          let minSelIndex = d3.min(s);
-          let maxSelIndex = d3.max(s);
+          let minSelIndex = Math.min(...s); // Use spread operator with Math.min/max
+          let maxSelIndex = Math.max(...s);
 
-          if (rowIndex <= minSelIndex)
-            this.tBody
-              .querySelectorAll("tr")
-              .forEach((tr, i) =>
-                i >= rowIndex && i < minSelIndex ? this.selectRow(tr) : null
-              );
-          else if (rowIndex >= maxSelIndex)
-            this.tBody
-              .querySelectorAll("tr")
-              .forEach((tr, i) =>
-                i <= rowIndex && i > maxSelIndex ? this.selectRow(tr) : null
-              );
+          if (rowIndex <= minSelIndex) {
+            for (let i = rowIndex; i < minSelIndex; i++) {
+              const trToSelect = this.tBody.querySelectorAll("tr")[i];
+              if (trToSelect) this.selectRow(trToSelect);
+            }
+          } else if (rowIndex >= maxSelIndex) {
+            for (let i = maxSelIndex + 1; i <= rowIndex; i++) {
+              const trToSelect = this.tBody.querySelectorAll("tr")[i];
+              if (trToSelect) this.selectRow(trToSelect);
+            }
+          }
         } else {
           this.clearSelection();
           this.selectRow(tr);
@@ -542,18 +570,49 @@ export class sorterTable {
         this.selectionUpdated();
       });
 
-      tr.addEventListener("mouseover", (event) => {
-        tr.selected
-          ? (tr.style.color = "rgb(120,30,30)")
-          : (tr.style.color = "rgb(180,80,80)");
-        event.stopPropagation();
+      // Add hover effect for rows
+      tr.addEventListener("mouseover", () => {
+        tr.style.backgroundColor = "#f0f0f0"; // Highlight on hover
       });
-      tr.addEventListener("mouseout", (event) => {
-        tr.selected ? (tr.style.color = "black") : (tr.style.color = "gray");
+
+      tr.addEventListener("mouseout", () => {
+        tr.style.backgroundColor = ""; // Reset background color
       });
-    });
+
+      this.lastLineAdded++;
+    }
 
     this.addingRows = false;
+  }
+
+  resetTable() {
+    // Reset data and indices to initial state
+    this.dataInd = d3.range(this.data.length);
+    this.selectedRows.clear();
+    this.compoundSorting = {};
+    this.rules = [];
+    this.history = [];
+
+    // Reset sort and shift controllers
+    this.sortControllers.forEach((ctrl) => ctrl.setDirection("none"));
+
+    // Update column order to the initial state
+    this.columns = this.initialColumns.map((col) => ({ ...col }));
+
+    // Update vis controllers
+    this.visControllers.forEach((vc, index) => {
+      const columnData = this.dataInd.map(
+        (i) => this.data[i][this.columns[index].column]
+      );
+      vc.updateData(columnData);
+    });
+
+    // Re-render the table
+    this.createHeader();
+    this.createTable();
+
+    // Notify about the reset
+    this.changed({ type: "reset" });
   }
 
   sortChanged(controller) {
@@ -656,49 +715,185 @@ export class sorterTable {
     } else return -1;
   }
 
+  //   getNode() {
+  //     let container = document.createElement("div");
+  //     container.style.maxHeight = "300px";
+  //     container.style.overflowY = "auto";
+  //     container.style.width = "100%";
+
+  //     this.table.style.width = "100%";
+  //     this.table.style.borderCollapse = "collapse";
+  //     this.table.style.marginTop = "0px";
+
+  //     let tableControllers = document.createElement("table");
+  //     let tableControllersRow = document.createElement("tr");
+  //     tableControllers.appendChild(tableControllersRow);
+
+  //     if (this.showDefaultControls) {
+  //       let tdController = document.createElement("td");
+  //       tableControllersRow.appendChild(tdController);
+  //       let filterController = new FilterController(() => this.filter());
+  //       tdController.appendChild(filterController.getNode());
+
+  //       tdController = document.createElement("td");
+  //       tableControllersRow.appendChild(tdController);
+  //       let undoController = new UndoController(() => this.undo());
+  //       tdController.appendChild(undoController.getNode());
+  //     }
+  //     container.appendChild(tableControllers);
+  //     container.appendChild(this.table);
+
+  //     container.addEventListener("keydown", (event) => {
+  //       if (event.shiftKey) {
+  //         this.shiftDown = true;
+  //       }
+  //       if (event.ctrlKey) this.ctrlDown = true;
+
+  //       event.preventDefault();
+  //     });
+  //     container.addEventListener("keyup", (event) => {
+  //       this.shiftDown = false;
+  //       this.ctrlDown = false;
+  //       event.preventDefault();
+  //     });
+  //     container.setAttribute("tabindex", "0");
+
+  //     container.addEventListener("scroll", () => {
+  //       const threshold = 500;
+  //       const scrollTop = container.scrollTop;
+  //       const scrollHeight = container.scrollHeight;
+  //       const clientHeight = container.clientHeight;
+
+  //       if (scrollTop + clientHeight >= scrollHeight - threshold) {
+  //         this.addTableRows(this.additionalLines);
+  //       }
+  //     });
+
+  //     return container;
+  //   }
+  // }
+
+  // Add search functionality
+  addSearch() {
+    const searchInput = document.createElement("input");
+    searchInput.type = "text";
+    searchInput.placeholder = "Search...";
+    searchInput.addEventListener("input", this.handleSearch.bind(this));
+    return searchInput;
+  }
+
+  // Add column visibility toggle
+  addColumnToggle() {
+    const toggleButton = document.createElement("button");
+    toggleButton.innerHTML = '<i class="fas fa-columns"></i>';
+    toggleButton.addEventListener(
+      "click",
+      this.toggleColumnVisibility.bind(this)
+    );
+    return toggleButton;
+  }
+
   getNode() {
     let container = document.createElement("div");
-    container.style.maxHeight = "300px";
-    container.style.overflowY = "auto";
     container.style.width = "100%";
+    container.style.display = "flex";
+    container.style.flexDirection = "row";
+    Object.assign(container.style, {
+      height: this.options.containerHeight,
+      width: this.options.containerWidth,
+      overflow: "auto",
+      position: "relative",
+    });
 
-    this.table.style.width = "100%";
-    this.table.style.borderCollapse = "collapse";
-    this.table.style.marginTop = "0px";
+    // --- Sidebar ---
+    let sidebar = document.createElement("div");
+    Object.assign(sidebar.style, {
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      width: "50px",
+      padding: "10px",
+      borderRight: "1px solid #ccc",
+      marginRight: "10px",
+    });
 
-    let tableControllers = document.createElement("table");
-    let tableControllersRow = document.createElement("tr");
-    tableControllers.appendChild(tableControllersRow);
+    // --- Filter Icon ---
+    let filterIcon = document.createElement("i");
+    filterIcon.classList.add("fas", "fa-filter");
+    Object.assign(filterIcon.style, {
+      cursor: "pointer",
+      marginBottom: "15px",
+      color: "gray",
+    });
+    filterIcon.setAttribute("title", "Apply Filter");
+    filterIcon.addEventListener("click", (event) => {
+      event.stopPropagation();
+      this.filter();
+    });
+    sidebar.appendChild(filterIcon);
 
-    if (this.showDefaultControls) {
-      let tdController = document.createElement("td");
-      tableControllersRow.appendChild(tdController);
-      let filterController = new FilterController(() => this.filter());
-      tdController.appendChild(filterController.getNode());
+    // --- Undo Icon ---
+    let undoIcon = document.createElement("i");
+    undoIcon.classList.add("fas", "fa-undo");
+    Object.assign(undoIcon.style, {
+      cursor: "pointer",
+      marginBottom: "15px",
+      color: "gray",
+    });
+    undoIcon.setAttribute("title", "Undo");
+    undoIcon.addEventListener("click", (event) => {
+      event.stopPropagation();
+      this.undo();
+    });
+    sidebar.appendChild(undoIcon);
 
-      tdController = document.createElement("td");
-      tableControllersRow.appendChild(tdController);
-      let undoController = new UndoController(() => this.undo());
-      tdController.appendChild(undoController.getNode());
-    }
-    container.appendChild(tableControllers);
-    container.appendChild(this.table);
+    // --- Reset Icon ---
+    let resetIcon = document.createElement("i");
+    resetIcon.classList.add("fas", "fa-sync-alt");
+    Object.assign(resetIcon.style, {
+      cursor: "pointer",
+      marginBottom: "15px",
+      color: "gray",
+    });
+    resetIcon.setAttribute("title", "Reset Table");
+    resetIcon.addEventListener("click", (event) => {
+      event.stopPropagation();
+      this.resetTable();
+    });
+    sidebar.appendChild(resetIcon);
 
+    // --- Table Container ---
+    let tableContainer = document.createElement("div");
+    Object.assign(tableContainer.style, {
+      flex: "1",
+      overflowX: "auto",
+    });
+    tableContainer.appendChild(this.table);
+
+    // --- Add sidebar and table container to main container ---
+    container.appendChild(sidebar);
+    container.appendChild(tableContainer);
+
+    // Event listeners for shift and ctrl keys
     container.addEventListener("keydown", (event) => {
       if (event.shiftKey) {
         this.shiftDown = true;
       }
-      if (event.ctrlKey) this.ctrlDown = true;
-
+      if (event.ctrlKey) {
+        this.ctrlDown = true;
+      }
       event.preventDefault();
     });
+
     container.addEventListener("keyup", (event) => {
       this.shiftDown = false;
       this.ctrlDown = false;
       event.preventDefault();
     });
-    container.setAttribute("tabindex", "0");
 
+    container.setAttribute("tabindex", "0"); // Make the container focusable
+
+    // Lazy loading listener
     container.addEventListener("scroll", () => {
       const threshold = 500;
       const scrollTop = container.scrollTop;
@@ -775,16 +970,19 @@ export class sorterTable {
 // }
 
 function SortController(colName, update) {
+  let active = false;
+
   let controller = this;
   let div = document.createElement("div");
-  div.style.width = "24px"; // Make it smaller
+  div.style.width = "24px";
   div.style.height = "24px";
   div.style.margin = "0 auto";
+  div.style.cursor = "pointer";
 
-  // Use Font Awesome icon (for now)
+  // Use Font Awesome icon
   const icon = document.createElement("i");
   icon.classList.add("fas", "fa-sort"); // Initial sort icon
-  icon.style.color = "gray"; // Light gray
+  icon.style.color = "gray";
   icon.style.fontSize = "12px"; // Adjust icon size if needed
   div.appendChild(icon);
 
@@ -794,11 +992,11 @@ function SortController(colName, update) {
   this.toggleDirection = () => {
     if (sorting === "none" || sorting === "down") {
       sorting = "up";
-      icon.classList.remove("fa-sort-down", "fa-sort"); // Remove other classes
+      icon.classList.remove("fa-sort-down", "fa-sort");
       icon.classList.add("fa-sort-up");
     } else {
       sorting = "down";
-      icon.classList.remove("fa-sort-up", "fa-sort"); // Remove other classes
+      icon.classList.remove("fa-sort-up", "fa-sort");
       icon.classList.add("fa-sort-down");
     }
   };
@@ -809,11 +1007,15 @@ function SortController(colName, update) {
 
   this.getNode = () => div;
 
-  // Add event listener to the icon for sorting
-  icon.addEventListener("click", (event) => {
+  // Prevent click propagation from the icon
+  div.addEventListener("click", (event) => {
     event.stopPropagation();
+    active = !active;
     controller.toggleDirection();
     update(controller);
+
+    // Visual feedback
+    icon.style.color = active ? "#2196F3" : "gray";
   });
 
   return this;
@@ -822,20 +1024,20 @@ function SortController(colName, update) {
 function ColShiftController(columnName, update) {
   let controller = this;
   let div = document.createElement("div");
-  div.style.display = "flex"; // Use flexbox for alignment
-  div.style.justifyContent = "space-around"; // Space out the icons
+  div.style.display = "flex";
+  div.style.justifyContent = "space-around";
   div.style.width = "100%";
 
   const createIcon = (iconClass, direction) => {
     const icon = document.createElement("i");
-    icon.classList.add("fas", iconClass); // Font Awesome icon classes
+    icon.classList.add("fas", iconClass);
     icon.style.color = "gray";
     icon.style.cursor = "pointer";
-    icon.style.fontSize = "12px"; // Adjust icon size if needed
-    icon.style.margin = "0 5px"; // Add some margin between icons
+    icon.style.fontSize = "12px";
+    icon.style.margin = "0 5px";
 
     icon.addEventListener("click", (event) => {
-      event.stopPropagation(); // Prevent triggering column header click
+      event.stopPropagation();
       update(columnName, direction);
     });
 

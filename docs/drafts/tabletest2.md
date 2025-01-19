@@ -279,7 +279,7 @@ function sparkarea(data, rowData, options = {}) {
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css" />
 
 <style>
-.sorter-table  table {
+/* .sorter-table  table {
   font-family: Arial, Helvetica, sans-serif;
   font-size: 10px;
   border-collapse: collapse;
@@ -312,4 +312,23 @@ function sparkarea(data, rowData, options = {}) {
   vertical-align: middle;
 }
 
+
+.sorter-table .sidebar { /* Target the sidebar using the table's class */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 50px; /* Adjust as needed */
+  padding: 10px;
+  border-right: 1px solid #ccc;
+}
+
+.sorter-table .sidebar i { /* Target icons within the sidebar */
+  margin-bottom: 15px;
+  cursor: pointer;
+  color: gray;
+}
+
+.sorter-table .sidebar i:hover {
+  color: black; /* Highlight on hover */
+} */
 </style>
