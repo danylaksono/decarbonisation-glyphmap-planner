@@ -32,7 +32,7 @@ import { sorterTable } from "./../components/sorterTableClass.js";
     "Low Carbon Technology Costs_Ground Source Heat Pump - Materials" AS gshp_material,
     "Low Carbon Technology Costs_Ground Source Heat Pump - Total" AS gshp_total,
     "Domestic Heat Demand_Annual Heat Demand (kWh)" AS heat_demand,
-    "Domestic Insulation Potential_EPC Rating" AS insulation_rating,
+    "Domestic Insulation Potential_EPC Rating" AS epc_rating,
     "Domestic Insulation Potential_Insulation - Cavity Wall" AS insulation_cwall,
     "Low Carbon Technology Costs_Insulation - Cavity Wall - Labour" AS insulation_cwall_labour,
     "Low Carbon Technology Costs_Insulation - Cavity Wall  - Materials" AS insulation_cwall_materials,
@@ -66,37 +66,7 @@ WHERE substation_peakload >= 500 AND pv_generation is not null;
 ```
 
 ```js
-const buildings = [...oxford_data];
-// const flattenned = buildings.map((p) => ({ ...p }));
-// display(buildings);
-// display(flattenned);
-```
-
-```js
-// const cols = [
-//   { column: "lsoa", nominals: null },
-//   {
-//     column: "insulation_rating",
-//     ordinals: ["Unknown", "A", "B", "C", "D", "E", "F", "G"],
-//   },
-//   {
-//     column: "insulation_ewall",
-//     // ordinals: null,
-//     nominals: null,
-//     // ordinals: ["Unknown", "A", "B", "C", "D", "E", "F", "G"],
-//   },
-//   {
-//     column: "pv_generation",
-//     thresholds: [
-//       0, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 20000,
-//       30000, 40000, 50000,
-//     ],
-//   },
-//   {
-//     column: "ashp_size",
-//     thresholds: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30, 40, 50],
-//   },
-// ];
+const oxBuildings = [...oxford_data];
 ```
 
 ```js
@@ -108,6 +78,7 @@ function useState(value) {
 const [selected, setSelected] = useState({});
 ```
 
+<!--
 ```js
 const columns = [
   { column: "id", unique: true },
@@ -117,6 +88,7 @@ const columns = [
   { column: "pv_generation", alias: "PV Generation" },
   "ashp_size",
   "substation_demand",
+  "epc_rating",
 ];
 ```
 
@@ -129,28 +101,6 @@ const table = new sorterTable(buildings, columns, tableChanged, {
 
 ```js
 display(table.getNode());
-```
-
-```js
-function tableChanged(event) {
-  console.log("Table changed:", event);
-
-  if (event.type === "filter") {
-    console.log("Filtered indices:", event.indeces);
-    console.log("Filter rule:", event.rule);
-  }
-
-  if (event.type === "sort") {
-    console.log("Sorted indices:", event.indeces);
-    console.log("Sort criteria:", event.sort);
-  }
-
-  if (event.type === "selection") {
-    console.log("Selected rows:", event.selection);
-    setSelected(event.selection);
-    console.log("Selection rule:", event.rule);
-  }
-}
 ```
 
 ```js
@@ -215,67 +165,7 @@ function sparkbar(max, colorScale, alpha = 0.6) {
     return div;
   };
 }
-```
-
-```js
-function sparkarea(data, rowData, options = {}) {
-  const {
-    width = 240,
-    height = 20,
-    fillColor = "#faa",
-    strokeColor = "red",
-  } = options;
-
-  // Extract x and y values from the data (assuming your data has a 'history' property)
-  const X = data.map((d) => d.date); // Assuming 'date' property for x-axis
-  const Y = data.map((d) => d.value); // Assuming 'value' property for y-axis
-
-  // Handle cases where there is not enough data for an area chart
-  if (X.length < 2 || Y.length < 2) {
-    const message = document.createElement("div");
-    message.innerText = "Not enough data";
-    return message;
-  }
-
-  const x = d3
-    .scaleTime() // Use scaleTime for dates
-    .domain(d3.extent(X))
-    .range([0, width]);
-  const y = d3.scaleLinear().domain(d3.extent(Y)).range([height, 0]);
-
-  const area = d3
-    .area()
-    .x((d, i) => x(X[i]))
-    .y1((d, i) => y(Y[i]))
-    .y0(height)
-    .defined((d, i) => !isNaN(X[i]) && !isNaN(Y[i]));
-
-  // Create the SVG element
-  const svg = d3
-    .create("svg")
-    .attr("width", width)
-    .attr("height", height)
-    .style("vertical-align", "middle")
-    .style("margin", "-3px 0")
-    .node(); // Get the actual SVG element
-
-  // Add the area path
-  d3.select(svg).append("path").attr("fill", fillColor).attr("d", area(data));
-
-  // Add the outline path
-  d3.select(svg)
-    .append("path")
-    .attr("fill", "none")
-    .attr("stroke", strokeColor)
-    .attr("d", area.lineY1()(data));
-
-  // Create a container div
-  const container = document.createElement("div");
-  container.appendChild(svg);
-
-  return container;
-}
-```
+``` -->
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css" />
 
@@ -341,3 +231,261 @@ table {
   display: block; /* Make the span a block element */
 } */
 </style>
+
+## Renderers Demo
+
+```js
+// --- Dummy Data ---
+const buildings = [
+  {
+    id: "A1",
+    lsoa: "E01000001",
+    insulation_rating: "C",
+    insulation_ewall: "Good",
+    pv_generation: 3500,
+    ashp_size: 120,
+    substation_demand: 45.5,
+    history: [
+      { date: new Date("2023-01-01"), value: 10 },
+      { date: new Date("2023-02-01"), value: 15 },
+      { date: new Date("2023-03-01"), value: 8 },
+      { date: new Date("2023-04-01"), value: 12 },
+      { date: new Date("2023-05-01"), value: 18 },
+    ],
+  },
+  {
+    id: "A2",
+    lsoa: "E01000002",
+    insulation_rating: "B",
+    insulation_ewall: "Very Good",
+    pv_generation: 8100,
+    ashp_size: 200,
+    substation_demand: 60.2,
+    history: [
+      { date: new Date("2023-01-01"), value: 22 },
+      { date: new Date("2023-02-01"), value: 18 },
+      { date: new Date("2023-03-01"), value: 25 },
+      { date: new Date("2023-04-01"), value: 20 },
+      { date: new Date("2023-05-01"), value: 15 },
+    ],
+  },
+  {
+    id: "A3",
+    lsoa: "E01000003",
+    insulation_rating: "D",
+    insulation_ewall: "Average",
+    pv_generation: 1500,
+    ashp_size: 90,
+    substation_demand: 38.0,
+    history: [
+      { date: new Date("2023-01-01"), value: 5 },
+      { date: new Date("2023-02-01"), value: 8 },
+      { date: new Date("2023-03-01"), value: 6 },
+      { date: new Date("2023-04-01"), value: 9 },
+      { date: new Date("2023-05-01"), value: 7 },
+    ],
+  },
+  {
+    id: "A4",
+    lsoa: "E01000004",
+    insulation_rating: "A",
+    insulation_ewall: "Excellent",
+    pv_generation: 12500,
+    ashp_size: 350,
+    substation_demand: 75.8,
+    history: [
+      { date: new Date("2023-01-01"), value: 30 },
+      { date: new Date("2023-02-01"), value: 33 },
+      { date: new Date("2023-03-01"), value: 28 },
+      { date: new Date("2023-04-01"), value: 35 },
+      { date: new Date("2023-05-01"), value: 29 },
+    ],
+  },
+  {
+    id: "A5",
+    lsoa: "E01000005",
+    insulation_rating: "E",
+    insulation_ewall: "Poor",
+    pv_generation: 500,
+    ashp_size: 50,
+    substation_demand: 25.3,
+    history: [
+      { date: new Date("2023-01-01"), value: 12 },
+      { date: new Date("2023-02-01"), value: 10 },
+      { date: new Date("2023-03-01"), value: 14 },
+      { date: new Date("2023-04-01"), value: 9 },
+      { date: new Date("2023-05-01"), value: 11 },
+    ],
+  },
+];
+
+// --- Column Definitions ---
+const columnNames = [
+  { column: "id", unique: true },
+  "lsoa",
+  { column: "insulation_rating", alias: "Insulation Rating" },
+  { column: "insulation_ewall", alias: "Wall Insulation" },
+  {
+    column: "pv_generation",
+    alias: "PV Generation",
+    thresholds: [0, 5000, 10000, 20000, 50000],
+  },
+  { column: "ashp_size", alias: "ASHP Size" },
+  { column: "substation_demand", alias: "Substation Demand" },
+  { column: "history", alias: "History" }, // For sparkline
+];
+```
+
+```js
+// --- Color Scale ---
+const colorScale = d3
+  .scaleSequential(d3.interpolateViridis)
+  .domain([0, d3.max(buildings, (d) => d.pv_generation)]);
+```
+
+```js
+// --- Custom Renderer Functions ---
+function sparkbar(max, colorScale, alpha = 0.6) {
+  return (x, rowData) => {
+    const color = d3.color(colorScale(x));
+    color.opacity = alpha;
+    const div = document.createElement("div");
+    div.style.background = color;
+    div.style.width = `${(100 * x) / max}%`;
+    div.style.float = "right";
+    div.style.paddingRight = "3px";
+    div.style.boxSizing = "border-box";
+    div.style.overflow = "visible";
+    div.style.display = "flex";
+    div.style.justifyContent = "end";
+    div.innerText = x.toLocaleString("en");
+    return div;
+  };
+}
+
+function sparkarea(data, rowData, options = {}) {
+  const {
+    width = 240,
+    height = 20,
+    fillColor = "#faa",
+    strokeColor = "red",
+  } = options;
+
+  // Extract x and y values from the data (assuming your data has a 'history' property)
+  const X = data.map((d) => d.date); // Assuming 'date' property for x-axis
+  const Y = data.map((d) => d.value); // Assuming 'value' property for y-axis
+
+  // Handle cases where there is not enough data for an area chart
+  if (X.length < 2 || Y.length < 2) {
+    const message = document.createElement("div");
+    message.innerText = "Not enough data";
+    return message;
+  }
+
+  const x = d3
+    .scaleTime() // Use scaleTime for dates
+    .domain(d3.extent(X))
+    .range([0, width]);
+  const y = d3.scaleLinear().domain(d3.extent(Y)).range([height, 0]);
+
+  const area = d3
+    .area()
+    .x((d, i) => x(X[i]))
+    .y1((d, i) => y(Y[i]))
+    .y0(height)
+    .defined((d, i) => !isNaN(X[i]) && !isNaN(Y[i]));
+
+  // Create the SVG element
+  const svg = d3
+    .create("svg")
+    .attr("width", width)
+    .attr("height", height)
+    .style("vertical-align", "middle")
+    .style("margin", "-3px 0")
+    .node(); // Get the actual SVG element
+
+  // Add the area path
+  d3.select(svg).append("path").attr("fill", fillColor).attr("d", area(data));
+
+  // Add the outline path
+  d3.select(svg)
+    .append("path")
+    .attr("fill", "none")
+    .attr("stroke", strokeColor)
+    .attr("d", area.lineY1()(data));
+
+  // Create a container div
+  const container = document.createElement("div");
+  container.appendChild(svg);
+
+  return container;
+}
+
+function ratingRenderer(rating, rowData, maxRating = 5) {
+  const fullStar = "★";
+  const emptyStar = "☆";
+  const container = document.createElement("div");
+
+  for (let i = 0; i < maxRating; i++) {
+    const star = document.createElement("span");
+    star.innerText = i < rating ? fullStar : emptyStar;
+    star.style.color = "gold";
+    star.style.fontSize = "16px";
+    container.appendChild(star);
+  }
+
+  return container;
+}
+```
+
+```js
+// --- Cell Renderers ---
+const cellRenderers = {
+  pv_generation: (value, rowData) => {
+    const max = d3.max(buildings, (d) => d.pv_generation);
+    return sparkbar(max, colorScale)(value, rowData);
+  },
+  ashp_size: (data) => {
+    const span = document.createElement("span");
+    span.innerText = data >= 180 ? "Large" : "Small";
+    return span;
+  },
+  history: (data, rowData) => sparkarea(data, rowData),
+  insulation_rating: (rating) => {
+    const ratingNumber = { A: 5, B: 4, C: 3, D: 2, E: 1, Unknown: 0 }; // Example mapping
+    return ratingRenderer(ratingNumber[rating], {}); // Use {} if rowData is not needed
+  },
+};
+```
+
+```js
+function tableChanged(event) {
+  console.log("Table changed:", event);
+
+  if (event.type === "filter") {
+    console.log("Filtered indices:", event.indeces);
+    console.log("Filter rule:", event.rule);
+  }
+
+  if (event.type === "sort") {
+    console.log("Sorted indices:", event.indeces);
+    console.log("Sort criteria:", event.sort);
+  }
+
+  if (event.type === "selection") {
+    console.log("Selected rows:", event.selection);
+    setSelected(event.selection);
+    console.log("Selection rule:", event.rule);
+  }
+}
+```
+
+```js
+// --- Create sorterTable Instance ---
+const table = new sorterTable(buildings, columnNames, tableChanged, {
+  cellRenderers,
+  defaultLines: 5, // Show 5 rows initially
+  additionalLines: 5, // Load 5 more rows on scroll
+});
+display(table.getNode());
+```

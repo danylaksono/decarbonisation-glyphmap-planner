@@ -1094,7 +1094,14 @@ const data =
 ```js
 // Table Data
 const excludedColumns = ["properties", "x", "y", "score"]; // columns to exclude from the table
-const customOrder = ["id", "lsoa", "msoa", "isIntervened", "EPC_Rating"]; // custom order for columns
+const customOrder = [
+  { column: "id", unique: true },
+  "lsoa",
+  "msoa",
+  // ...(isIntervened ? ["isIntervened"] : []),
+  "EPC_rating",
+];
+
 // const customOrder2 = ["id", "lsoa", "score"]; // custom order for columns
 // const tableColumns = customOrder2;
 
@@ -1156,7 +1163,9 @@ function tableChanged(event) {
 
 ```js
 // test table
-const table = new sorterTable(data, customOrder, tableChanged);
+const table = new sorterTable(data, customOrder, tableChanged, {
+  height: "300px",
+});
 ```
 
 ```js

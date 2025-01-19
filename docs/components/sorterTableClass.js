@@ -543,13 +543,16 @@ export class sorterTable {
   }
 
   addTableRows(howMany) {
+    if (this.addingRows) {
+      return; // Prevent overlapping calls
+    }
     this.addingRows = true;
 
     let min = this.lastLineAdded + 1; // Corrected: Start from the next line
     let max = Math.min(min + howMany - 1, this.dataInd.length - 1); // Corrected: Use Math.min to avoid exceeding dataInd.length
 
     for (let row = min; row <= max; row++) {
-      let dataIndex = this.dataInd[row - 1]; // Adjust index for dataInd
+      let dataIndex = this.dataInd[row]; // Adjust index for dataInd
       if (dataIndex === undefined) continue;
 
       let tr = document.createElement("tr");
@@ -1398,14 +1401,14 @@ function HistogramController(data, binrules) {
         }
 
         svg
-          .selectAll(".label")
+          .selectAll(".histogram-label")
           .data([d]) // Bind the data to the label
           .join("text")
-          .attr("class", "label")
+          .attr("class", "histogram-label")
           .attr("x", width / 2) // Center the label under the bar
           .attr("y", height + 10) // Position the label below the bar
           .attr("font-size", "10px")
-          .attr("fill", "black")
+          .attr("fill", "#444444")
           .attr("text-anchor", "middle") // Center the text
           .text(d.category + ": " + d.count); // Display the value in the label
       })
@@ -1422,7 +1425,7 @@ function HistogramController(data, binrules) {
         //   "steelblue"
         // ); // Revert color on mouseout
 
-        svg.selectAll(".label").remove();
+        svg.selectAll(".histogram-label").remove();
       })
       .on("click", (event, d) => {
         // Toggle the selected state
