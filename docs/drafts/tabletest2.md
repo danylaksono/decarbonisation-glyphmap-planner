@@ -110,7 +110,7 @@ const [selected, setSelected] = useState({});
 
 ```js
 const columns = [
-  "id",
+  { column: "id", unique: true },
   "lsoa",
   "insulation_rating",
   "insulation_ewall",
@@ -280,8 +280,8 @@ function sparkarea(data, rowData, options = {}) {
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css" />
 
 <style>
-/* .sorter-table  table {
-  font-family: Arial, Helvetica, sans-serif;
+table {
+  font-family: Roboto, Helvetica, sans-serif;
   font-size: 10px;
   border-collapse: collapse;
   width: 100%;
@@ -331,5 +331,13 @@ function sparkarea(data, rowData, options = {}) {
 
 .sorter-table .sidebar i:hover {
   color: black; /* Highlight on hover */
+} 
+
+/* .unique-values-text {
+  font-size: 12px; /* Adjust font size to match histogram labels */
+  color: #666; /* Adjust color to match histogram text */
+  text-align: center;
+  width: 100%; /* Ensure the span takes up the full width of the cell */
+  display: block; /* Make the span a block element */
 } */
 </style>

@@ -15,9 +15,13 @@ export class sorterTable {
     // use alias if provided
     this.columns = columnNames.map((col) => {
       if (typeof col === "string") {
-        return { column: col }; // Default: no alias
+        return { column: col, unique: false }; // Default: not unique
       } else {
-        return { column: col.column, alias: col.alias }; // Use alias if provided
+        return {
+          column: col.column,
+          alias: col.alias,
+          unique: col.unique || false,
+        };
       }
     });
     this.initialColumns = JSON.parse(JSON.stringify(this.columns));
@@ -486,16 +490,38 @@ export class sorterTable {
       let visTd = document.createElement("td");
       visRow.appendChild(visTd);
 
-      // Create and add visualization controller
-      let visCtrl = new HistogramController(
-        this.dataInd.map((i) => this.data[i][c.column]),
-        this.getColumnType(c.column) === "continuous"
-          ? { thresholds: c.thresholds }
-          : { nominals: c.nominals }
-      );
-      visCtrl.table = this;
-      this.visControllers.push(visCtrl);
-      visTd.appendChild(visCtrl.getNode());
+      if (c.unique) {
+        // Column is unique, draw a full rectangle
+        const uniqueRect = document.createElement("div");
+        uniqueRect.style.width = "90px"; //"100%";
+        uniqueRect.style.height = "50px"; // Same as histogram height
+        // uniqueRect.style.backgroundColor = "#e0e0e0"; // Light gray
+        uniqueRect.style.display = "flex";
+        uniqueRect.style.justifyContent = "center";
+        uniqueRect.style.alignItems = "center";
+        uniqueRect.style.paddingBottom = "5px";
+
+        const uniqueText = document.createElement("span");
+        uniqueText.innerText = "Unique Values";
+        uniqueText.style.fontSize = "11px";
+        uniqueText.style.color = "#666";
+        uniqueText.style.textAlign = "center";
+
+        uniqueRect.appendChild(uniqueText);
+        visTd.appendChild(uniqueRect);
+      } else {
+        // Create and add visualization controller (histogram)
+        let visCtrl = new HistogramController(
+          this.dataInd.map((i) => this.data[i][c.column]),
+          this.getColumnType(c.column) === "continuous"
+            ? { thresholds: c.thresholds }
+            : { nominals: c.nominals }
+        );
+        visCtrl.table = this;
+        visCtrl.columnName = c.column;
+        this.visControllers.push(visCtrl);
+        visTd.appendChild(visCtrl.getNode());
+      }
     });
 
     // Add sticky positioning to thead
