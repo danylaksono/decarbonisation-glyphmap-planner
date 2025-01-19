@@ -271,8 +271,8 @@ const [allocations, setAllocations] = useState([]);
           </header> -->
           <div class="card-content">
             <div class="content">
-              ${ObsTable}
-              <!-- ${table.getNode()} -->
+              <!-- ${ObsTable} -->
+              ${table.getNode()}
               <!-- <div>No. of intervened buildings: ${JSON.stringify(stackedResults.summary.intervenedCount)}</div> -->
             </div>
           </div>
@@ -1156,11 +1156,11 @@ function tableChanged(event) {
 
 ```js
 // test table
-const table = new sorterTable(data, tableColumns, tableChanged);
+const table = new sorterTable(data, customOrder, tableChanged);
 ```
 
 ```js
-display(table.getNode());
+// display(table.getNode());
 ```
 
 ```js
@@ -1221,21 +1221,21 @@ const tableFormat = createTableFormat(data);
 ```
 
 ```js
-const ObsTable = Inputs.table(data, {
-  columns: tableColumns,
-  format: tableFormat,
-  layout: "auto",
-});
-// Object.assign(ObsTable, {
-//   oninput: (event) => event.isTrusted && event.stopImmediatePropagation(),
-//   onchange: (event) => event.currentTarget.dispatchEvent(new Event("input")),
+// const ObsTable = Inputs.table(data, {
+//   columns: tableColumns,
+//   format: tableFormat,
+//   layout: "auto",
 // });
+// // Object.assign(ObsTable, {
+// //   oninput: (event) => event.isTrusted && event.stopImmediatePropagation(),
+// //   onchange: (event) => event.currentTarget.dispatchEvent(new Event("input")),
+// // });
 
-// Listening to change events
-ObsTable.addEventListener("change", (event) => {
-  console.log("Table changed:", event); // Access the event target
-});
-const selectedRow = Generators.input(ObsTable);
+// // Listening to change events
+// ObsTable.addEventListener("change", (event) => {
+//   console.log("Table changed:", event); // Access the event target
+// });
+// const selectedRow = Generators.input(ObsTable);
 ```
 
 <!-- ---------------- Sortable Table ---------------- -->

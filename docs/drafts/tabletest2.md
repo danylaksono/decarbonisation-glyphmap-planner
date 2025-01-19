@@ -123,6 +123,7 @@ const columns = [
 ```js
 const table = new sorterTable(buildings, columns, tableChanged, {
   cellRenderers,
+  containerWidth: 300,
 });
 ```
 

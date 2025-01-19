@@ -74,7 +74,7 @@ export class sorterTable {
       containerHeight: options.height || "400px",
       containerWidth: options.width || "100%",
       rowsPerPage: options.rowsPerPage || 50,
-      loadMoreThreshold: options.loadMoreThreshold || 200,
+      loadMoreThreshold: options.loadMoreThreshold || 100,
     };
 
     Object.assign(this.table.style, {
@@ -103,7 +103,7 @@ export class sorterTable {
       return;
     }
     this.columnTypes[columnName] = type;
-    console.log("Setting column type:", this.columnTypes);
+    // console.log("Setting column type:", this.columnTypes);  // DEBUG
   }
 
   getColumnType(columnName) {
@@ -143,7 +143,7 @@ export class sorterTable {
       return thresholds;
     };
 
-    console.log("Columns before type inference:", this.columns);
+    // console.log("Columns before type inference:", this.columns);  // DEBUG
 
     if (!this.columnTypes) {
       this.columnTypes = {}; // Ensure it's initialized
@@ -153,7 +153,7 @@ export class sorterTable {
       // console.log("Column Definition:", colDef);
       const colName = colDef.column;
       const type = getType(data, colName);
-      console.log("Column Type:", type);
+      // console.log("Column Type:", type);  // DEBUG
 
       if (type === "continuous") {
         colDef.thresholds = calculateThresholds(data, colName);
@@ -163,20 +163,20 @@ export class sorterTable {
         //you can define specific logic for date type later.
       }
 
-      console.log("setting column type:", colName, type);
+      // console.log("setting column type:", colName, type);  // DEBUG
       this.setColumnType(colName, type); // Store the inferred type
     });
   }
 
   // Shift column position using visController
   shiftCol(columnName, dir) {
-    console.log("Shifting column:", columnName, "direction:", dir);
+    // console.log("Shifting column:", columnName, "direction:", dir);
 
     let colIndex = this.columns.findIndex((c) => c.column === columnName);
-    console.log("Found column at index:", colIndex);
+    // console.log("Found column at index:", colIndex);
 
     const targetIndex = dir === "left" ? colIndex - 1 : colIndex + 1;
-    console.log("Target index:", targetIndex);
+    // console.log("Target index:", targetIndex);
 
     if (targetIndex >= 0 && targetIndex < this.columns.length) {
       if (!this._isUndoing) {
@@ -292,7 +292,7 @@ export class sorterTable {
         });
       }
     });
-    console.log("Selection result:", ret);
+    // console.log("Selection result:", ret);
     this.selected = ret;
     return ret;
   }
@@ -558,11 +558,12 @@ export class sorterTable {
       // Add event listeners for row selection
       tr.addEventListener("click", (event) => {
         let rowIndex = this.getRowIndex(tr);
-        console.log("Row index clicked:", rowIndex);
+
         if (this.shiftDown) {
+          // SHIFT-CLICK (select range)
           let s = this.getSelection().map((s) => s.index);
-          if (s.length == 0) s = [rowIndex];
-          let minSelIndex = Math.min(...s); // Use spread operator with Math.min/max
+          if (s.length == 0) s = [rowIndex]; // If nothing selected, use current row index
+          let minSelIndex = Math.min(...s);
           let maxSelIndex = Math.max(...s);
 
           if (rowIndex <= minSelIndex) {
@@ -576,10 +577,19 @@ export class sorterTable {
               if (trToSelect) this.selectRow(trToSelect);
             }
           }
+        } else if (this.ctrlDown) {
+          // CTRL-CLICK (toggle individual row selection)
+          if (tr.selected) {
+            this.unselectRow(tr);
+          } else {
+            this.selectRow(tr);
+          }
         } else {
+          // NORMAL CLICK (clear selection and select clicked row)
           this.clearSelection();
           this.selectRow(tr);
         }
+
         this.selectionUpdated();
       });
 
@@ -627,6 +637,14 @@ export class sorterTable {
 
     // Notify about the reset
     this.changed({ type: "reset" });
+  }
+
+  resetHistogramSelections() {
+    this.visControllers.forEach((vc) => {
+      if (vc instanceof HistogramController) {
+        vc.resetSelection();
+      }
+    });
   }
 
   sortChanged(controller) {
@@ -862,6 +880,11 @@ export class sorterTable {
       flex: "1",
       overflowX: "auto",
     });
+    if (this.tableWidth) {
+      this.table.style.width = this.tableWidth;
+    } else {
+      this.table.style.width = "100%"; // Default to 100%
+    }
     tableContainer.appendChild(this.table);
 
     // --- Add sidebar and table container to main container ---
@@ -896,6 +919,27 @@ export class sorterTable {
 
       if (scrollTop + clientHeight >= scrollHeight - threshold) {
         this.addTableRows(this.additionalLines);
+      }
+    });
+
+    //deselection
+    // Add click listener to the container
+    container.addEventListener("click", (event) => {
+      // Check if the click target is outside any table row
+      let isOutsideRow = true;
+      let element = event.target;
+      while (element != null) {
+        if (element == this.tBody || element == this.tHead) {
+          isOutsideRow = false;
+          break;
+        }
+        element = element.parentNode;
+      }
+
+      if (isOutsideRow) {
+        this.clearSelection();
+        this.resetHistogramSelections();
+        this.selectionUpdated();
       }
     });
 
@@ -1182,6 +1226,19 @@ function HistogramController(data, binrules) {
 
   this.updateData = (d) => setData(d);
 
+  // reset the selection state of the histogram
+  this.resetSelection = () => {
+    // Reset the 'selected' property of all bins
+    bins.forEach((bin) => {
+      bin.selected = false;
+    });
+
+    // Reset the fill color of all bars in the histogram
+    svg
+      .selectAll(".bar rect:nth-child(1)") // Selects the visible bars
+      .attr("fill", "steelblue");
+  };
+
   function setData(dd) {
     // console.log("dd:", dd);
 
@@ -1356,7 +1413,7 @@ function HistogramController(data, binrules) {
         }
 
         // d3.select(event.currentTarget.previousSibling).attr("fill", "orange"); // Revert color on mouseout
-        console.log("histo select:", bins[d.index].indeces);
+        // console.log("histo select:", bins[d.index].indeces);
 
         // Select the corresponding rows in the table
         // Assuming 'controller.table' references the sorterTable instance
