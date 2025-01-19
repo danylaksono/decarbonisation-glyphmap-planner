@@ -9,8 +9,19 @@ export class sorterTable {
     this.table.classList.add("sorter-table");
 
     // Automatically create column definitions with type inference
-    this.columns = columnNames.map((colName) => ({ column: colName }));
-    this.initialColumns = columnNames.map((colName) => ({ column: colName }));
+    // this.columns = columnNames.map((colName) => ({ column: colName }));
+    // this.initialColumns = columnNames.map((colName) => ({ column: colName }));
+
+    // use alias if provided
+    this.columns = columnNames.map((col) => {
+      if (typeof col === "string") {
+        return { column: col }; // Default: no alias
+      } else {
+        return { column: col.column, alias: col.alias }; // Use alias if provided
+      }
+    });
+    this.initialColumns = JSON.parse(JSON.stringify(this.columns));
+
     console.log("Initial columns:", this.columns);
     this.inferColumnTypesAndThresholds(data);
 
@@ -420,7 +431,7 @@ export class sorterTable {
 
       // --- Column Name ---
       let nameSpan = document.createElement("span");
-      nameSpan.innerText = c.column;
+      nameSpan.innerText = c.alias || c.column;
       nameSpan.style.fontWeight = "bold";
       nameSpan.style.fontFamily = "Arial, sans-serif"; // Set font (optional)
       nameSpan.style.fontSize = "1em";
@@ -594,7 +605,8 @@ export class sorterTable {
     this.history = [];
 
     // Reset sort and shift controllers
-    this.sortControllers.forEach((ctrl) => ctrl.setDirection("none"));
+    // this.sortControllers.forEach((ctrl) => ctrl.setDirection("none"));
+    this.sortControllers.forEach((ctrl) => ctrl.toggleDirection()); // Toggle direction to reset
 
     // Update column order to the initial state
     this.columns = this.initialColumns.map((col) => ({ ...col }));
@@ -773,26 +785,6 @@ export class sorterTable {
   //   }
   // }
 
-  // Add search functionality
-  addSearch() {
-    const searchInput = document.createElement("input");
-    searchInput.type = "text";
-    searchInput.placeholder = "Search...";
-    searchInput.addEventListener("input", this.handleSearch.bind(this));
-    return searchInput;
-  }
-
-  // Add column visibility toggle
-  addColumnToggle() {
-    const toggleButton = document.createElement("button");
-    toggleButton.innerHTML = '<i class="fas fa-columns"></i>';
-    toggleButton.addEventListener(
-      "click",
-      this.toggleColumnVisibility.bind(this)
-    );
-    return toggleButton;
-  }
-
   getNode() {
     let container = document.createElement("div");
     container.style.width = "100%";
@@ -811,10 +803,10 @@ export class sorterTable {
       display: "flex",
       flexDirection: "column",
       alignItems: "center",
-      width: "50px",
-      padding: "10px",
+      width: "35px",
+      padding: "5px",
       borderRight: "1px solid #ccc",
-      marginRight: "10px",
+      marginRight: "2px",
     });
 
     // --- Filter Icon ---
@@ -1203,7 +1195,7 @@ function HistogramController(data, binrules) {
     const svgHeight = 50;
     const margin = { top: 5, right: 5, bottom: 8, left: 5 };
 
-    // Make the histogram responsive to the cell width
+    // Make the histogram responsive to the cell width (not working now)
     // const cellWidth = div.parentNode.clientWidth; // Get cell width
     // const width = cellWidth - margin.left - margin.right;
     const width = svgWidth - margin.left - margin.right;
@@ -1232,7 +1224,7 @@ function HistogramController(data, binrules) {
         .domain(binrules.thresholds)
         .range([0, 1, 2, 3, 4, 5]); // output: pixel range
 
-      let binnedData = data.map((d) => x(d));
+      // let binnedData = data.map((d) => x(d));
 
       // Define histogram bins
       bins = d3
@@ -1404,7 +1396,7 @@ function HistogramController(data, binrules) {
 
   setData(data);
 
-  // set from sorterTable
+  // set this.table from sorterTable
   this.table = null;
 
   this.getNode = () => div;

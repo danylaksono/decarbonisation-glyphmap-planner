@@ -114,7 +114,7 @@ const columns = [
   "lsoa",
   "insulation_rating",
   "insulation_ewall",
-  "pv_generation",
+  { column: "pv_generation", alias: "PV Generation" },
   "ashp_size",
   "substation_demand",
 ];
