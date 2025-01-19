@@ -158,54 +158,46 @@ display(selected);
 ```
 
 ```js
-const sortButton = document.createElement("button");
-sortButton.textContent = "Sort by LSOA (Descending)";
-document.body.appendChild(sortButton);
+// const sortButton = document.createElement("button");
+// sortButton.textContent = "Sort by LSOA (Descending)";
+// // document.body.appendChild(sortButton);
 
-sortButton.addEventListener("click", () => {
-  const ageSortCtrl = table.sortControllers.find(
-    (ctrl) => ctrl.getColumn() === "lsoa"
-  );
-  ageSortCtrl.setDirection("down");
-  table.sortChanged(ageSortCtrl);
-});
+// sortButton.addEventListener("click", () => {
+//   const ageSortCtrl = table.sortControllers.find(
+//     (ctrl) => ctrl.getColumn() === "lsoa"
+//   );
+//   ageSortCtrl.setDirection("down");
+//   table.sortChanged(ageSortCtrl);
+// });
 ```
 
 ```js
 // Create a color scale (example)
 const colorScale = d3
-  .scaleLinear()
-  .domain([0, d3.max(buildings, (d) => d.pv_generation)]) // Assuming 'value' is the column for sparkbar
-  .range(["lightblue", "blue"]);
-display(colorScale(1000));
+  .scaleSequential(d3.interpolateViridis)
+  .domain([0, d3.max(buildings, (d) => d.pv_generation)]);
+// display(colorScale(1000));
 ```
 
 ```js
 // Define cell renderers
 const cellRenderers = {
-  pv_generation: sparkbar(
-    d3.max(buildings, (d) => d.value),
-    colorScale
-  ), // Sparkbar for 'value' column
+  pv_generation: (value, rowData) => {
+    const max = d3.max(buildings, (d) => d.pv_generation); // Calculate max dynamically
+    return sparkbar(max, colorScale)(value, rowData); // Call sparkbar with calculated max
+  },
   ashp_size: (data) => {
     const span = document.createElement("span");
     span.innerText = data >= 180 ? "More" : "Less";
     return span;
-  }, // Categorical renderer for 'ashp' column
-  // city: (city, rowData) => {
-  //   const a = document.createElement('a');
-  //   a.href = `https://www.google.com/maps/place/${encodeURIComponent(city)}`;
-  //   a.target = '_blank';
-  //   a.innerText = city;
-  //   return a;
-  // } // Link renderer for 'city' column
+  },
 };
 ```
 
 ```js
 function sparkbar(max, colorScale, alpha = 0.6) {
   return (x, rowData) => {
-    console.log("Rendering sparkbar for:", x, rowData);
+    // console.log("Rendering sparkbar for:", x, rowData);
     // Now takes 'x' (cell value) and 'rowData' (entire row)
     const color = d3.color(colorScale(x));
     color.opacity = alpha;
@@ -283,3 +275,41 @@ function sparkarea(data, rowData, options = {}) {
   return container;
 }
 ```
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css" />
+
+<style>
+.sorter-table  table {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 10px;
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.sorter-table tbody tr:nth-child(even) {
+  background-color: #f8f8f8; /* Zebra striping */
+}
+
+.sorter-table tbody tr:hover {
+  background-color: #f0f0f0; /* Highlight on hover */
+}
+
+.sorter-table thead {
+  background-color: #e0e0e0; /* Header background */
+}
+
+.sorter-table th {
+  text-align: left;
+  padding: 8px;
+  font-size: 10px;
+  border-bottom: 2px solid #ddd;
+}
+
+.sorter-table td {
+  padding: 8px;
+  border: 1px solid #ddd;
+  text-align: left;
+  vertical-align: middle;
+}
+
+</style>

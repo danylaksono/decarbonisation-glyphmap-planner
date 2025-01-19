@@ -5,6 +5,9 @@ export class sorterTable {
     this.data = data;
     // this.columns = columns;
 
+    this.table = document.createElement("table");
+    this.table.classList.add("sorter-table");
+
     // Automatically create column definitions with type inference
     this.columns = columnNames.map((colName) => ({ column: colName }));
     console.log("Initial columns:", this.columns);
@@ -48,6 +51,10 @@ export class sorterTable {
         }
       }
     }
+    this.showDefaultControls =
+      options.showDefaultControls !== undefined
+        ? options.showDefaultControls
+        : true;
 
     this.createHeader();
     this.createTable();
@@ -377,50 +384,69 @@ export class sorterTable {
 
     this.tHead = document.createElement("thead");
     this.table.appendChild(this.tHead);
-    let tr = document.createElement("tr");
-    this.tHead.append(tr);
+
+    // --- Column Header Row ---
+    let headerRow = document.createElement("tr");
+    this.tHead.append(headerRow);
 
     this.columns.forEach((c) => {
       let th = document.createElement("th");
-      tr.appendChild(th);
+      headerRow.appendChild(th);
 
-      let ctrlTable = document.createElement("table");
-      ctrlTable.style.margin = "0px";
-      th.appendChild(ctrlTable);
-
-      // Column name row
-      let row = document.createElement("tr");
-      ctrlTable.append(row);
-      let td = document.createElement("td");
-      row.appendChild(td);
-      td.innerText = c.column;
-      td.setAttribute("colspan", 3);
-
-      // Make column name clickable for sorting
-      td.style.cursor = "pointer";
-      td.addEventListener("click", () => {
+      // --- Column Name ---
+      let nameSpan = document.createElement("span");
+      nameSpan.innerText = c.column;
+      nameSpan.style.fontWeight = "bold";
+      nameSpan.style.fontFamily = "Arial, sans-serif"; // Set font (optional)
+      nameSpan.style.fontSize = "1em";
+      nameSpan.style.cursor = "pointer";
+      nameSpan.addEventListener("click", () => {
         const sortCtrl = this.sortControllers.find(
           (ctrl) => ctrl.getColumn() === c.column
         );
         if (sortCtrl) {
-          if (
-            sortCtrl.getDirection() === "none" ||
-            sortCtrl.getDirection() === "down"
-          ) {
-            sortCtrl.setDirection("up");
-          } else {
-            sortCtrl.setDirection("down");
-          }
+          sortCtrl.toggleDirection();
           this.sortChanged(sortCtrl);
         }
       });
+      th.appendChild(nameSpan);
 
-      // Visualization row
-      row = document.createElement("tr");
-      ctrlTable.append(row);
-      td = document.createElement("td");
-      td.setAttribute("colspan", 3);
-      row.appendChild(td);
+      // --- Controls Row ---
+      let controlsRow = document.createElement("tr");
+      th.appendChild(controlsRow); // Append controls row to the header cell (th)
+
+      let controlsTd = document.createElement("td");
+      controlsRow.appendChild(controlsTd);
+
+      // Create a container for controls
+      let controlsContainer = document.createElement("div");
+      controlsContainer.style.display = "flex";
+      controlsContainer.style.alignItems = "center"; // Vertically center
+      controlsContainer.style.justifyContent = "space-around"; // Space out the controls
+      controlsContainer.style.width = "100%";
+      controlsContainer.style.padding = "2px 0"; // Add some padding
+      controlsTd.appendChild(controlsContainer);
+
+      // Shift controller cell
+      const shiftCtrl = new ColShiftController(
+        c.column,
+        (columnName, direction) => this.shiftCol(columnName, direction)
+      );
+      controlsContainer.appendChild(shiftCtrl.getNode());
+
+      // Sort controller cell
+      let sortCtrl = new SortController(c.column, (controller) =>
+        this.sortChanged(controller)
+      );
+      this.sortControllers.push(sortCtrl);
+      controlsContainer.appendChild(sortCtrl.getNode());
+
+      // --- Visualization Row ---
+      let visRow = document.createElement("tr");
+      th.appendChild(visRow); // Append visualization row to the header cell (th)
+
+      let visTd = document.createElement("td");
+      visRow.appendChild(visTd);
 
       // Create and add visualization controller
       let visCtrl = new HistogramController(
@@ -429,36 +455,9 @@ export class sorterTable {
           ? { thresholds: c.thresholds }
           : { nominals: c.nominals }
       );
-      visCtrl.table = this; // Set the table reference!
+      visCtrl.table = this;
       this.visControllers.push(visCtrl);
-      td.appendChild(visCtrl.getNode());
-
-      // Controls row
-      row = document.createElement("tr");
-      ctrlTable.append(row);
-
-      // Shift controller cell
-      td = document.createElement("td");
-      row.appendChild(td);
-      const shiftCtrl = new ColShiftController(
-        c.column,
-        (columnName, direction) => this.shiftCol(columnName, direction)
-      );
-      td.appendChild(shiftCtrl.getNode());
-
-      // Sort controller cell
-      td = document.createElement("td");
-      row.appendChild(td);
-      let sortCtrl = new SortController(c.column, (controller) =>
-        this.sortChanged(controller)
-      );
-      this.sortControllers.push(sortCtrl);
-      td.appendChild(sortCtrl.getNode());
-
-      // Spacer cell
-      td = document.createElement("td");
-      td.style.width = "100%";
-      row.appendChild(td);
+      visTd.appendChild(visCtrl.getNode());
     });
   }
 
@@ -671,16 +670,17 @@ export class sorterTable {
     let tableControllersRow = document.createElement("tr");
     tableControllers.appendChild(tableControllersRow);
 
-    let tdController = document.createElement("td");
-    tableControllersRow.appendChild(tdController);
-    let filterController = new FilterController(() => this.filter());
-    tdController.appendChild(filterController.getNode());
+    if (this.showDefaultControls) {
+      let tdController = document.createElement("td");
+      tableControllersRow.appendChild(tdController);
+      let filterController = new FilterController(() => this.filter());
+      tdController.appendChild(filterController.getNode());
 
-    tdController = document.createElement("td");
-    tableControllersRow.appendChild(tdController);
-    let undoController = new UndoController(() => this.undo());
-    tdController.appendChild(undoController.getNode());
-
+      tdController = document.createElement("td");
+      tableControllersRow.appendChild(tdController);
+      let undoController = new UndoController(() => this.undo());
+      tdController.appendChild(undoController.getNode());
+    }
     container.appendChild(tableControllers);
     container.appendChild(this.table);
 
@@ -714,62 +714,107 @@ export class sorterTable {
   }
 }
 
+// function SortController(colName, update) {
+//   let controller = this;
+
+//   let div = document.createElement("div");
+
+//   //CREATE SVG
+//   let svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+//   svg.setAttribute("width", 10);
+//   svg.setAttribute("height", 16);
+//   // svg.setAttribute("style", "border: 1px solid black; background-color: #f0f0f0");
+//   div.appendChild(svg);
+
+//   const leftTriangle = createTriangle("0,7 5,0 10,7", "grey", () => {
+//     sorting = "up";
+//     update(controller);
+//   });
+//   const rightTriangle = createTriangle("0,9 10,9 5,16", "grey", () => {
+//     sorting = "down";
+//     console.log("down");
+//     update(controller);
+//   });
+
+//   // Add triangles to SVG
+//   svg.appendChild(leftTriangle);
+//   svg.appendChild(rightTriangle);
+
+//   /* let weight = 1;
+//       this.setWeight = (w) => {
+//           weight = w;
+//           draw();
+//       }
+//       this.getWeight = () => weight;*/
+
+//   let sorting = "none";
+//   this.getDirection = () => sorting;
+
+//   // toggle sorting direction
+//   this.setDirection = (newDirection) => {
+//     sorting = newDirection;
+
+//     // Update the triangle colors based on the new direction
+//     if (sorting === "up") {
+//       leftTriangle.setAttribute("fill", "black");
+//       rightTriangle.setAttribute("fill", "grey");
+//     } else if (sorting === "down") {
+//       leftTriangle.setAttribute("fill", "grey");
+//       rightTriangle.setAttribute("fill", "black");
+//     } else {
+//       leftTriangle.setAttribute("fill", "grey");
+//       rightTriangle.setAttribute("fill", "grey");
+//     }
+//   };
+
+//   this.getColumn = () => colName;
+
+//   this.getNode = () => div;
+
+//   return this;
+// }
+
 function SortController(colName, update) {
   let controller = this;
-
   let div = document.createElement("div");
+  div.style.width = "24px"; // Make it smaller
+  div.style.height = "24px";
+  div.style.margin = "0 auto";
 
-  //CREATE SVG
-  let svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-  svg.setAttribute("width", 10);
-  svg.setAttribute("height", 16);
-  // svg.setAttribute("style", "border: 1px solid black; background-color: #f0f0f0");
-  div.appendChild(svg);
-
-  const leftTriangle = createTriangle("0,7 5,0 10,7", "grey", () => {
-    sorting = "up";
-    update(controller);
-  });
-  const rightTriangle = createTriangle("0,9 10,9 5,16", "grey", () => {
-    sorting = "down";
-    console.log("down");
-    update(controller);
-  });
-
-  // Add triangles to SVG
-  svg.appendChild(leftTriangle);
-  svg.appendChild(rightTriangle);
-
-  /* let weight = 1;
-      this.setWeight = (w) => {
-          weight = w;
-          draw();
-      }
-      this.getWeight = () => weight;*/
+  // Use Font Awesome icon (for now)
+  const icon = document.createElement("i");
+  icon.classList.add("fas", "fa-sort"); // Initial sort icon
+  icon.style.color = "gray"; // Light gray
+  icon.style.fontSize = "12px"; // Adjust icon size if needed
+  div.appendChild(icon);
 
   let sorting = "none";
-  this.getDirection = () => sorting;
 
-  // toggle sorting direction
-  this.setDirection = (newDirection) => {
-    sorting = newDirection;
-
-    // Update the triangle colors based on the new direction
-    if (sorting === "up") {
-      leftTriangle.setAttribute("fill", "black");
-      rightTriangle.setAttribute("fill", "grey");
-    } else if (sorting === "down") {
-      leftTriangle.setAttribute("fill", "grey");
-      rightTriangle.setAttribute("fill", "black");
+  // Toggle function
+  this.toggleDirection = () => {
+    if (sorting === "none" || sorting === "down") {
+      sorting = "up";
+      icon.classList.remove("fa-sort-down", "fa-sort"); // Remove other classes
+      icon.classList.add("fa-sort-up");
     } else {
-      leftTriangle.setAttribute("fill", "grey");
-      rightTriangle.setAttribute("fill", "grey");
+      sorting = "down";
+      icon.classList.remove("fa-sort-up", "fa-sort"); // Remove other classes
+      icon.classList.add("fa-sort-down");
     }
   };
+
+  this.getDirection = () => sorting;
 
   this.getColumn = () => colName;
 
   this.getNode = () => div;
+
+  // Add event listener to the icon for sorting
+  icon.addEventListener("click", (event) => {
+    event.stopPropagation();
+    controller.toggleDirection();
+    update(controller);
+  });
 
   return this;
 }
@@ -777,26 +822,33 @@ function SortController(colName, update) {
 function ColShiftController(columnName, update) {
   let controller = this;
   let div = document.createElement("div");
+  div.style.display = "flex"; // Use flexbox for alignment
+  div.style.justifyContent = "space-around"; // Space out the icons
+  div.style.width = "100%";
 
-  //CREATE SVG
-  let svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-  svg.setAttribute("width", 20);
-  svg.setAttribute("height", 10);
-  div.appendChild(svg);
+  const createIcon = (iconClass, direction) => {
+    const icon = document.createElement("i");
+    icon.classList.add("fas", iconClass); // Font Awesome icon classes
+    icon.style.color = "gray";
+    icon.style.cursor = "pointer";
+    icon.style.fontSize = "12px"; // Adjust icon size if needed
+    icon.style.margin = "0 5px"; // Add some margin between icons
 
-  const leftTriangle = createTriangle("0,5 9,0 9,10", "grey", () =>
-    update(columnName, "left")
-  );
-  const rightTriangle = createTriangle("11,0 11,10 20,5", "grey", () =>
-    update(columnName, "right")
-  );
+    icon.addEventListener("click", (event) => {
+      event.stopPropagation(); // Prevent triggering column header click
+      update(columnName, direction);
+    });
 
-  // Add triangles to SVG
-  svg.appendChild(leftTriangle);
-  svg.appendChild(rightTriangle);
+    return icon;
+  };
+
+  const leftIcon = createIcon("fa-arrow-left", "left");
+  const rightIcon = createIcon("fa-arrow-right", "right");
+
+  div.appendChild(leftIcon);
+  div.appendChild(rightIcon);
 
   this.getNode = () => div;
-
   return this;
 }
 
@@ -947,7 +999,11 @@ function HistogramController(data, binrules) {
     //CREATE SVG
     const svgWidth = 100;
     const svgHeight = 50;
-    const margin = { top: 5, right: 5, bottom: 12, left: 5 };
+    const margin = { top: 5, right: 5, bottom: 8, left: 5 };
+
+    // Make the histogram responsive to the cell width
+    // const cellWidth = div.parentNode.clientWidth; // Get cell width
+    // const width = cellWidth - margin.left - margin.right;
     const width = svgWidth - margin.left - margin.right;
     const height = svgHeight - margin.top - margin.bottom;
 
