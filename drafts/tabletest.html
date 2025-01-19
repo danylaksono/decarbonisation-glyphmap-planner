@@ -43,7 +43,7 @@
 <link rel="modulepreload" href="../_npm/d3-timer@3.0.1/_esm.js">
 <link rel="modulepreload" href="../_npm/d3-transition@3.0.1/_esm.js">
 <link rel="modulepreload" href="../_npm/d3-zoom@3.0.0/_esm.js">
-<link rel="modulepreload" href="../_npm/apache-arrow@18.1.0/_esm.js">
+<link rel="modulepreload" href="../_npm/apache-arrow@19.0.0/_esm.js">
 <link rel="modulepreload" href="../_npm/internmap@2.0.3/_esm.js">
 <link rel="modulepreload" href="../_npm/delaunator@5.0.1/_esm.js">
 <link rel="modulepreload" href="../_npm/tslib@2.8.1/_esm.js">
@@ -55,12 +55,8 @@ import {define} from "../_observablehq/client.js";
 import {registerFile, FileAttachment} from "../_observablehq/stdlib.js";
 import {registerTable} from "../_observablehq/stdlib/duckdb.js";
 
-registerFile("./../data/oxford_decarbonisation_data.parquet", {"name":"./../data/oxford_decarbonisation_data.parquet","path":"../_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1736763011778});
+registerFile("./../data/oxford_decarbonisation_data.parquet", {"name":"./../data/oxford_decarbonisation_data.parquet","path":"../_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1737299104509});
 registerTable("oxford", FileAttachment("../data/oxford_decarbonisation_data.parquet"));
-
-define({id: "0c6d6149", inputs: ["display"], body: (display) => {
-display(1 + 2);
-}});
 
 define({id: "d22197ed", inputs: ["sql"], outputs: ["oxford_data"], body: async (sql) => {
 const oxford_data = await sql`  SELECT DISTINCT
@@ -1095,55 +1091,6 @@ display(table.getSelection());
 <div id="observablehq-center">
 <main id="observablehq-main" class="observablehq">
 <h1 id="table-experiments" tabindex="-1"><a class="observablehq-header-anchor" href="#table-experiments">Table experiments</a></h1>
-<div class="observablehq observablehq--block"><!--:0c6d6149:--></div>
-<!--
-```js
-const modelData = FileAttachment("./data/result_gdf_admin.geojson").json();
-```
-
-```js
-    const buildings = modelData.features.map( (b,index) => ({
-    building_id : index,
-    lsoa : b.properties["LSOA code"],
-    msoa : b.properties["MSOA code"],
-    building_area : b.properties["Air Source Heat Pump Potential_Building Size (m^2)"],
-    garden_area : b.properties["Air Source Heat Pump Potential_Garden Area (m^2)"],
-    ashp_suitability : b.properties["Air Source Heat Pump Potential_Overall Suitability Rating"],
-    ashp_size : b.properties["Air Source Heat Pump Potential_Recommended Heat Pump Size [kW]"],
-    ashp_labour : b.properties["Low Carbon Technology Costs_Air Source Heat Pump - Labour"],
-    ashp_material : b.properties["Low Carbon Technology Costs_Air Source Heat Pump - Material"],
-    ashp_total : b.properties["Low Carbon Technology Costs_Air Source Heat Pump - Total"],
-    gshp_suitability : b.properties["Domestic Ground Source Heat Pump Potential_Overall Suitability Rating"],
-    gshp_size : b.properties["Domestic Ground Source Heat Pump Potential_Recommended Heat Pump Size [kW]"],
-    gshp_labour : b.properties["Low Carbon Technology Costs_Ground Source Heat Pump - Labour"],
-    gshp_material : b.properties["Low Carbon Technology Costs_Ground Source Heat Pump - Materials"],
-    gshp_total : b.properties["Low Carbon Technology Costs_Ground Source Heat Pump - Total"],
-    heat_demand : b.properties["Domestic Heat Demand_Annual Heat Demand (kWh)"],
-    insulation_rating :  b.properties["Domestic Insulation Potential_EPC Rating"],
-    insulation_cwall: b.properties["Domestic Insulation Potential_Insulation - Cavity Wall"],
-    insulation_cwall_labour : b.properties["Low Carbon Technology Costs_Insulation - Cavity Wall - Labour"],
-    insulation_cwall_materials : b.properties["Low Carbon Technology Costs_Insulation - Cavity Wall  - Materials"],
-    insulation_cwall_total : b.properties["Low Carbon Technology Costs_Insulation - Cavity Wall - Total"],
-    insulation_ewall : b.properties["Domestic Insulation Potential_Insulation - External Wall"],
-    insulation_ewall_labour : b.properties["Low Carbon Technology Costs_Insulation - External Wall - Labour"],
-    insulation_ewall_materials : b.properties["Low Carbon Technology Costs_Insulation - External Wall - Material"],
-    insulation_ewall_total : b.properties["Low Carbon Technology Costs_Insulation - External Wall - Total"],
-    insulation_roof : b.properties["Domestic Insulation Potential_Insulation - Roof"],
-    insulation_roof_labour : b.properties["Low Carbon Technology Costs_Insulation - Loft - Labour"],
-    insulation_roof_materials : b.properties["Low Carbon Technology Costs_Insulation - Loft - Material"],
-    insulation_roof_total : b.properties["Low Carbon Technology Costs_Insulation - Loft - Total"],
-    insulation_floor : b.properties["Domestic Insulation Potential_Insulation - Under Floor"],
-    insulation_floor_labour : b.properties["Low Carbon Technology Costs_Insulation - Under Floor - Labour"],
-    insulation_floor_materials : b.properties["Low Carbon Technology Costs_Insulation - Under Floor - Material"],
-    insulation_floor_total : b.properties["Low Carbon Technology Costs_Insulation - Under Floor- Total"],
-    pv_suitability : b.properties["Domestic PV Potential_Overall Suitability"],
-    pv_size : b.properties["Domestic PV Potential_Recommended Array Size [kW]"],
-    pv_generation : b.properties["Domestic PV Potential_Annual Generation [kWh]"],
-    pv_labour : b.properties["Low Carbon Technology Costs_Rooftop PV - Labour"],
-    pv_material : b.properties["Low Carbon Technology Costs_Rooftop PV - Materials"],
-    pv_total : b.properties["Low Carbon Technology Costs_Rooftop PV - Total"],
-    }));
-``` -->
 <div class="observablehq observablehq--block"><!--:d22197ed:--></div>
 <div class="observablehq observablehq--block"><!--:d11f8e11:--></div>
 <div class="observablehq observablehq--block"><!--:74c9939d:--></div>

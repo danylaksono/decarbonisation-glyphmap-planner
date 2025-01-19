@@ -187,7 +187,7 @@
 <link rel="modulepreload" href="./_npm/d3-zoom@3.0.0/_esm.js">
 <link rel="modulepreload" href="./_npm/kdbush@4.0.2/_esm.js">
 <link rel="modulepreload" href="./_npm/interval-tree-1d@1.0.4/_esm.js">
-<link rel="modulepreload" href="./_npm/apache-arrow@18.1.0/_esm.js">
+<link rel="modulepreload" href="./_npm/apache-arrow@19.0.0/_esm.js">
 <link rel="modulepreload" href="./_node/geojson-equality-ts@1.0.2/index.js">
 <link rel="modulepreload" href="./_node/point-in-polygon-hao@1.1.0/index.js">
 <link rel="modulepreload" href="./_node/@turf/jsts@2.7.1/index.js">
@@ -219,10 +219,10 @@ import {define} from "./_observablehq/client.js";
 import {registerFile, FileAttachment} from "./_observablehq/stdlib.js";
 import {registerTable} from "./_observablehq/stdlib/duckdb.js";
 
-registerFile("./data/oxford_decarbonisation_data.parquet", {"name":"./data/oxford_decarbonisation_data.parquet","path":"./_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1736763011778});
-registerFile("./data/oxford_lsoa_boundary.geojson", {"name":"./data/oxford_lsoa_boundary.geojson","mimeType":"application/geo+json","path":"./_file/data/oxford_lsoa_boundary.50c731e8.geojson","lastModified":1736763011786});
-registerFile("./data/oxford_lsoas_cartogram.json", {"name":"./data/oxford_lsoas_cartogram.json","mimeType":"application/json","path":"./_file/data/oxford_lsoas_cartogram.a72fa2b8.json","lastModified":1736763011786});
-registerFile("./data/oxford_lsoas_regular.json", {"name":"./data/oxford_lsoas_regular.json","mimeType":"application/json","path":"./_file/data/oxford_lsoas_regular.e1c36e7e.json","lastModified":1736763011786});
+registerFile("./data/oxford_decarbonisation_data.parquet", {"name":"./data/oxford_decarbonisation_data.parquet","path":"./_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1737299104509});
+registerFile("./data/oxford_lsoa_boundary.geojson", {"name":"./data/oxford_lsoa_boundary.geojson","mimeType":"application/geo+json","path":"./_file/data/oxford_lsoa_boundary.50c731e8.geojson","lastModified":1737299104519});
+registerFile("./data/oxford_lsoas_cartogram.json", {"name":"./data/oxford_lsoas_cartogram.json","mimeType":"application/json","path":"./_file/data/oxford_lsoas_cartogram.a72fa2b8.json","lastModified":1737299104519});
+registerFile("./data/oxford_lsoas_regular.json", {"name":"./data/oxford_lsoas_regular.json","mimeType":"application/json","path":"./_file/data/oxford_lsoas_regular.e1c36e7e.json","lastModified":1737299104519});
 registerTable("oxford", FileAttachment("./data/oxford_decarbonisation_data.parquet"));
 
 define({id: "8a26f43d", outputs: ["d3","flubber","require","Mutable","turf","bulmaToast","bulmaQuickview","TimeGlyph","GlyphCollection","StreamGraphGlyph","RadialGlyph","glyphMap","createDiscretiserValue","_drawCellBackground","OSGB","BudgetAllocator","InterventionManager","MiniDecarbModel","createTimelineInterface","LeafletMap","createTable","SummarizeColumn","createTableFormat","inferTypes","enrichGeoData","normaliseData","insideCell","debounceInput","saveToSession","getFromSession","transformCoordinates","transformGeometry","normalisebyGroup","aggregateValues"], body: async () => {
@@ -1673,7 +1673,7 @@ const glyphColours = [
 return {glyphVariables,glyphColours};
 }});
 
-define({id: "f1a3ad2b", inputs: ["map_aggregate","transformCoordinates","turf","regular_geodata","data","keydata","regularGeodataLookup","transformInterventionData","groupedData","timelineDataArray","aggregateValues","glyphVariables","normaliseData","d3","insideCell","RadialGlyph","glyphColours"], outputs: ["glyphMapSpec"], body: (map_aggregate,transformCoordinates,turf,regular_geodata,data,keydata,regularGeodataLookup,transformInterventionData,groupedData,timelineDataArray,aggregateValues,glyphVariables,normaliseData,d3,insideCell,RadialGlyph,glyphColours) => {
+define({id: "1f6eb58d", inputs: ["map_aggregate","transformCoordinates","turf","regular_geodata","data","keydata","regularGeodataLookup","transformInterventionData","groupedData","timelineDataArray","aggregateValues","glyphVariables","normaliseData","d3","insideCell","RadialGlyph","glyphColours"], outputs: ["glyphMapSpec"], body: (map_aggregate,transformCoordinates,turf,regular_geodata,data,keydata,regularGeodataLookup,transformInterventionData,groupedData,timelineDataArray,aggregateValues,glyphVariables,normaliseData,d3,insideCell,RadialGlyph,glyphColours) => {
 console.log(">> Initialize the GlyphMap Specification...");
 // console.log("Sample x y from Data in Glyph", [data[0].x, data[0].y]);
 function glyphMapSpec(width = 800, height = 600) {
@@ -1789,7 +1789,7 @@ function glyphMapSpec(width = 800, height = 600) {
           : cell.data; // when map_aggregate == "Building Level", use individual data
 
         // console.log("cell data to draw >>>", cellData);
-        // let timeData = cell.data[0];
+        let timeData = cell.data[0];
         // console.log("timeData", timeData);
 
         const boundary = cell.getBoundary(0);
@@ -1835,7 +1835,10 @@ function glyphMapSpec(width = 800, height = 600) {
         //   let tg = new StreamGraphGlyph(timeData, "year", null, customConfig);
         //   tg.draw(ctx, x, y, cellSize / 2);
         // }
-
+        console.log(
+          "Drawn in order >>>",
+          glyphVariables.map((key) => cellData[key])
+        );
         let rg = new RadialGlyph(
           glyphVariables.map((key) => cellData[key]),
           glyphColours
@@ -2742,7 +2745,7 @@ return {createOverallPlot};
 <div class="observablehq observablehq--block"><!--:631d166f:--></div>
 <div class="observablehq observablehq--block"><!--:4965f46a:--></div>
 <div class="observablehq observablehq--block"><!--:e746b01a:--></div>
-<div class="observablehq observablehq--block"><!--:f1a3ad2b:--></div>
+<div class="observablehq observablehq--block"><!--:1f6eb58d:--></div>
 <div class="observablehq observablehq--block"><!--:e0053c6e:--></div>
 <div class="observablehq observablehq--block"><!--:f5493bd3:--></div>
 <div class="observablehq observablehq--block"><!--:a0e83f83:--></div>
