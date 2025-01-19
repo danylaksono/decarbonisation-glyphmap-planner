@@ -8,8 +8,8 @@ sql:
 ---
 
 ```js
-import { createTable } from "./../components/sorterTable.js";
-// import { sorterTable } from "./../components/sorterTableClass.js";
+// import { createTable } from "./../components/sorterTable.js";
+import { sorterTable } from "./../components/sorterTableClass.js";
 ```
 
 # Table Experiments 2
@@ -61,41 +61,42 @@ import { createTable } from "./../components/sorterTable.js";
     "Substation - Headroom" AS substation_headroom,
     "Substation - % headroom" AS substation_headroom_pct,
     "Substation - Demand_rag" AS substation_demand
-FROM oxford b;
+FROM oxford b
+WHERE substation_peakload >= 500 AND pv_generation is not null;
 ```
 
 ```js
 const buildings = [...oxford_data];
-const flattenned = buildings.map((p) => ({ ...p }));
+// const flattenned = buildings.map((p) => ({ ...p }));
 // display(buildings);
 // display(flattenned);
 ```
 
 ```js
-const cols = [
-  { column: "lsoa", nominals: null },
-  {
-    column: "insulation_rating",
-    ordinals: ["Unknown", "A", "B", "C", "D", "E", "F", "G"],
-  },
-  {
-    column: "insulation_ewall",
-    // ordinals: null,
-    nominals: null,
-    // ordinals: ["Unknown", "A", "B", "C", "D", "E", "F", "G"],
-  },
-  {
-    column: "pv_generation",
-    thresholds: [
-      0, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 20000,
-      30000, 40000, 50000,
-    ],
-  },
-  {
-    column: "ashp_size",
-    thresholds: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30, 40, 50],
-  },
-];
+// const cols = [
+//   { column: "lsoa", nominals: null },
+//   {
+//     column: "insulation_rating",
+//     ordinals: ["Unknown", "A", "B", "C", "D", "E", "F", "G"],
+//   },
+//   {
+//     column: "insulation_ewall",
+//     // ordinals: null,
+//     nominals: null,
+//     // ordinals: ["Unknown", "A", "B", "C", "D", "E", "F", "G"],
+//   },
+//   {
+//     column: "pv_generation",
+//     thresholds: [
+//       0, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 20000,
+//       30000, 40000, 50000,
+//     ],
+//   },
+//   {
+//     column: "ashp_size",
+//     thresholds: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30, 40, 50],
+//   },
+// ];
 ```
 
 ```js
@@ -108,18 +109,21 @@ const [selected, setSelected] = useState({});
 ```
 
 ```js
-// const table = new createTable(buildings, cols, () => {});
+const columns = [
+  "id",
+  "lsoa",
+  "insulation_rating",
+  "insulation_ewall",
+  { column: "pv_generation", alias: "PV Generation" },
+  "ashp_size",
+  "substation_demand",
+];
+```
 
-const table = new createTable(
-  buildings.map((p) => ({ ...p })),
-  cols,
-  (changes) => {
-    console.log("Table changed:", changes);
-    setSelected(changes.selection);
-  }
-);
-
-// const table = sorter_table.createTable(buildings, cols, () => {});
+```js
+const table = new sorterTable(buildings, columns, tableChanged, {
+  cellRenderers,
+});
 ```
 
 ```js
@@ -127,5 +131,204 @@ display(table.getNode());
 ```
 
 ```js
+function tableChanged(event) {
+  console.log("Table changed:", event);
+
+  if (event.type === "filter") {
+    console.log("Filtered indices:", event.indeces);
+    console.log("Filter rule:", event.rule);
+  }
+
+  if (event.type === "sort") {
+    console.log("Sorted indices:", event.indeces);
+    console.log("Sort criteria:", event.sort);
+  }
+
+  if (event.type === "selection") {
+    console.log("Selected rows:", event.selection);
+    setSelected(event.selection);
+    console.log("Selection rule:", event.rule);
+  }
+}
+```
+
+```js
+html`Selected`;
 display(selected);
 ```
+
+```js
+// const sortButton = document.createElement("button");
+// sortButton.textContent = "Sort by LSOA (Descending)";
+// // document.body.appendChild(sortButton);
+
+// sortButton.addEventListener("click", () => {
+//   const ageSortCtrl = table.sortControllers.find(
+//     (ctrl) => ctrl.getColumn() === "lsoa"
+//   );
+//   ageSortCtrl.setDirection("down");
+//   table.sortChanged(ageSortCtrl);
+// });
+```
+
+```js
+// Create a color scale (example)
+const colorScale = d3
+  .scaleSequential(d3.interpolateViridis)
+  .domain([0, d3.max(buildings, (d) => d.pv_generation)]);
+// display(colorScale(1000));
+```
+
+```js
+// Define cell renderers
+const cellRenderers = {
+  pv_generation: (value, rowData) => {
+    const max = d3.max(buildings, (d) => d.pv_generation); // Calculate max dynamically
+    return sparkbar(max, colorScale)(value, rowData); // Call sparkbar with calculated max
+  },
+  ashp_size: (data) => {
+    const span = document.createElement("span");
+    span.innerText = data >= 180 ? "More" : "Less";
+    return span;
+  },
+};
+```
+
+```js
+function sparkbar(max, colorScale, alpha = 0.6) {
+  return (x, rowData) => {
+    // console.log("Rendering sparkbar for:", x, rowData);
+    // Now takes 'x' (cell value) and 'rowData' (entire row)
+    const color = d3.color(colorScale(x));
+    color.opacity = alpha;
+    const div = document.createElement("div");
+    div.style.background = color;
+    div.style.width = `${(100 * x) / max}%`;
+    div.style.float = "right";
+    div.style.paddingRight = "3px";
+    div.style.boxSizing = "border-box";
+    div.style.overflow = "visible";
+    div.style.display = "flex";
+    div.style.justifyContent = "end";
+    div.innerText = x.toLocaleString("en");
+    return div;
+  };
+}
+```
+
+```js
+function sparkarea(data, rowData, options = {}) {
+  const {
+    width = 240,
+    height = 20,
+    fillColor = "#faa",
+    strokeColor = "red",
+  } = options;
+
+  // Extract x and y values from the data (assuming your data has a 'history' property)
+  const X = data.map((d) => d.date); // Assuming 'date' property for x-axis
+  const Y = data.map((d) => d.value); // Assuming 'value' property for y-axis
+
+  // Handle cases where there is not enough data for an area chart
+  if (X.length < 2 || Y.length < 2) {
+    const message = document.createElement("div");
+    message.innerText = "Not enough data";
+    return message;
+  }
+
+  const x = d3
+    .scaleTime() // Use scaleTime for dates
+    .domain(d3.extent(X))
+    .range([0, width]);
+  const y = d3.scaleLinear().domain(d3.extent(Y)).range([height, 0]);
+
+  const area = d3
+    .area()
+    .x((d, i) => x(X[i]))
+    .y1((d, i) => y(Y[i]))
+    .y0(height)
+    .defined((d, i) => !isNaN(X[i]) && !isNaN(Y[i]));
+
+  // Create the SVG element
+  const svg = d3
+    .create("svg")
+    .attr("width", width)
+    .attr("height", height)
+    .style("vertical-align", "middle")
+    .style("margin", "-3px 0")
+    .node(); // Get the actual SVG element
+
+  // Add the area path
+  d3.select(svg).append("path").attr("fill", fillColor).attr("d", area(data));
+
+  // Add the outline path
+  d3.select(svg)
+    .append("path")
+    .attr("fill", "none")
+    .attr("stroke", strokeColor)
+    .attr("d", area.lineY1()(data));
+
+  // Create a container div
+  const container = document.createElement("div");
+  container.appendChild(svg);
+
+  return container;
+}
+```
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css" />
+
+<style>
+/* .sorter-table  table {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 10px;
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.sorter-table tbody tr:nth-child(even) {
+  background-color: #f8f8f8; /* Zebra striping */
+}
+
+.sorter-table tbody tr:hover {
+  background-color: #f0f0f0; /* Highlight on hover */
+}
+
+.sorter-table thead {
+  background-color: #e0e0e0; /* Header background */
+}
+
+.sorter-table th {
+  text-align: left;
+  padding: 8px;
+  font-size: 10px;
+  border-bottom: 2px solid #ddd;
+}
+
+.sorter-table td {
+  padding: 8px;
+  border: 1px solid #ddd;
+  text-align: left;
+  vertical-align: middle;
+}
+
+
+.sorter-table .sidebar { /* Target the sidebar using the table's class */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 50px; /* Adjust as needed */
+  padding: 10px;
+  border-right: 1px solid #ccc;
+}
+
+.sorter-table .sidebar i { /* Target icons within the sidebar */
+  margin-bottom: 15px;
+  cursor: pointer;
+  color: gray;
+}
+
+.sorter-table .sidebar i:hover {
+  color: black; /* Highlight on hover */
+} */
+</style>
