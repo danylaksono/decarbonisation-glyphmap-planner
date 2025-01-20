@@ -19,8 +19,10 @@ export function RadialGlyph(data, customColors) {
       ? (i) => this.colors[i % this.colors.length]
       : d3.scaleOrdinal(d3.schemeTableau10).domain(d3.range(this.data.length));
 
+    // console.log("the data in the glyph", this.data);
+
     this.data.map((d, i) => {
-      console.log("data in radial glyph", d);
+      // console.log("data in radial glyph", d);
       drawPieSlice(
         ctx,
         x,

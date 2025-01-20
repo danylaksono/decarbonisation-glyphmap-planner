@@ -173,7 +173,7 @@ const [selectedInterventionIndex, setSelectedInterventionIndex] =
   useState(null); // selected intervention index
 const [detailOnDemand, setDetailOnDemand] = useState(null); // detail on demand on map
 const [currentConfig, setCurrentConfig] = useState({}); // current configuration
-const [tableFiltered, setTableFiltered] = useState(null); // filtered table
+const [tableFiltered, setTableFiltered] = useState([]); // filtered table
 ```
 
 ```js
@@ -274,7 +274,7 @@ const [allocations, setAllocations] = useState([]);
             <div class="content">
               <!-- ${ObsTable} -->
               ${table.getNode()}
-              <!-- <div>No. of intervened buildings: ${JSON.stringify(stackedResults.summary.intervenedCount)}</div> -->
+              ${tableFilteredData ? html`<p> No. of Filtered Data: ${tableFilteredData.length} </p>`: "" }
             </div>
           </div>
         </div>
@@ -1103,6 +1103,13 @@ const data =
     ? stackedRecap?.buildings ?? buildingsData
     : flatData;
 // console.log(">> DATA DATA DATA", data);
+```
+
+```js
+timelineSwitchInput;
+const glyphdata = aggregateValues(data, glyphVariables, "sum", true);
+console.log(">> Glyph data", glyphdata);
+console.log(normaliseData([{ a: 100, b: 200, c: 300 }], ["a", "b", "c"]));
 ```
 
 ```js
@@ -1981,7 +1988,7 @@ let keysToNormalise = [
 ```
 
 ```js
-function createOverallPotential(data, width = 900, height = 600) {
+function createOverallPotential(data, width = 1100, height = 800) {
   const margin = { top: 30, right: 150, bottom: 120, left: 80 };
   const innerWidth = width - margin.left - margin.right;
   const innerHeight = height - margin.top - margin.bottom;
@@ -2000,7 +2007,7 @@ function createOverallPotential(data, width = 900, height = 600) {
   const x = innerWidth / 2;
   const y = innerHeight / 2;
 
-  let glyphdata = aggregateValues(data, glyphVariables, "sum", true);
+  // let glyphdata = aggregateValues(data, glyphVariables, "sum", true);
 
   // console.log(
   //   ">> Check radial glyph data",

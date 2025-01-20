@@ -166,6 +166,16 @@ export function aggregateValues(
     throw new Error("Data must be a non-empty array.");
   }
 
+  // Validate selected parameters
+  if (!Array.isArray(selectedParameters) || selectedParameters.length === 0) {
+    throw new Error("Selected parameters must be a non-empty array.");
+  }
+
+  // Optional normalization step BEFORE aggregation
+  if (normalise && selectedParameters.length > 1) {
+    data = normaliseData(data, selectedParameters);
+  }
+
   const aggregates = {};
 
   // Define aggregation functions
@@ -183,33 +193,25 @@ export function aggregateValues(
     throw new Error(`Unsupported aggregation type: ${aggregationType}`);
   }
 
-  // Validate selected parameters
-  if (!Array.isArray(selectedParameters) || selectedParameters.length === 0) {
-    throw new Error("Selected parameters must be a non-empty array.");
-  }
-
   // Perform aggregation
   for (const parameter of selectedParameters) {
     const values = data
-      .map((d) =>
-        typeof d[parameter] === "boolean"
-          ? d[parameter]
-            ? 1
-            : 0
-          : d[parameter]
-      )
+      .map((d) => {
+        let value = d[parameter];
+
+        if (typeof value === "boolean") {
+          return value ? 1 : 0;
+        }
+
+        if (typeof value === "string" && !isNaN(value)) {
+          value = Number(value); // Convert numeric strings to numbers
+        }
+
+        return typeof value === "number" ? value : null; // Ensure it's a number
+      })
       .filter((v) => v != null); // Remove null/undefined values
 
     aggregates[parameter] = values.length > 0 ? aggregationFn(values) : null;
-  }
-
-  // Optional normalization step
-  if (normalise && selectedParameters.length > 1) {
-    const normalisedAggregates = normaliseData(
-      [aggregates],
-      selectedParameters
-    );
-    return normalisedAggregates[0]; // Return single normalized aggregate object
   }
 
   return aggregates;
