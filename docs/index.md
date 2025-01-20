@@ -20,6 +20,7 @@ import * as turf from "@turf/turf";
 import * as bulmaToast from "npm:bulma-toast";
 import * as bulmaQuickview from "npm:bulma-quickview@2.0.0/dist/js/bulma-quickview.js";
 
+import { sorterTable } from "./components/sorterTableClass.js";
 import {
   TimeGlyph,
   GlyphCollection,
@@ -172,6 +173,7 @@ const [selectedInterventionIndex, setSelectedInterventionIndex] =
   useState(null); // selected intervention index
 const [detailOnDemand, setDetailOnDemand] = useState(null); // detail on demand on map
 const [currentConfig, setCurrentConfig] = useState({}); // current configuration
+const [tableFiltered, setTableFiltered] = useState(null); // filtered table
 ```
 
 ```js
@@ -270,8 +272,8 @@ const [allocations, setAllocations] = useState([]);
           </header> -->
           <div class="card-content">
             <div class="content">
-              ${ObsTable}
-              <!-- ${table.getNode()} -->
+              <!-- ${ObsTable} -->
+              ${table.getNode()}
               <!-- <div>No. of intervened buildings: ${JSON.stringify(stackedResults.summary.intervenedCount)}</div> -->
             </div>
           </div>
@@ -1093,7 +1095,14 @@ const data =
 ```js
 // Table Data
 const excludedColumns = ["properties", "x", "y", "score"]; // columns to exclude from the table
-const customOrder = ["id", "lsoa", "msoa", "isIntervened", "EPC_Rating"]; // custom order for columns
+const customOrder = [
+  { column: "id", unique: true },
+  "lsoa",
+  "msoa",
+  // ...(isIntervened ? ["isIntervened"] : []),
+  "EPC_rating",
+];
+
 // const customOrder2 = ["id", "lsoa", "score"]; // custom order for columns
 // const tableColumns = customOrder2;
 
@@ -1117,9 +1126,61 @@ const tableColumns = Object.keys(data[0])
 ```
 
 ```js
+function tableChanged(event) {
+  console.log("Table changed:", event);
+
+  if (event.type === "filter") {
+    console.log("Filtered indices:", event.indeces);
+    console.log("Filter rule:", event.rule);
+
+    setTableFiltered(event.indeces);
+  }
+
+  if (event.type === "sort") {
+    console.log("Sorted indices:", event.indeces);
+    console.log("Sort criteria:", event.sort);
+  }
+
+  if (event.type === "selection") {
+    console.log("Selected rows:", event.selection);
+    setSelected(event.selection);
+    console.log("Selection rule:", event.rule);
+  }
+}
+```
+
+```js
+const tableFilteredData = tableFiltered.map((index) => {
+  return table.data[index];
+});
+
+console.log("Filtered data:", tableFilteredData);
+```
+
+```js
+// Define cell renderers
+// const cellRenderers = {
+//   pv_generation: (value, rowData) => {
+//     const max = d3.max(data, (d) => d.pv_generation); // Calculate max dynamically
+//     return sparkbar(max, colorScale)(value, rowData); // Call sparkbar with calculated max
+//   },
+//   ashp_size: (data) => {
+//     const span = document.createElement("span");
+//     span.innerText = data >= 180 ? "More" : "Less";
+//     return span;
+//   },
+// };
+```
+
+```js
 // test table
-html`<h1>Summarize</h1>`;
-// display(SummarizeColumn(data, "lsoa"));
+const table = new sorterTable(data, customOrder, tableChanged, {
+  height: "300px",
+});
+```
+
+```js
+// display(table.getNode());
 ```
 
 ```js
@@ -1176,25 +1237,25 @@ function createTableHeader(fill, headerText) {
 ```
 
 ```js
-const tableFormat = createTableFormat(data);
+// const tableFormat = createTableFormat(data);
 ```
 
 ```js
-const ObsTable = Inputs.table(data, {
-  columns: tableColumns,
-  format: tableFormat,
-  layout: "auto",
-});
-// Object.assign(ObsTable, {
-//   oninput: (event) => event.isTrusted && event.stopImmediatePropagation(),
-//   onchange: (event) => event.currentTarget.dispatchEvent(new Event("input")),
+// const ObsTable = Inputs.table(data, {
+//   columns: tableColumns,
+//   format: tableFormat,
+//   layout: "auto",
 // });
+// // Object.assign(ObsTable, {
+// //   oninput: (event) => event.isTrusted && event.stopImmediatePropagation(),
+// //   onchange: (event) => event.currentTarget.dispatchEvent(new Event("input")),
+// // });
 
-// Listening to change events
-ObsTable.addEventListener("change", (event) => {
-  console.log("Table changed:", event); // Access the event target
-});
-const selectedRow = Generators.input(ObsTable);
+// // Listening to change events
+// ObsTable.addEventListener("change", (event) => {
+//   console.log("Table changed:", event); // Access the event target
+// });
+// const selectedRow = Generators.input(ObsTable);
 ```
 
 <!-- ---------------- Sortable Table ---------------- -->
@@ -1507,6 +1568,19 @@ const glyphColours = [
   "#228B22", // pv_generation: ForestGreen
   "#006400", // pv_total: DarkGreen
 ];
+
+const timelineVariables = [
+  "interventionCost",
+  "carbonSaved",
+  "numInterventions",
+  "interventionTechs",
+];
+const timelineColours = [
+  "#000000", // interventionCost: Black
+  "#0000FF", // carbonSaved: Blue
+  "#00FF00", // numInterventions: Green
+  "#FF0000", // interventionTechs: Red
+];
 ```
 
 ```js
@@ -1671,10 +1745,10 @@ function glyphMapSpec(width = 800, height = 600) {
         //   let tg = new StreamGraphGlyph(timeData, "year", null, customConfig);
         //   tg.draw(ctx, x, y, cellSize / 2);
         // }
-        console.log(
-          "Drawn in order >>>",
-          glyphVariables.map((key) => cellData[key])
-        );
+        // console.log(
+        //   "Drawn in order >>>",
+        //   glyphVariables.map((key) => cellData[key])
+        // );
         let rg = new RadialGlyph(
           glyphVariables.map((key) => cellData[key]),
           glyphColours
