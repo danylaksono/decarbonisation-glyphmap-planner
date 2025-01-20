@@ -158,8 +158,9 @@ function getNumericKeys(data) {
 
 export function aggregateValues(
   data,
-  selectedParameters = getNumericKeys(data), // Default to numeric keys if not provided
-  aggregationType = "mean"
+  selectedParameters = getNumericKeys(data),
+  aggregationType = "mean",
+  normalise = false // Optional normalization flag
 ) {
   if (!Array.isArray(data) || data.length === 0) {
     throw new Error("Data must be a non-empty array.");
@@ -167,7 +168,7 @@ export function aggregateValues(
 
   const aggregates = {};
 
-  // Map the aggregation type to the corresponding D3 function
+  // Define aggregation functions
   const aggregationFunctions = {
     mean: d3.mean,
     sum: d3.sum,
@@ -183,56 +184,95 @@ export function aggregateValues(
   }
 
   // Validate selected parameters
-  // console.log("selectedParameters:", selectedParameters);
-
   if (!Array.isArray(selectedParameters) || selectedParameters.length === 0) {
     throw new Error("Selected parameters must be a non-empty array.");
   }
 
+  // Perform aggregation
   for (const parameter of selectedParameters) {
     const values = data
       .map((d) =>
         typeof d[parameter] === "boolean"
           ? d[parameter]
             ? 1
-            : 0 // Convert boolean to 1 or 0
+            : 0
           : d[parameter]
       )
-      .filter((v) => v != null); // Filter out null/undefined
-    if (values.length === 0) {
-      // Handle cases where there are no valid values for the parameter
-      aggregates[parameter] = null;
-    } else {
-      aggregates[parameter] = aggregationFn(values);
-    }
+      .filter((v) => v != null); // Remove null/undefined values
+
+    aggregates[parameter] = values.length > 0 ? aggregationFn(values) : null;
+  }
+
+  // Optional normalization step
+  if (normalise && selectedParameters.length > 1) {
+    const normalisedAggregates = normaliseData(
+      [aggregates],
+      selectedParameters
+    );
+    return normalisedAggregates[0]; // Return single normalized aggregate object
   }
 
   return aggregates;
 }
 
+// Normalization function
 export function normaliseData(data, keysToNormalise) {
-  // Create a D3 linear scale for each key to be normalized
-  const scales = keysToNormalise.map((key) =>
-    d3
-      .scaleLinear()
-      .domain(d3.extent(data, (d) => d[key])) // Set domain based on actual data range
-      .range([0, 1])
-  );
+  if (!Array.isArray(data) || data.length === 0) {
+    throw new Error("Data must be a non-empty array.");
+  }
 
-  // Normalize the data using the scales
-  const normalisedData = data.map((d) => ({
-    ...d, // Keep original properties
+  if (!Array.isArray(keysToNormalise) || keysToNormalise.length === 0) {
+    throw new Error("Keys to normalise must be a non-empty array.");
+  }
+
+  // Create a D3 linear scale for each key
+  const scales = {};
+  keysToNormalise.forEach((key) => {
+    const extent = d3.extent(data, (d) => d[key]);
+    if (extent[0] === extent[1]) {
+      // Avoid division by zero by setting a constant scale
+      scales[key] = () => 0.5;
+    } else {
+      scales[key] = d3.scaleLinear().domain(extent).range([0, 1]);
+    }
+  });
+
+  // Normalize data
+  return data.map((d) => ({
+    ...d, // Preserve original properties
     ...keysToNormalise.reduce(
       (acc, key) => ({
         ...acc,
-        [key]: scales[keysToNormalise.indexOf(key)](d[key]),
+        [key]: scales[key](d[key]),
       }),
       {}
     ),
   }));
-
-  return normalisedData;
 }
+
+// export function normaliseData(data, keysToNormalise) {
+//   // Create a D3 linear scale for each key to be normalized
+//   const scales = keysToNormalise.map((key) =>
+//     d3
+//       .scaleLinear()
+//       .domain(d3.extent(data, (d) => d[key])) // Set domain based on actual data range
+//       .range([0, 1])
+//   );
+
+//   // Normalize the data using the scales
+//   const normalisedData = data.map((d) => ({
+//     ...d, // Keep original properties
+//     ...keysToNormalise.reduce(
+//       (acc, key) => ({
+//         ...acc,
+//         [key]: scales[keysToNormalise.indexOf(key)](d[key]),
+//       }),
+//       {}
+//     ),
+//   }));
+
+//   return normalisedData;
+// }
 
 // function getNumericKeys(data) {
 //   const sample = data[0];
