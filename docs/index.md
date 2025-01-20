@@ -1106,10 +1106,10 @@ const data =
 ```
 
 ```js
-timelineSwitchInput;
-const glyphdata = aggregateValues(data, glyphVariables, "sum", true);
-console.log(">> Glyph data", glyphdata);
-console.log(normaliseData([{ a: 100, b: 200, c: 300 }], ["a", "b", "c"]));
+timeline_switch;
+// const glyphdata = aggregateValues(data, glyphVariables, "sum", true);
+// console.log(">> Glyph data", glyphdata);
+// console.log(normaliseData([{ a: 100, b: 200, c: 300 }], ["a", "b", "c"]));
 ```
 
 ```js
@@ -2007,12 +2007,12 @@ function createOverallPotential(data, width = 1100, height = 800) {
   const x = innerWidth / 2;
   const y = innerHeight / 2;
 
-  // let glyphdata = aggregateValues(data, glyphVariables, "sum", true);
+  let glyphdata = aggregateValues(data, glyphVariables, "sum", true);
 
-  // console.log(
-  //   ">> Check radial glyph data",
-  //   glyphVariables.map((key) => glyphdata[key])
-  // );
+  console.log(
+    ">> Check radial glyph data",
+    glyphVariables.map((key) => glyphdata[key])
+  );
 
   // Create and draw Radial Glyph
   let rg = new RadialGlyph(
