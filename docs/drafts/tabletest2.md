@@ -339,7 +339,7 @@ const columnNames = [
 ```js
 // --- Color Scale ---
 const colorScale = d3
-  .scaleSequential(d3.interpolateViridis)
+  .scaleSequential(d3.interpolateGreens)
   .domain([0, d3.max(buildings, (d) => d.pv_generation)]);
 ```
 
@@ -347,18 +347,17 @@ const colorScale = d3
 // --- Custom Renderer Functions ---
 function sparkbar(max, colorScale, alpha = 0.6) {
   return (x, rowData) => {
-    const color = d3.color(colorScale(x));
-    color.opacity = alpha;
+    const color = "blue"; // d3.color(colorScale(x));
+    // color.opacity = alpha;
     const div = document.createElement("div");
     div.style.background = color;
     div.style.width = `${(100 * x) / max}%`;
-    div.style.float = "right";
-    div.style.paddingRight = "3px";
+    div.style.height = "10px"; // Ensure visibility
+    // div.style.float = "right";
     div.style.boxSizing = "border-box";
-    div.style.overflow = "visible";
-    div.style.display = "flex";
-    div.style.justifyContent = "end";
-    div.innerText = x.toLocaleString("en");
+    div.style.overflow = "hidden";
+    div.style.display = "block";
+    div.title = x.toLocaleString("en"); // Tooltip text
     return div;
   };
 }
@@ -463,12 +462,12 @@ function tableChanged(event) {
   console.log("Table changed:", event);
 
   if (event.type === "filter") {
-    console.log("Filtered indices:", event.indeces);
+    console.log("Filtered indices:", event);
     console.log("Filter rule:", event.rule);
   }
 
   if (event.type === "sort") {
-    console.log("Sorted indices:", event.indeces);
+    console.log("Sorted indices:", event);
     console.log("Sort criteria:", event.sort);
   }
 

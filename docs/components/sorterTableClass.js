@@ -232,11 +232,31 @@ export class sorterTable {
     this.history.push({ type: "filter", data: this.dataInd });
     this.dataInd = this.getSelection().map((s) => this.dataInd[s.index]);
     this.createTable();
-    this.visControllers.map((vc, vci) =>
-      vc.updateData(
-        this.dataInd.map((i) => this.data[i][this.columns[vci].column])
-      )
-    );
+
+    // this.visControllers.map((vc, vci) =>
+    //   vc.updateData(
+    //     this.dataInd.map((i) => this.data[i][this.columns[vci].column])
+    //   )
+    // );
+
+    this.visControllers.forEach((vc, vci) => {
+      if (vc instanceof HistogramController) {
+        // Get the correct column name associated with this histogram
+        const columnName = this.columns[vci].column;
+
+        // Filter data for the specific column and maintain original index
+        const columnData = this.dataInd.map((i) => ({
+          value: this.data[i][columnName],
+          index: i, // Keep track of the original index
+        }));
+
+        vc.updateData(this.dataInd.map((i) => this.data[i][columnName])); // Update data (for potential other uses)
+
+        // Update the histogram data
+        vc.setData(columnData);
+      }
+    });
+
     this.changed({
       type: "filter",
       indeces: this.dataInd,
@@ -1253,12 +1273,14 @@ function HistogramController(data, binrules) {
   let controller = this;
   let div = document.createElement("div");
 
-  this.updateData = (d) => setData(d);
+  this.bins = [];
+
+  this.updateData = (d) => this.setData(d);
 
   // reset the selection state of the histogram
   this.resetSelection = () => {
     // Reset the 'selected' property of all bins
-    bins.forEach((bin) => {
+    this.bins.forEach((bin) => {
       bin.selected = false;
     });
 
@@ -1268,7 +1290,7 @@ function HistogramController(data, binrules) {
       .attr("fill", "steelblue");
   };
 
-  function setData(dd) {
+  this.setData = function (dd) {
     // console.log("dd:", dd);
 
     div.innerHTML = "";
@@ -1302,7 +1324,7 @@ function HistogramController(data, binrules) {
       .attr("transform", `translate(${margin.left},${margin.top})`);
 
     let x = null;
-    let bins = null;
+    // let bins = null;
 
     //bin data by either thresholds or ordinals or nominals
     if ("thresholds" in binrules) {
@@ -1321,7 +1343,7 @@ function HistogramController(data, binrules) {
         .thresholds(binrules.thresholds) // Set the number of bins (10 in this case)
         .value((d) => d.value)(data);
 
-      bins = bins.map((b) => ({
+      this.bins = bins.map((b) => ({
         category: b.x0 + "-" + b.x1,
         count: b.length,
         indeces: b.map((v) => v.index),
@@ -1340,14 +1362,14 @@ function HistogramController(data, binrules) {
       const binType = "ordinals" in binrules ? "ordinals" : "nominals";
 
       if (binType in binrules && Array.isArray(binrules[binType])) {
-        bins = binrules[binType].map((v) => ({
+        this.bins = binrules[binType].map((v) => ({
           category: v,
           count: frequency.get(v) != null ? frequency.get(v).count : 0,
           indeces: frequency.get(v) != null ? frequency.get(v).indeces : [],
         }));
       } else {
         // Handle cases where binrules[binType] is not a valid array
-        bins = Array.from(frequency, ([key, value]) => ({
+        this.bins = Array.from(frequency, ([key, value]) => ({
           category: key,
           count: value.count,
           indeces: value.indeces,
@@ -1356,13 +1378,13 @@ function HistogramController(data, binrules) {
     }
 
     //add the bin index to each bin
-    bins.map((bin, i) => (bin.index = i));
+    this.bins.map((bin, i) => (bin.index = i));
     // console.log("bins: ", bins);
 
     // Define the y scale (based on bin counts)
     const y = d3
       .scaleLinear()
-      .domain([0, d3.max(bins, (d) => d.count)]) // input: max count in bins
+      .domain([0, d3.max(this.bins, (d) => d.count)]) // input: max count in bins
       .range([height, 0]); // output: pixel range (inverted for SVG coordinate system)
 
     //for each bin we'll have to bars, a regular one and an
@@ -1370,19 +1392,19 @@ function HistogramController(data, binrules) {
     //chart; the latter is there for interaction.
     const barGroups = svg
       .selectAll(".bar")
-      .data(bins)
+      .data(this.bins)
       .join("g")
       .attr("class", "bar")
       .attr(
         "transform",
-        (d, i) => `translate(${(i * width) / bins.length}, 0)`
+        (d, i) => `translate(${(i * width) / this.bins.length}, 0)`
       );
 
     // visible bars
     barGroups
       .append("rect")
       .attr("x", 0)
-      .attr("width", (d) => width / bins.length)
+      .attr("width", (d) => width / this.bins.length)
       .attr("y", (d) => y(d.count))
       .attr("height", (d) => height - y(d.count))
       .attr("fill", "steelblue");
@@ -1390,7 +1412,7 @@ function HistogramController(data, binrules) {
     //invisible bars for interaction
     barGroups
       .append("rect")
-      .attr("width", (d) => width / bins.length)
+      .attr("width", (d) => width / this.bins.length)
       .attr("height", height) // Stretch to full height
       .attr("fill", "transparent") // Make invisible
       .on("mouseover", (event, d) => {
@@ -1420,11 +1442,6 @@ function HistogramController(data, binrules) {
           );
         }
 
-        // d3.select(event.currentTarget.previousSibling).attr(
-        //   "fill",
-        //   "steelblue"
-        // ); // Revert color on mouseout
-
         svg.selectAll(".histogram-label").remove();
       })
       .on("click", (event, d) => {
@@ -1451,7 +1468,7 @@ function HistogramController(data, binrules) {
             controller.table.clearSelection();
           }
 
-          bins[d.index].indeces.forEach((rowIndex) => {
+          this.bins[d.index].indeces.forEach((rowIndex) => {
             // Use the dataInd array to get the correct data index
             const actualIndex = controller.table.dataInd[rowIndex];
             const tr = controller.table.tBody.querySelector(
@@ -1467,26 +1484,14 @@ function HistogramController(data, binrules) {
           });
           controller.table.selectionUpdated();
         }
-        // if (controller.table) {
-        //   controller.table.clearSelection();
-        //   bins[d.index].indeces.forEach((rowIndex) => {
-        //     const tr = controller.table.tBody.querySelector(
-        //       `tr:nth-child(${rowIndex + 1})`
-        //     );
-        //     if (tr) {
-        //       controller.table.selectRow(tr);
-        //     }
-        //   });
-        // }
-        // // Inform sorterTable about the selection change
-        // controller.table.selectionUpdated();
       });
-  }
+  };
 
-  setData(data);
+  // setData(data);
 
   // set this.table from sorterTable
   this.table = null;
+  this.setData(data);
 
   this.getNode = () => div;
   return this;

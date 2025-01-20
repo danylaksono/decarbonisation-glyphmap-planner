@@ -173,6 +173,7 @@ const [selectedInterventionIndex, setSelectedInterventionIndex] =
   useState(null); // selected intervention index
 const [detailOnDemand, setDetailOnDemand] = useState(null); // detail on demand on map
 const [currentConfig, setCurrentConfig] = useState({}); // current configuration
+const [tableFiltered, setTableFiltered] = useState(null); // filtered table
 ```
 
 ```js
@@ -1131,6 +1132,8 @@ function tableChanged(event) {
   if (event.type === "filter") {
     console.log("Filtered indices:", event.indeces);
     console.log("Filter rule:", event.rule);
+
+    setTableFiltered(event.indeces);
   }
 
   if (event.type === "sort") {
@@ -1144,6 +1147,14 @@ function tableChanged(event) {
     console.log("Selection rule:", event.rule);
   }
 }
+```
+
+```js
+const tableFilteredData = tableFiltered.map((index) => {
+  return table.data[index];
+});
+
+console.log("Filtered data:", tableFilteredData);
 ```
 
 ```js
@@ -1226,7 +1237,7 @@ function createTableHeader(fill, headerText) {
 ```
 
 ```js
-const tableFormat = createTableFormat(data);
+// const tableFormat = createTableFormat(data);
 ```
 
 ```js
@@ -1557,6 +1568,19 @@ const glyphColours = [
   "#228B22", // pv_generation: ForestGreen
   "#006400", // pv_total: DarkGreen
 ];
+
+const timelineVariables = [
+  "interventionCost",
+  "carbonSaved",
+  "numInterventions",
+  "interventionTechs",
+];
+const timelineColours = [
+  "#000000", // interventionCost: Black
+  "#0000FF", // carbonSaved: Blue
+  "#00FF00", // numInterventions: Green
+  "#FF0000", // interventionTechs: Red
+];
 ```
 
 ```js
@@ -1721,10 +1745,10 @@ function glyphMapSpec(width = 800, height = 600) {
         //   let tg = new StreamGraphGlyph(timeData, "year", null, customConfig);
         //   tg.draw(ctx, x, y, cellSize / 2);
         // }
-        console.log(
-          "Drawn in order >>>",
-          glyphVariables.map((key) => cellData[key])
-        );
+        // console.log(
+        //   "Drawn in order >>>",
+        //   glyphVariables.map((key) => cellData[key])
+        // );
         let rg = new RadialGlyph(
           glyphVariables.map((key) => cellData[key]),
           glyphColours
