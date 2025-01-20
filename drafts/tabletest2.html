@@ -10,10 +10,9 @@
 <link rel="modulepreload" href="../_observablehq/client.js">
 <link rel="modulepreload" href="../_observablehq/runtime.js">
 <link rel="modulepreload" href="../_observablehq/stdlib.js">
-<link rel="modulepreload" href="../_import/components/sorterTableClass.e826138a.js">
+<link rel="modulepreload" href="../_import/components/sorterTableClass.e30ae16e.js">
 <link rel="modulepreload" href="../_npm/d3@7.9.0/_esm.js">
 <link rel="modulepreload" href="../_observablehq/stdlib/duckdb.js">
-<link rel="modulepreload" href="../_npm/htl@0.3.1/_esm.js">
 <link rel="modulepreload" href="../_npm/@duckdb/duckdb-wasm@1.28.0/_esm.js">
 <link rel="modulepreload" href="../_npm/d3-array@3.2.4/_esm.js">
 <link rel="modulepreload" href="../_npm/d3-axis@3.0.0/_esm.js">
@@ -57,17 +56,17 @@ import {define} from "../_observablehq/client.js";
 import {registerFile, FileAttachment} from "../_observablehq/stdlib.js";
 import {registerTable} from "../_observablehq/stdlib/duckdb.js";
 
-registerFile("./../data/oxford_decarbonisation_data.parquet", {"name":"./../data/oxford_decarbonisation_data.parquet","path":"../_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1737299104509});
+registerFile("./../data/oxford_decarbonisation_data.parquet", {"name":"./../data/oxford_decarbonisation_data.parquet","path":"../_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1737356014937});
 registerTable("oxford", FileAttachment("../data/oxford_decarbonisation_data.parquet"));
 
 define({id: "e85258d2", outputs: ["sorterTable"], body: async () => {
-const {sorterTable} = await import("../_import/components/sorterTableClass.e826138a.js");
+const {sorterTable} = await import("../_import/components/sorterTableClass.e30ae16e.js");
 // import { createTable } from "./../components/sorterTable.js";
 
 return {sorterTable};
 }});
 
-define({id: "2a11b13d", inputs: ["sql"], outputs: ["oxford_data"], body: async (sql) => {
+define({id: "56d16951", inputs: ["sql"], outputs: ["oxford_data"], body: async (sql) => {
 const oxford_data = await sql`  SELECT DISTINCT
     "UPRN" AS id,
     "LSOA code" AS lsoa,
@@ -85,7 +84,7 @@ const oxford_data = await sql`  SELECT DISTINCT
     "Low Carbon Technology Costs_Ground Source Heat Pump - Materials" AS gshp_material,
     "Low Carbon Technology Costs_Ground Source Heat Pump - Total" AS gshp_total,
     "Domestic Heat Demand_Annual Heat Demand (kWh)" AS heat_demand,
-    "Domestic Insulation Potential_EPC Rating" AS insulation_rating,
+    "Domestic Insulation Potential_EPC Rating" AS epc_rating,
     "Domestic Insulation Potential_Insulation - Cavity Wall" AS insulation_cwall,
     "Low Carbon Technology Costs_Insulation - Cavity Wall - Labour" AS insulation_cwall_labour,
     "Low Carbon Technology Costs_Insulation - Cavity Wall  - Materials" AS insulation_cwall_materials,
@@ -119,39 +118,9 @@ WHERE substation_peakload >= 500 AND pv_generation is not null;`;
 return {oxford_data};
 }});
 
-define({id: "fd5729b6", inputs: ["oxford_data"], outputs: ["buildings"], body: (oxford_data) => {
-const buildings = [...oxford_data];
-// const flattenned = buildings.map((p) => ({ ...p }));
-// display(buildings);
-// display(flattenned);
-return {buildings};
-}});
-
-define({id: "90cd0078", body: () => {
-// const cols = [
-//   { column: "lsoa", nominals: null },
-//   {
-//     column: "insulation_rating",
-//     ordinals: ["Unknown", "A", "B", "C", "D", "E", "F", "G"],
-//   },
-//   {
-//     column: "insulation_ewall",
-//     // ordinals: null,
-//     nominals: null,
-//     // ordinals: ["Unknown", "A", "B", "C", "D", "E", "F", "G"],
-//   },
-//   {
-//     column: "pv_generation",
-//     thresholds: [
-//       0, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 20000,
-//       30000, 40000, 50000,
-//     ],
-//   },
-//   {
-//     column: "ashp_size",
-//     thresholds: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30, 40, 50],
-//   },
-// ];
+define({id: "ee098890", inputs: ["oxford_data"], outputs: ["oxBuildings"], body: (oxford_data) => {
+const oxBuildings = [...oxford_data];
+return {oxBuildings};
 }});
 
 define({id: "ec01b706", inputs: ["Mutable"], outputs: ["useState","selected","setSelected"], body: (Mutable) => {
@@ -164,121 +133,136 @@ const [selected, setSelected] = useState({});
 return {useState,selected,setSelected};
 }});
 
-define({id: "e5f92493", outputs: ["columns"], body: () => {
-const columns = [
-  "id",
-  "lsoa",
-  "insulation_rating",
-  "insulation_ewall",
-  { column: "pv_generation", alias: "PV Generation" },
-  "ashp_size",
-  "substation_demand",
+define({id: "27a46bb1", outputs: ["buildings","columnNames"], body: () => {
+// --- Dummy Data ---
+const buildings = [
+  {
+    id: "A1",
+    lsoa: "E01000001",
+    insulation_rating: "C",
+    insulation_ewall: "Good",
+    pv_generation: 3500,
+    ashp_size: 120,
+    substation_demand: 45.5,
+    history: [
+      { date: new Date("2023-01-01"), value: 10 },
+      { date: new Date("2023-02-01"), value: 15 },
+      { date: new Date("2023-03-01"), value: 8 },
+      { date: new Date("2023-04-01"), value: 12 },
+      { date: new Date("2023-05-01"), value: 18 },
+    ],
+  },
+  {
+    id: "A2",
+    lsoa: "E01000002",
+    insulation_rating: "B",
+    insulation_ewall: "Very Good",
+    pv_generation: 8100,
+    ashp_size: 200,
+    substation_demand: 60.2,
+    history: [
+      { date: new Date("2023-01-01"), value: 22 },
+      { date: new Date("2023-02-01"), value: 18 },
+      { date: new Date("2023-03-01"), value: 25 },
+      { date: new Date("2023-04-01"), value: 20 },
+      { date: new Date("2023-05-01"), value: 15 },
+    ],
+  },
+  {
+    id: "A3",
+    lsoa: "E01000003",
+    insulation_rating: "D",
+    insulation_ewall: "Average",
+    pv_generation: 1500,
+    ashp_size: 90,
+    substation_demand: 38.0,
+    history: [
+      { date: new Date("2023-01-01"), value: 5 },
+      { date: new Date("2023-02-01"), value: 8 },
+      { date: new Date("2023-03-01"), value: 6 },
+      { date: new Date("2023-04-01"), value: 9 },
+      { date: new Date("2023-05-01"), value: 7 },
+    ],
+  },
+  {
+    id: "A4",
+    lsoa: "E01000004",
+    insulation_rating: "A",
+    insulation_ewall: "Excellent",
+    pv_generation: 12500,
+    ashp_size: 350,
+    substation_demand: 75.8,
+    history: [
+      { date: new Date("2023-01-01"), value: 30 },
+      { date: new Date("2023-02-01"), value: 33 },
+      { date: new Date("2023-03-01"), value: 28 },
+      { date: new Date("2023-04-01"), value: 35 },
+      { date: new Date("2023-05-01"), value: 29 },
+    ],
+  },
+  {
+    id: "A5",
+    lsoa: "E01000005",
+    insulation_rating: "E",
+    insulation_ewall: "Poor",
+    pv_generation: 500,
+    ashp_size: 50,
+    substation_demand: 25.3,
+    history: [
+      { date: new Date("2023-01-01"), value: 12 },
+      { date: new Date("2023-02-01"), value: 10 },
+      { date: new Date("2023-03-01"), value: 14 },
+      { date: new Date("2023-04-01"), value: 9 },
+      { date: new Date("2023-05-01"), value: 11 },
+    ],
+  },
 ];
-return {columns};
+
+// --- Column Definitions ---
+const columnNames = [
+  { column: "id", unique: true },
+  "lsoa",
+  { column: "insulation_rating", alias: "Insulation Rating" },
+  { column: "insulation_ewall", alias: "Wall Insulation" },
+  {
+    column: "pv_generation",
+    alias: "PV Generation",
+    thresholds: [0, 5000, 10000, 20000, 50000],
+  },
+  { column: "ashp_size", alias: "ASHP Size" },
+  { column: "substation_demand", alias: "Substation Demand" },
+  { column: "history", alias: "History" }, // For sparkline
+];
+return {buildings,columnNames};
 }});
 
-define({id: "8b345ab2", inputs: ["sorterTable","buildings","columns","tableChanged","cellRenderers"], outputs: ["table"], body: (sorterTable,buildings,columns,tableChanged,cellRenderers) => {
-const table = new sorterTable(buildings, columns, tableChanged, {
-  cellRenderers,
-});
-return {table};
-}});
-
-define({id: "19721a50", inputs: ["display","table"], body: (display,table) => {
-display(table.getNode());
-}});
-
-define({id: "d1d62983", inputs: ["setSelected"], outputs: ["tableChanged"], body: (setSelected) => {
-function tableChanged(event) {
-  console.log("Table changed:", event);
-
-  if (event.type === "filter") {
-    console.log("Filtered indices:", event.indeces);
-    console.log("Filter rule:", event.rule);
-  }
-
-  if (event.type === "sort") {
-    console.log("Sorted indices:", event.indeces);
-    console.log("Sort criteria:", event.sort);
-  }
-
-  if (event.type === "selection") {
-    console.log("Selected rows:", event.selection);
-    setSelected(event.selection);
-    console.log("Selection rule:", event.rule);
-  }
-}
-return {tableChanged};
-}});
-
-define({id: "c720684d", inputs: ["html","display","selected"], body: (html,display,selected) => {
-html`Selected`;
-display(selected);
-}});
-
-define({id: "c6d9531a", body: () => {
-// const sortButton = document.createElement("button");
-// sortButton.textContent = "Sort by LSOA (Descending)";
-// // document.body.appendChild(sortButton);
-
-// sortButton.addEventListener("click", () => {
-//   const ageSortCtrl = table.sortControllers.find(
-//     (ctrl) => ctrl.getColumn() === "lsoa"
-//   );
-//   ageSortCtrl.setDirection("down");
-//   table.sortChanged(ageSortCtrl);
-// });
-}});
-
-define({id: "c48be364", inputs: ["d3","buildings"], outputs: ["colorScale"], body: (d3,buildings) => {
-// Create a color scale (example)
+define({id: "456fc21f", inputs: ["d3","buildings"], outputs: ["colorScale"], body: (d3,buildings) => {
+// --- Color Scale ---
 const colorScale = d3
-  .scaleSequential(d3.interpolateViridis)
+  .scaleSequential(d3.interpolateGreens)
   .domain([0, d3.max(buildings, (d) => d.pv_generation)]);
-// display(colorScale(1000));
 return {colorScale};
 }});
 
-define({id: "2b33b424", inputs: ["d3","buildings","sparkbar","colorScale"], outputs: ["cellRenderers"], body: (d3,buildings,sparkbar,colorScale) => {
-// Define cell renderers
-const cellRenderers = {
-  pv_generation: (value, rowData) => {
-    const max = d3.max(buildings, (d) => d.pv_generation); // Calculate max dynamically
-    return sparkbar(max, colorScale)(value, rowData); // Call sparkbar with calculated max
-  },
-  ashp_size: (data) => {
-    const span = document.createElement("span");
-    span.innerText = data >= 180 ? "More" : "Less";
-    return span;
-  },
-};
-return {cellRenderers};
-}});
-
-define({id: "e249a1e9", inputs: ["d3"], outputs: ["sparkbar"], body: (d3) => {
+define({id: "c41eecd9", inputs: ["d3"], outputs: ["sparkbar","sparkarea","ratingRenderer"], body: (d3) => {
+// --- Custom Renderer Functions ---
 function sparkbar(max, colorScale, alpha = 0.6) {
   return (x, rowData) => {
-    // console.log("Rendering sparkbar for:", x, rowData);
-    // Now takes 'x' (cell value) and 'rowData' (entire row)
-    const color = d3.color(colorScale(x));
-    color.opacity = alpha;
+    const color = "blue"; // d3.color(colorScale(x));
+    // color.opacity = alpha;
     const div = document.createElement("div");
     div.style.background = color;
     div.style.width = `${(100 * x) / max}%`;
-    div.style.float = "right";
-    div.style.paddingRight = "3px";
+    div.style.height = "10px"; // Ensure visibility
+    // div.style.float = "right";
     div.style.boxSizing = "border-box";
-    div.style.overflow = "visible";
-    div.style.display = "flex";
-    div.style.justifyContent = "end";
-    div.innerText = x.toLocaleString("en");
+    div.style.overflow = "hidden";
+    div.style.display = "block";
+    div.title = x.toLocaleString("en"); // Tooltip text
     return div;
   };
 }
-return {sparkbar};
-}});
 
-define({id: "d3e24e39", inputs: ["d3"], outputs: ["sparkarea"], body: (d3) => {
 function sparkarea(data, rowData, options = {}) {
   const {
     width = 240,
@@ -336,7 +320,78 @@ function sparkarea(data, rowData, options = {}) {
 
   return container;
 }
-return {sparkarea};
+
+function ratingRenderer(rating, rowData, maxRating = 5) {
+  const fullStar = "★";
+  const emptyStar = "☆";
+  const container = document.createElement("div");
+
+  for (let i = 0; i < maxRating; i++) {
+    const star = document.createElement("span");
+    star.innerText = i < rating ? fullStar : emptyStar;
+    star.style.color = "gold";
+    star.style.fontSize = "16px";
+    container.appendChild(star);
+  }
+
+  return container;
+}
+return {sparkbar,sparkarea,ratingRenderer};
+}});
+
+define({id: "db2ad6db", inputs: ["d3","buildings","sparkbar","colorScale","sparkarea","ratingRenderer"], outputs: ["cellRenderers"], body: (d3,buildings,sparkbar,colorScale,sparkarea,ratingRenderer) => {
+// --- Cell Renderers ---
+const cellRenderers = {
+  pv_generation: (value, rowData) => {
+    const max = d3.max(buildings, (d) => d.pv_generation);
+    return sparkbar(max, colorScale)(value, rowData);
+  },
+  ashp_size: (data) => {
+    const span = document.createElement("span");
+    span.innerText = data >= 180 ? "Large" : "Small";
+    return span;
+  },
+  history: (data, rowData) => sparkarea(data, rowData),
+  insulation_rating: (rating) => {
+    const ratingNumber = { A: 5, B: 4, C: 3, D: 2, E: 1, Unknown: 0 }; // Example mapping
+    return ratingRenderer(ratingNumber[rating], {}); // Use {} if rowData is not needed
+  },
+};
+return {cellRenderers};
+}});
+
+define({id: "3cac1ebb", inputs: ["setSelected"], outputs: ["tableChanged"], body: (setSelected) => {
+function tableChanged(event) {
+  console.log("Table changed:", event);
+
+  if (event.type === "filter") {
+    console.log("Filtered indices:", event);
+    console.log("Filter rule:", event.rule);
+  }
+
+  if (event.type === "sort") {
+    console.log("Sorted indices:", event);
+    console.log("Sort criteria:", event.sort);
+  }
+
+  if (event.type === "selection") {
+    console.log("Selected rows:", event.selection);
+    setSelected(event.selection);
+    console.log("Selection rule:", event.rule);
+  }
+}
+return {tableChanged};
+}});
+
+define({id: "cd07fd9e", inputs: ["sorterTable","buildings","columnNames","tableChanged","cellRenderers","display"], outputs: ["table"], body: (sorterTable,buildings,columnNames,tableChanged,cellRenderers,display) => {
+// --- Create sorterTable Instance ---
+const table = new sorterTable(buildings, columnNames, tableChanged, {
+  cellRenderers,
+  defaultLines: 5, // Show 5 rows initially
+  additionalLines: 5, // Load 5 more rows on scroll
+});
+display(table.getNode());
+return {table};
 }});
 
 </script>
@@ -344,24 +399,101 @@ return {sparkarea};
 <main id="observablehq-main" class="observablehq">
 <div class="observablehq observablehq--block"><!--:e85258d2:--></div>
 <h1 id="table-experiments-2" tabindex="-1"><a class="observablehq-header-anchor" href="#table-experiments-2">Table Experiments 2</a></h1>
-<div class="observablehq observablehq--block"><!--:2a11b13d:--></div>
-<div class="observablehq observablehq--block"><!--:fd5729b6:--></div>
-<div class="observablehq observablehq--block"><!--:90cd0078:--></div>
+<div class="observablehq observablehq--block"><!--:56d16951:--></div>
+<div class="observablehq observablehq--block"><!--:ee098890:--></div>
 <div class="observablehq observablehq--block"><!--:ec01b706:--></div>
-<div class="observablehq observablehq--block"><!--:e5f92493:--></div>
-<div class="observablehq observablehq--block"><!--:8b345ab2:--></div>
-<div class="observablehq observablehq--block"><!--:19721a50:--></div>
-<div class="observablehq observablehq--block"><!--:d1d62983:--></div>
-<div class="observablehq observablehq--block"><!--:c720684d:--></div>
-<div class="observablehq observablehq--block"><!--:c6d9531a:--></div>
-<div class="observablehq observablehq--block"><!--:c48be364:--></div>
-<div class="observablehq observablehq--block"><!--:2b33b424:--></div>
-<div class="observablehq observablehq--block"><!--:e249a1e9:--></div>
-<div class="observablehq observablehq--block"><!--:d3e24e39:--></div>
+<!--
+```js
+const columns = [
+  { column: "id", unique: true },
+  "lsoa",
+  "insulation_rating",
+  "insulation_ewall",
+  { column: "pv_generation", alias: "PV Generation" },
+  "ashp_size",
+  "substation_demand",
+  "epc_rating",
+];
+```
+
+```js
+const table = new sorterTable(buildings, columns, tableChanged, {
+  cellRenderers,
+  containerWidth: 300,
+});
+```
+
+```js
+display(table.getNode());
+```
+
+```js
+html`Selected`;
+display(selected);
+```
+
+```js
+// const sortButton = document.createElement("button");
+// sortButton.textContent = "Sort by LSOA (Descending)";
+// // document.body.appendChild(sortButton);
+
+// sortButton.addEventListener("click", () => {
+//   const ageSortCtrl = table.sortControllers.find(
+//     (ctrl) => ctrl.getColumn() === "lsoa"
+//   );
+//   ageSortCtrl.setDirection("down");
+//   table.sortChanged(ageSortCtrl);
+// });
+```
+
+```js
+// Create a color scale (example)
+const colorScale = d3
+  .scaleSequential(d3.interpolateViridis)
+  .domain([0, d3.max(buildings, (d) => d.pv_generation)]);
+// display(colorScale(1000));
+```
+
+```js
+// Define cell renderers
+const cellRenderers = {
+  pv_generation: (value, rowData) => {
+    const max = d3.max(buildings, (d) => d.pv_generation); // Calculate max dynamically
+    return sparkbar(max, colorScale)(value, rowData); // Call sparkbar with calculated max
+  },
+  ashp_size: (data) => {
+    const span = document.createElement("span");
+    span.innerText = data >= 180 ? "More" : "Less";
+    return span;
+  },
+};
+```
+
+```js
+function sparkbar(max, colorScale, alpha = 0.6) {
+  return (x, rowData) => {
+    // console.log("Rendering sparkbar for:", x, rowData);
+    // Now takes 'x' (cell value) and 'rowData' (entire row)
+    const color = d3.color(colorScale(x));
+    color.opacity = alpha;
+    const div = document.createElement("div");
+    div.style.background = color;
+    div.style.width = `${(100 * x) / max}%`;
+    div.style.float = "right";
+    div.style.paddingRight = "3px";
+    div.style.boxSizing = "border-box";
+    div.style.overflow = "visible";
+    div.style.display = "flex";
+    div.style.justifyContent = "end";
+    div.innerText = x.toLocaleString("en");
+    return div;
+  };
+}
+``` -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
 <style>
-/* .sorter-table  table {
-  font-family: Arial, Helvetica, sans-serif;
+table {
+  font-family: Roboto, Helvetica, sans-serif;
   font-size: 10px;
   border-collapse: collapse;
   width: 100%;
@@ -411,7 +543,22 @@ return {sparkarea};
 
 .sorter-table .sidebar i:hover {
   color: black; /* Highlight on hover */
+} 
+
+/* .unique-values-text {
+  font-size: 12px; /* Adjust font size to match histogram labels */
+  color: #666; /* Adjust color to match histogram text */
+  text-align: center;
+  width: 100%; /* Ensure the span takes up the full width of the cell */
+  display: block; /* Make the span a block element */
 } */
 </style>
+<h2 id="renderers-demo" tabindex="-1"><a class="observablehq-header-anchor" href="#renderers-demo">Renderers Demo</a></h2>
+<div class="observablehq observablehq--block"><!--:27a46bb1:--></div>
+<div class="observablehq observablehq--block"><!--:456fc21f:--></div>
+<div class="observablehq observablehq--block"><!--:c41eecd9:--></div>
+<div class="observablehq observablehq--block"><!--:db2ad6db:--></div>
+<div class="observablehq observablehq--block"><!--:3cac1ebb:--></div>
+<div class="observablehq observablehq--block"><!--:cd07fd9e:--></div>
 </main>
 </div>

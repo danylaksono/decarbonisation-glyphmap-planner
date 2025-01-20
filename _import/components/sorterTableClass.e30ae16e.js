@@ -15,9 +15,13 @@ export class sorterTable {
     // use alias if provided
     this.columns = columnNames.map((col) => {
       if (typeof col === "string") {
-        return { column: col }; // Default: no alias
+        return { column: col, unique: false }; // Default: not unique
       } else {
-        return { column: col.column, alias: col.alias }; // Use alias if provided
+        return {
+          column: col.column,
+          alias: col.alias,
+          unique: col.unique || false,
+        };
       }
     });
     this.initialColumns = JSON.parse(JSON.stringify(this.columns));
@@ -74,7 +78,7 @@ export class sorterTable {
       containerHeight: options.height || "400px",
       containerWidth: options.width || "100%",
       rowsPerPage: options.rowsPerPage || 50,
-      loadMoreThreshold: options.loadMoreThreshold || 200,
+      loadMoreThreshold: options.loadMoreThreshold || 100,
     };
 
     Object.assign(this.table.style, {
@@ -103,7 +107,7 @@ export class sorterTable {
       return;
     }
     this.columnTypes[columnName] = type;
-    console.log("Setting column type:", this.columnTypes);
+    // console.log("Setting column type:", this.columnTypes);  // DEBUG
   }
 
   getColumnType(columnName) {
@@ -143,7 +147,7 @@ export class sorterTable {
       return thresholds;
     };
 
-    console.log("Columns before type inference:", this.columns);
+    // console.log("Columns before type inference:", this.columns);  // DEBUG
 
     if (!this.columnTypes) {
       this.columnTypes = {}; // Ensure it's initialized
@@ -153,7 +157,7 @@ export class sorterTable {
       // console.log("Column Definition:", colDef);
       const colName = colDef.column;
       const type = getType(data, colName);
-      console.log("Column Type:", type);
+      // console.log("Column Type:", type);  // DEBUG
 
       if (type === "continuous") {
         colDef.thresholds = calculateThresholds(data, colName);
@@ -163,20 +167,20 @@ export class sorterTable {
         //you can define specific logic for date type later.
       }
 
-      console.log("setting column type:", colName, type);
+      // console.log("setting column type:", colName, type);  // DEBUG
       this.setColumnType(colName, type); // Store the inferred type
     });
   }
 
   // Shift column position using visController
   shiftCol(columnName, dir) {
-    console.log("Shifting column:", columnName, "direction:", dir);
+    // console.log("Shifting column:", columnName, "direction:", dir);
 
     let colIndex = this.columns.findIndex((c) => c.column === columnName);
-    console.log("Found column at index:", colIndex);
+    // console.log("Found column at index:", colIndex);
 
     const targetIndex = dir === "left" ? colIndex - 1 : colIndex + 1;
-    console.log("Target index:", targetIndex);
+    // console.log("Target index:", targetIndex);
 
     if (targetIndex >= 0 && targetIndex < this.columns.length) {
       if (!this._isUndoing) {
@@ -228,11 +232,31 @@ export class sorterTable {
     this.history.push({ type: "filter", data: this.dataInd });
     this.dataInd = this.getSelection().map((s) => this.dataInd[s.index]);
     this.createTable();
-    this.visControllers.map((vc, vci) =>
-      vc.updateData(
-        this.dataInd.map((i) => this.data[i][this.columns[vci].column])
-      )
-    );
+
+    // this.visControllers.map((vc, vci) =>
+    //   vc.updateData(
+    //     this.dataInd.map((i) => this.data[i][this.columns[vci].column])
+    //   )
+    // );
+
+    this.visControllers.forEach((vc, vci) => {
+      if (vc instanceof HistogramController) {
+        // Get the correct column name associated with this histogram
+        const columnName = this.columns[vci].column;
+
+        // Filter data for the specific column and maintain original index
+        const columnData = this.dataInd.map((i) => ({
+          value: this.data[i][columnName],
+          index: i, // Keep track of the original index
+        }));
+
+        vc.updateData(this.dataInd.map((i) => this.data[i][columnName])); // Update data (for potential other uses)
+
+        // Update the histogram data
+        vc.setData(columnData);
+      }
+    });
+
     this.changed({
       type: "filter",
       indeces: this.dataInd,
@@ -292,7 +316,7 @@ export class sorterTable {
         });
       }
     });
-    console.log("Selection result:", ret);
+    // console.log("Selection result:", ret);
     this.selected = ret;
     return ret;
   }
@@ -486,16 +510,38 @@ export class sorterTable {
       let visTd = document.createElement("td");
       visRow.appendChild(visTd);
 
-      // Create and add visualization controller
-      let visCtrl = new HistogramController(
-        this.dataInd.map((i) => this.data[i][c.column]),
-        this.getColumnType(c.column) === "continuous"
-          ? { thresholds: c.thresholds }
-          : { nominals: c.nominals }
-      );
-      visCtrl.table = this;
-      this.visControllers.push(visCtrl);
-      visTd.appendChild(visCtrl.getNode());
+      if (c.unique) {
+        // Column is unique, draw a full rectangle
+        const uniqueRect = document.createElement("div");
+        uniqueRect.style.width = "90px"; //"100%";
+        uniqueRect.style.height = "50px"; // Same as histogram height
+        // uniqueRect.style.backgroundColor = "#e0e0e0"; // Light gray
+        uniqueRect.style.display = "flex";
+        uniqueRect.style.justifyContent = "center";
+        uniqueRect.style.alignItems = "center";
+        uniqueRect.style.paddingBottom = "5px";
+
+        const uniqueText = document.createElement("span");
+        uniqueText.innerText = "Unique Values";
+        uniqueText.style.fontSize = "11px";
+        uniqueText.style.color = "#666";
+        uniqueText.style.textAlign = "center";
+
+        uniqueRect.appendChild(uniqueText);
+        visTd.appendChild(uniqueRect);
+      } else {
+        // Create and add visualization controller (histogram)
+        let visCtrl = new HistogramController(
+          this.dataInd.map((i) => this.data[i][c.column]),
+          this.getColumnType(c.column) === "continuous"
+            ? { thresholds: c.thresholds }
+            : { nominals: c.nominals }
+        );
+        visCtrl.table = this;
+        visCtrl.columnName = c.column;
+        this.visControllers.push(visCtrl);
+        visTd.appendChild(visCtrl.getNode());
+      }
     });
 
     // Add sticky positioning to thead
@@ -517,13 +563,16 @@ export class sorterTable {
   }
 
   addTableRows(howMany) {
+    if (this.addingRows) {
+      return; // Prevent overlapping calls
+    }
     this.addingRows = true;
 
     let min = this.lastLineAdded + 1; // Corrected: Start from the next line
     let max = Math.min(min + howMany - 1, this.dataInd.length - 1); // Corrected: Use Math.min to avoid exceeding dataInd.length
 
     for (let row = min; row <= max; row++) {
-      let dataIndex = this.dataInd[row - 1]; // Adjust index for dataInd
+      let dataIndex = this.dataInd[row]; // Adjust index for dataInd
       if (dataIndex === undefined) continue;
 
       let tr = document.createElement("tr");
@@ -558,11 +607,12 @@ export class sorterTable {
       // Add event listeners for row selection
       tr.addEventListener("click", (event) => {
         let rowIndex = this.getRowIndex(tr);
-        console.log("Row index clicked:", rowIndex);
+
         if (this.shiftDown) {
+          // SHIFT-CLICK (select range)
           let s = this.getSelection().map((s) => s.index);
-          if (s.length == 0) s = [rowIndex];
-          let minSelIndex = Math.min(...s); // Use spread operator with Math.min/max
+          if (s.length == 0) s = [rowIndex]; // If nothing selected, use current row index
+          let minSelIndex = Math.min(...s);
           let maxSelIndex = Math.max(...s);
 
           if (rowIndex <= minSelIndex) {
@@ -576,10 +626,19 @@ export class sorterTable {
               if (trToSelect) this.selectRow(trToSelect);
             }
           }
+        } else if (this.ctrlDown) {
+          // CTRL-CLICK (toggle individual row selection)
+          if (tr.selected) {
+            this.unselectRow(tr);
+          } else {
+            this.selectRow(tr);
+          }
         } else {
+          // NORMAL CLICK (clear selection and select clicked row)
           this.clearSelection();
           this.selectRow(tr);
         }
+
         this.selectionUpdated();
       });
 
@@ -627,6 +686,14 @@ export class sorterTable {
 
     // Notify about the reset
     this.changed({ type: "reset" });
+  }
+
+  resetHistogramSelections() {
+    this.visControllers.forEach((vc) => {
+      if (vc instanceof HistogramController) {
+        vc.resetSelection();
+      }
+    });
   }
 
   sortChanged(controller) {
@@ -862,6 +929,11 @@ export class sorterTable {
       flex: "1",
       overflowX: "auto",
     });
+    if (this.tableWidth) {
+      this.table.style.width = this.tableWidth;
+    } else {
+      this.table.style.width = "100%"; // Default to 100%
+    }
     tableContainer.appendChild(this.table);
 
     // --- Add sidebar and table container to main container ---
@@ -896,6 +968,27 @@ export class sorterTable {
 
       if (scrollTop + clientHeight >= scrollHeight - threshold) {
         this.addTableRows(this.additionalLines);
+      }
+    });
+
+    //deselection
+    // Add click listener to the container
+    container.addEventListener("click", (event) => {
+      // Check if the click target is outside any table row
+      let isOutsideRow = true;
+      let element = event.target;
+      while (element != null) {
+        if (element == this.tBody || element == this.tHead) {
+          isOutsideRow = false;
+          break;
+        }
+        element = element.parentNode;
+      }
+
+      if (isOutsideRow) {
+        this.clearSelection();
+        this.resetHistogramSelections();
+        this.selectionUpdated();
       }
     });
 
@@ -1180,9 +1273,24 @@ function HistogramController(data, binrules) {
   let controller = this;
   let div = document.createElement("div");
 
-  this.updateData = (d) => setData(d);
+  this.bins = [];
 
-  function setData(dd) {
+  this.updateData = (d) => this.setData(d);
+
+  // reset the selection state of the histogram
+  this.resetSelection = () => {
+    // Reset the 'selected' property of all bins
+    this.bins.forEach((bin) => {
+      bin.selected = false;
+    });
+
+    // Reset the fill color of all bars in the histogram
+    svg
+      .selectAll(".bar rect:nth-child(1)") // Selects the visible bars
+      .attr("fill", "steelblue");
+  };
+
+  this.setData = function (dd) {
     // console.log("dd:", dd);
 
     div.innerHTML = "";
@@ -1216,7 +1324,7 @@ function HistogramController(data, binrules) {
       .attr("transform", `translate(${margin.left},${margin.top})`);
 
     let x = null;
-    let bins = null;
+    // let bins = null;
 
     //bin data by either thresholds or ordinals or nominals
     if ("thresholds" in binrules) {
@@ -1235,7 +1343,7 @@ function HistogramController(data, binrules) {
         .thresholds(binrules.thresholds) // Set the number of bins (10 in this case)
         .value((d) => d.value)(data);
 
-      bins = bins.map((b) => ({
+      this.bins = bins.map((b) => ({
         category: b.x0 + "-" + b.x1,
         count: b.length,
         indeces: b.map((v) => v.index),
@@ -1254,14 +1362,14 @@ function HistogramController(data, binrules) {
       const binType = "ordinals" in binrules ? "ordinals" : "nominals";
 
       if (binType in binrules && Array.isArray(binrules[binType])) {
-        bins = binrules[binType].map((v) => ({
+        this.bins = binrules[binType].map((v) => ({
           category: v,
           count: frequency.get(v) != null ? frequency.get(v).count : 0,
           indeces: frequency.get(v) != null ? frequency.get(v).indeces : [],
         }));
       } else {
         // Handle cases where binrules[binType] is not a valid array
-        bins = Array.from(frequency, ([key, value]) => ({
+        this.bins = Array.from(frequency, ([key, value]) => ({
           category: key,
           count: value.count,
           indeces: value.indeces,
@@ -1270,13 +1378,13 @@ function HistogramController(data, binrules) {
     }
 
     //add the bin index to each bin
-    bins.map((bin, i) => (bin.index = i));
+    this.bins.map((bin, i) => (bin.index = i));
     // console.log("bins: ", bins);
 
     // Define the y scale (based on bin counts)
     const y = d3
       .scaleLinear()
-      .domain([0, d3.max(bins, (d) => d.count)]) // input: max count in bins
+      .domain([0, d3.max(this.bins, (d) => d.count)]) // input: max count in bins
       .range([height, 0]); // output: pixel range (inverted for SVG coordinate system)
 
     //for each bin we'll have to bars, a regular one and an
@@ -1284,19 +1392,19 @@ function HistogramController(data, binrules) {
     //chart; the latter is there for interaction.
     const barGroups = svg
       .selectAll(".bar")
-      .data(bins)
+      .data(this.bins)
       .join("g")
       .attr("class", "bar")
       .attr(
         "transform",
-        (d, i) => `translate(${(i * width) / bins.length}, 0)`
+        (d, i) => `translate(${(i * width) / this.bins.length}, 0)`
       );
 
     // visible bars
     barGroups
       .append("rect")
       .attr("x", 0)
-      .attr("width", (d) => width / bins.length)
+      .attr("width", (d) => width / this.bins.length)
       .attr("y", (d) => y(d.count))
       .attr("height", (d) => height - y(d.count))
       .attr("fill", "steelblue");
@@ -1304,7 +1412,7 @@ function HistogramController(data, binrules) {
     //invisible bars for interaction
     barGroups
       .append("rect")
-      .attr("width", (d) => width / bins.length)
+      .attr("width", (d) => width / this.bins.length)
       .attr("height", height) // Stretch to full height
       .attr("fill", "transparent") // Make invisible
       .on("mouseover", (event, d) => {
@@ -1315,14 +1423,14 @@ function HistogramController(data, binrules) {
         }
 
         svg
-          .selectAll(".label")
+          .selectAll(".histogram-label")
           .data([d]) // Bind the data to the label
           .join("text")
-          .attr("class", "label")
+          .attr("class", "histogram-label")
           .attr("x", width / 2) // Center the label under the bar
           .attr("y", height + 10) // Position the label below the bar
           .attr("font-size", "10px")
-          .attr("fill", "black")
+          .attr("fill", "#444444")
           .attr("text-anchor", "middle") // Center the text
           .text(d.category + ": " + d.count); // Display the value in the label
       })
@@ -1334,12 +1442,7 @@ function HistogramController(data, binrules) {
           );
         }
 
-        // d3.select(event.currentTarget.previousSibling).attr(
-        //   "fill",
-        //   "steelblue"
-        // ); // Revert color on mouseout
-
-        svg.selectAll(".label").remove();
+        svg.selectAll(".histogram-label").remove();
       })
       .on("click", (event, d) => {
         // Toggle the selected state
@@ -1356,19 +1459,20 @@ function HistogramController(data, binrules) {
         }
 
         // d3.select(event.currentTarget.previousSibling).attr("fill", "orange"); // Revert color on mouseout
-        console.log("histo select:", bins[d.index].indeces);
+        // console.log("histo select:", bins[d.index].indeces);
 
         // Select the corresponding rows in the table
         // Assuming 'controller.table' references the sorterTable instance
         if (controller.table) {
-          // Only clear selection if this bar is being unselected
           if (!d.selected) {
             controller.table.clearSelection();
           }
 
-          bins[d.index].indeces.forEach((rowIndex) => {
+          this.bins[d.index].indeces.forEach((rowIndex) => {
+            // Use the dataInd array to get the correct data index
+            const actualIndex = controller.table.dataInd[rowIndex];
             const tr = controller.table.tBody.querySelector(
-              `tr:nth-child(${rowIndex + 1})`
+              `tr:nth-child(${actualIndex + 1})`
             );
             if (tr) {
               if (d.selected) {
@@ -1380,26 +1484,14 @@ function HistogramController(data, binrules) {
           });
           controller.table.selectionUpdated();
         }
-        // if (controller.table) {
-        //   controller.table.clearSelection();
-        //   bins[d.index].indeces.forEach((rowIndex) => {
-        //     const tr = controller.table.tBody.querySelector(
-        //       `tr:nth-child(${rowIndex + 1})`
-        //     );
-        //     if (tr) {
-        //       controller.table.selectRow(tr);
-        //     }
-        //   });
-        // }
-        // // Inform sorterTable about the selection change
-        // controller.table.selectionUpdated();
       });
-  }
+  };
 
-  setData(data);
+  // setData(data);
 
   // set this.table from sorterTable
   this.table = null;
+  this.setData(data);
 
   this.getNode = () => div;
   return this;
