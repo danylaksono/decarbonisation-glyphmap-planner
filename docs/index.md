@@ -26,7 +26,7 @@ import {
   GlyphCollection,
 } from "./components/glyph-designs/timeGlyph.js";
 import { StreamGraphGlyph } from "./components/glyph-designs/mirrorTimeGlyph.js";
-import { RadialGlyph } from "./components/radialglyph.js";
+import { RadialGlyph } from "./components/glyph-designs/radialglyph.js";
 import {
   glyphMap,
   createDiscretiserValue,
@@ -173,7 +173,7 @@ const [selectedInterventionIndex, setSelectedInterventionIndex] =
   useState(null); // selected intervention index
 const [detailOnDemand, setDetailOnDemand] = useState(null); // detail on demand on map
 const [currentConfig, setCurrentConfig] = useState({}); // current configuration
-const [tableFiltered, setTableFiltered] = useState(null); // filtered table
+const [tableFiltered, setTableFiltered] = useState([]); // filtered table
 ```
 
 ```js
@@ -274,7 +274,7 @@ const [allocations, setAllocations] = useState([]);
             <div class="content">
               <!-- ${ObsTable} -->
               ${table.getNode()}
-              <!-- <div>No. of intervened buildings: ${JSON.stringify(stackedResults.summary.intervenedCount)}</div> -->
+              ${tableFilteredData ? html`<p> No. of Filtered Data: ${tableFilteredData.length} </p>`: "" }
             </div>
           </div>
         </div>
@@ -289,6 +289,7 @@ const [allocations, setAllocations] = useState([]);
       <div class="card-content">
         <div class="content">
           ${mapAggregationInput}
+          ${timelineSwitchInput}
           ${(map_aggregate === "Building Level") ? toggleGridmaps : ""}
           ${(map_aggregate === "LSOA Level") ? html`${playButton} ${morphFactorInput}` : ""}
           <!-- ${html`${playButton} ${morphFactorInput}`} -->
@@ -705,6 +706,18 @@ const map_aggregate = Generators.input(mapAggregationInput);
 ```
 
 ```js
+// --- potentials and timeline  ---
+const timelineSwitchInput = Inputs.radio(
+  ["Decarbonisation Potentials", "Decarbonisation Timeline"],
+  {
+    label: "Show Data",
+    value: "Decarbonisation Potentials",
+  }
+);
+const timeline_switch = Generators.input(timelineSwitchInput);
+```
+
+```js
 // --- morph factor ---
 const morphFactorInput = html`<input
   style="width: 100%; max-width:450px;"
@@ -1090,6 +1103,13 @@ const data =
     ? stackedRecap?.buildings ?? buildingsData
     : flatData;
 // console.log(">> DATA DATA DATA", data);
+```
+
+```js
+timeline_switch;
+// const glyphdata = aggregateValues(data, glyphVariables, "sum", true);
+// console.log(">> Glyph data", glyphdata);
+// console.log(normaliseData([{ a: 100, b: 200, c: 300 }], ["a", "b", "c"]));
 ```
 
 ```js
@@ -1850,11 +1870,10 @@ function createGlyphMap(map_aggregate, width, height) {
   } else if (map_aggregate == "LSOA Level") {
     return morphGlyphMap;
   } else if (map_aggregate == "LA Level") {
-    try {
+    if (timeline_switch == "Decarbonisation Potentials") {
+      return createOverallPotential(data);
+    } else {
       return createOverallPlot(yearlySummaryArray);
-    } catch (error) {
-      // console.error("Error in createOverallPlot:", error);
-      return {};
     }
   }
 }
@@ -1872,6 +1891,7 @@ function interactiveDrawFn(mode) {
 ```
 
 ```js
+// interactive draw function - change glyphs based on mode
 {
   // glyphMode;
   // decarbonisationGlyph.setGlyph({
@@ -1965,6 +1985,44 @@ let keysToNormalise = [
 //   keysToNormalise
 // );
 // console.log(">> Normalised Recap", normalisedYearlyRecap);
+```
+
+```js
+function createOverallPotential(data, width = 1100, height = 800) {
+  const margin = { top: 30, right: 150, bottom: 120, left: 80 };
+  const innerWidth = width - margin.left - margin.right;
+  const innerHeight = height - margin.top - margin.bottom;
+
+  // Create canvas for drawing
+  const canvas = document.createElement("canvas");
+  canvas.width = innerWidth;
+  canvas.height = innerHeight;
+
+  const ctx = canvas.getContext("2d");
+
+  // Set cellSize dynamically
+  const cellSize = Math.min(innerWidth, innerHeight) / 2;
+
+  // Define x, y as the center of the canvas
+  const x = innerWidth / 2;
+  const y = innerHeight / 2;
+
+  let glyphdata = aggregateValues(data, glyphVariables, "sum", true);
+
+  console.log(
+    ">> Check radial glyph data",
+    glyphVariables.map((key) => glyphdata[key])
+  );
+
+  // Create and draw Radial Glyph
+  let rg = new RadialGlyph(
+    glyphVariables.map((key) => glyphdata[key]),
+    glyphColours
+  );
+  rg.draw(ctx, x, y, cellSize / 2);
+
+  return canvas;
+}
 ```
 
 ```js

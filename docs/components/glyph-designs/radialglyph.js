@@ -15,17 +15,19 @@ export function RadialGlyph(data, customColors) {
   this.draw = (ctx, x, y, radius) => {
     let angle = (2 * Math.PI) / this.data.length;
 
-    // Use custom colors if provided, otherwise use D3 scheme
     let colors = this.colors
       ? (i) => this.colors[i % this.colors.length]
       : d3.scaleOrdinal(d3.schemeTableau10).domain(d3.range(this.data.length));
 
+    // console.log("the data in the glyph", this.data);
+
     this.data.map((d, i) => {
+      // console.log("data in radial glyph", d);
       drawPieSlice(
         ctx,
         x,
         y,
-        radius * 0.9,
+        Math.abs(radius * 0.9), // Add Math.abs() here
         angle * (i + 0.1),
         angle * (i + 0.9),
         "rgba(0,0,0,0.05)"
@@ -34,7 +36,7 @@ export function RadialGlyph(data, customColors) {
         ctx,
         x,
         y,
-        radius * Math.sqrt(d) * 0.95,
+        Math.abs(radius * Math.sqrt(d) * 0.95), // Add Math.abs() here
         angle * (i + 0.1),
         angle * (i + 0.9),
         colors(i)
