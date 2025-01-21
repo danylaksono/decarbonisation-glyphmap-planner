@@ -27,6 +27,7 @@ import {
 } from "./components/glyph-designs/timeGlyph.js";
 import { StreamGraphGlyph } from "./components/glyph-designs/mirrorTimeGlyph.js";
 import { RadialGlyph } from "./components/glyph-designs/radialglyph.js";
+import { RadialGlyphOverall } from "./components/glyph-designs/radialGlyphOverall.js";
 import {
   glyphMap,
   createDiscretiserValue,
@@ -1107,7 +1108,7 @@ const data =
 
 ```js
 timeline_switch;
-// const glyphdata = aggregateValues(data, glyphVariables, "sum", true);
+const glyphdata = aggregateValues(data, glyphVariables, "sum", true);
 // console.log(">> Glyph data", glyphdata);
 // console.log(normaliseData([{ a: 100, b: 200, c: 300 }], ["a", "b", "c"]));
 ```
@@ -1989,39 +1990,55 @@ let keysToNormalise = [
 
 ```js
 function createOverallPotential(data, width = 1100, height = 800) {
-  const margin = { top: 30, right: 150, bottom: 120, left: 80 };
-  const innerWidth = width - margin.left - margin.right;
-  const innerHeight = height - margin.top - margin.bottom;
+  const margin = { top: 80, right: 200, bottom: 200, left: 80 };
 
-  // Create canvas for drawing
-  const canvas = document.createElement("canvas");
-  canvas.width = innerWidth;
-  canvas.height = innerHeight;
+  const rgOptions = {
+    showTooltips: true,
+    showLegend: true,
+    title: "Overall Decarbonisation Potentials",
+    subtitle: "Aggregated building stock data",
+    labels: glyphVariables,
+    tooltipFormatter: (value) => `${(value * 100).toFixed(1)}%`,
+    width: width,
+    height: height,
+    backgroundColor: "#fafafa",
+    titleColor: "#2c3e50",
+    subtitleColor: "#7f8c8d",
+    glyphOpacity: 0.85,
+    glyphStrokeColor: "#ffffff",
+    glyphStrokeWidth: 1.5,
+    margin: margin,
+    legendPosition: "right",
+    titleAlignment: "middle",
 
-  const ctx = canvas.getContext("2d");
+    // Enhanced styling
+    titleFont: "system-ui, sans-serif",
+    subtitleFont: "system-ui, sans-serif",
+    legendFont: "system-ui, sans-serif",
+    titleFontSize: "24px",
+    subtitleFontSize: "16px",
+    legendFontSize: "14px",
+    legendSpacing: 30,
+    legendWidth: 180,
+  };
 
-  // Set cellSize dynamically
-  const cellSize = Math.min(innerWidth, innerHeight) / 2;
-
-  // Define x, y as the center of the canvas
-  const x = innerWidth / 2;
-  const y = innerHeight / 2;
-
-  let glyphdata = aggregateValues(data, glyphVariables, "sum", true);
-
-  console.log(
-    ">> Check radial glyph data",
-    glyphVariables.map((key) => glyphdata[key])
-  );
-
-  // Create and draw Radial Glyph
-  let rg = new RadialGlyph(
+  // Create Radial Glyph
+  const rg = new RadialGlyphOverall(
     glyphVariables.map((key) => glyphdata[key]),
-    glyphColours
+    glyphColours,
+    rgOptions
   );
-  rg.draw(ctx, x, y, cellSize / 2);
 
-  return canvas;
+  // Get the SVG element
+  return rg.createSVG();
+}
+
+// Helper function to clean up tooltips when needed
+function cleanupTooltips() {
+  const tooltip = document.querySelector(".radial-glyph-tooltip");
+  if (tooltip) {
+    tooltip.remove();
+  }
 }
 ```
 
