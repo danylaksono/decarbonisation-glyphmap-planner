@@ -266,7 +266,7 @@ class StreamGraphGlyph extends Glyph {
         .curve(curve);
 
       area.context(ctx)(s);
-      ctx.fillStyle = colourMapping[s.key]; // You need to define 'colourMapping'
+      ctx.fillStyle = colourMapping[s.key]; //  need to define 'colourMapping'
       ctx.fill();
     });
 
@@ -280,7 +280,7 @@ class StreamGraphGlyph extends Glyph {
         .curve(curve);
 
       area.context(ctx)(s);
-      ctx.fillStyle = colourMapping[s.key]; // You need to define 'colourMapping'
+      ctx.fillStyle = colourMapping[s.key]; // need to define 'colourMapping'
       ctx.fill();
     });
 
