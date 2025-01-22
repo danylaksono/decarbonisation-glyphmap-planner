@@ -29,8 +29,6 @@
 <link rel="modulepreload" href="./_import/components/decarb-model/mini-decarbonisation.46bd522e.js">
 <link rel="modulepreload" href="./_import/components/decarb-model/timeline.2b635da2.js">
 <link rel="modulepreload" href="./_import/components/leaflet/leaflet-map.498e936b.js">
-<link rel="modulepreload" href="./_import/components/sorterTable.b455407f.js">
-<link rel="modulepreload" href="./_import/components/input-table/input-table.247272e6.js">
 <link rel="modulepreload" href="./_import/components/helpers.c82b92f4.js">
 <link rel="modulepreload" href="./_npm/d3@7.9.0/_esm.js">
 <link rel="modulepreload" href="./_import/components/osgb/ellipsoid.1ac4eba6.js">
@@ -39,9 +37,8 @@
 <link rel="modulepreload" href="./_npm/leaflet@1.9.4/_esm.js">
 <link rel="modulepreload" href="./_npm/supercluster@8.0.1/_esm.js">
 <link rel="modulepreload" href="./_npm/lodash@4.17.21/_esm.js">
-<link rel="modulepreload" href="./_npm/htl@0.3.1/_esm.js">
-<link rel="modulepreload" href="./_npm/@observablehq/plot@0.6.16/_esm.js">
 <link rel="modulepreload" href="./_observablehq/stdlib/duckdb.js">
+<link rel="modulepreload" href="./_npm/htl@0.3.1/_esm.js">
 <link rel="modulepreload" href="./_observablehq/stdlib/inputs.js">
 <link rel="modulepreload" href="./_npm/@duckdb/duckdb-wasm@1.28.0/_esm.js">
 <link rel="modulepreload" href="./_npm/isoformat@0.2.1/_esm.js">
@@ -188,7 +185,6 @@
 <link rel="modulepreload" href="./_npm/d3-transition@3.0.1/_esm.js">
 <link rel="modulepreload" href="./_npm/d3-zoom@3.0.0/_esm.js">
 <link rel="modulepreload" href="./_npm/kdbush@4.0.2/_esm.js">
-<link rel="modulepreload" href="./_npm/interval-tree-1d@1.0.4/_esm.js">
 <link rel="modulepreload" href="./_npm/apache-arrow@19.0.0/_esm.js">
 <link rel="modulepreload" href="./_node/geojson-equality-ts@1.0.2/index.js">
 <link rel="modulepreload" href="./_node/point-in-polygon-hao@1.1.0/index.js">
@@ -207,7 +203,6 @@
 <link rel="modulepreload" href="./_node/d3-voronoi@1.1.2/index.js">
 <link rel="modulepreload" href="./_npm/internmap@2.0.3/_esm.js">
 <link rel="modulepreload" href="./_npm/delaunator@5.0.1/_esm.js">
-<link rel="modulepreload" href="./_npm/binary-search-bounds@2.0.5/_esm.js">
 <link rel="modulepreload" href="./_npm/tslib@2.8.1/_esm.js">
 <link rel="modulepreload" href="./_npm/flatbuffers@24.12.23/_esm.js">
 <link rel="modulepreload" href="./_node/d3-array@1.2.4/index.js">
@@ -221,22 +216,27 @@ import {define} from "./_observablehq/client.js";
 import {registerFile, FileAttachment} from "./_observablehq/stdlib.js";
 import {registerTable} from "./_observablehq/stdlib/duckdb.js";
 
-registerFile("./data/oxford_decarbonisation_data.parquet", {"name":"./data/oxford_decarbonisation_data.parquet","path":"./_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1737445116108});
-registerFile("./data/oxford_lsoa_boundary.geojson", {"name":"./data/oxford_lsoa_boundary.geojson","mimeType":"application/geo+json","path":"./_file/data/oxford_lsoa_boundary.50c731e8.geojson","lastModified":1737445116118});
-registerFile("./data/oxford_lsoas_cartogram.json", {"name":"./data/oxford_lsoas_cartogram.json","mimeType":"application/json","path":"./_file/data/oxford_lsoas_cartogram.a72fa2b8.json","lastModified":1737445116118});
-registerFile("./data/oxford_lsoas_regular.json", {"name":"./data/oxford_lsoas_regular.json","mimeType":"application/json","path":"./_file/data/oxford_lsoas_regular.e1c36e7e.json","lastModified":1737445116118});
+registerFile("./data/oxford_decarbonisation_data.parquet", {"name":"./data/oxford_decarbonisation_data.parquet","path":"./_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1737527185061});
+registerFile("./data/oxford_lsoa_boundary.geojson", {"name":"./data/oxford_lsoa_boundary.geojson","mimeType":"application/geo+json","path":"./_file/data/oxford_lsoa_boundary.50c731e8.geojson","lastModified":1737527185071});
+registerFile("./data/oxford_lsoas_cartogram.json", {"name":"./data/oxford_lsoas_cartogram.json","mimeType":"application/json","path":"./_file/data/oxford_lsoas_cartogram.a72fa2b8.json","lastModified":1737527185071});
+registerFile("./data/oxford_lsoas_regular.json", {"name":"./data/oxford_lsoas_regular.json","mimeType":"application/json","path":"./_file/data/oxford_lsoas_regular.e1c36e7e.json","lastModified":1737527185071});
 registerTable("oxford", FileAttachment("./data/oxford_decarbonisation_data.parquet"));
 
-define({id: "877f8b65", outputs: ["d3","flubber","require","Mutable","turf","bulmaToast","bulmaQuickview","sorterTable","TimeGlyph","GlyphCollection","StreamGraphGlyph","RadialGlyph","RadialGlyphOverall","glyphMap","createDiscretiserValue","_drawCellBackground","OSGB","BudgetAllocator","InterventionManager","MiniDecarbModel","createTimelineInterface","LeafletMap","createTable","SummarizeColumn","createTableFormat","inferTypes","enrichGeoData","normaliseData","insideCell","debounceInput","saveToSession","getFromSession","transformCoordinates","transformGeometry","normalisebyGroup","aggregateValues"], body: async () => {
-const [{require}, {Mutable}, turf, bulmaToast, bulmaQuickview, {sorterTable}, {TimeGlyph, GlyphCollection}, {StreamGraphGlyph}, {RadialGlyph}, {RadialGlyphOverall}, {glyphMap, createDiscretiserValue, _drawCellBackground}, {OSGB}, {BudgetAllocator}, {InterventionManager, MiniDecarbModel}, {createTimelineInterface}, {LeafletMap}, {createTable}, {SummarizeColumn, createTableFormat}, {inferTypes, enrichGeoData, normaliseData, insideCell, debounceInput, saveToSession, getFromSession, transformCoordinates, transformGeometry, normalisebyGroup, aggregateValues}] = await Promise.all([import("./_npm/d3-require@1.3.0/_esm.js"), import("./_observablehq/stdlib.js"), import("./_node/@turf/turf@7.1.0/index.js"), import("./_npm/bulma-toast@2.4.4/_esm.js"), import("./_npm/bulma-quickview@2.0.0/dist/js/bulma-quickview.js"), import("./_import/components/sorterTableClass.e30ae16e.js"), import("./_import/components/glyph-designs/timeGlyph.a1969fec.js"), import("./_import/components/glyph-designs/mirrorTimeGlyph.5185ad88.js"), import("./_import/components/glyph-designs/radialglyph.cbd7ddeb.js"), import("./_import/components/glyph-designs/radialGlyphOverall.e15902a2.js"), import("./_import/components/gridded-glyphmaps/index.min.f034b425.js"), import("./_import/components/osgb/index.1d2476df.js"), import("./_import/components/decarb-model/budget-allocator.5c9a0a07.js"), import("./_import/components/decarb-model/mini-decarbonisation.46bd522e.js"), import("./_import/components/decarb-model/timeline.2b635da2.js"), import("./_import/components/leaflet/leaflet-map.498e936b.js"), import("./_import/components/sorterTable.b455407f.js"), import("./_import/components/input-table/input-table.247272e6.js"), import("./_import/components/helpers.c82b92f4.js")]);
+define({id: "ec2b6149", outputs: ["d3","flubber","require","Mutable","turf","bulmaToast","bulmaQuickview","sorterTable","TimeGlyph","GlyphCollection","StreamGraphGlyph","RadialGlyph","RadialGlyphOverall","glyphMap","createDiscretiserValue","_drawCellBackground","OSGB","BudgetAllocator","InterventionManager","MiniDecarbModel","createTimelineInterface","LeafletMap","inferTypes","enrichGeoData","normaliseData","insideCell","debounceInput","saveToSession","getFromSession","transformCoordinates","transformGeometry","normalisebyGroup","aggregateValues"], body: async () => {
+const [{require}, {Mutable}, turf, bulmaToast, bulmaQuickview, {sorterTable}, {TimeGlyph, GlyphCollection}, {StreamGraphGlyph}, {RadialGlyph}, {RadialGlyphOverall}, {glyphMap, createDiscretiserValue, _drawCellBackground}, {OSGB}, {BudgetAllocator}, {InterventionManager, MiniDecarbModel}, {createTimelineInterface}, {LeafletMap}, {inferTypes, enrichGeoData, normaliseData, insideCell, debounceInput, saveToSession, getFromSession, transformCoordinates, transformGeometry, normalisebyGroup, aggregateValues}] = await Promise.all([import("./_npm/d3-require@1.3.0/_esm.js"), import("./_observablehq/stdlib.js"), import("./_node/@turf/turf@7.1.0/index.js"), import("./_npm/bulma-toast@2.4.4/_esm.js"), import("./_npm/bulma-quickview@2.0.0/dist/js/bulma-quickview.js"), import("./_import/components/sorterTableClass.e30ae16e.js"), import("./_import/components/glyph-designs/timeGlyph.a1969fec.js"), import("./_import/components/glyph-designs/mirrorTimeGlyph.5185ad88.js"), import("./_import/components/glyph-designs/radialglyph.cbd7ddeb.js"), import("./_import/components/glyph-designs/radialGlyphOverall.e15902a2.js"), import("./_import/components/gridded-glyphmaps/index.min.f034b425.js"), import("./_import/components/osgb/index.1d2476df.js"), import("./_import/components/decarb-model/budget-allocator.5c9a0a07.js"), import("./_import/components/decarb-model/mini-decarbonisation.46bd522e.js"), import("./_import/components/decarb-model/timeline.2b635da2.js"), import("./_import/components/leaflet/leaflet-map.498e936b.js"), import("./_import/components/helpers.c82b92f4.js")]);
 console.log(">> Importing libraries...");
 const d3 = require("d3", "d3-geo-projection");
 const flubber = require("flubber@0.4");
 
 
 
+// import { createTable } from "./components/sorterTable.js";
+// import {
+//   SummarizeColumn,
+//   createTableFormat,
+// } from "./components/input-table/input-table.js";
 
-return {d3,flubber,require,Mutable,turf,bulmaToast,bulmaQuickview,sorterTable,TimeGlyph,GlyphCollection,StreamGraphGlyph,RadialGlyph,RadialGlyphOverall,glyphMap,createDiscretiserValue,_drawCellBackground,OSGB,BudgetAllocator,InterventionManager,MiniDecarbModel,createTimelineInterface,LeafletMap,createTable,SummarizeColumn,createTableFormat,inferTypes,enrichGeoData,normaliseData,insideCell,debounceInput,saveToSession,getFromSession,transformCoordinates,transformGeometry,normalisebyGroup,aggregateValues};
+return {d3,flubber,require,Mutable,turf,bulmaToast,bulmaQuickview,sorterTable,TimeGlyph,GlyphCollection,StreamGraphGlyph,RadialGlyph,RadialGlyphOverall,glyphMap,createDiscretiserValue,_drawCellBackground,OSGB,BudgetAllocator,InterventionManager,MiniDecarbModel,createTimelineInterface,LeafletMap,inferTypes,enrichGeoData,normaliseData,insideCell,debounceInput,saveToSession,getFromSession,transformCoordinates,transformGeometry,normalisebyGroup,aggregateValues};
 }});
 
 define({id: "5dd85f8f", inputs: ["OSGB"], outputs: ["proj"], body: (OSGB) => {
@@ -244,7 +244,7 @@ const proj = new OSGB();
 return {proj};
 }});
 
-define({id: "fff1c897", inputs: ["sql"], outputs: ["oxford_data"], body: async (sql) => {
+define({id: "1e9c393a", inputs: ["sql"], outputs: ["oxford_data"], body: async (sql) => {
 const oxford_data = await sql`  SELECT DISTINCT
     "UPRN" AS id,
     "LSOA code" AS lsoa,
@@ -252,7 +252,7 @@ const oxford_data = await sql`  SELECT DISTINCT
     "xcoord" AS x,
     "ycoord" AS y,
     "Air Source Heat Pump Potential_Building Size (m^2)" AS building_area,
-    "Air Source Heat Pump Potential_Garden Area (m^2)" AS garden_area,
+    -- "Air Source Heat Pump Potential_Garden Area (m^2)" AS garden_area,
     "Air Source Heat Pump Potential_Overall Suitability Rating" AS ashp_suitability,
     "Air Source Heat Pump Potential_Recommended Heat Pump Size [kW]" AS ashp_size,
     "Low Carbon Technology Costs_Air Source Heat Pump - Labour" AS ashp_labour,
@@ -265,22 +265,22 @@ const oxford_data = await sql`  SELECT DISTINCT
     "Low Carbon Technology Costs_Ground Source Heat Pump - Total" AS gshp_total,
     "Domestic Heat Demand_Annual Heat Demand (kWh)" AS heat_demand,
     "Domestic Insulation Potential_EPC Rating" AS EPC_rating,
-    "Domestic Insulation Potential_Insulation - Cavity Wall" AS insulation_cwall,
-    "Low Carbon Technology Costs_Insulation - Cavity Wall - Labour" AS insulation_cwall_labour,
-    "Low Carbon Technology Costs_Insulation - Cavity Wall  - Materials" AS insulation_cwall_materials,
-    "Low Carbon Technology Costs_Insulation - Cavity Wall - Total" AS insulation_cwall_total,
-    "Domestic Insulation Potential_Insulation - External Wall" AS insulation_ewall,
-    "Low Carbon Technology Costs_Insulation - External Wall - Labour" AS insulation_ewall_labour,
-    "Low Carbon Technology Costs_Insulation - External Wall - Material" AS insulation_ewall_materials,
-    "Low Carbon Technology Costs_Insulation - External Wall - Total" AS insulation_ewall_total,
-    "Domestic Insulation Potential_Insulation - Roof" AS insulation_roof,
-    "Low Carbon Technology Costs_Insulation - Loft - Labour" AS insulation_roof_labour,
-    "Low Carbon Technology Costs_Insulation - Loft - Material" AS insulation_roof_materials,
-    "Low Carbon Technology Costs_Insulation - Loft - Total" AS insulation_roof_total,
-    "Domestic Insulation Potential_Insulation - Under Floor" AS insulation_floor,
-    "Low Carbon Technology Costs_Insulation - Under Floor - Labour" AS insulation_floor_labour,
-    "Low Carbon Technology Costs_Insulation - Under Floor - Material" AS insulation_floor_materials,
-    "Low Carbon Technology Costs_Insulation - Under Floor- Total" AS insulation_floor_total,
+   -- "Domestic Insulation Potential_Insulation - Cavity Wall" AS insulation_cwall,
+   -- "Low Carbon Technology Costs_Insulation - Cavity Wall - Labour" AS insulation_cwall_labour,
+   -- "Low Carbon Technology Costs_Insulation - Cavity Wall  - Materials" AS insulation_cwall_materials,
+   -- "Low Carbon Technology Costs_Insulation - Cavity Wall - Total" AS insulation_cwall_total,
+   -- "Domestic Insulation Potential_Insulation - External Wall" AS insulation_ewall,
+   -- "Low Carbon Technology Costs_Insulation - External Wall - Labour" AS insulation_ewall_labour,
+   -- "Low Carbon Technology Costs_Insulation - External Wall - Material" AS insulation_ewall_materials,
+   -- "Low Carbon Technology Costs_Insulation - External Wall - Total" AS insulation_ewall_total,
+   -- "Domestic Insulation Potential_Insulation - Roof" AS insulation_roof,
+   -- "Low Carbon Technology Costs_Insulation - Loft - Labour" AS insulation_roof_labour,
+   -- "Low Carbon Technology Costs_Insulation - Loft - Material" AS insulation_roof_materials,
+   -- "Low Carbon Technology Costs_Insulation - Loft - Total" AS insulation_roof_total,
+   -- "Domestic Insulation Potential_Insulation - Under Floor" AS insulation_floor,
+   -- "Low Carbon Technology Costs_Insulation - Under Floor - Labour" AS insulation_floor_labour,
+   -- "Low Carbon Technology Costs_Insulation - Under Floor - Material" AS insulation_floor_materials,
+   -- "Low Carbon Technology Costs_Insulation - Under Floor- Total" AS insulation_floor_total,
     "Domestic PV Potential_Overall Suitability" AS pv_suitability,
     "Domestic PV Potential_Recommended Array Size [kW]" AS pv_size,
     "Domestic PV Potential_Annual Generation [kWh]" AS pv_generation,
@@ -342,9 +342,10 @@ function useState(value) {
 return {useState};
 }});
 
-define({id: "e40df91a", inputs: ["useState"], outputs: ["selected","setSelected","getInterventions","setInterventions","getResults","setResults","selectedIntervention","setSelectedIntervention","selectedInterventionIndex","setSelectedInterventionIndex","detailOnDemand","setDetailOnDemand","currentConfig","setCurrentConfig","tableFiltered","setTableFiltered"], body: (useState) => {
+define({id: "cc2afead", inputs: ["useState"], outputs: ["getSelectedAllocation","setSelectedAllocation","getSelectedTableRow","setSelectedTableRow","getInterventions","setInterventions","getResults","setResults","selectedIntervention","setSelectedIntervention","selectedInterventionIndex","setSelectedInterventionIndex","detailOnDemand","setDetailOnDemand","currentConfig","setCurrentConfig"], body: (useState) => {
 console.log(">> Getters and Setters...");
-const [selected, setSelected] = useState([]); // selected data in table
+const [getSelectedAllocation, setSelectedAllocation] = useState([]); // selected allocation
+const [getSelectedTableRow, setSelectedTableRow] = useState([]); // selected table row
 const [getInterventions, setInterventions] = useState([]); // list of interventions
 const [getResults, setResults] = useState([]); // list of results, from running model
 const [selectedIntervention, setSelectedIntervention] = useState(null); // selected intervention in timeline
@@ -352,8 +353,12 @@ const [selectedInterventionIndex, setSelectedInterventionIndex] =
   useState(null); // selected intervention index
 const [detailOnDemand, setDetailOnDemand] = useState(null); // detail on demand on map
 const [currentConfig, setCurrentConfig] = useState({}); // current configuration
+return {getSelectedAllocation,setSelectedAllocation,getSelectedTableRow,setSelectedTableRow,getInterventions,setInterventions,getResults,setResults,selectedIntervention,setSelectedIntervention,selectedInterventionIndex,setSelectedInterventionIndex,detailOnDemand,setDetailOnDemand,currentConfig,setCurrentConfig};
+}});
+
+define({id: "0467d1a3", inputs: ["useState"], outputs: ["tableFiltered","setTableFiltered"], body: (useState) => {
 const [tableFiltered, setTableFiltered] = useState([]); // filtered table
-return {selected,setSelected,getInterventions,setInterventions,getResults,setResults,selectedIntervention,setSelectedIntervention,selectedInterventionIndex,setSelectedInterventionIndex,detailOnDemand,setDetailOnDemand,currentConfig,setCurrentConfig,tableFiltered,setTableFiltered};
+return {tableFiltered,setTableFiltered};
 }});
 
 define({id: "eefad3c9", inputs: ["useState"], outputs: ["timelineModifications","setTimelineModifications"], body: (useState) => {
@@ -368,7 +373,19 @@ const [allocations, setAllocations] = useState([]);
 return {allocations,setAllocations};
 }});
 
-define({id: "63048cc7", mode: "inline", inputs: ["createTimelineInterface","interventions","setTimelineModifications","setSelectedInterventionIndex","display"], body: async (createTimelineInterface,interventions,setTimelineModifications,setSelectedInterventionIndex,display) => {
+define({id: "27617c0d", mode: "inline", inputs: ["table","display"], body: async (table,display) => {
+display(await(
+table.getNode()
+))
+}});
+
+define({id: "6f313450", mode: "inline", inputs: ["tableFilteredData","html","display"], body: async (tableFilteredData,html,display) => {
+display(await(
+tableFilteredData ? html`<p> No. of Filtered Data: ${tableFilteredData.length} </p>`: "" 
+))
+}});
+
+define({id: "85068478", mode: "inline", inputs: ["createTimelineInterface","interventions","setTimelineModifications","setSelectedInterventionIndex","display"], body: async (createTimelineInterface,interventions,setTimelineModifications,setSelectedInterventionIndex,display) => {
 display(await(
 createTimelineInterface(
                 interventions,
@@ -381,7 +398,7 @@ createTimelineInterface(
                   console.log("Clicked Interventions", click, interventions[click]);
                 },
                 450,
-                200
+                220
               )
 ))
 }});
@@ -442,27 +459,15 @@ html`<button class="btn move-down tooltip" data-tooltip="Move Down" aria-label="
 ))
 }});
 
-define({id: "27617c0d", mode: "inline", inputs: ["table","display"], body: async (table,display) => {
-display(await(
-table.getNode()
-))
-}});
-
-define({id: "6f313450", mode: "inline", inputs: ["tableFilteredData","html","display"], body: async (tableFilteredData,html,display) => {
-display(await(
-tableFilteredData ? html`<p> No. of Filtered Data: ${tableFilteredData.length} </p>`: "" 
-))
-}});
-
 define({id: "3dea4862", mode: "inline", inputs: ["mapAggregationInput","display"], body: async (mapAggregationInput,display) => {
 display(await(
 mapAggregationInput
 ))
 }});
 
-define({id: "b9abde73", mode: "inline", inputs: ["timelineSwitchInput","display"], body: async (timelineSwitchInput,display) => {
+define({id: "96b332f9", mode: "inline", inputs: ["map_aggregate","timelineSwitchInput","display"], body: async (map_aggregate,timelineSwitchInput,display) => {
 display(await(
-timelineSwitchInput
+(map_aggregate === "Building Level") ? "": timelineSwitchInput
 ))
 }});
 
@@ -552,42 +557,42 @@ cancelButton.addEventListener("click", () => {
 return {openQuickviewButton,closeQuickviewButton,quickviewDefault,cancelButton};
 }});
 
-define({id: "5f2f5549", inputs: ["display","html","data","stackedRecap","selectedInterventionIndex","buildingsData","interventions"], body: (display,html,data,stackedRecap,selectedInterventionIndex,buildingsData,interventions) => {
-display(html`<p>"DATA DATA DATA"</p>`);
-display(data);
-// --- Analyze Stacked Results ---
-display(html`<p>"Stacked Recap.Summary:"</p>`);
-display(stackedRecap.summary);
+define({id: "085417a2", body: () => {
+// display(html`<p>"DATA DATA DATA"</p>`);
+// display(data);
+// // --- Analyze Stacked Results ---
+// display(html`<p>"Stacked Recap.Summary:"</p>`);
+// display(stackedRecap.summary);
 
-display(html`<p>"Stacked Recap.YearlySummary:"</p>`);
-display(stackedRecap.yearlySummary);
+// display(html`<p>"Stacked Recap.YearlySummary:"</p>`);
+// display(stackedRecap.yearlySummary);
 
-display(html`<p>"Stacked Recap.Buildings:"</p>`);
-display(stackedRecap.buildings);
+// display(html`<p>"Stacked Recap.Buildings:"</p>`);
+// display(stackedRecap.buildings);
 
-display(html`<p>"Stacked Recap.IntervenedBuildings:"</p>`);
-display(stackedRecap.intervenedBuildings);
+// display(html`<p>"Stacked Recap.IntervenedBuildings:"</p>`);
+// display(stackedRecap.intervenedBuildings);
 
-display(html`<p>"List of Intervention Results recap:"</p>`);
-display(stackedRecap.recap);
+// display(html`<p>"List of Intervention Results recap:"</p>`);
+// display(stackedRecap.recap);
 
-display(html`<p>"Selected Intervention"</p>`);
-display(
-  selectedInterventionIndex === null
-    ? [...buildingsData]
-    : interventions[selectedInterventionIndex].intervenedBuildings
-);
+// display(html`<p>"Selected Intervention"</p>`);
+// display(
+//   selectedInterventionIndex === null
+//     ? [...buildingsData]
+//     : interventions[selectedInterventionIndex].intervenedBuildings
+// );
 }});
 
-define({id: "aed13250", inputs: ["display","html","MiniDecarbModel","data"], outputs: ["groupedData"], body: (display,html,MiniDecarbModel,data) => {
-display(html`<p>"Grouped Intervention"</p>`);
+define({id: "a5a36b90", inputs: ["MiniDecarbModel","data"], outputs: ["groupedData"], body: (MiniDecarbModel,data) => {
+// display(html`<p>"Grouped Intervention"</p>`);
 const groupedData = MiniDecarbModel.group(data, ["lsoa", "interventionYear"]);
-display(groupedData);
+// display(groupedData);
 return {groupedData};
 }});
 
-define({id: "07c6c826", inputs: ["display","html","transformInterventionData","groupedData"], outputs: ["timelineDataArray","transformedGroupedData"], body: (display,html,transformInterventionData,groupedData) => {
-display(html`<p>"Transformed Grouped Intervention"</p>`);
+define({id: "2b4c79b3", inputs: ["transformInterventionData","groupedData"], outputs: ["timelineDataArray","transformedGroupedData"], body: (transformInterventionData,groupedData) => {
+// display(html`<p>"Transformed Grouped Intervention"</p>`);
 const timelineDataArray = [
   "interventionCost",
   "carbonSaved",
@@ -599,7 +604,7 @@ const transformedGroupedData = transformInterventionData(
   "E01035740",
   timelineDataArray
 );
-display(transformedGroupedData);
+// display(transformedGroupedData);
 return {timelineDataArray,transformedGroupedData};
 }});
 
@@ -977,12 +982,12 @@ if (allocation_type === "linear") {
 return {allocator,initialAllocations};
 }});
 
-define({id: "22ac79f5", inputs: ["allocator","initialAllocations","setSelected"], outputs: ["budgetVisualiser"], body: (allocator,initialAllocations,setSelected) => {
+define({id: "ba5e32a5", inputs: ["allocator","initialAllocations","setSelectedAllocation"], outputs: ["budgetVisualiser"], body: (allocator,initialAllocations,setSelectedAllocation) => {
 const budgetVisualiser = allocator.visualise(
   initialAllocations,
   (changes) => {
     // console.log("On Budget Updated", changes);
-    setSelected(changes);
+    setSelectedAllocation(changes);
   },
   400,
   200
@@ -990,17 +995,17 @@ const budgetVisualiser = allocator.visualise(
 return {budgetVisualiser};
 }});
 
-define({id: "2761c731", inputs: ["setSelected","allocator"], body: (setSelected,allocator) => {
-setSelected(allocator.getAllocations());
+define({id: "38b893d7", inputs: ["setSelectedAllocation","allocator"], body: (setSelectedAllocation,allocator) => {
+setSelectedAllocation(allocator.getAllocations());
 }});
 
-define({id: "9ea66861", inputs: ["allocator","saveToSession","selected"], body: (allocator,saveToSession,selected) => {
+define({id: "0e1a5ec1", inputs: ["allocator","saveToSession","getSelectedAllocation"], body: (allocator,saveToSession,getSelectedAllocation) => {
 // ----------------- Assign budget -----------------
 {
   allocator;
   // const newAllocation = selected ? selected : allocator.getAllocations();
   // console.log("newAllocation", newAllocation);
-  saveToSession("allocations", selected);
+  saveToSession("allocations", getSelectedAllocation);
 }
 }});
 
@@ -1064,12 +1069,12 @@ playButton.addEventListener("click", () => {
 return {playing,direction,animationFrame,animate};
 }});
 
-define({id: "64b98d79", inputs: ["getFromSession","manager","runModel"], outputs: ["addNewIntervention"], body: (getFromSession,manager,runModel) => {
+define({id: "35c6f694", inputs: ["getFromSession","manager","runModel"], outputs: ["addNewIntervention"], body: (getFromSession,manager,runModel) => {
 // Handle form submission: add new intervention
 function addNewIntervention(data) {
   // console.log(Date.now(), "Checking allocations now:", allocations);
   const currentAllocation = getFromSession("allocations");
-
+  console.log(">> Current Allocation from session", currentAllocation);
   const yearlyBudgets = currentAllocation.map((item) => item.budget);
 
   const newConfig = {
@@ -1253,7 +1258,7 @@ function modifyIntervention(index, newConfig) {
 return {modifyIntervention};
 }});
 
-define({id: "376d8384", inputs: ["interventions","selectedInterventionIndex","stackedRecap","buildingsData"], outputs: ["selectedIntervenedBuildings","flatData","data"], body: (interventions,selectedInterventionIndex,stackedRecap,buildingsData) => {
+define({id: "c4428258", inputs: ["interventions","selectedInterventionIndex","getFromSession","stackedRecap","buildingsData"], outputs: ["selectedIntervenedBuildings","flatData","filteredDatafromTableSession","data"], body: (interventions,selectedInterventionIndex,getFromSession,stackedRecap,buildingsData) => {
 const selectedIntervenedBuildings =
   interventions[selectedInterventionIndex]?.intervenedBuildings;
 
@@ -1264,12 +1269,16 @@ const flatData = selectedIntervenedBuildings?.map((p) => ({
 
 console.log(">> Intervened buildings", flatData);
 
+const filteredDatafromTableSession = getFromSession("tableFiltered");
+
 const data =
   selectedInterventionIndex === null
     ? stackedRecap?.buildings ?? buildingsData
+    : filteredDatafromTableSession
+    ? filteredDatafromTableSession
     : flatData;
 // console.log(">> DATA DATA DATA", data);
-return {selectedIntervenedBuildings,flatData,data};
+return {selectedIntervenedBuildings,flatData,filteredDatafromTableSession,data};
 }});
 
 define({id: "8043f7ad", inputs: ["timeline_switch","aggregateValues","data","glyphVariables"], outputs: ["glyphdata"], body: (timeline_switch,aggregateValues,data,glyphVariables) => {
@@ -1280,47 +1289,70 @@ const glyphdata = aggregateValues(data, glyphVariables, "sum", true);
 return {glyphdata};
 }});
 
-define({id: "1e1aab46", inputs: ["data"], outputs: ["excludedColumns","customOrder","tableColumns"], body: (data) => {
+define({id: "03a232db", inputs: ["data"], outputs: ["excludedColumns","customOrder","tableColumns"], body: (data) => {
 // Table Data
-const excludedColumns = ["properties", "x", "y", "score"]; // columns to exclude from the table
+const excludedColumns = [
+  "id",
+  "properties",
+  "x",
+  "y",
+  "score",
+  "ashp_labour",
+  "ashp_material",
+  "pv_labour",
+  "pv_material",
+  "gshp_labour",
+  "gshp_material",
+  "substation_headroom_pct",
+  "substation_peakload",
+  "deprivation_decile",
+  // "fuel_poverty_decile",
+]; // columns to exclude from the table
 const customOrder = [
-  { column: "id", unique: true },
   "lsoa",
   "msoa",
-  // ...(isIntervened ? ["isIntervened"] : []),
   "EPC_rating",
+  "ashp_suitability",
+  "pv_suitability",
+  "gshp_suitability",
 ];
 
-// const customOrder2 = ["id", "lsoa", "score"]; // custom order for columns
-// const tableColumns = customOrder2;
+const tableColumns = [
+  { column: "id", unique: true },
+  ...Object.keys(data[0])
+    .filter((key) => !excludedColumns.includes(key) && key !== "id")
+    .sort((a, b) => {
+      const indexA = customOrder.indexOf(a);
+      const indexB = customOrder.indexOf(b);
+      if (indexA === -1 && indexB === -1) return a.localeCompare(b);
+      if (indexA === -1) return 1;
+      if (indexB === -1) return -1;
+      return indexA - indexB;
+    }),
+];
 
-// const customHeader = {
-//   id: createTableHeader(50, 20, "#4a90e2", "id"),
-//   lsoa: createTableHeader(50, 20, "#4a90e2", "LSOA"),
-//   score: createTableHeader(50, 20, "#4a90e2", "Score"),
-// };
-
-const tableColumns = Object.keys(data[0])
-  .filter((key) => !excludedColumns.includes(key))
-  .sort((a, b) => {
-    const indexA = customOrder.indexOf(a);
-    const indexB = customOrder.indexOf(b);
-    if (indexA === -1 && indexB === -1) return a.localeCompare(b); // Sort alphabetically if not in customOrder
-    if (indexA === -1) return 1; // Put a after b
-    if (indexB === -1) return -1; // Put b after a
-    return indexA - indexB; // Sort based on customOrder
-  });
-// console.log(">> Define table columns...", tableColumns);
+// const tableColumns = Object.keys(data[0])
+//   .filter((key) => !excludedColumns.includes(key))
+//   .sort((a, b) => {
+//     const indexA = customOrder.indexOf(a);
+//     const indexB = customOrder.indexOf(b);
+//     if (indexA === -1 && indexB === -1) return a.localeCompare(b); // Sort alphabetically if not in customOrder
+//     if (indexA === -1) return 1; // Put a after b
+//     if (indexB === -1) return -1; // Put b after a
+//     return indexA - indexB; // Sort based on customOrder
+//   });
+console.log(">> Define table columns...", tableColumns);
 return {excludedColumns,customOrder,tableColumns};
 }});
 
-define({id: "e81778ff", inputs: ["setTableFiltered","setSelected"], outputs: ["tableChanged"], body: (setTableFiltered,setSelected) => {
+define({id: "47b4cd63", inputs: ["saveToSession","setTableFiltered","setSelectedTableRow"], outputs: ["tableChanged"], body: (saveToSession,setTableFiltered,setSelectedTableRow) => {
 function tableChanged(event) {
   console.log("Table changed:", event);
 
   if (event.type === "filter") {
     console.log("Filtered indices:", event.indeces);
     console.log("Filter rule:", event.rule);
+    saveToSession("tableFiltered", event.indeces);
 
     setTableFiltered(event.indeces);
   }
@@ -1332,7 +1364,7 @@ function tableChanged(event) {
 
   if (event.type === "selection") {
     console.log("Selected rows:", event.selection);
-    setSelected(event.selection);
+    setSelectedTableRow(event.selection);
     console.log("Selection rule:", event.rule);
   }
 }
@@ -1363,9 +1395,8 @@ define({id: "55e7c930", body: () => {
 // };
 }});
 
-define({id: "3ebe8287", inputs: ["sorterTable","data","customOrder","tableChanged"], outputs: ["table"], body: (sorterTable,data,customOrder,tableChanged) => {
-// test table
-const table = new sorterTable(data, customOrder, tableChanged, {
+define({id: "3bbbd90f", inputs: ["sorterTable","data","tableColumns","tableChanged"], outputs: ["table"], body: (sorterTable,data,tableColumns,tableChanged) => {
+const table = new sorterTable(data, tableColumns, tableChanged, {
   height: "300px",
 });
 return {table};
@@ -1486,21 +1517,7 @@ const cols = [
 return {cols};
 }});
 
-define({id: "77ea3ee0", outputs: ["tableData"], body: () => {
-console.log(">> Create sortable table...");
-const tableData = null;
-// const tableData = selectedIntervention
-//   ? stackedResults.buildings
-//   : buildingsData;
-
-// const table = new createTable(tableData, cols, (changes) => {
-//   console.log("Table changed:", changes);
-//   setSelected(changes.selection);
-// });
-return {tableData};
-}});
-
-define({id: "177b2c8b", inputs: ["enrichGeoData","data","regular_geodata","cartogram_geodata"], outputs: ["aggregations","regular_geodata_withproperties","cartogram_geodata_withproperties"], body: (enrichGeoData,data,regular_geodata,cartogram_geodata) => {
+define({id: "81cf7538", inputs: ["enrichGeoData","data","regular_geodata","cartogram_geodata"], outputs: ["aggregations","regular_geodata_withproperties","cartogram_geodata_withproperties"], body: (enrichGeoData,data,regular_geodata,cartogram_geodata) => {
 console.log(">> Geo-enrichment...");
 // geo-enrichment - combine geodata with building level properties
 
@@ -1548,23 +1565,23 @@ const aggregations = {
   gshp_material: "sum",
   gshp_total: "sum",
   heat_demand: "sum",
-  insulation_rating: "count",
-  insulation_cwall: "count",
-  insulation_cwall_labour: "sum",
-  insulation_cwall_materials: "sum",
-  insulation_cwall_total: "sum",
-  insulation_ewall: "count",
-  insulation_ewall_labour: "sum",
-  insulation_ewall_materials: "sum",
-  insulation_ewall_total: "sum",
-  insulation_roof: "count",
-  insulation_roof_labour: "sum",
-  insulation_roof_materials: "sum",
-  insulation_roof_total: "sum",
-  insulation_floor: "count",
-  insulation_floor_labour: "sum",
-  insulation_floor_materials: "sum",
-  insulation_floor_total: "sum",
+  // insulation_rating: "count",
+  // insulation_cwall: "count",
+  // insulation_cwall_labour: "sum",
+  // insulation_cwall_materials: "sum",
+  // insulation_cwall_total: "sum",
+  // insulation_ewall: "count",
+  // insulation_ewall_labour: "sum",
+  // insulation_ewall_materials: "sum",
+  // insulation_ewall_total: "sum",
+  // insulation_roof: "count",
+  // insulation_roof_labour: "sum",
+  // insulation_roof_materials: "sum",
+  // insulation_roof_total: "sum",
+  // insulation_floor: "count",
+  // insulation_floor_labour: "sum",
+  // insulation_floor_materials: "sum",
+  // insulation_floor_total: "sum",
   pv_suitability: "count",
   pv_size: "sum",
   pv_generation: "sum",
@@ -2123,16 +2140,16 @@ function createLeafletMap(data, width, height) {
 return {createLeafletMap};
 }});
 
-define({id: "9eb91f18", inputs: ["selectedRow"], outputs: ["getSelectedRow"], body: (selectedRow) => {
+define({id: "1c1f6375", body: () => {
 // get last element of the selectedRow if more than one columns are selected,
 // else return the first element
-function getSelectedRow() {
-  if (selectedRow.length > 1) {
-    return selectedRow[selectedRow.length - 1];
-  } else {
-    return selectedRow[0];
-  }
-}
+// function getSelectedRow() {
+//   if (selectedRow.length > 1) {
+//     return selectedRow[selectedRow.length - 1];
+//   } else {
+//     return selectedRow[0];
+//   }
+// }
 
 // if (selectedRow) {
 //   await mapInstance.flyTo({
@@ -2145,7 +2162,6 @@ function getSelectedRow() {
 // }
 
 // display([getSelectedRow().x, getSelectedRow().y]);
-return {getSelectedRow};
 }});
 
 define({id: "8866168d", inputs: ["selectedInterventionIndex","stackedRecap"], outputs: ["yearlySummaryArray","keysToNormalise"], body: (selectedInterventionIndex,stackedRecap) => {
@@ -2172,7 +2188,7 @@ let keysToNormalise = [
 return {yearlySummaryArray,keysToNormalise};
 }});
 
-define({id: "2531d4da", inputs: ["glyphVariables","RadialGlyphOverall","glyphdata","glyphColours"], outputs: ["createOverallPotential","cleanupTooltips"], body: (glyphVariables,RadialGlyphOverall,glyphdata,glyphColours) => {
+define({id: "f511c572", inputs: ["glyphVariables","RadialGlyphOverall","glyphdata","glyphColours"], outputs: ["createOverallPotential","cleanupTooltips"], body: (glyphVariables,RadialGlyphOverall,glyphdata,glyphColours) => {
 function createOverallPotential(data, width = 1100, height = 800) {
   const margin = { top: 80, right: 200, bottom: 200, left: 80 };
 
@@ -2180,7 +2196,7 @@ function createOverallPotential(data, width = 1100, height = 800) {
     showTooltips: true,
     showLegend: true,
     title: "Overall Decarbonisation Potentials",
-    subtitle: "Aggregated building stock data",
+    subtitle: "Aggregated building stock data in Oxford",
     labels: glyphVariables,
     tooltipFormatter: (value) => `${(value * 100).toFixed(1)}%`,
     width: width,
@@ -2691,28 +2707,43 @@ return {createOverallPlot};
 <div id="observablehq-center">
 <main id="observablehq-main" class="observablehq">
 <!-- ------------ Imports ------------ -->
-<div class="observablehq observablehq--block"><!--:877f8b65:--></div>
+<div class="observablehq observablehq--block"><!--:ec2b6149:--></div>
 <div class="observablehq observablehq--block"><!--:5dd85f8f:--></div>
 <!-- ---------------- Loading Raw Data ---------------- -->
-<div class="observablehq observablehq--block"><!--:fff1c897:--></div>
+<div class="observablehq observablehq--block"><!--:1e9c393a:--></div>
 <div class="observablehq observablehq--block"><!--:a8708139:--></div>
 <div class="observablehq observablehq--block"><!--:59d4d98d:--></div>
 <div class="observablehq observablehq--block"><!--:74ca6350:--></div>
 <!-- ------------ Getter-Setter ------------ -->
 <div class="observablehq observablehq--block"><!--:04385e81:--></div>
-<div class="observablehq observablehq--block"><!--:e40df91a:--></div>
+<div class="observablehq observablehq--block"><!--:cc2afead:--></div>
+<div class="observablehq observablehq--block"><!--:0467d1a3:--></div>
 <div class="observablehq observablehq--block"><!--:eefad3c9:--></div>
 <div class="observablehq observablehq--block"><!--:6ec1e3f5:--></div>
 <!-------- Stylesheets -------->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css">
 <link rel="stylesheet" href="./_file/styles/bulma-quickview.min.c71603a5.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-<link rel="stylesheet" href="./_file/styles/dashboard.8a19c7c0.css">
+<link rel="stylesheet" href="./_file/styles/dashboard.87b341af.css">
 <!-- ---------------- HTML Layout ---------------- -->
 <div class="grid-container" style="padding:2px; height:100vh;">
   <div id="left-panel" style="overflow-x:hidden; overflow-y:hidden; height:96vh;">
     <div class="left-top">
-      <div class="card" style="overflow-y: hidden;">
+      <div class="card" style="overflow-x:hidden;">
+          <header class="quickview-header">
+            <p class="title">Table View </p>
+          </header>
+          <div class="card-content">
+            <div class="content">
+              <!-- ${ObsTable} -->
+              <observablehq-loading></observablehq-loading><!--:27617c0d:-->
+              <observablehq-loading></observablehq-loading><!--:6f313450:-->
+            </div>
+          </div>
+        </div>
+    </div> <!-- left top -->
+    <div class="left-bottom">
+        <div class="card" style="overflow-y: hidden;">
         <header class="quickview-header">
           <p class="title">Decarbonisation Timeline</p>
         </header>
@@ -2720,7 +2751,7 @@ return {createOverallPlot};
           <div class="content">
             <div id="graph-container">
               <div id="timeline-panel">
-                <observablehq-loading></observablehq-loading><!--:63048cc7:-->
+                <observablehq-loading></observablehq-loading><!--:85068478:-->
               </div> <!-- timeline panel -->
               <nav id="timeline-buttons">
                 <button id="openQuickviewButton" data-show="quickview" class="btn tooltip" data-tooltip="Add New Intervention" aria-label="Add">
@@ -2735,20 +2766,6 @@ return {createOverallPlot};
           </div>
         </div>
       </div> <!-- card -->
-    </div> <!-- left top -->
-    <div class="left-bottom">
-        <div class="card" style="overflow-x:hidden;">
-          <!-- <header class="quickview-header">
-            <p class="title">Table View </p>
-          </header> -->
-          <div class="card-content">
-            <div class="content">
-              <!-- ${ObsTable} -->
-              <observablehq-loading></observablehq-loading><!--:27617c0d:-->
-              <observablehq-loading></observablehq-loading><!--:6f313450:-->
-            </div>
-          </div>
-        </div>
     </div> <!-- left bottom -->
     </div> <!-- left panel -->
   <div id="main-panel">
@@ -2759,7 +2776,7 @@ return {createOverallPlot};
       <div class="card-content">
         <div class="content">
           <observablehq-loading></observablehq-loading><!--:3dea4862:-->
-          <observablehq-loading></observablehq-loading><!--:b9abde73:-->
+          <observablehq-loading></observablehq-loading><!--:96b332f9:-->
           <observablehq-loading></observablehq-loading><!--:66c049e1:-->
           <observablehq-loading></observablehq-loading><!--:eafe6dd4:-->
           <!-- ${html`${playButton} ${morphFactorInput}`} -->
@@ -2851,10 +2868,9 @@ return {createOverallPlot};
   </footer>
 </div>
 <div class="observablehq observablehq--block"><!--:8c10b9a9:--></div>
-<h3 id="interventions" tabindex="-1"><a class="observablehq-header-anchor" href="#interventions">Interventions</a></h3>
-<div class="observablehq observablehq--block"><!--:5f2f5549:--></div>
-<div class="observablehq observablehq--block"><!--:aed13250:--></div>
-<div class="observablehq observablehq--block"><!--:07c6c826:--></div>
+<div class="observablehq observablehq--block"><!--:085417a2:--></div>
+<div class="observablehq observablehq--block"><!--:a5a36b90:--></div>
+<div class="observablehq observablehq--block"><!--:2b4c79b3:--></div>
 <div class="observablehq observablehq--block"><!--:dc04a23d:--></div>
 <!-- ---------------- Intervention Managers ---------------- -->
 <div class="observablehq observablehq--block"><!--:4e309342:--></div>
@@ -2877,15 +2893,15 @@ return {createOverallPlot};
 <div class="observablehq observablehq--block"><!--:90a33c18:--></div>
 <!--------------- Budget Allocator ---------------->
 <div class="observablehq observablehq--block"><!--:8f13d3de:--></div>
-<div class="observablehq observablehq--block"><!--:22ac79f5:--></div>
-<div class="observablehq observablehq--block"><!--:2761c731:--></div>
-<div class="observablehq observablehq--block"><!--:9ea66861:--></div>
+<div class="observablehq observablehq--block"><!--:ba5e32a5:--></div>
+<div class="observablehq observablehq--block"><!--:38b893d7:--></div>
+<div class="observablehq observablehq--block"><!--:0e1a5ec1:--></div>
 <div class="observablehq observablehq--block"><!--:eacc9ef7:--></div>
 <!-- morph animation logic -->
 <div class="observablehq observablehq--block"><!--:a013da47:--></div>
 <!-- ---------------- Functions ---------------- -->
 <!-- Intervention functions -->
-<div class="observablehq observablehq--block"><!--:64b98d79:--></div>
+<div class="observablehq observablehq--block"><!--:35c6f694:--></div>
 <div class="observablehq observablehq--block"><!--:d0bca6bd:--></div>
 <div class="observablehq observablehq--block"><!--:569b625c:--></div>
 <div class="observablehq observablehq--block"><!--:6b6d738c:--></div>
@@ -2893,22 +2909,21 @@ return {createOverallPlot};
 <div class="observablehq observablehq--block"><!--:f3e9e975:--></div>
 <div class="observablehq observablehq--block"><!--:8d85d522:--></div>
 <!-- ----------------  D A T A  ---------------- -->
-<div class="observablehq observablehq--block"><!--:376d8384:--></div>
+<div class="observablehq observablehq--block"><!--:c4428258:--></div>
 <div class="observablehq observablehq--block"><!--:8043f7ad:--></div>
-<div class="observablehq observablehq--block"><!--:1e1aab46:--></div>
-<div class="observablehq observablehq--block"><!--:e81778ff:--></div>
+<div class="observablehq observablehq--block"><!--:03a232db:--></div>
+<div class="observablehq observablehq--block"><!--:47b4cd63:--></div>
 <div class="observablehq observablehq--block"><!--:0ac7290d:--></div>
 <div class="observablehq observablehq--block"><!--:55e7c930:--></div>
-<div class="observablehq observablehq--block"><!--:3ebe8287:--></div>
+<div class="observablehq observablehq--block"><!--:3bbbd90f:--></div>
 <div class="observablehq observablehq--block"><!--:b6a14afc:--></div>
 <div class="observablehq observablehq--block"><!--:26c5bc6b:--></div>
 <div class="observablehq observablehq--block"><!--:3dc5a5d2:--></div>
 <div class="observablehq observablehq--block"><!--:6e09673d:--></div>
 <!-- ---------------- Sortable Table ---------------- -->
 <div class="observablehq observablehq--block"><!--:15b870e4:--></div>
-<div class="observablehq observablehq--block"><!--:77ea3ee0:--></div>
 <!-- ---------------- Glyph Maps ---------------- -->
-<div class="observablehq observablehq--block"><!--:177b2c8b:--></div>
+<div class="observablehq observablehq--block"><!--:81cf7538:--></div>
 <div class="observablehq observablehq--block"><!--:2386a129:--></div>
 <div class="observablehq observablehq--block"><!--:d3e304e8:--></div>
 <div class="observablehq observablehq--block"><!--:e1386e07:--></div>
@@ -2925,10 +2940,10 @@ return {createOverallPlot};
 <div class="observablehq observablehq--block"><observablehq-loading></observablehq-loading><!--:10050398:--></div>
 <div class="observablehq observablehq--block"><!--:f93e4c1e:--></div>
 <!-- ----------------  Link Table to Leaflet Map  ---------------- -->
-<div class="observablehq observablehq--block"><!--:9eb91f18:--></div>
+<div class="observablehq observablehq--block"><!--:1c1f6375:--></div>
 <!-- ----------------  Main Plot  ---------------- -->
 <div class="observablehq observablehq--block"><!--:8866168d:--></div>
-<div class="observablehq observablehq--block"><!--:2531d4da:--></div>
+<div class="observablehq observablehq--block"><!--:f511c572:--></div>
 <div class="observablehq observablehq--block"><!--:2b1041ed:--></div>
 </main>
 </div>
