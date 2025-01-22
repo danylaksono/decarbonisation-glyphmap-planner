@@ -2,7 +2,7 @@ body,
 html {
   height: 100%;
   margin: 0 !important;
-  /* overflow: hidden; */
+  overflow: hidden;
   padding: 0;
   font-family: var(--bulma-body-family);
 }
@@ -43,7 +43,7 @@ html {
   /* Spans 2 rows */
   display: grid;
   grid-column: 1;
-  grid-template-rows: 2fr 3fr; /* Sets the row proportions */
+  grid-template-rows: 5fr 3fr; /* Sets the row proportions */
   /* grid-template-rows: 1fr 1fr; Two equal rows */
   height: 100%;
   gap: 4px;
@@ -167,7 +167,7 @@ html {
 
 #graph-container {
   display: flex;
-  align-items: flex-start;
+  align-items: stretch;
   justify-content: space-between;
   width: 100%;
   /* border: 1px solid #ddd; */
@@ -232,6 +232,13 @@ html {
   flex: 1 1 0%;
   overflow-y: hidden;
   padding: 1em;
+}
+
+.quickview-header {
+  background-color: var(--bulma-scheme-main);
+  color: var(--bulma-text-strong);
+  /* padding: 1em; */
+  min-height: 1.5rem !important;
 }
 
 .field {
