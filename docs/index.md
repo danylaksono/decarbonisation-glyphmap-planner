@@ -42,11 +42,11 @@ import {
 import { createTimelineInterface } from "./components/decarb-model/timeline.js";
 import { LeafletMap } from "./components/leaflet/leaflet-map.js";
 
-import { createTable } from "./components/sorterTable.js";
-import {
-  SummarizeColumn,
-  createTableFormat,
-} from "./components/input-table/input-table.js";
+// import { createTable } from "./components/sorterTable.js";
+// import {
+//   SummarizeColumn,
+//   createTableFormat,
+// } from "./components/input-table/input-table.js";
 import {
   inferTypes,
   enrichGeoData,
@@ -166,7 +166,8 @@ function useState(value) {
 
 ```js
 console.log(">> Getters and Setters...");
-const [selected, setSelected] = useState([]); // selected data in table
+const [getSelectedAllocation, setSelectedAllocation] = useState([]); // selected allocation
+const [getSelectedTableRow, setSelectedTableRow] = useState([]); // selected table row
 const [getInterventions, setInterventions] = useState([]); // list of interventions
 const [getResults, setResults] = useState([]); // list of results, from running model
 const [selectedIntervention, setSelectedIntervention] = useState(null); // selected intervention in timeline
@@ -174,6 +175,9 @@ const [selectedInterventionIndex, setSelectedInterventionIndex] =
   useState(null); // selected intervention index
 const [detailOnDemand, setDetailOnDemand] = useState(null); // detail on demand on map
 const [currentConfig, setCurrentConfig] = useState({}); // current configuration
+```
+
+```js
 const [tableFiltered, setTableFiltered] = useState([]); // filtered table
 ```
 
@@ -290,7 +294,7 @@ const [allocations, setAllocations] = useState([]);
       <div class="card-content">
         <div class="content">
           ${mapAggregationInput}
-          ${timelineSwitchInput}
+          ${(map_aggregate === "Building Level") ? "": timelineSwitchInput}
           ${(map_aggregate === "Building Level") ? toggleGridmaps : ""}
           ${(map_aggregate === "LSOA Level") ? html`${playButton} ${morphFactorInput}` : ""}
           <!-- ${html`${playButton} ${morphFactorInput}`} -->
@@ -819,7 +823,7 @@ const budgetVisualiser = allocator.visualise(
   initialAllocations,
   (changes) => {
     // console.log("On Budget Updated", changes);
-    setSelected(changes);
+    setSelectedAllocation(changes);
   },
   400,
   200
@@ -827,7 +831,7 @@ const budgetVisualiser = allocator.visualise(
 ```
 
 ```js
-setSelected(allocator.getAllocations());
+setSelectedAllocation(allocator.getAllocations());
 ```
 
 ```js
@@ -836,7 +840,7 @@ setSelected(allocator.getAllocations());
   allocator;
   // const newAllocation = selected ? selected : allocator.getAllocations();
   // console.log("newAllocation", newAllocation);
-  saveToSession("allocations", selected);
+  saveToSession("allocations", getSelectedAllocation);
 }
 ```
 
@@ -909,7 +913,7 @@ playButton.addEventListener("click", () => {
 function addNewIntervention(data) {
   // console.log(Date.now(), "Checking allocations now:", allocations);
   const currentAllocation = getFromSession("allocations");
-
+  console.log(">> Current Allocation from session", currentAllocation);
   const yearlyBudgets = currentAllocation.map((item) => item.budget);
 
   const newConfig = {
@@ -1164,7 +1168,7 @@ function tableChanged(event) {
 
   if (event.type === "selection") {
     console.log("Selected rows:", event.selection);
-    setSelected(event.selection);
+    setSelectedTableRow(event.selection);
     console.log("Selection rule:", event.rule);
   }
 }
@@ -1313,19 +1317,6 @@ const cols = [
     thresholds: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30, 40, 50],
   },
 ];
-```
-
-```js
-console.log(">> Create sortable table...");
-const tableData = null;
-// const tableData = selectedIntervention
-//   ? stackedResults.buildings
-//   : buildingsData;
-
-// const table = new createTable(tableData, cols, (changes) => {
-//   console.log("Table changed:", changes);
-//   setSelected(changes.selection);
-// });
 ```
 
 <!-- ---------------- Glyph Maps ---------------- -->
@@ -1942,13 +1933,13 @@ function createLeafletMap(data, width, height) {
 ```js
 // get last element of the selectedRow if more than one columns are selected,
 // else return the first element
-function getSelectedRow() {
-  if (selectedRow.length > 1) {
-    return selectedRow[selectedRow.length - 1];
-  } else {
-    return selectedRow[0];
-  }
-}
+// function getSelectedRow() {
+//   if (selectedRow.length > 1) {
+//     return selectedRow[selectedRow.length - 1];
+//   } else {
+//     return selectedRow[0];
+//   }
+// }
 
 // if (selectedRow) {
 //   await mapInstance.flyTo({
