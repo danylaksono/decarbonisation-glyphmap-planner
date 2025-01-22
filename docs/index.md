@@ -42,11 +42,11 @@ import {
 import { createTimelineInterface } from "./components/decarb-model/timeline.js";
 import { LeafletMap } from "./components/leaflet/leaflet-map.js";
 
-import { createTable } from "./components/sorterTable.js";
-import {
-  SummarizeColumn,
-  createTableFormat,
-} from "./components/input-table/input-table.js";
+// import { createTable } from "./components/sorterTable.js";
+// import {
+//   SummarizeColumn,
+//   createTableFormat,
+// } from "./components/input-table/input-table.js";
 import {
   inferTypes,
   enrichGeoData,
@@ -77,7 +77,7 @@ const proj = new OSGB();
     "xcoord" AS x,
     "ycoord" AS y,
     "Air Source Heat Pump Potential_Building Size (m^2)" AS building_area,
-    "Air Source Heat Pump Potential_Garden Area (m^2)" AS garden_area,
+    -- "Air Source Heat Pump Potential_Garden Area (m^2)" AS garden_area,
     "Air Source Heat Pump Potential_Overall Suitability Rating" AS ashp_suitability,
     "Air Source Heat Pump Potential_Recommended Heat Pump Size [kW]" AS ashp_size,
     "Low Carbon Technology Costs_Air Source Heat Pump - Labour" AS ashp_labour,
@@ -90,22 +90,22 @@ const proj = new OSGB();
     "Low Carbon Technology Costs_Ground Source Heat Pump - Total" AS gshp_total,
     "Domestic Heat Demand_Annual Heat Demand (kWh)" AS heat_demand,
     "Domestic Insulation Potential_EPC Rating" AS EPC_rating,
-    "Domestic Insulation Potential_Insulation - Cavity Wall" AS insulation_cwall,
-    "Low Carbon Technology Costs_Insulation - Cavity Wall - Labour" AS insulation_cwall_labour,
-    "Low Carbon Technology Costs_Insulation - Cavity Wall  - Materials" AS insulation_cwall_materials,
-    "Low Carbon Technology Costs_Insulation - Cavity Wall - Total" AS insulation_cwall_total,
-    "Domestic Insulation Potential_Insulation - External Wall" AS insulation_ewall,
-    "Low Carbon Technology Costs_Insulation - External Wall - Labour" AS insulation_ewall_labour,
-    "Low Carbon Technology Costs_Insulation - External Wall - Material" AS insulation_ewall_materials,
-    "Low Carbon Technology Costs_Insulation - External Wall - Total" AS insulation_ewall_total,
-    "Domestic Insulation Potential_Insulation - Roof" AS insulation_roof,
-    "Low Carbon Technology Costs_Insulation - Loft - Labour" AS insulation_roof_labour,
-    "Low Carbon Technology Costs_Insulation - Loft - Material" AS insulation_roof_materials,
-    "Low Carbon Technology Costs_Insulation - Loft - Total" AS insulation_roof_total,
-    "Domestic Insulation Potential_Insulation - Under Floor" AS insulation_floor,
-    "Low Carbon Technology Costs_Insulation - Under Floor - Labour" AS insulation_floor_labour,
-    "Low Carbon Technology Costs_Insulation - Under Floor - Material" AS insulation_floor_materials,
-    "Low Carbon Technology Costs_Insulation - Under Floor- Total" AS insulation_floor_total,
+   -- "Domestic Insulation Potential_Insulation - Cavity Wall" AS insulation_cwall,
+   -- "Low Carbon Technology Costs_Insulation - Cavity Wall - Labour" AS insulation_cwall_labour,
+   -- "Low Carbon Technology Costs_Insulation - Cavity Wall  - Materials" AS insulation_cwall_materials,
+   -- "Low Carbon Technology Costs_Insulation - Cavity Wall - Total" AS insulation_cwall_total,
+   -- "Domestic Insulation Potential_Insulation - External Wall" AS insulation_ewall,
+   -- "Low Carbon Technology Costs_Insulation - External Wall - Labour" AS insulation_ewall_labour,
+   -- "Low Carbon Technology Costs_Insulation - External Wall - Material" AS insulation_ewall_materials,
+   -- "Low Carbon Technology Costs_Insulation - External Wall - Total" AS insulation_ewall_total,
+   -- "Domestic Insulation Potential_Insulation - Roof" AS insulation_roof,
+   -- "Low Carbon Technology Costs_Insulation - Loft - Labour" AS insulation_roof_labour,
+   -- "Low Carbon Technology Costs_Insulation - Loft - Material" AS insulation_roof_materials,
+   -- "Low Carbon Technology Costs_Insulation - Loft - Total" AS insulation_roof_total,
+   -- "Domestic Insulation Potential_Insulation - Under Floor" AS insulation_floor,
+   -- "Low Carbon Technology Costs_Insulation - Under Floor - Labour" AS insulation_floor_labour,
+   -- "Low Carbon Technology Costs_Insulation - Under Floor - Material" AS insulation_floor_materials,
+   -- "Low Carbon Technology Costs_Insulation - Under Floor- Total" AS insulation_floor_total,
     "Domestic PV Potential_Overall Suitability" AS pv_suitability,
     "Domestic PV Potential_Recommended Array Size [kW]" AS pv_size,
     "Domestic PV Potential_Annual Generation [kWh]" AS pv_generation,
@@ -166,7 +166,8 @@ function useState(value) {
 
 ```js
 console.log(">> Getters and Setters...");
-const [selected, setSelected] = useState([]); // selected data in table
+const [getSelectedAllocation, setSelectedAllocation] = useState([]); // selected allocation
+const [getSelectedTableRow, setSelectedTableRow] = useState([]); // selected table row
 const [getInterventions, setInterventions] = useState([]); // list of interventions
 const [getResults, setResults] = useState([]); // list of results, from running model
 const [selectedIntervention, setSelectedIntervention] = useState(null); // selected intervention in timeline
@@ -174,6 +175,9 @@ const [selectedInterventionIndex, setSelectedInterventionIndex] =
   useState(null); // selected intervention index
 const [detailOnDemand, setDetailOnDemand] = useState(null); // detail on demand on map
 const [currentConfig, setCurrentConfig] = useState({}); // current configuration
+```
+
+```js
 const [tableFiltered, setTableFiltered] = useState([]); // filtered table
 ```
 
@@ -198,7 +202,21 @@ const [allocations, setAllocations] = useState([]);
 <div class="grid-container" style="padding:2px; height:100vh;">
   <div id="left-panel" style="overflow-x:hidden; overflow-y:hidden; height:96vh;">
     <div class="left-top">
-      <div class="card" style="overflow-y: hidden;">
+      <div class="card" style="overflow-x:hidden;">
+          <header class="quickview-header">
+            <p class="title">Table View </p>
+          </header>
+          <div class="card-content">
+            <div class="content">
+              <!-- ${ObsTable} -->
+              ${table.getNode()}
+              ${tableFilteredData ? html`<p> No. of Filtered Data: ${tableFilteredData.length} </p>`: "" }
+            </div>
+          </div>
+        </div>
+    </div> <!-- left top -->
+    <div class="left-bottom">
+        <div class="card" style="overflow-y: hidden;">
         <header class="quickview-header">
           <p class="title">Decarbonisation Timeline</p>
         </header>
@@ -217,7 +235,7 @@ const [allocations, setAllocations] = useState([]);
                   console.log("Clicked Interventions", click, interventions[click]);
                 },
                 450,
-                200
+                220
               )}
               </div> <!-- timeline panel -->
               <nav id="timeline-buttons">
@@ -265,20 +283,6 @@ const [allocations, setAllocations] = useState([]);
           </div>
         </div>
       </div> <!-- card -->
-    </div> <!-- left top -->
-    <div class="left-bottom">
-        <div class="card" style="overflow-x:hidden;">
-          <!-- <header class="quickview-header">
-            <p class="title">Table View </p>
-          </header> -->
-          <div class="card-content">
-            <div class="content">
-              <!-- ${ObsTable} -->
-              ${table.getNode()}
-              ${tableFilteredData ? html`<p> No. of Filtered Data: ${tableFilteredData.length} </p>`: "" }
-            </div>
-          </div>
-        </div>
     </div> <!-- left bottom -->
     </div> <!-- left panel -->
 
@@ -290,7 +294,7 @@ const [allocations, setAllocations] = useState([]);
       <div class="card-content">
         <div class="content">
           ${mapAggregationInput}
-          ${timelineSwitchInput}
+          ${(map_aggregate === "Building Level") ? "": timelineSwitchInput}
           ${(map_aggregate === "Building Level") ? toggleGridmaps : ""}
           ${(map_aggregate === "LSOA Level") ? html`${playButton} ${morphFactorInput}` : ""}
           <!-- ${html`${playButton} ${morphFactorInput}`} -->
@@ -402,43 +406,41 @@ cancelButton.addEventListener("click", () => {
 });
 ```
 
-### Interventions
-
 ```js
-display(html`<p>"DATA DATA DATA"</p>`);
-display(data);
-// --- Analyze Stacked Results ---
-display(html`<p>"Stacked Recap.Summary:"</p>`);
-display(stackedRecap.summary);
+// display(html`<p>"DATA DATA DATA"</p>`);
+// display(data);
+// // --- Analyze Stacked Results ---
+// display(html`<p>"Stacked Recap.Summary:"</p>`);
+// display(stackedRecap.summary);
 
-display(html`<p>"Stacked Recap.YearlySummary:"</p>`);
-display(stackedRecap.yearlySummary);
+// display(html`<p>"Stacked Recap.YearlySummary:"</p>`);
+// display(stackedRecap.yearlySummary);
 
-display(html`<p>"Stacked Recap.Buildings:"</p>`);
-display(stackedRecap.buildings);
+// display(html`<p>"Stacked Recap.Buildings:"</p>`);
+// display(stackedRecap.buildings);
 
-display(html`<p>"Stacked Recap.IntervenedBuildings:"</p>`);
-display(stackedRecap.intervenedBuildings);
+// display(html`<p>"Stacked Recap.IntervenedBuildings:"</p>`);
+// display(stackedRecap.intervenedBuildings);
 
-display(html`<p>"List of Intervention Results recap:"</p>`);
-display(stackedRecap.recap);
+// display(html`<p>"List of Intervention Results recap:"</p>`);
+// display(stackedRecap.recap);
 
-display(html`<p>"Selected Intervention"</p>`);
-display(
-  selectedInterventionIndex === null
-    ? [...buildingsData]
-    : interventions[selectedInterventionIndex].intervenedBuildings
-);
+// display(html`<p>"Selected Intervention"</p>`);
+// display(
+//   selectedInterventionIndex === null
+//     ? [...buildingsData]
+//     : interventions[selectedInterventionIndex].intervenedBuildings
+// );
 ```
 
 ```js
-display(html`<p>"Grouped Intervention"</p>`);
+// display(html`<p>"Grouped Intervention"</p>`);
 const groupedData = MiniDecarbModel.group(data, ["lsoa", "interventionYear"]);
-display(groupedData);
+// display(groupedData);
 ```
 
 ```js
-display(html`<p>"Transformed Grouped Intervention"</p>`);
+// display(html`<p>"Transformed Grouped Intervention"</p>`);
 const timelineDataArray = [
   "interventionCost",
   "carbonSaved",
@@ -450,7 +452,7 @@ const transformedGroupedData = transformInterventionData(
   "E01035740",
   timelineDataArray
 );
-display(transformedGroupedData);
+// display(transformedGroupedData);
 ```
 
 ```js
@@ -819,7 +821,7 @@ const budgetVisualiser = allocator.visualise(
   initialAllocations,
   (changes) => {
     // console.log("On Budget Updated", changes);
-    setSelected(changes);
+    setSelectedAllocation(changes);
   },
   400,
   200
@@ -827,7 +829,7 @@ const budgetVisualiser = allocator.visualise(
 ```
 
 ```js
-setSelected(allocator.getAllocations());
+setSelectedAllocation(allocator.getAllocations());
 ```
 
 ```js
@@ -836,7 +838,7 @@ setSelected(allocator.getAllocations());
   allocator;
   // const newAllocation = selected ? selected : allocator.getAllocations();
   // console.log("newAllocation", newAllocation);
-  saveToSession("allocations", selected);
+  saveToSession("allocations", getSelectedAllocation);
 }
 ```
 
@@ -909,7 +911,7 @@ playButton.addEventListener("click", () => {
 function addNewIntervention(data) {
   // console.log(Date.now(), "Checking allocations now:", allocations);
   const currentAllocation = getFromSession("allocations");
-
+  console.log(">> Current Allocation from session", currentAllocation);
   const yearlyBudgets = currentAllocation.map((item) => item.budget);
 
   const newConfig = {
@@ -1099,9 +1101,13 @@ const flatData = selectedIntervenedBuildings?.map((p) => ({
 
 console.log(">> Intervened buildings", flatData);
 
+const filteredDatafromTableSession = getFromSession("tableFiltered");
+
 const data =
   selectedInterventionIndex === null
     ? stackedRecap?.buildings ?? buildingsData
+    : filteredDatafromTableSession
+    ? filteredDatafromTableSession
     : flatData;
 // console.log(">> DATA DATA DATA", data);
 ```
@@ -1115,35 +1121,57 @@ const glyphdata = aggregateValues(data, glyphVariables, "sum", true);
 
 ```js
 // Table Data
-const excludedColumns = ["properties", "x", "y", "score"]; // columns to exclude from the table
+const excludedColumns = [
+  "id",
+  "properties",
+  "x",
+  "y",
+  "score",
+  "ashp_labour",
+  "ashp_material",
+  "pv_labour",
+  "pv_material",
+  "gshp_labour",
+  "gshp_material",
+  "substation_headroom_pct",
+  "substation_peakload",
+  "deprivation_decile",
+  // "fuel_poverty_decile",
+]; // columns to exclude from the table
 const customOrder = [
-  { column: "id", unique: true },
   "lsoa",
   "msoa",
-  // ...(isIntervened ? ["isIntervened"] : []),
   "EPC_rating",
+  "ashp_suitability",
+  "pv_suitability",
+  "gshp_suitability",
 ];
 
-// const customOrder2 = ["id", "lsoa", "score"]; // custom order for columns
-// const tableColumns = customOrder2;
+const tableColumns = [
+  { column: "id", unique: true },
+  ...Object.keys(data[0])
+    .filter((key) => !excludedColumns.includes(key) && key !== "id")
+    .sort((a, b) => {
+      const indexA = customOrder.indexOf(a);
+      const indexB = customOrder.indexOf(b);
+      if (indexA === -1 && indexB === -1) return a.localeCompare(b);
+      if (indexA === -1) return 1;
+      if (indexB === -1) return -1;
+      return indexA - indexB;
+    }),
+];
 
-// const customHeader = {
-//   id: createTableHeader(50, 20, "#4a90e2", "id"),
-//   lsoa: createTableHeader(50, 20, "#4a90e2", "LSOA"),
-//   score: createTableHeader(50, 20, "#4a90e2", "Score"),
-// };
-
-const tableColumns = Object.keys(data[0])
-  .filter((key) => !excludedColumns.includes(key))
-  .sort((a, b) => {
-    const indexA = customOrder.indexOf(a);
-    const indexB = customOrder.indexOf(b);
-    if (indexA === -1 && indexB === -1) return a.localeCompare(b); // Sort alphabetically if not in customOrder
-    if (indexA === -1) return 1; // Put a after b
-    if (indexB === -1) return -1; // Put b after a
-    return indexA - indexB; // Sort based on customOrder
-  });
-// console.log(">> Define table columns...", tableColumns);
+// const tableColumns = Object.keys(data[0])
+//   .filter((key) => !excludedColumns.includes(key))
+//   .sort((a, b) => {
+//     const indexA = customOrder.indexOf(a);
+//     const indexB = customOrder.indexOf(b);
+//     if (indexA === -1 && indexB === -1) return a.localeCompare(b); // Sort alphabetically if not in customOrder
+//     if (indexA === -1) return 1; // Put a after b
+//     if (indexB === -1) return -1; // Put b after a
+//     return indexA - indexB; // Sort based on customOrder
+//   });
+console.log(">> Define table columns...", tableColumns);
 ```
 
 ```js
@@ -1153,6 +1181,7 @@ function tableChanged(event) {
   if (event.type === "filter") {
     console.log("Filtered indices:", event.indeces);
     console.log("Filter rule:", event.rule);
+    saveToSession("tableFiltered", event.indeces);
 
     setTableFiltered(event.indeces);
   }
@@ -1164,7 +1193,7 @@ function tableChanged(event) {
 
   if (event.type === "selection") {
     console.log("Selected rows:", event.selection);
-    setSelected(event.selection);
+    setSelectedTableRow(event.selection);
     console.log("Selection rule:", event.rule);
   }
 }
@@ -1194,8 +1223,7 @@ console.log("Filtered data:", tableFilteredData);
 ```
 
 ```js
-// test table
-const table = new sorterTable(data, customOrder, tableChanged, {
+const table = new sorterTable(data, tableColumns, tableChanged, {
   height: "300px",
 });
 ```
@@ -1315,19 +1343,6 @@ const cols = [
 ];
 ```
 
-```js
-console.log(">> Create sortable table...");
-const tableData = null;
-// const tableData = selectedIntervention
-//   ? stackedResults.buildings
-//   : buildingsData;
-
-// const table = new createTable(tableData, cols, (changes) => {
-//   console.log("Table changed:", changes);
-//   setSelected(changes.selection);
-// });
-```
-
 <!-- ---------------- Glyph Maps ---------------- -->
 
 ```js
@@ -1378,23 +1393,23 @@ const aggregations = {
   gshp_material: "sum",
   gshp_total: "sum",
   heat_demand: "sum",
-  insulation_rating: "count",
-  insulation_cwall: "count",
-  insulation_cwall_labour: "sum",
-  insulation_cwall_materials: "sum",
-  insulation_cwall_total: "sum",
-  insulation_ewall: "count",
-  insulation_ewall_labour: "sum",
-  insulation_ewall_materials: "sum",
-  insulation_ewall_total: "sum",
-  insulation_roof: "count",
-  insulation_roof_labour: "sum",
-  insulation_roof_materials: "sum",
-  insulation_roof_total: "sum",
-  insulation_floor: "count",
-  insulation_floor_labour: "sum",
-  insulation_floor_materials: "sum",
-  insulation_floor_total: "sum",
+  // insulation_rating: "count",
+  // insulation_cwall: "count",
+  // insulation_cwall_labour: "sum",
+  // insulation_cwall_materials: "sum",
+  // insulation_cwall_total: "sum",
+  // insulation_ewall: "count",
+  // insulation_ewall_labour: "sum",
+  // insulation_ewall_materials: "sum",
+  // insulation_ewall_total: "sum",
+  // insulation_roof: "count",
+  // insulation_roof_labour: "sum",
+  // insulation_roof_materials: "sum",
+  // insulation_roof_total: "sum",
+  // insulation_floor: "count",
+  // insulation_floor_labour: "sum",
+  // insulation_floor_materials: "sum",
+  // insulation_floor_total: "sum",
   pv_suitability: "count",
   pv_size: "sum",
   pv_generation: "sum",
@@ -1942,13 +1957,13 @@ function createLeafletMap(data, width, height) {
 ```js
 // get last element of the selectedRow if more than one columns are selected,
 // else return the first element
-function getSelectedRow() {
-  if (selectedRow.length > 1) {
-    return selectedRow[selectedRow.length - 1];
-  } else {
-    return selectedRow[0];
-  }
-}
+// function getSelectedRow() {
+//   if (selectedRow.length > 1) {
+//     return selectedRow[selectedRow.length - 1];
+//   } else {
+//     return selectedRow[0];
+//   }
+// }
 
 // if (selectedRow) {
 //   await mapInstance.flyTo({
@@ -1996,7 +2011,7 @@ function createOverallPotential(data, width = 1100, height = 800) {
     showTooltips: true,
     showLegend: true,
     title: "Overall Decarbonisation Potentials",
-    subtitle: "Aggregated building stock data",
+    subtitle: "Aggregated building stock data in Oxford",
     labels: glyphVariables,
     tooltipFormatter: (value) => `${(value * 100).toFixed(1)}%`,
     width: width,
