@@ -465,6 +465,10 @@ function tableChanged(event) {
     console.log("Filtered indices:", event);
     console.log("Filter rule:", event.rule);
   }
+  if (event.type === "columnSelection") {
+    console.log("Selected column:", event.selectedColumn);
+    // ... do something with the selected column information ...
+  }
 
   if (event.type === "sort") {
     console.log("Sorted indices:", event);

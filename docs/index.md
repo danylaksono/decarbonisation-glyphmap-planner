@@ -761,6 +761,15 @@ const toggle_grids = Generators.input(toggleGridmaps);
 ```
 
 ```js
+const filterByIds = (suitableIds) => {
+  return {
+    filterName: `Buildings with IDs in provided list (${suitableIds.length} buildings)`,
+    filterFunction: (building) => suitableIds.includes(building.id),
+  };
+};
+```
+
+```js
 // ----------------- QuickView Event Listeners -----------------
 const addInterventionBtn = document.getElementById("addInterventionBtn");
 
@@ -775,6 +784,7 @@ addInterventionBtn.addEventListener("click", () => {
     optimizationStrategy: "tech-first",
     tech: techsInput.value,
     priorities: [],
+    filters: [],
   };
 
   addNewIntervention(formData);
@@ -1103,11 +1113,16 @@ console.log(">> Intervened buildings", flatData);
 
 const filteredDatafromTableSession = getFromSession("tableFiltered");
 
+// const data =
+//   selectedInterventionIndex === null
+//     ? stackedRecap?.buildings ?? buildingsData
+//     : filteredDatafromTableSession
+//     ? filteredDatafromTableSession
+//     : flatData;
+
 const data =
   selectedInterventionIndex === null
     ? stackedRecap?.buildings ?? buildingsData
-    : filteredDatafromTableSession
-    ? filteredDatafromTableSession
     : flatData;
 // console.log(">> DATA DATA DATA", data);
 ```
@@ -1183,7 +1198,7 @@ function tableChanged(event) {
     console.log("Filter rule:", event.rule);
     saveToSession("tableFiltered", event.indeces);
 
-    setTableFiltered(event.indeces);
+    // setTableFiltered(event.indeces);
   }
 
   if (event.type === "sort") {
