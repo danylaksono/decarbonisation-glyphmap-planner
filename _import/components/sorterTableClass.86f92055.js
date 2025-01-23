@@ -265,6 +265,24 @@ export class sorterTable {
     });
   }
 
+  applyCustomFilter(filterFunction) {
+    // Apply the custom filter function to the data
+    this.dataInd = this.dataInd.filter((index) => {
+      return filterFunction(this.data[index]); // Pass the data object to the filter function
+    });
+
+    // Re-render the table and update visualizations
+    this.rebuildTable();
+    this.visControllers.forEach((vc) => {
+      if (vc && vc.updateData) {
+        vc.updateData(this.dataInd.map((i) => this.data[i][vc.columnName]));
+      }
+    });
+
+    // Notify about the filter change
+    this.changed({ type: "customFilter", indices: this.dataInd });
+  }
+
   getAllRules() {
     return this.rules;
   }
@@ -1558,4 +1576,62 @@ function HistogramController(data, binrules) {
 
   this.getNode = () => div;
   return this;
+}
+
+function createDynamicFilter(attribute, operator, threshold) {
+  // Validate attribute
+  if (typeof attribute !== "string" || attribute.trim() === "") {
+    throw new Error("Invalid attribute: Attribute must be a non-empty string.");
+  }
+
+  // Validate operator
+  const validOperators = [">", ">=", "<", "<=", "==", "!="];
+  if (!validOperators.includes(operator)) {
+    throw new Error(
+      `Invalid operator: Supported operators are ${validOperators.join(", ")}.`
+    );
+  }
+
+  // Validate threshold
+  if (typeof threshold !== "number" && typeof threshold !== "string") {
+    throw new Error(
+      "Invalid threshold: Threshold must be a number or a string."
+    );
+  }
+
+  // Return the filter function
+  return (dataObj) => {
+    // Use the passed data object directly
+    const value = dataObj[attribute];
+
+    if (value === undefined) {
+      console.warn(`Attribute "${attribute}" not found in data object.`);
+      return false; // Exclude data objects missing the attribute
+    }
+
+    // Perform comparison
+    try {
+      switch (operator) {
+        case ">":
+          return value > threshold;
+        case ">=":
+          return value >= threshold;
+        case "<":
+          return value < threshold;
+        case "<=":
+          return value <= threshold;
+        case "==":
+          return value == threshold; // Consider using === for strict equality
+        case "!=":
+          return value != threshold; // Consider using !== for strict inequality
+        default:
+          throw new Error(`Unexpected operator: ${operator}`);
+      }
+    } catch (error) {
+      console.error(
+        `Error evaluating filter: ${attribute} ${operator} ${threshold} - ${error.message}`
+      );
+      return false;
+    }
+  };
 }

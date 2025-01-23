@@ -10,9 +10,10 @@
 <link rel="modulepreload" href="../_observablehq/client.js">
 <link rel="modulepreload" href="../_observablehq/runtime.js">
 <link rel="modulepreload" href="../_observablehq/stdlib.js">
-<link rel="modulepreload" href="../_import/components/sorterTableClass.1dbbf5d8.js">
+<link rel="modulepreload" href="../_import/components/sorterTableClass.86f92055.js">
 <link rel="modulepreload" href="../_npm/d3@7.9.0/_esm.js">
 <link rel="modulepreload" href="../_observablehq/stdlib/duckdb.js">
+<link rel="modulepreload" href="../_npm/htl@0.3.1/_esm.js">
 <link rel="modulepreload" href="../_npm/@duckdb/duckdb-wasm@1.28.0/_esm.js">
 <link rel="modulepreload" href="../_npm/d3-array@3.2.4/_esm.js">
 <link rel="modulepreload" href="../_npm/d3-axis@3.0.0/_esm.js">
@@ -56,11 +57,11 @@ import {define} from "../_observablehq/client.js";
 import {registerFile, FileAttachment} from "../_observablehq/stdlib.js";
 import {registerTable} from "../_observablehq/stdlib/duckdb.js";
 
-registerFile("./../data/oxford_decarbonisation_data.parquet", {"name":"./../data/oxford_decarbonisation_data.parquet","path":"../_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1737627973672});
+registerFile("./../data/oxford_decarbonisation_data.parquet", {"name":"./../data/oxford_decarbonisation_data.parquet","path":"../_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1737628463724});
 registerTable("oxford", FileAttachment("../data/oxford_decarbonisation_data.parquet"));
 
 define({id: "e85258d2", outputs: ["sorterTable"], body: async () => {
-const {sorterTable} = await import("../_import/components/sorterTableClass.1dbbf5d8.js");
+const {sorterTable} = await import("../_import/components/sorterTableClass.86f92055.js");
 // import { createTable } from "./../components/sorterTable.js";
 
 return {sorterTable};
@@ -131,6 +132,113 @@ function useState(value) {
 }
 const [selected, setSelected] = useState({});
 return {useState,selected,setSelected};
+}});
+
+define({id: "71dd243b", outputs: ["columns2"], body: () => {
+const columns2 = [
+  { column: "id", unique: true },
+  "lsoa",
+  "insulation_rating",
+  "insulation_ewall",
+  { column: "pv_generation", alias: "PV Generation" },
+  "ashp_size",
+  "substation_demand",
+  "epc_rating",
+];
+return {columns2};
+}});
+
+define({id: "1bcb0b2e", outputs: ["createDynamicFilter"], body: () => {
+function createDynamicFilter(attribute, operator, threshold) {
+  // Validate attribute
+  if (typeof attribute !== "string" || attribute.trim() === "") {
+    throw new Error("Invalid attribute: Attribute must be a non-empty string.");
+  }
+
+  // Validate operator
+  const validOperators = [">", ">=", "<", "<=", "==", "!="];
+  if (!validOperators.includes(operator)) {
+    throw new Error(
+      `Invalid operator: Supported operators are ${validOperators.join(", ")}.`
+    );
+  }
+
+  // Validate threshold
+  if (typeof threshold !== "number" && typeof threshold !== "string") {
+    throw new Error(
+      "Invalid threshold: Threshold must be a number or a string."
+    );
+  }
+
+  // Return the filter function
+  return (dataObj) => {
+    // Use the passed data object directly
+    const value = dataObj[attribute];
+
+    if (value === undefined) {
+      console.warn(`Attribute "${attribute}" not found in data object.`);
+      return false; // Exclude data objects missing the attribute
+    }
+
+    // Perform comparison
+    try {
+      switch (operator) {
+        case ">":
+          return value > threshold;
+        case ">=":
+          return value >= threshold;
+        case "<":
+          return value < threshold;
+        case "<=":
+          return value <= threshold;
+        case "==":
+          return value == threshold; // Consider using === for strict equality
+        case "!=":
+          return value != threshold; // Consider using !== for strict inequality
+        default:
+          throw new Error(`Unexpected operator: ${operator}`);
+      }
+    } catch (error) {
+      console.error(
+        `Error evaluating filter: ${attribute} ${operator} ${threshold} - ${error.message}`
+      );
+      return false;
+    }
+  };
+}
+return {createDynamicFilter};
+}});
+
+define({id: "baf2b79f", inputs: ["createDynamicFilter","table2"], outputs: ["userAttribute","userOperator","userThreshold","customFilter"], body: (createDynamicFilter,table2) => {
+const userAttribute = "insulation_ewall";
+const userOperator = "==";
+const userThreshold = "Uninsulated";
+
+const customFilter = createDynamicFilter(
+  userAttribute,
+  userOperator,
+  userThreshold
+);
+
+table2.applyCustomFilter(customFilter);
+return {userAttribute,userOperator,userThreshold,customFilter};
+}});
+
+define({id: "72bf4f2c", inputs: ["sorterTable","oxBuildings","columns2","tableChanged","cellRenderers"], outputs: ["table2"], body: (sorterTable,oxBuildings,columns2,tableChanged,cellRenderers) => {
+const table2 = new sorterTable(oxBuildings, columns2, tableChanged, {
+  cellRenderers,
+  containerWidth: 300,
+});
+return {table2};
+}});
+
+define({id: "1ee36312", inputs: ["display","table2"], body: (display,table2) => {
+display(table2.getNode());
+}});
+
+define({id: "c720684d", inputs: ["html","display","selected"], body: (html,display,selected) => {
+html`Selected`;
+display(selected);
 }});
 
 define({id: "27a46bb1", outputs: ["buildings","columnNames"], body: () => {
@@ -406,36 +514,13 @@ return {table};
 <div class="observablehq observablehq--block"><!--:56d16951:--></div>
 <div class="observablehq observablehq--block"><!--:ee098890:--></div>
 <div class="observablehq observablehq--block"><!--:ec01b706:--></div>
+<div class="observablehq observablehq--block"><!--:71dd243b:--></div>
+<div class="observablehq observablehq--block"><!--:1bcb0b2e:--></div>
+<div class="observablehq observablehq--block"><!--:baf2b79f:--></div>
+<div class="observablehq observablehq--block"><!--:72bf4f2c:--></div>
+<div class="observablehq observablehq--block"><!--:1ee36312:--></div>
+<div class="observablehq observablehq--block"><!--:c720684d:--></div>
 <!--
-```js
-const columns = [
-  { column: "id", unique: true },
-  "lsoa",
-  "insulation_rating",
-  "insulation_ewall",
-  { column: "pv_generation", alias: "PV Generation" },
-  "ashp_size",
-  "substation_demand",
-  "epc_rating",
-];
-```
-
-```js
-const table = new sorterTable(buildings, columns, tableChanged, {
-  cellRenderers,
-  containerWidth: 300,
-});
-```
-
-```js
-display(table.getNode());
-```
-
-```js
-html`Selected`;
-display(selected);
-```
-
 ```js
 // const sortButton = document.createElement("button");
 // sortButton.textContent = "Sort by LSOA (Descending)";

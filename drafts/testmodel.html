@@ -14,7 +14,7 @@
 <link rel="modulepreload" href="../_observablehq/stdlib.js">
 <link rel="modulepreload" href="../_npm/leaflet@1.9.4/_esm.js">
 <link rel="modulepreload" href="../_import/components/glyph-designs/timeGlyph.a1969fec.js">
-<link rel="modulepreload" href="../_import/components/decarb-model/mini-decarbonisation.46bd522e.js">
+<link rel="modulepreload" href="../_import/components/decarb-model/mini-decarbonisation.8b9c339f.js">
 <link rel="modulepreload" href="../_import/components/leaflet/leaflet-map.498e936b.js">
 <link rel="modulepreload" href="../_npm/d3@7.9.0/_esm.js">
 <link rel="modulepreload" href="../_import/components/decarb-model/priority-queue.aea4e806.js">
@@ -66,11 +66,11 @@ import {define} from "../_observablehq/client.js";
 import {registerFile, FileAttachment} from "../_observablehq/stdlib.js";
 import {registerTable} from "../_observablehq/stdlib/duckdb.js";
 
-registerFile("./../data/oxford_decarbonisation_data.parquet", {"name":"./../data/oxford_decarbonisation_data.parquet","path":"../_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1737627973672});
+registerFile("./../data/oxford_decarbonisation_data.parquet", {"name":"./../data/oxford_decarbonisation_data.parquet","path":"../_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1737628463724});
 registerTable("oxford", FileAttachment("../data/oxford_decarbonisation_data.parquet"));
 
 define({id: "800c160e", outputs: ["L","TimeGlyph","GlyphCollection","InterventionManager","MiniDecarbModel","LeafletMap"], body: async () => {
-const [L, {TimeGlyph, GlyphCollection}, {InterventionManager, MiniDecarbModel}, {LeafletMap}] = await Promise.all([import("../_npm/leaflet@1.9.4/_esm.js"), import("../_import/components/glyph-designs/timeGlyph.a1969fec.js"), import("../_import/components/decarb-model/mini-decarbonisation.46bd522e.js"), import("../_import/components/leaflet/leaflet-map.498e936b.js")]);
+const [L, {TimeGlyph, GlyphCollection}, {InterventionManager, MiniDecarbModel}, {LeafletMap}] = await Promise.all([import("../_npm/leaflet@1.9.4/_esm.js"), import("../_import/components/glyph-designs/timeGlyph.a1969fec.js"), import("../_import/components/decarb-model/mini-decarbonisation.8b9c339f.js"), import("../_import/components/leaflet/leaflet-map.498e936b.js")]);
 
 return {L,TimeGlyph,GlyphCollection,InterventionManager,MiniDecarbModel,LeafletMap};
 }});
@@ -146,7 +146,7 @@ const newBuildings = [...oxford_data];
 return {newBuildings};
 }});
 
-define({id: "74a46275", outputs: ["listOfTech","config1","config2","config3"], body: () => {
+define({id: "9ebdbf22", inputs: ["MiniDecarbModel"], outputs: ["listOfTech","config1","config2","config3"], body: (MiniDecarbModel) => {
 console.log("this SPECIFICATION cell is called");
 // model specifications
 const listOfTech = {
@@ -195,10 +195,21 @@ const config1 = {
   id: Date.now(),
   initialYear: 2024,
   rolloverBudget: 0,
-  yearlyBudgets: [500000, 5000, 5000],
+  yearlyBudgets: [5000, 5000, 5000],
   optimizationStrategy: "tech-first",
   tech: "ASHP", // Use the tech name as a string
   priorities: [],
+  filters: [
+    {
+      // Using the createDynamicFilter helper
+      filterName: "high heat demand",
+      filterFunction: MiniDecarbModel.createDynamicFilter(
+        "heat_demand",
+        "<",
+        5500
+      ),
+    },
+  ],
 };
 
 // Config 2: Carbon-first, consider ASHP and PV, prioritize multi-deprivation
@@ -225,14 +236,14 @@ const config3 = {
 return {listOfTech,config1,config2,config3};
 }});
 
-define({id: "dff51016", inputs: ["InterventionManager","newBuildings","listOfTech","config1","config3"], outputs: ["manager","recaps","stackedRecap"], body: (InterventionManager,newBuildings,listOfTech,config1,config3) => {
+define({id: "e4fa4e3f", inputs: ["InterventionManager","newBuildings","listOfTech","config1"], outputs: ["manager","recaps","stackedRecap"], body: (InterventionManager,newBuildings,listOfTech,config1) => {
 console.log("this INTERVENTION cell is called");
 // --- Create an InterventionManager instance ---
 const manager = new InterventionManager(newBuildings, listOfTech);
 
 // --- Add interventions ---
 manager.addIntervention(config1);
-manager.addIntervention(config3);
+// manager.addIntervention(config3);
 // manager.addIntervention(config2);
 
 // --- Change the order of interventions ---
@@ -254,11 +265,14 @@ display(newResults);
 return {newResults};
 }});
 
-define({id: "94e2872f", inputs: ["display","html","recaps","stackedRecap","MiniDecarbModel"], outputs: ["groupedAll"], body: (display,html,recaps,stackedRecap,MiniDecarbModel) => {
+define({id: "4c7f8f77", inputs: ["display","html","recaps","stackedRecap","MiniDecarbModel"], outputs: ["groupedAll"], body: (display,html,recaps,stackedRecap,MiniDecarbModel) => {
 console.log("this ANALYZE cell is called");
 // --- Analyze Stacked Results ---
 display(html`<p>"RECAPS"</p>`);
 display(recaps);
+
+display(html`<p>"appliedFilters:"</p>`);
+display(recaps[0].appliedFilters);
 
 // --- Analyze Stacked Results ---
 display(html`<p>"Stacked Recap Summary:"</p>`);
@@ -283,51 +297,6 @@ const groupedAll = MiniDecarbModel.group(stackedRecap.intervenedBuildings, [
 ]);
 display(groupedAll);
 return {groupedAll};
-}});
-
-define({id: "22c7e45d", body: () => {
-// timeglyph
-// const tgData = {
-//   ASHP: [0.2, 0.3, 0.4, 0.5, 0.6], // Values for category "ASHP" over 5 time steps
-//   PV: [0.1, 0.2, 0.1, 0.15, 0.2], // Values for category "PV" over the same time steps
-//   Wind: [0.05, 0.1, 0.15, 0.1, 0.05], // Another category "Wind"
-// };
-
-// const data1 = {
-//   ASHP: [0.2, 0.3, 0.4],
-//   PV: [0.1, 0.2, 0.1],
-// };
-
-// const data2 = {
-//   ASHP: [0.3, 0.4, 0.5],
-//   PV: [0.2, 0.3, 0.2],
-// };
-
-// const tg = new TimeGlyph(tgData);
-// const tg2 = new TimeGlyph(data1);
-// const tg3 = new TimeGlyph(data2);
-}});
-
-define({id: "0521a05a", body: () => {
-// const [w, h] = [600, 600];
-// const ctx = context2d(w, h);
-// const canvas = ctx.canvas;
-// ctx.fillStyle = "lightgrey";
-// ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-// const x = 200;
-// const y = 200;
-
-// const collection = new GlyphCollection();
-
-// collection.add(tg2);
-// collection.add(tg3);
-
-// collection.recalculate();
-
-// display(canvas);
-// tg2.draw(ctx, x, y, 200, 200);
-// tg3.draw(ctx, x + 210, y, 200, 200);
 }});
 
 define({id: "05aa37cd", inputs: ["LeafletMap","stackedRecap","display"], outputs: ["container","mapInstance","buildingsData"], body: (LeafletMap,stackedRecap,display) => {
@@ -428,15 +397,13 @@ return {filterByIds};
 <h2 id="test-new-model" tabindex="-1"><a class="observablehq-header-anchor" href="#test-new-model">Test New Model</a></h2>
 <div class="observablehq observablehq--block"><!--:d4d16302:--></div>
 <div class="observablehq observablehq--block"><!--:e990e608:--></div>
-<div class="observablehq observablehq--block"><!--:74a46275:--></div>
-<div class="observablehq observablehq--block"><!--:dff51016:--></div>
+<div class="observablehq observablehq--block"><!--:9ebdbf22:--></div>
+<div class="observablehq observablehq--block"><!--:e4fa4e3f:--></div>
 <h3 id="modify-and-run-intervention" tabindex="-1"><a class="observablehq-header-anchor" href="#modify-and-run-intervention">Modify and Run Intervention</a></h3>
 <div class="observablehq observablehq--block"><!--:35688cd1:--></div>
 <h3 id="model-outputs" tabindex="-1"><a class="observablehq-header-anchor" href="#model-outputs">Model Outputs</a></h3>
-<div class="observablehq observablehq--block"><!--:94e2872f:--></div>
-<h2 id="glyphs" tabindex="-1"><a class="observablehq-header-anchor" href="#glyphs">Glyphs</a></h2>
-<div class="observablehq observablehq--block"><!--:22c7e45d:--></div>
-<div class="observablehq observablehq--block"><!--:0521a05a:--></div>
+<div class="observablehq observablehq--block"><!--:4c7f8f77:--></div>
+<h2 id="show-the-data" tabindex="-1"><a class="observablehq-header-anchor" href="#show-the-data">Show the data</a></h2>
 <div class="observablehq observablehq--block"><!--:05aa37cd:--></div>
 <div class="observablehq observablehq--block"><!--:b36c50d9:--></div>
 <div class="observablehq observablehq--block"><!--:905fa32c:--></div>
