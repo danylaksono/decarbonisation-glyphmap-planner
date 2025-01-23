@@ -139,10 +139,21 @@ const config1 = {
   id: Date.now(),
   initialYear: 2024,
   rolloverBudget: 0,
-  yearlyBudgets: [500000, 5000, 5000],
+  yearlyBudgets: [5000, 5000, 5000],
   optimizationStrategy: "tech-first",
   tech: "ASHP", // Use the tech name as a string
   priorities: [],
+  filters: [
+    {
+      // Using the createDynamicFilter helper
+      filterName: "high heat demand",
+      filterFunction: MiniDecarbModel.createDynamicFilter(
+        "heat_demand",
+        "<",
+        5500
+      ),
+    },
+  ],
 };
 
 // Config 2: Carbon-first, consider ASHP and PV, prioritize multi-deprivation
@@ -175,7 +186,7 @@ const manager = new InterventionManager(newBuildings, listOfTech);
 
 // --- Add interventions ---
 manager.addIntervention(config1);
-manager.addIntervention(config3);
+// manager.addIntervention(config3);
 // manager.addIntervention(config2);
 
 // --- Change the order of interventions ---
@@ -205,6 +216,9 @@ console.log("this ANALYZE cell is called");
 display(html`<p>"RECAPS"</p>`);
 display(recaps);
 
+display(html`<p>"appliedFilters:"</p>`);
+display(recaps[0].appliedFilters);
+
 // --- Analyze Stacked Results ---
 display(html`<p>"Stacked Recap Summary:"</p>`);
 display(stackedRecap.summary);
@@ -229,52 +243,7 @@ const groupedAll = MiniDecarbModel.group(stackedRecap.intervenedBuildings, [
 display(groupedAll);
 ```
 
-## Glyphs
-
-```js
-// timeglyph
-// const tgData = {
-//   ASHP: [0.2, 0.3, 0.4, 0.5, 0.6], // Values for category "ASHP" over 5 time steps
-//   PV: [0.1, 0.2, 0.1, 0.15, 0.2], // Values for category "PV" over the same time steps
-//   Wind: [0.05, 0.1, 0.15, 0.1, 0.05], // Another category "Wind"
-// };
-
-// const data1 = {
-//   ASHP: [0.2, 0.3, 0.4],
-//   PV: [0.1, 0.2, 0.1],
-// };
-
-// const data2 = {
-//   ASHP: [0.3, 0.4, 0.5],
-//   PV: [0.2, 0.3, 0.2],
-// };
-
-// const tg = new TimeGlyph(tgData);
-// const tg2 = new TimeGlyph(data1);
-// const tg3 = new TimeGlyph(data2);
-```
-
-```js
-// const [w, h] = [600, 600];
-// const ctx = context2d(w, h);
-// const canvas = ctx.canvas;
-// ctx.fillStyle = "lightgrey";
-// ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-// const x = 200;
-// const y = 200;
-
-// const collection = new GlyphCollection();
-
-// collection.add(tg2);
-// collection.add(tg3);
-
-// collection.recalculate();
-
-// display(canvas);
-// tg2.draw(ctx, x, y, 200, 200);
-// tg3.draw(ctx, x + 210, y, 200, 200);
-```
+## Show the data
 
 ```js
 const container = document.createElement("div");
