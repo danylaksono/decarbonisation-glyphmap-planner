@@ -356,6 +356,10 @@ export class InterventionManager {
       }
 
       const recap = model.run();
+      recap.intervenedBuildings = model
+        .getFilteredBuildings()
+        .filter((b) => b.isIntervened);
+      recap.allBuildings = model.getFilteredBuildings(); // Use the filtered list
       this.results.push(recap);
 
       // Update current rollover budget
@@ -527,6 +531,17 @@ export class MiniDecarbModel {
         (b) => b.properties[this.config.tech.config.suitabilityKey]
       );
     }
+
+    // Apply all added filters, if any:
+    if (this.config.filters && this.config.filters.length > 0) {
+      // Check for existence and length
+      for (const filter of this.config.filters) {
+        this.suitableBuildings = this.suitableBuildings.filter(
+          filter.filterFunction
+        );
+      }
+    }
+
     // console.log("Suitable buildings", this.suitableBuildings);
     this.suitableBuildingsNeedUpdate = false; // Reset the flag after filtering
   }
@@ -537,9 +552,27 @@ export class MiniDecarbModel {
 
   // Add a custom filter for buildings based on criteria
   addBuildingFilter(filterFn, filterName = "Custom filter") {
+    const beforeCount = this.suitableBuildings.length;
     this.suitableBuildings = this.suitableBuildings.filter(filterFn);
-    this.appliedFilters.push(filterName);
-    this.suitableBuildingsNeedUpdate = true; // Need to re-filter when filters change
+    const afterCount = this.suitableBuildings.length;
+
+    const filterResult = {
+      name: filterName,
+      buildingsBefore: beforeCount,
+      buildingsAfter: afterCount,
+      buildingsFiltered: beforeCount - afterCount,
+    };
+
+    this.appliedFilters.push(filterResult);
+
+    this.suitableBuildingsNeedUpdate = true;
+
+    console.log(`Filter "${filterName}" applied:`, filterResult);
+    return filterResult;
+
+    // this.suitableBuildings = this.suitableBuildings.filter(filterFn);
+    // this.appliedFilters.push(filterName);
+    // this.suitableBuildingsNeedUpdate = true; // Need to re-filter when filters change
   }
 
   // Add a priority to the configuration, not directly to the model
@@ -547,8 +580,22 @@ export class MiniDecarbModel {
     this.config.priorities.push({ attribute, order, scoreFunction, weight });
   }
 
+  getFilteredBuildings() {
+    // Key improvement: Encapsulate filtered access
+    if (this.suitableBuildingsNeedUpdate) {
+      this.filterSuitableBuildings();
+      this.suitableBuildingsNeedUpdate = false;
+    }
+    return this.suitableBuildings;
+  }
+
   // Get available buildings sorted by score and filtered by intervention status
   getAvailableBuildings() {
+    if (this.suitableBuildingsNeedUpdate) {
+      // Key: Check if filtering applied
+      this.filterSuitableBuildings();
+      this.suitableBuildingsNeedUpdate = false; // Reset after filtering
+    }
     if (!this._availableBuildings) {
       this._availableBuildings = this.suitableBuildings
         .filter((b) => !b.isIntervened)
@@ -565,6 +612,12 @@ export class MiniDecarbModel {
   // Cache building costs for the current technology
   precalculateBuildingCosts() {
     this._buildingCosts.clear(); // Clear previous costs
+
+    if (this.suitableBuildingsNeedUpdate) {
+      // Key: Check if filtering applied
+      this.filterSuitableBuildings();
+      this.suitableBuildingsNeedUpdate = false; // Reset after filtering
+    }
 
     if (this.config.optimizationStrategy === "carbon-first") {
       for (const building of this.suitableBuildings) {
@@ -622,6 +675,14 @@ export class MiniDecarbModel {
   }
 
   calculateBuildingScores() {
+    // if (this.suitableBuildingsNeedUpdate) {
+    //   // Key: Check if filtering applied
+    //   this.filterSuitableBuildings();
+    //   this.suitableBuildingsNeedUpdate = false; // Reset after filtering
+    // }
+
+    this.filterSuitableBuildings();
+
     // Calculate scores in a single pass
     const buildingCount = this.suitableBuildings.length;
 
@@ -743,6 +804,12 @@ export class MiniDecarbModel {
   }
 
   calculatePotentialInterventions() {
+    if (this.suitableBuildingsNeedUpdate) {
+      // Key: Check if filtering applied
+      this.filterSuitableBuildings();
+      this.suitableBuildingsNeedUpdate = false; // Reset after filtering
+    }
+
     // TEST: Calculate once and cache
     if (!this._potentialInterventions) {
       this._potentialInterventions = new Map();
@@ -781,6 +848,12 @@ export class MiniDecarbModel {
   runCarbonFirstModel() {
     let remainingBudget = this.config.rolledover_budget || 0;
     const interventions = this.calculatePotentialInterventions();
+
+    if (this.suitableBuildingsNeedUpdate) {
+      // Key: Check if filtering applied
+      this.filterSuitableBuildings();
+      this.suitableBuildingsNeedUpdate = false; // Reset after filtering
+    }
 
     // Create a priority queue for interventions, ordered by carbon efficiency (ascending)
     const pq = new PriorityQueue(
@@ -849,6 +922,12 @@ export class MiniDecarbModel {
   runTechFirstModel() {
     // Calculate and cache building costs
     this.precalculateBuildingCosts();
+
+    if (this.suitableBuildingsNeedUpdate) {
+      // Key: Check if filtering applied
+      this.filterSuitableBuildings();
+      this.suitableBuildingsNeedUpdate = false; // Reset after filtering
+    }
 
     let remainingBudget = this.config.rolledover_budget || 0;
 
@@ -932,6 +1011,10 @@ export class MiniDecarbModel {
 
   run() {
     // const startTime = performance.now();
+    // Initialize the model
+    // this.filterSuitableBuildings(); // already applied in score calculation
+    this.calculateBuildingScores();
+
     // Set tech to the first technology if optimization strategy is not carbon-first and only one technology is available
     if (
       this.config.optimizationStrategy !== "carbon-first" &&
@@ -939,10 +1022,6 @@ export class MiniDecarbModel {
     ) {
       this.config.tech = this.config.technologies[0];
     }
-
-    // Initialize the model
-    this.filterSuitableBuildings();
-    this.calculateBuildingScores();
 
     if (this.config.optimizationStrategy === "carbon-first") {
       console.log("Running carbon-first model");
@@ -965,6 +1044,12 @@ export class MiniDecarbModel {
       (sum, year) => sum + year.budgetSpent,
       0
     );
+
+    if (this.suitableBuildingsNeedUpdate) {
+      // Key: Check if filtering applied
+      this.filterSuitableBuildings();
+      this.suitableBuildingsNeedUpdate = false; // Reset after filtering
+    }
 
     // Calculate remaining budget correctly
     let remainingBudget = 0;
@@ -989,7 +1074,12 @@ export class MiniDecarbModel {
       intervenedBuildings: this.suitableBuildings.filter((b) => b.isIntervened),
       // untouchedBuildings: this.suitableBuildings.filter((b) => !b.isIntervened),
       allBuildings: this.suitableBuildings,
-      appliedFilters: this.appliedFilters,
+      appliedFilters: this.appliedFilters.map((filter) => ({
+        name: filter.name,
+        buildingsBefore: filter.buildingsBefore,
+        buildingsAfter: filter.buildingsAfter,
+        buildingsFiltered: filter.buildingsFiltered,
+      })),
       priorityRules: this.config.priorities.map((rule) => ({
         attribute: rule.attribute,
         hasCustomScore: !!rule.scoreFunction,
