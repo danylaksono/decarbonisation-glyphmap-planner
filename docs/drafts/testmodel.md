@@ -83,8 +83,7 @@ function context2d(width, height, dpi = devicePixelRatio) {
     "Substation - Headroom" AS substation_headroom,
     "Substation - % headroom" AS substation_headroom_pct,
     "Substation - Demand_rag" AS substation_demand
-FROM oxford b
-WHERE "substation_headroom" >= 1000;
+FROM oxford b;
 ```
 
 ```js
@@ -307,4 +306,59 @@ display(container);
 
 // // Clean up
 // mapInstance.destroy();
+```
+
+```js
+/*
+The filters will exclude non-matching buildings, while priorities will determine the order in which remaining buildings are selected for intervention within the budget constraints.
+
+The priority scoring combines:
+
+Base ranking score
+Custom score function (if provided)
+Weight multiplier
+Multiple priority rules can be combined
+
+Filters are applied first to create a subset of suitable buildings, then priorities determine the order of intervention within that subset.
+*/
+
+// Example priorities
+const priorities_example = [
+  {
+    attribute: "energyConsumption", // The building property to evaluate
+    order: "desc", // "asc" or "desc" ordering
+    scoreFunction: (value) => value / 100, // Optional custom scoring function
+    weight: 1.5, // Optional weight factor (default: 1.0)
+  },
+  {
+    attribute: "buildingAge",
+    order: "asc",
+    weight: 0.8,
+  },
+];
+// Example filters using the static helper method
+const filters_example = [
+  {
+    filterName: "Large Buildings Only",
+    filterFunction: (building) => building.properties.floorArea > 1000,
+  },
+  {
+    // Using the createDynamicFilter helper
+    filterName: "High Energy Buildings",
+    filterFunction: MiniDecarbModel.createDynamicFilter(
+      "energyConsumption",
+      ">",
+      500
+    ),
+  },
+];
+```
+
+```js
+const filterByIds = (suitableIds) => {
+  return {
+    filterName: `Buildings with IDs in provided list (${suitableIds.length} buildings)`,
+    filterFunction: (building) => suitableIds.includes(building.id),
+  };
+};
 ```
