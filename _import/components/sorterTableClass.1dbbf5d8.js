@@ -38,6 +38,7 @@ export class sorterTable {
     this.table.style.userSelect = "none";
     this.compoundSorting = {};
     this.selected = [];
+    this.selectedColumn = null;
     this.history = [];
     this.tBody = null;
     this.tHead = null;
@@ -413,6 +414,26 @@ export class sorterTable {
     //   this.tBody.querySelectorAll("tr").forEach((tr) => this.unselectRow(tr));
   }
 
+  selectColumn(columnName) {
+    console.log("Selected column:", columnName);
+    this.selectedColumn = columnName;
+
+    this.tHead.querySelectorAll("th").forEach((th) => {
+      th.classList.remove("selected-column"); // Remove previous selection
+    });
+
+    const columnIndex = this.columns.findIndex((c) => c.column === columnName);
+    if (columnIndex !== -1) {
+      this.tHead
+        .querySelectorAll("th")
+        [columnIndex].classList.add("selected-column");
+    }
+    this.changed({
+      type: "columnSelection",
+      selectedColumn: this.selectedColumn,
+    });
+  }
+
   selectRow(tr) {
     tr.selected = true;
     tr.style.fontWeight = "bold";
@@ -458,20 +479,62 @@ export class sorterTable {
       // --- Column Name ---
       let nameSpan = document.createElement("span");
       nameSpan.innerText = c.alias || c.column;
-      nameSpan.style.fontWeight = "bold";
-      nameSpan.style.fontFamily = "Arial, sans-serif"; // Set font (optional)
-      nameSpan.style.fontSize = "1em";
-      nameSpan.style.cursor = "pointer";
-      nameSpan.addEventListener("click", () => {
-        const sortCtrl = this.sortControllers.find(
-          (ctrl) => ctrl.getColumn() === c.column
-        );
-        if (sortCtrl) {
-          sortCtrl.toggleDirection();
-          this.sortChanged(sortCtrl);
-        }
+      // nameSpan.style.fontWeight = "bold";
+      // nameSpan.style.fontFamily = "Arial, sans-serif"; // Set font (optional)
+      // nameSpan.style.fontSize = "1em";
+      // nameSpan.style.cursor = "pointer";
+      Object.assign(nameSpan.style, {
+        fontWeight: "bold",
+        fontFamily: "Arial, sans-serif",
+        fontSize: "1em",
+        cursor: "pointer",
+        userSelect: "none",
+        padding: "8px",
       });
       th.appendChild(nameSpan);
+
+      // Add long press event listener
+      let longPressTimer;
+      let isLongPress = false;
+      nameSpan.addEventListener("mousedown", (event) => {
+        // Check if the left mouse button was pressed
+        if (event.button === 0) {
+          isLongPress = false; // Reset long press flag
+          longPressTimer = setTimeout(() => {
+            isLongPress = true;
+            this.selectColumn(c.column); // Select the column
+          }, 500); // Adjust the timeout (in milliseconds) as needed
+        }
+      });
+
+      nameSpan.addEventListener("mouseup", () => {
+        clearTimeout(longPressTimer);
+      });
+
+      // Prevent context menu on long press
+      nameSpan.addEventListener("contextmenu", (event) => {
+        event.preventDefault();
+      });
+
+      nameSpan.addEventListener("click", () => {
+        if (!isLongPress) {
+          const sortCtrl = this.sortControllers.find(
+            (ctrl) => ctrl.getColumn() === c.column
+          );
+          if (sortCtrl) {
+            sortCtrl.toggleDirection();
+            this.sortChanged(sortCtrl);
+          }
+        }
+      });
+
+      // nameSpan.addEventListener("mouseover", () => {
+      //   th.style.backgroundColor = "#e8e8e8"; // Light hover effect
+      // });
+
+      // nameSpan.addEventListener("mouseout", () => {
+      //   th.style.backgroundColor = ""; // Reset background color
+      // });
 
       // --- Controls Row ---
       let controlsRow = document.createElement("tr");

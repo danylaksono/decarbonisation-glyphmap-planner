@@ -10,7 +10,7 @@
 <link rel="modulepreload" href="../_observablehq/client.js">
 <link rel="modulepreload" href="../_observablehq/runtime.js">
 <link rel="modulepreload" href="../_observablehq/stdlib.js">
-<link rel="modulepreload" href="../_import/components/sorterTableClass.e30ae16e.js">
+<link rel="modulepreload" href="../_import/components/sorterTableClass.1dbbf5d8.js">
 <link rel="modulepreload" href="../_npm/d3@7.9.0/_esm.js">
 <link rel="modulepreload" href="../_observablehq/stdlib/duckdb.js">
 <link rel="modulepreload" href="../_npm/@duckdb/duckdb-wasm@1.28.0/_esm.js">
@@ -56,11 +56,11 @@ import {define} from "../_observablehq/client.js";
 import {registerFile, FileAttachment} from "../_observablehq/stdlib.js";
 import {registerTable} from "../_observablehq/stdlib/duckdb.js";
 
-registerFile("./../data/oxford_decarbonisation_data.parquet", {"name":"./../data/oxford_decarbonisation_data.parquet","path":"../_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1737527185061});
+registerFile("./../data/oxford_decarbonisation_data.parquet", {"name":"./../data/oxford_decarbonisation_data.parquet","path":"../_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1737627973672});
 registerTable("oxford", FileAttachment("../data/oxford_decarbonisation_data.parquet"));
 
 define({id: "e85258d2", outputs: ["sorterTable"], body: async () => {
-const {sorterTable} = await import("../_import/components/sorterTableClass.e30ae16e.js");
+const {sorterTable} = await import("../_import/components/sorterTableClass.1dbbf5d8.js");
 // import { createTable } from "./../components/sorterTable.js";
 
 return {sorterTable};
@@ -360,13 +360,17 @@ const cellRenderers = {
 return {cellRenderers};
 }});
 
-define({id: "3cac1ebb", inputs: ["setSelected"], outputs: ["tableChanged"], body: (setSelected) => {
+define({id: "5d0f3363", inputs: ["setSelected"], outputs: ["tableChanged"], body: (setSelected) => {
 function tableChanged(event) {
   console.log("Table changed:", event);
 
   if (event.type === "filter") {
     console.log("Filtered indices:", event);
     console.log("Filter rule:", event.rule);
+  }
+  if (event.type === "columnSelection") {
+    console.log("Selected column:", event.selectedColumn);
+    // ... do something with the selected column information ...
   }
 
   if (event.type === "sort") {
@@ -558,7 +562,7 @@ table {
 <div class="observablehq observablehq--block"><!--:456fc21f:--></div>
 <div class="observablehq observablehq--block"><!--:c41eecd9:--></div>
 <div class="observablehq observablehq--block"><!--:db2ad6db:--></div>
-<div class="observablehq observablehq--block"><!--:3cac1ebb:--></div>
+<div class="observablehq observablehq--block"><!--:5d0f3363:--></div>
 <div class="observablehq observablehq--block"><!--:cd07fd9e:--></div>
 </main>
 </div>

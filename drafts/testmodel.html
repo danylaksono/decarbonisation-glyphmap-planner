@@ -66,7 +66,7 @@ import {define} from "../_observablehq/client.js";
 import {registerFile, FileAttachment} from "../_observablehq/stdlib.js";
 import {registerTable} from "../_observablehq/stdlib/duckdb.js";
 
-registerFile("./../data/oxford_decarbonisation_data.parquet", {"name":"./../data/oxford_decarbonisation_data.parquet","path":"../_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1737527185061});
+registerFile("./../data/oxford_decarbonisation_data.parquet", {"name":"./../data/oxford_decarbonisation_data.parquet","path":"../_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1737627973672});
 registerTable("oxford", FileAttachment("../data/oxford_decarbonisation_data.parquet"));
 
 define({id: "800c160e", outputs: ["L","TimeGlyph","GlyphCollection","InterventionManager","MiniDecarbModel","LeafletMap"], body: async () => {
@@ -88,7 +88,7 @@ function context2d(width, height, dpi = devicePixelRatio) {
 return {context2d};
 }});
 
-define({id: "d7a9f714", inputs: ["sql"], outputs: ["oxford_data"], body: async (sql) => {
+define({id: "d4d16302", inputs: ["sql"], outputs: ["oxford_data"], body: async (sql) => {
 const oxford_data = await sql`  SELECT DISTINCT
     "UPRN" AS id,
     "LSOA code" AS lsoa,
@@ -137,8 +137,7 @@ const oxford_data = await sql`  SELECT DISTINCT
     "Substation - Headroom" AS substation_headroom,
     "Substation - % headroom" AS substation_headroom_pct,
     "Substation - Demand_rag" AS substation_demand
-FROM oxford b
-WHERE "substation_headroom" >= 1000;`;
+FROM oxford b;`;
 return {oxford_data};
 }});
 
@@ -364,13 +363,70 @@ display(container);
 return {container,mapInstance,buildingsData};
 }});
 
+define({id: "b36c50d9", inputs: ["MiniDecarbModel"], outputs: ["priorities_example","filters_example"], body: (MiniDecarbModel) => {
+/*
+The filters will exclude non-matching buildings, while priorities will determine the order in which remaining buildings are selected for intervention within the budget constraints.
+
+The priority scoring combines:
+
+Base ranking score
+Custom score function (if provided)
+Weight multiplier
+Multiple priority rules can be combined
+
+Filters are applied first to create a subset of suitable buildings, then priorities determine the order of intervention within that subset.
+*/
+
+// Example priorities
+const priorities_example = [
+  {
+    attribute: "energyConsumption", // The building property to evaluate
+    order: "desc", // "asc" or "desc" ordering
+    scoreFunction: (value) => value / 100, // Optional custom scoring function
+    weight: 1.5, // Optional weight factor (default: 1.0)
+  },
+  {
+    attribute: "buildingAge",
+    order: "asc",
+    weight: 0.8,
+  },
+];
+// Example filters using the static helper method
+const filters_example = [
+  {
+    filterName: "Large Buildings Only",
+    filterFunction: (building) => building.properties.floorArea > 1000,
+  },
+  {
+    // Using the createDynamicFilter helper
+    filterName: "High Energy Buildings",
+    filterFunction: MiniDecarbModel.createDynamicFilter(
+      "energyConsumption",
+      ">",
+      500
+    ),
+  },
+];
+return {priorities_example,filters_example};
+}});
+
+define({id: "905fa32c", outputs: ["filterByIds"], body: () => {
+const filterByIds = (suitableIds) => {
+  return {
+    filterName: `Buildings with IDs in provided list (${suitableIds.length} buildings)`,
+    filterFunction: (building) => suitableIds.includes(building.id),
+  };
+};
+return {filterByIds};
+}});
+
 </script>
 <div id="observablehq-center">
 <main id="observablehq-main" class="observablehq">
 <div class="observablehq observablehq--block"><!--:800c160e:--></div>
 <div class="observablehq observablehq--block"><!--:6e25fed2:--></div>
 <h2 id="test-new-model" tabindex="-1"><a class="observablehq-header-anchor" href="#test-new-model">Test New Model</a></h2>
-<div class="observablehq observablehq--block"><!--:d7a9f714:--></div>
+<div class="observablehq observablehq--block"><!--:d4d16302:--></div>
 <div class="observablehq observablehq--block"><!--:e990e608:--></div>
 <div class="observablehq observablehq--block"><!--:74a46275:--></div>
 <div class="observablehq observablehq--block"><!--:dff51016:--></div>
@@ -382,5 +438,7 @@ return {container,mapInstance,buildingsData};
 <div class="observablehq observablehq--block"><!--:22c7e45d:--></div>
 <div class="observablehq observablehq--block"><!--:0521a05a:--></div>
 <div class="observablehq observablehq--block"><!--:05aa37cd:--></div>
+<div class="observablehq observablehq--block"><!--:b36c50d9:--></div>
+<div class="observablehq observablehq--block"><!--:905fa32c:--></div>
 </main>
 </div>
