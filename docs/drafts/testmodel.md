@@ -149,8 +149,8 @@ const config1 = {
       filterName: "high heat demand",
       filterFunction: MiniDecarbModel.createDynamicFilter(
         "heat_demand",
-        "<",
-        5500
+        ">",
+        47000
       ),
     },
   ],
@@ -202,10 +202,10 @@ const stackedRecap = manager.getStackedResults();
 ### Modify and Run Intervention
 
 ```js
-const newResults = manager.modifyAndRunIntervention(0, {
-  yearlyBudgets: [5000, 0, 0],
-});
-display(newResults);
+// const newResults = manager.modifyAndRunIntervention(0, {
+//   yearlyBudgets: [5000, 0, 0],
+// });
+// display(newResults);
 ```
 
 ### Model Outputs
@@ -213,10 +213,10 @@ display(newResults);
 ```js
 console.log("this ANALYZE cell is called");
 // --- Analyze Stacked Results ---
-display(html`<p>"RECAPS"</p>`);
-display(recaps);
+display(html`<p>"RECAPS Intervened Buildings"</p>`);
+display(recaps[0].intervenedBuildings);
 
-display(html`<p>"appliedFilters:"</p>`);
+display(html`<p>"RECAPS appliedFilters:"</p>`);
 display(recaps[0].appliedFilters);
 
 // --- Analyze Stacked Results ---
