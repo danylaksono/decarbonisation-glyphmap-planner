@@ -356,10 +356,10 @@ export class InterventionManager {
       }
 
       const recap = model.run();
-      recap.intervenedBuildings = model
-        .getFilteredBuildings()
-        .filter((b) => b.isIntervened);
-      recap.allBuildings = model.getFilteredBuildings(); // Use the filtered list
+      // recap.intervenedBuildings = model
+      //   .getFilteredBuildings()
+      //   .filter((b) => b.isIntervened);
+      // recap.allBuildings = model.getFilteredBuildings(); // Use the filtered list
       this.results.push(recap);
 
       // Update current rollover budget
@@ -552,6 +552,12 @@ export class MiniDecarbModel {
 
   // Add a custom filter for buildings based on criteria
   addBuildingFilter(filterFn, filterName = "Custom filter") {
+    if (!this.config.filters) {
+      this.config.filters = [];
+    }
+    this.config.filters.push({ filterFunction: filterFn, filterName });
+
+    // Apply the filter to the current suitable buildings
     const beforeCount = this.suitableBuildings.length;
     this.suitableBuildings = this.suitableBuildings.filter(filterFn);
     const afterCount = this.suitableBuildings.length;
@@ -568,7 +574,7 @@ export class MiniDecarbModel {
     this.suitableBuildingsNeedUpdate = true;
 
     console.log(`Filter "${filterName}" applied:`, filterResult);
-    return filterResult;
+    return this;
 
     // this.suitableBuildings = this.suitableBuildings.filter(filterFn);
     // this.appliedFilters.push(filterName);
@@ -1012,7 +1018,7 @@ export class MiniDecarbModel {
   run() {
     // const startTime = performance.now();
     // Initialize the model
-    // this.filterSuitableBuildings(); // already applied in score calculation
+    this.filterSuitableBuildings(); // already applied in score calculation
     this.calculateBuildingScores();
 
     // Set tech to the first technology if optimization strategy is not carbon-first and only one technology is available
@@ -1088,7 +1094,6 @@ export class MiniDecarbModel {
     };
   }
 
-  // Helper method to stack results for visualisation
   // Helper method to stack results for visualisation
   static stackResults(modelRecaps) {
     const buildingMap = new Map();
@@ -1281,6 +1286,8 @@ export class MiniDecarbModel {
       }
     }
   }
+
+  // ------- Helper method to create dynamic filters
 
   static createDynamicFilter(attribute, operator, threshold) {
     // Helper method to create building filters

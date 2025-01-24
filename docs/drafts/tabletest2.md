@@ -88,6 +88,7 @@ const columns2 = [
   "ashp_size",
   "substation_demand",
   "epc_rating",
+  "heat_demand",
 ];
 ```
 
