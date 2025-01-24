@@ -14,7 +14,7 @@
 <link rel="modulepreload" href="../_observablehq/stdlib.js">
 <link rel="modulepreload" href="../_npm/leaflet@1.9.4/_esm.js">
 <link rel="modulepreload" href="../_import/components/glyph-designs/timeGlyph.a1969fec.js">
-<link rel="modulepreload" href="../_import/components/decarb-model/mini-decarbonisation.8b9c339f.js">
+<link rel="modulepreload" href="../_import/components/decarb-model/mini-decarbonisation.96368c2a.js">
 <link rel="modulepreload" href="../_import/components/leaflet/leaflet-map.498e936b.js">
 <link rel="modulepreload" href="../_npm/d3@7.9.0/_esm.js">
 <link rel="modulepreload" href="../_import/components/decarb-model/priority-queue.aea4e806.js">
@@ -66,11 +66,11 @@ import {define} from "../_observablehq/client.js";
 import {registerFile, FileAttachment} from "../_observablehq/stdlib.js";
 import {registerTable} from "../_observablehq/stdlib/duckdb.js";
 
-registerFile("./../data/oxford_decarbonisation_data.parquet", {"name":"./../data/oxford_decarbonisation_data.parquet","path":"../_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1737628463724});
+registerFile("./../data/oxford_decarbonisation_data.parquet", {"name":"./../data/oxford_decarbonisation_data.parquet","path":"../_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1737752927490});
 registerTable("oxford", FileAttachment("../data/oxford_decarbonisation_data.parquet"));
 
 define({id: "800c160e", outputs: ["L","TimeGlyph","GlyphCollection","InterventionManager","MiniDecarbModel","LeafletMap"], body: async () => {
-const [L, {TimeGlyph, GlyphCollection}, {InterventionManager, MiniDecarbModel}, {LeafletMap}] = await Promise.all([import("../_npm/leaflet@1.9.4/_esm.js"), import("../_import/components/glyph-designs/timeGlyph.a1969fec.js"), import("../_import/components/decarb-model/mini-decarbonisation.8b9c339f.js"), import("../_import/components/leaflet/leaflet-map.498e936b.js")]);
+const [L, {TimeGlyph, GlyphCollection}, {InterventionManager, MiniDecarbModel}, {LeafletMap}] = await Promise.all([import("../_npm/leaflet@1.9.4/_esm.js"), import("../_import/components/glyph-designs/timeGlyph.a1969fec.js"), import("../_import/components/decarb-model/mini-decarbonisation.96368c2a.js"), import("../_import/components/leaflet/leaflet-map.498e936b.js")]);
 
 return {L,TimeGlyph,GlyphCollection,InterventionManager,MiniDecarbModel,LeafletMap};
 }});
@@ -146,7 +146,7 @@ const newBuildings = [...oxford_data];
 return {newBuildings};
 }});
 
-define({id: "9ebdbf22", inputs: ["MiniDecarbModel"], outputs: ["listOfTech","config1","config2","config3"], body: (MiniDecarbModel) => {
+define({id: "8a2869b6", inputs: ["MiniDecarbModel"], outputs: ["listOfTech","config1","config2","config3"], body: (MiniDecarbModel) => {
 console.log("this SPECIFICATION cell is called");
 // model specifications
 const listOfTech = {
@@ -205,8 +205,8 @@ const config1 = {
       filterName: "high heat demand",
       filterFunction: MiniDecarbModel.createDynamicFilter(
         "heat_demand",
-        "<",
-        5500
+        ">",
+        47000
       ),
     },
   ],
@@ -257,21 +257,20 @@ const stackedRecap = manager.getStackedResults();
 return {manager,recaps,stackedRecap};
 }});
 
-define({id: "35688cd1", inputs: ["manager","display"], outputs: ["newResults"], body: (manager,display) => {
-const newResults = manager.modifyAndRunIntervention(0, {
-  yearlyBudgets: [5000, 0, 0],
-});
-display(newResults);
-return {newResults};
+define({id: "8b00cb67", body: () => {
+// const newResults = manager.modifyAndRunIntervention(0, {
+//   yearlyBudgets: [5000, 0, 0],
+// });
+// display(newResults);
 }});
 
-define({id: "4c7f8f77", inputs: ["display","html","recaps","stackedRecap","MiniDecarbModel"], outputs: ["groupedAll"], body: (display,html,recaps,stackedRecap,MiniDecarbModel) => {
+define({id: "35538d9d", inputs: ["display","html","recaps","stackedRecap","MiniDecarbModel"], outputs: ["groupedAll"], body: (display,html,recaps,stackedRecap,MiniDecarbModel) => {
 console.log("this ANALYZE cell is called");
 // --- Analyze Stacked Results ---
-display(html`<p>"RECAPS"</p>`);
-display(recaps);
+display(html`<p>"RECAPS Intervened Buildings"</p>`);
+display(recaps[0].intervenedBuildings);
 
-display(html`<p>"appliedFilters:"</p>`);
+display(html`<p>"RECAPS appliedFilters:"</p>`);
 display(recaps[0].appliedFilters);
 
 // --- Analyze Stacked Results ---
@@ -397,12 +396,12 @@ return {filterByIds};
 <h2 id="test-new-model" tabindex="-1"><a class="observablehq-header-anchor" href="#test-new-model">Test New Model</a></h2>
 <div class="observablehq observablehq--block"><!--:d4d16302:--></div>
 <div class="observablehq observablehq--block"><!--:e990e608:--></div>
-<div class="observablehq observablehq--block"><!--:9ebdbf22:--></div>
+<div class="observablehq observablehq--block"><!--:8a2869b6:--></div>
 <div class="observablehq observablehq--block"><!--:e4fa4e3f:--></div>
 <h3 id="modify-and-run-intervention" tabindex="-1"><a class="observablehq-header-anchor" href="#modify-and-run-intervention">Modify and Run Intervention</a></h3>
-<div class="observablehq observablehq--block"><!--:35688cd1:--></div>
+<div class="observablehq observablehq--block"><!--:8b00cb67:--></div>
 <h3 id="model-outputs" tabindex="-1"><a class="observablehq-header-anchor" href="#model-outputs">Model Outputs</a></h3>
-<div class="observablehq observablehq--block"><!--:4c7f8f77:--></div>
+<div class="observablehq observablehq--block"><!--:35538d9d:--></div>
 <h2 id="show-the-data" tabindex="-1"><a class="observablehq-header-anchor" href="#show-the-data">Show the data</a></h2>
 <div class="observablehq observablehq--block"><!--:05aa37cd:--></div>
 <div class="observablehq observablehq--block"><!--:b36c50d9:--></div>

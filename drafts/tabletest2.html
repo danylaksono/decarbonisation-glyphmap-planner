@@ -10,7 +10,7 @@
 <link rel="modulepreload" href="../_observablehq/client.js">
 <link rel="modulepreload" href="../_observablehq/runtime.js">
 <link rel="modulepreload" href="../_observablehq/stdlib.js">
-<link rel="modulepreload" href="../_import/components/sorterTableClass.86f92055.js">
+<link rel="modulepreload" href="../_import/components/sorterTableClass.818b0a2b.js">
 <link rel="modulepreload" href="../_npm/d3@7.9.0/_esm.js">
 <link rel="modulepreload" href="../_observablehq/stdlib/duckdb.js">
 <link rel="modulepreload" href="../_npm/htl@0.3.1/_esm.js">
@@ -57,11 +57,11 @@ import {define} from "../_observablehq/client.js";
 import {registerFile, FileAttachment} from "../_observablehq/stdlib.js";
 import {registerTable} from "../_observablehq/stdlib/duckdb.js";
 
-registerFile("./../data/oxford_decarbonisation_data.parquet", {"name":"./../data/oxford_decarbonisation_data.parquet","path":"../_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1737628463724});
+registerFile("./../data/oxford_decarbonisation_data.parquet", {"name":"./../data/oxford_decarbonisation_data.parquet","path":"../_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1737752927490});
 registerTable("oxford", FileAttachment("../data/oxford_decarbonisation_data.parquet"));
 
 define({id: "e85258d2", outputs: ["sorterTable"], body: async () => {
-const {sorterTable} = await import("../_import/components/sorterTableClass.86f92055.js");
+const {sorterTable} = await import("../_import/components/sorterTableClass.818b0a2b.js");
 // import { createTable } from "./../components/sorterTable.js";
 
 return {sorterTable};
@@ -134,7 +134,7 @@ const [selected, setSelected] = useState({});
 return {useState,selected,setSelected};
 }});
 
-define({id: "71dd243b", outputs: ["columns2"], body: () => {
+define({id: "2bc6ef3e", outputs: ["columns2"], body: () => {
 const columns2 = [
   { column: "id", unique: true },
   "lsoa",
@@ -144,6 +144,7 @@ const columns2 = [
   "ashp_size",
   "substation_demand",
   "epc_rating",
+  "heat_demand",
 ];
 return {columns2};
 }});
@@ -514,7 +515,7 @@ return {table};
 <div class="observablehq observablehq--block"><!--:56d16951:--></div>
 <div class="observablehq observablehq--block"><!--:ee098890:--></div>
 <div class="observablehq observablehq--block"><!--:ec01b706:--></div>
-<div class="observablehq observablehq--block"><!--:71dd243b:--></div>
+<div class="observablehq observablehq--block"><!--:2bc6ef3e:--></div>
 <div class="observablehq observablehq--block"><!--:1bcb0b2e:--></div>
 <div class="observablehq observablehq--block"><!--:baf2b79f:--></div>
 <div class="observablehq observablehq--block"><!--:72bf4f2c:--></div>
