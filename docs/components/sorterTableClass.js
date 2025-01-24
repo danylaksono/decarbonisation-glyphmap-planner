@@ -163,9 +163,9 @@ export class sorterTable {
       if (type === "continuous") {
         colDef.thresholds = calculateThresholds(data, colName);
       } else if (type === "ordinal") {
-        colDef.nominals = [...new Set(data.map((d) => d[colName]))]; // Get unique values
+        colDef.nominals = [...new Set(data.map((d) => d[colName]))].sort(); // Get unique values
       } else if (type === "date") {
-        //you can define specific logic for date type later.
+        // specific logic for date type later.
       }
 
       // console.log("setting column type:", colName, type);  // DEBUG
