@@ -9,7 +9,7 @@ sql:
 
 ```js
 // import { createTable } from "./../components/sorterTable.js";
-import { sorterTable } from "./../components/sorterTableClass.js";
+import { sorterTable } from "./../components/sorttable/sorterTableClass.js";
 ```
 
 # Table Experiments 2
