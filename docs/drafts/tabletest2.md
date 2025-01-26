@@ -80,7 +80,7 @@ const [selected, setSelected] = useState({});
 
 ```js
 const columns2 = [
-  { column: "id", unique: true },
+  { column: "id" },
   "lsoa",
   "epc_rating",
   "insulation_ewall",
