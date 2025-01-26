@@ -18,7 +18,7 @@
 <link rel="modulepreload" href="./_node/@turf/turf@7.1.0/index.js">
 <link rel="modulepreload" href="./_npm/bulma-toast@2.4.4/_esm.js">
 <link rel="modulepreload" href="./_npm/bulma-quickview@2.0.0/dist/js/bulma-quickview.js">
-<link rel="modulepreload" href="./_import/components/sorterTableClass.818b0a2b.js">
+<link rel="modulepreload" href="./_import/components/sorttable/sorterTableClass.6c30725f.js">
 <link rel="modulepreload" href="./_import/components/glyph-designs/timeGlyph.a1969fec.js">
 <link rel="modulepreload" href="./_import/components/glyph-designs/mirrorTimeGlyph.5185ad88.js">
 <link rel="modulepreload" href="./_import/components/glyph-designs/radialglyph.cbd7ddeb.js">
@@ -216,14 +216,14 @@ import {define} from "./_observablehq/client.js";
 import {registerFile, FileAttachment} from "./_observablehq/stdlib.js";
 import {registerTable} from "./_observablehq/stdlib/duckdb.js";
 
-registerFile("./data/oxford_decarbonisation_data.parquet", {"name":"./data/oxford_decarbonisation_data.parquet","path":"./_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1737752927490});
-registerFile("./data/oxford_lsoa_boundary.geojson", {"name":"./data/oxford_lsoa_boundary.geojson","mimeType":"application/geo+json","path":"./_file/data/oxford_lsoa_boundary.50c731e8.geojson","lastModified":1737752927500});
-registerFile("./data/oxford_lsoas_cartogram.json", {"name":"./data/oxford_lsoas_cartogram.json","mimeType":"application/json","path":"./_file/data/oxford_lsoas_cartogram.a72fa2b8.json","lastModified":1737752927500});
-registerFile("./data/oxford_lsoas_regular.json", {"name":"./data/oxford_lsoas_regular.json","mimeType":"application/json","path":"./_file/data/oxford_lsoas_regular.e1c36e7e.json","lastModified":1737752927500});
+registerFile("./data/oxford_decarbonisation_data.parquet", {"name":"./data/oxford_decarbonisation_data.parquet","path":"./_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1737935084634});
+registerFile("./data/oxford_lsoa_boundary.geojson", {"name":"./data/oxford_lsoa_boundary.geojson","mimeType":"application/geo+json","path":"./_file/data/oxford_lsoa_boundary.50c731e8.geojson","lastModified":1737935084644});
+registerFile("./data/oxford_lsoas_cartogram.json", {"name":"./data/oxford_lsoas_cartogram.json","mimeType":"application/json","path":"./_file/data/oxford_lsoas_cartogram.a72fa2b8.json","lastModified":1737935084644});
+registerFile("./data/oxford_lsoas_regular.json", {"name":"./data/oxford_lsoas_regular.json","mimeType":"application/json","path":"./_file/data/oxford_lsoas_regular.e1c36e7e.json","lastModified":1737935084644});
 registerTable("oxford", FileAttachment("./data/oxford_decarbonisation_data.parquet"));
 
-define({id: "ec2b6149", outputs: ["d3","flubber","require","Mutable","turf","bulmaToast","bulmaQuickview","sorterTable","TimeGlyph","GlyphCollection","StreamGraphGlyph","RadialGlyph","RadialGlyphOverall","glyphMap","createDiscretiserValue","_drawCellBackground","OSGB","BudgetAllocator","InterventionManager","MiniDecarbModel","createTimelineInterface","LeafletMap","inferTypes","enrichGeoData","normaliseData","insideCell","debounceInput","saveToSession","getFromSession","transformCoordinates","transformGeometry","normalisebyGroup","aggregateValues"], body: async () => {
-const [{require}, {Mutable}, turf, bulmaToast, bulmaQuickview, {sorterTable}, {TimeGlyph, GlyphCollection}, {StreamGraphGlyph}, {RadialGlyph}, {RadialGlyphOverall}, {glyphMap, createDiscretiserValue, _drawCellBackground}, {OSGB}, {BudgetAllocator}, {InterventionManager, MiniDecarbModel}, {createTimelineInterface}, {LeafletMap}, {inferTypes, enrichGeoData, normaliseData, insideCell, debounceInput, saveToSession, getFromSession, transformCoordinates, transformGeometry, normalisebyGroup, aggregateValues}] = await Promise.all([import("./_npm/d3-require@1.3.0/_esm.js"), import("./_observablehq/stdlib.js"), import("./_node/@turf/turf@7.1.0/index.js"), import("./_npm/bulma-toast@2.4.4/_esm.js"), import("./_npm/bulma-quickview@2.0.0/dist/js/bulma-quickview.js"), import("./_import/components/sorterTableClass.818b0a2b.js"), import("./_import/components/glyph-designs/timeGlyph.a1969fec.js"), import("./_import/components/glyph-designs/mirrorTimeGlyph.5185ad88.js"), import("./_import/components/glyph-designs/radialglyph.cbd7ddeb.js"), import("./_import/components/glyph-designs/radialGlyphOverall.e15902a2.js"), import("./_import/components/gridded-glyphmaps/index.min.f034b425.js"), import("./_import/components/osgb/index.1d2476df.js"), import("./_import/components/decarb-model/budget-allocator.5c9a0a07.js"), import("./_import/components/decarb-model/mini-decarbonisation.96368c2a.js"), import("./_import/components/decarb-model/timeline.2b635da2.js"), import("./_import/components/leaflet/leaflet-map.498e936b.js"), import("./_import/components/helpers.c82b92f4.js")]);
+define({id: "4278f92a", outputs: ["d3","flubber","require","Mutable","turf","bulmaToast","bulmaQuickview","sorterTable","TimeGlyph","GlyphCollection","StreamGraphGlyph","RadialGlyph","RadialGlyphOverall","glyphMap","createDiscretiserValue","_drawCellBackground","OSGB","BudgetAllocator","InterventionManager","MiniDecarbModel","createTimelineInterface","LeafletMap","inferTypes","enrichGeoData","normaliseData","insideCell","debounceInput","saveToSession","getFromSession","transformCoordinates","transformGeometry","normalisebyGroup","aggregateValues"], body: async () => {
+const [{require}, {Mutable}, turf, bulmaToast, bulmaQuickview, {sorterTable}, {TimeGlyph, GlyphCollection}, {StreamGraphGlyph}, {RadialGlyph}, {RadialGlyphOverall}, {glyphMap, createDiscretiserValue, _drawCellBackground}, {OSGB}, {BudgetAllocator}, {InterventionManager, MiniDecarbModel}, {createTimelineInterface}, {LeafletMap}, {inferTypes, enrichGeoData, normaliseData, insideCell, debounceInput, saveToSession, getFromSession, transformCoordinates, transformGeometry, normalisebyGroup, aggregateValues}] = await Promise.all([import("./_npm/d3-require@1.3.0/_esm.js"), import("./_observablehq/stdlib.js"), import("./_node/@turf/turf@7.1.0/index.js"), import("./_npm/bulma-toast@2.4.4/_esm.js"), import("./_npm/bulma-quickview@2.0.0/dist/js/bulma-quickview.js"), import("./_import/components/sorttable/sorterTableClass.6c30725f.js"), import("./_import/components/glyph-designs/timeGlyph.a1969fec.js"), import("./_import/components/glyph-designs/mirrorTimeGlyph.5185ad88.js"), import("./_import/components/glyph-designs/radialglyph.cbd7ddeb.js"), import("./_import/components/glyph-designs/radialGlyphOverall.e15902a2.js"), import("./_import/components/gridded-glyphmaps/index.min.f034b425.js"), import("./_import/components/osgb/index.1d2476df.js"), import("./_import/components/decarb-model/budget-allocator.5c9a0a07.js"), import("./_import/components/decarb-model/mini-decarbonisation.96368c2a.js"), import("./_import/components/decarb-model/timeline.2b635da2.js"), import("./_import/components/leaflet/leaflet-map.498e936b.js"), import("./_import/components/helpers.c82b92f4.js")]);
 console.log(">> Importing libraries...");
 const d3 = require("d3", "d3-geo-projection");
 const flubber = require("flubber@0.4");
@@ -1305,10 +1305,10 @@ const glyphdata = aggregateValues(data, glyphVariables, "sum", true);
 return {glyphdata};
 }});
 
-define({id: "03a232db", inputs: ["data"], outputs: ["excludedColumns","customOrder","tableColumns"], body: (data) => {
+define({id: "8812ba21", inputs: ["data"], outputs: ["excludedColumns","customOrder","tableColumns"], body: (data) => {
 // Table Data
 const excludedColumns = [
-  "id",
+  // "id",
   "properties",
   "x",
   "y",
@@ -1325,6 +1325,7 @@ const excludedColumns = [
   // "fuel_poverty_decile",
 ]; // columns to exclude from the table
 const customOrder = [
+  "id",
   "lsoa",
   "msoa",
   "EPC_rating",
@@ -1334,9 +1335,9 @@ const customOrder = [
 ];
 
 const tableColumns = [
-  { column: "id", unique: true },
+  // { column: "id" },
   ...Object.keys(data[0])
-    .filter((key) => !excludedColumns.includes(key) && key !== "id")
+    .filter((key) => !excludedColumns.includes(key)) // && key !== "id")
     .sort((a, b) => {
       const indexA = customOrder.indexOf(a);
       const indexB = customOrder.indexOf(b);
@@ -2723,7 +2724,7 @@ return {createOverallPlot};
 <div id="observablehq-center">
 <main id="observablehq-main" class="observablehq">
 <!-- ------------ Imports ------------ -->
-<div class="observablehq observablehq--block"><!--:ec2b6149:--></div>
+<div class="observablehq observablehq--block"><!--:4278f92a:--></div>
 <div class="observablehq observablehq--block"><!--:5dd85f8f:--></div>
 <!-- ---------------- Loading Raw Data ---------------- -->
 <div class="observablehq observablehq--block"><!--:1e9c393a:--></div>
@@ -2928,7 +2929,7 @@ return {createOverallPlot};
 <!-- ----------------  D A T A  ---------------- -->
 <div class="observablehq observablehq--block"><!--:5ddd2f10:--></div>
 <div class="observablehq observablehq--block"><!--:8043f7ad:--></div>
-<div class="observablehq observablehq--block"><!--:03a232db:--></div>
+<div class="observablehq observablehq--block"><!--:8812ba21:--></div>
 <div class="observablehq observablehq--block"><!--:1c78c411:--></div>
 <div class="observablehq observablehq--block"><!--:0ac7290d:--></div>
 <div class="observablehq observablehq--block"><!--:55e7c930:--></div>
