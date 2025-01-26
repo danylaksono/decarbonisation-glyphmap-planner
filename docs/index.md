@@ -20,7 +20,7 @@ import * as turf from "@turf/turf";
 import * as bulmaToast from "npm:bulma-toast";
 import * as bulmaQuickview from "npm:bulma-quickview@2.0.0/dist/js/bulma-quickview.js";
 
-import { sorterTable } from "./components/sorterTableClass.js";
+import { sorterTable } from "./components/sorttable/sorterTableClass.js";
 import {
   TimeGlyph,
   GlyphCollection,
@@ -1137,7 +1137,7 @@ const glyphdata = aggregateValues(data, glyphVariables, "sum", true);
 ```js
 // Table Data
 const excludedColumns = [
-  "id",
+  // "id",
   "properties",
   "x",
   "y",
@@ -1154,6 +1154,7 @@ const excludedColumns = [
   // "fuel_poverty_decile",
 ]; // columns to exclude from the table
 const customOrder = [
+  "id",
   "lsoa",
   "msoa",
   "EPC_rating",
@@ -1163,9 +1164,9 @@ const customOrder = [
 ];
 
 const tableColumns = [
-  { column: "id", unique: true },
+  // { column: "id" },
   ...Object.keys(data[0])
-    .filter((key) => !excludedColumns.includes(key) && key !== "id")
+    .filter((key) => !excludedColumns.includes(key)) // && key !== "id")
     .sort((a, b) => {
       const indexA = customOrder.indexOf(a);
       const indexB = customOrder.indexOf(b);
