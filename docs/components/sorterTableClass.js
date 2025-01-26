@@ -117,11 +117,11 @@ export class sorterTable {
   }
 
   inferColumnTypesAndThresholds(data) {
+    // Helper function to infer the type of a column
     const getType = (data, column) => {
       for (const d of data) {
         const value = d[column];
         if (value === undefined) {
-          // Check for undefined
           console.warn(`Value undefined for column: ${column}`);
           continue;
         }
@@ -130,46 +130,88 @@ export class sorterTable {
         if (value instanceof Date) return "date";
         return "ordinal";
       }
-      // if all are null, return ordinal
+      // If all values are null or undefined, default to ordinal
       return "ordinal";
     };
 
+    // Helper function to calculate thresholds for continuous columns
     const calculateThresholds = (data, column, numBins = 10) => {
-      // const values = data.map((d) => d[column]).filter((v) => v != null);
+      // Validate numBins
+      if (
+        typeof numBins !== "number" ||
+        numBins < 1 ||
+        !Number.isInteger(numBins)
+      ) {
+        throw new Error("numBins must be a positive integer greater than 0.");
+      }
+
+      // Extract and filter values
       const values = data
         .map((d) => d[column])
         .filter((v) => v != null && v !== undefined);
-      const min = d3.min(values);
-      const max = d3.max(values);
 
-      // Simple equal-width binning (you can use more sophisticated methods)
-      const binWidth = (max - min) / numBins;
-      const thresholds = d3.range(1, numBins).map((i) => min + i * binWidth);
+      // Handle edge case where no valid values are found
+      if (values.length === 0) {
+        console.warn(
+          `No valid values found for column: ${column}. Using default thresholds.`
+        );
+        return d3.range(1, numBins).map((i) => i); // Default thresholds
+      }
+
+      // Use d3.histogram to calculate bins
+      const histogram = d3
+        .histogram()
+        .domain([d3.min(values), d3.max(values)]) // Set the domain
+        .thresholds(numBins); // Set the number of bins
+
+      const bins = histogram(values);
+
+      // Extract thresholds from the bins
+      const thresholds = bins.slice(1).map((bin) => bin.x0);
+
       return thresholds;
     };
 
-    // console.log("Columns before type inference:", this.columns);  // DEBUG
+    // Helper function to get unique values for ordinal columns
+    const getUniqueValues = (data, column) => {
+      const values = data
+        .map((d) => d[column])
+        .filter((v) => v != null && v !== undefined);
 
+      if (values.length === 0) {
+        console.warn(
+          `No valid values found for column: ${column}. Using empty nominals.`
+        );
+        return []; // Default empty array
+      }
+
+      return [...new Set(values)].sort(); // Get unique values and sort them
+    };
+
+    // Initialize columnTypes if not already initialized
     if (!this.columnTypes) {
-      this.columnTypes = {}; // Ensure it's initialized
+      this.columnTypes = {};
     }
 
+    // Iterate over each column and infer its type and properties
     this.columns.forEach((colDef) => {
-      // console.log("Column Definition:", colDef);
       const colName = colDef.column;
       const type = getType(data, colName);
-      // console.log("Column Type:", type);  // DEBUG
 
+      // Set column type
+      this.setColumnType(colName, type);
+
+      // Calculate thresholds or unique values based on the inferred type
       if (type === "continuous") {
         colDef.thresholds = calculateThresholds(data, colName);
       } else if (type === "ordinal") {
-        colDef.nominals = [...new Set(data.map((d) => d[colName]))].sort(); // Get unique values
+        colDef.nominals = getUniqueValues(data, colName);
       } else if (type === "date") {
-        // specific logic for date type later.
+        // Specific logic for date columns (e.g., calculate date ranges)
+        colDef.dateRange = d3.extent(
+          data.map((d) => d[colName]).filter((v) => v != null)
+        );
       }
-
-      // console.log("setting column type:", colName, type);  // DEBUG
-      this.setColumnType(colName, type); // Store the inferred type
     });
   }
 

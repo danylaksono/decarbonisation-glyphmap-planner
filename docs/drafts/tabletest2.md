@@ -82,12 +82,11 @@ const [selected, setSelected] = useState({});
 const columns2 = [
   { column: "id", unique: true },
   "lsoa",
-  "insulation_rating",
+  "epc_rating",
   "insulation_ewall",
   { column: "pv_generation", alias: "PV Generation" },
   "ashp_size",
   "substation_demand",
-  "epc_rating",
   "heat_demand",
 ];
 ```
