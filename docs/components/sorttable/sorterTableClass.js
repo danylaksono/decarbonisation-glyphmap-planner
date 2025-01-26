@@ -272,20 +272,16 @@ export class sorterTable {
 
   filter() {
     this.rules.push(this.getSelectionRule());
-    this.history.push({ type: "filter", data: this.dataInd });
     this.dataInd = this.getSelection().map((s) => this.dataInd[s.index]);
+    this.history.push({ type: "filter", data: this.dataInd });
     this.createTable();
 
-    // this.visControllers.map((vc, vci) =>
-    //   vc.updateData(
-    //     this.dataInd.map((i) => this.data[i][this.columns[vci].column])
-    //   )
-    // );
-
     this.visControllers.forEach((vc, vci) => {
+      // console.log("Updating visualization controller:", vci);
       if (vc instanceof HistogramController) {
         // Get the correct column name associated with this histogram
         const columnName = this.columns[vci].column;
+        // console.log("By Column:", vci, columnName);
 
         // Filter data for the specific column and maintain original index
         const columnData = this.dataInd.map((i) => ({
@@ -293,10 +289,8 @@ export class sorterTable {
           index: i, // Keep track of the original index
         }));
 
-        vc.updateData(this.dataInd.map((i) => this.data[i][columnName])); // Update data (for potential other uses)
-
         // Update the histogram data
-        vc.setData(columnData);
+        vc.setData(this.dataInd.map((i) => this.data[i][columnName]));
       }
     });
 
@@ -1405,9 +1399,14 @@ function HistogramController(data, binrules) {
 
           this.bins[d.index].indeces.forEach((rowIndex) => {
             // Use the dataInd array to get the correct data index
-            const actualIndex = controller.table.dataInd[rowIndex];
+            // const actualIndex = controller.table.dataInd[rowIndex];
+            // const tr = controller.table.tBody.querySelector(
+            //   `tr:nth-child(${actualIndex + 1})`
+            // );
+
+            // test fix row index
             const tr = controller.table.tBody.querySelector(
-              `tr:nth-child(${actualIndex + 1})`
+              `tr:nth-child(${rowIndex + 1})`
             );
             if (tr) {
               if (d.selected) {

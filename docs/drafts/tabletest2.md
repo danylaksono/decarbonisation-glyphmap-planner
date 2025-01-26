@@ -9,7 +9,7 @@ sql:
 
 ```js
 // import { createTable } from "./../components/sorterTable.js";
-import { sorterTable } from "./../components/sorterTableClass.js";
+import { sorterTable } from "./../components/sorttable/sorterTableClass.js";
 ```
 
 # Table Experiments 2
@@ -80,14 +80,13 @@ const [selected, setSelected] = useState({});
 
 ```js
 const columns2 = [
-  { column: "id", unique: true },
+  { column: "id" },
   "lsoa",
-  "insulation_rating",
+  "epc_rating",
   "insulation_ewall",
   { column: "pv_generation", alias: "PV Generation" },
   "ashp_size",
   "substation_demand",
-  "epc_rating",
   "heat_demand",
 ];
 ```
