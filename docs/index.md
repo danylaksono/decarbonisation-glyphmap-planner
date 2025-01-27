@@ -313,6 +313,7 @@ const [allocations, setAllocations] = useState([]);
     <span class="delete" data-dismiss="quickview" id="closeQuickviewButton"></span>
   </header>
   <div class="quickview-body">
+    ${tableFilteredData ? html`<i> Using ${tableFilteredData.length} Filtered Data </i>`: "" }
     <div class="quickview-block">
       <form id="quickviewForm">
         <!-- Technology Selection -->
@@ -1169,9 +1170,9 @@ const excludedColumns = [
 const customOrder = ["id", "lsoa", "msoa", "EPC_rating"];
 
 const tableColumns = [
-  // { column: "id" },
+  { column: "id", unique: true },
   ...Object.keys(data[0])
-    .filter((key) => !excludedColumns.includes(key)) // && key !== "id")
+    .filter((key) => !excludedColumns.includes(key) && key !== "id")
     .sort((a, b) => {
       const indexA = customOrder.indexOf(a);
       const indexB = customOrder.indexOf(b);
