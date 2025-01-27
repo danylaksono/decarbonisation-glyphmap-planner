@@ -786,7 +786,7 @@ addInterventionBtn.addEventListener("click", () => {
     optimizationStrategy: "tech-first",
     tech: techsInput.value,
     priorities: [],
-    filters: [],
+    filters: [filterByIds(tableFilteredData.map((d) => d.id))],
   };
 
   addNewIntervention(formData);
@@ -928,8 +928,7 @@ function addNewIntervention(data) {
 
   const newConfig = {
     ...data,
-    filters: [],
-    priorities: [],
+    // priorities: [],
     yearlyBudgets: yearlyBudgets,
   };
   console.log(">> CONFIG from session", newConfig);
@@ -1130,11 +1129,11 @@ const data =
 ```
 
 ```js
-const filteredDatafromTableSession = getFromSession("tableFiltered");
+// const filteredDatafromTableSession = getFromSession("tableFiltered");
 
 console.log(
   "Filter By IDS",
-  filteredDatafromTableSession.map((d) => d.id)
+  tableFilteredData.map((d) => d.id)
 );
 ```
 
