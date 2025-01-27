@@ -299,6 +299,7 @@ const [allocations, setAllocations] = useState([]);
           ${(map_aggregate === "LSOA Level") ? html`${playButton} ${morphFactorInput}` : ""}
           <!-- ${html`${playButton} ${morphFactorInput}`} -->
           ${resize((width, height) => createGlyphMap(map_aggregate, width, height))}
+          ${resize((width, height) => console.log("width and height", {width, height}))}
         </div>
       </div>
     </div>
@@ -926,6 +927,8 @@ function addNewIntervention(data) {
 
   const newConfig = {
     ...data,
+    filters: [],
+    priorities: [],
     yearlyBudgets: yearlyBudgets,
   };
   console.log(">> CONFIG from session", newConfig);
@@ -1111,8 +1114,6 @@ const flatData = selectedIntervenedBuildings?.map((p) => ({
 
 console.log(">> Intervened buildings", flatData);
 
-const filteredDatafromTableSession = getFromSession("tableFiltered");
-
 // const data =
 //   selectedInterventionIndex === null
 //     ? stackedRecap?.buildings ?? buildingsData
@@ -1125,6 +1126,15 @@ const data =
     ? stackedRecap?.buildings ?? buildingsData
     : flatData;
 // console.log(">> DATA DATA DATA", data);
+```
+
+```js
+const filteredDatafromTableSession = getFromSession("tableFiltered");
+
+console.log(
+  "Filter By IDS",
+  filteredDatafromTableSession.map((d) => d.id)
+);
 ```
 
 ```js
@@ -1148,20 +1158,15 @@ const excludedColumns = [
   "pv_material",
   "gshp_labour",
   "gshp_material",
+  "ashp_suitability",
+  "pv_suitability",
+  "gshp_suitability",
   "substation_headroom_pct",
   "substation_peakload",
   "deprivation_decile",
   // "fuel_poverty_decile",
 ]; // columns to exclude from the table
-const customOrder = [
-  "id",
-  "lsoa",
-  "msoa",
-  "EPC_rating",
-  "ashp_suitability",
-  "pv_suitability",
-  "gshp_suitability",
-];
+const customOrder = ["id", "lsoa", "msoa", "EPC_rating"];
 
 const tableColumns = [
   // { column: "id" },
@@ -1199,7 +1204,7 @@ function tableChanged(event) {
     console.log("Filter rule:", event.rule);
     saveToSession("tableFiltered", event.indeces);
 
-    // setTableFiltered(event.indeces);
+    setTableFiltered(event.indeces);
   }
 
   if (event.type === "sort") {
@@ -1242,10 +1247,6 @@ console.log("Filtered data:", tableFilteredData);
 const table = new sorterTable(data, tableColumns, tableChanged, {
   height: "300px",
 });
-```
-
-```js
-// display(table.getNode());
 ```
 
 ```js
