@@ -628,26 +628,15 @@ export class sorterTable {
       visRow.appendChild(visTd);
 
       if (c.unique) {
-        // Column is unique, draw a full rectangle
-        const uniqueRect = document.createElement("div");
-        uniqueRect.style.width = "90px"; //"100%";
-        uniqueRect.style.height = "50px"; // Same as histogram height
-        // uniqueRect.style.backgroundColor = "#e0e0e0"; // Light gray
-        uniqueRect.style.display = "flex";
-        uniqueRect.style.justifyContent = "center";
-        uniqueRect.style.alignItems = "center";
-        uniqueRect.style.paddingBottom = "5px";
-
-        const uniqueText = document.createElement("span");
-        uniqueText.innerText = "Unique Values";
-        uniqueText.style.fontSize = "11px";
-        uniqueText.style.color = "#666";
-        uniqueText.style.textAlign = "center";
-
-        uniqueRect.appendChild(uniqueText);
-        visTd.appendChild(uniqueRect);
+        // For unique columns, create a histogram with a single bin
+        let uniqueData = this.dataInd.map((i) => this.data[i][c.column]);
+        let visCtrl = new HistogramController(uniqueData, { unique: true });
+        visCtrl.table = this;
+        visCtrl.columnName = c.column;
+        this.visControllers.push(visCtrl);
+        visTd.appendChild(visCtrl.getNode());
       } else {
-        // Create and add visualization controller (histogram)
+        // Create and add visualization controller (histogram) for non-unique columns
         let visCtrl = new HistogramController(
           this.dataInd.map((i) => this.data[i][c.column]),
           this.getColumnType(c.column) === "continuous"
@@ -1206,70 +1195,58 @@ function HistogramController(data, binrules) {
 
   this.updateData = (d) => this.setData(d);
 
-  // reset the selection state of the histogram
+  // Reset the selection state of the histogram
   this.resetSelection = () => {
-    // Reset the 'selected' property of all bins
     this.bins.forEach((bin) => {
       bin.selected = false;
     });
 
-    // Reset the fill color of all bars in the histogram
-    svg
-      .selectAll(".bar rect:nth-child(1)") // Selects the visible bars
-      .attr("fill", "steelblue");
+    svg.selectAll(".bar rect:nth-child(1)").attr("fill", "steelblue");
   };
 
   this.setData = function (dd) {
-    // console.log("dd:", dd);
-
     div.innerHTML = "";
 
-    //in our aggregations we will need to capture the indeces of
-    //the data in each category (not just the counts) to support
-    //selection. So, we annotate data with its indeces
     let data = dd.map((d, i) => ({ value: d, index: i }));
 
-    //CREATE SVG
     const svgWidth = 100;
     const svgHeight = 50;
     const margin = { top: 5, right: 5, bottom: 8, left: 5 };
-
-    // Make the histogram responsive to the cell width (not working now)
-    // const cellWidth = div.parentNode.clientWidth; // Get cell width
-    // const width = cellWidth - margin.left - margin.right;
     const width = svgWidth - margin.left - margin.right;
     const height = svgHeight - margin.top - margin.bottom;
 
-    // Create the SVG element
     const svg = d3
       .select(div)
       .append("svg")
       .attr("width", svgWidth)
       .attr("height", svgHeight);
 
-    // Append a group element to handle margins
     const chart = svg
       .append("g")
       .attr("transform", `translate(${margin.left},${margin.top})`);
 
     let x = null;
-    // let bins = null;
 
-    //bin data by either thresholds or ordinals or nominals
-    if ("thresholds" in binrules) {
-      // Define the x scale (linear scale for values)
+    if (binrules.unique) {
+      // Handle unique columns: create a single bin
+      this.bins = [
+        {
+          category: "Unique Values",
+          count: data.length,
+          indeces: data.map((d) => d.index),
+        },
+      ];
+    } else if ("thresholds" in binrules) {
+      // Handle continuous data with thresholds
       x = d3
         .scaleThreshold()
         .domain(binrules.thresholds)
-        .range([0, 1, 2, 3, 4, 5]); // output: pixel range
+        .range([0, 1, 2, 3, 4, 5]);
 
-      // let binnedData = data.map((d) => x(d));
-
-      // Define histogram bins
       bins = d3
         .bin()
-        .domain([0, 1000000]) // Set the domain of the bins
-        .thresholds(binrules.thresholds) // Set the number of bins (10 in this case)
+        .domain([0, 1000000])
+        .thresholds(binrules.thresholds)
         .value((d) => d.value)(data);
 
       this.bins = bins.map((b) => ({
@@ -1278,6 +1255,7 @@ function HistogramController(data, binrules) {
         indeces: b.map((v) => v.index),
       }));
     } else if ("ordinals" in binrules || "nominals" in binrules) {
+      // Handle ordinal or nominal data
       const frequency = d3.rollup(
         data,
         (values) => ({
@@ -1287,7 +1265,6 @@ function HistogramController(data, binrules) {
         (d) => d.value
       );
 
-      // Prepare the data as an array of bins
       const binType = "ordinals" in binrules ? "ordinals" : "nominals";
 
       if (binType in binrules && Array.isArray(binrules[binType])) {
@@ -1297,7 +1274,6 @@ function HistogramController(data, binrules) {
           indeces: frequency.get(v) != null ? frequency.get(v).indeces : [],
         }));
       } else {
-        // Handle cases where binrules[binType] is not a valid array
         this.bins = Array.from(frequency, ([key, value]) => ({
           category: key,
           count: value.count,
@@ -1306,19 +1282,13 @@ function HistogramController(data, binrules) {
       }
     }
 
-    //add the bin index to each bin
     this.bins.map((bin, i) => (bin.index = i));
-    // console.log("bins: ", bins);
 
-    // Define the y scale (based on bin counts)
     const y = d3
       .scaleLinear()
-      .domain([0, d3.max(this.bins, (d) => d.count)]) // input: max count in bins
-      .range([height, 0]); // output: pixel range (inverted for SVG coordinate system)
+      .domain([0, d3.max(this.bins, (d) => d.count)])
+      .range([height, 0]);
 
-    //for each bin we'll have to bars, a regular one and an
-    //invisible one that stretches through the whole height of the
-    //chart; the latter is there for interaction.
     const barGroups = svg
       .selectAll(".bar")
       .data(this.bins)
@@ -1329,7 +1299,7 @@ function HistogramController(data, binrules) {
         (d, i) => `translate(${(i * width) / this.bins.length}, 0)`
       );
 
-    // visible bars
+    // Visible bars
     barGroups
       .append("rect")
       .attr("x", 0)
@@ -1338,30 +1308,28 @@ function HistogramController(data, binrules) {
       .attr("height", (d) => height - y(d.count))
       .attr("fill", "steelblue");
 
-    //invisible bars for interaction
+    // Invisible bars for interaction
     barGroups
       .append("rect")
       .attr("width", (d) => width / this.bins.length)
-      .attr("height", height) // Stretch to full height
-      .attr("fill", "transparent") // Make invisible
+      .attr("height", height)
+      .attr("fill", "transparent")
       .on("mouseover", (event, d) => {
-        // d3.select(event.currentTarget.previousSibling).attr("fill", "purple"); // Change color on hover for the actual bar
-
         if (!d.selected) {
           d3.select(event.currentTarget.previousSibling).attr("fill", "purple");
         }
 
         svg
           .selectAll(".histogram-label")
-          .data([d]) // Bind the data to the label
+          .data([d])
           .join("text")
           .attr("class", "histogram-label")
-          .attr("x", width / 2) // Center the label under the bar
-          .attr("y", height + 10) // Position the label below the bar
+          .attr("x", width / 2)
+          .attr("y", height + 10)
           .attr("font-size", "10px")
           .attr("fill", "#444444")
-          .attr("text-anchor", "middle") // Center the text
-          .text(d.category + ": " + d.count); // Display the value in the label
+          .attr("text-anchor", "middle")
+          .text(d.category + ": " + d.count);
       })
       .on("mouseout", (event, d) => {
         if (!d.selected) {
@@ -1374,10 +1342,8 @@ function HistogramController(data, binrules) {
         svg.selectAll(".histogram-label").remove();
       })
       .on("click", (event, d) => {
-        // Toggle the selected state
         d.selected = !d.selected;
 
-        // Update highlight based on selection state
         if (d.selected) {
           d3.select(event.currentTarget.previousSibling).attr("fill", "orange");
         } else {
@@ -1387,24 +1353,12 @@ function HistogramController(data, binrules) {
           );
         }
 
-        // d3.select(event.currentTarget.previousSibling).attr("fill", "orange"); // Revert color on mouseout
-        // console.log("histo select:", bins[d.index].indeces);
-
-        // Select the corresponding rows in the table
-        // Assuming 'controller.table' references the sorterTable instance
         if (controller.table) {
           if (!d.selected) {
             controller.table.clearSelection();
           }
 
           this.bins[d.index].indeces.forEach((rowIndex) => {
-            // Use the dataInd array to get the correct data index
-            // const actualIndex = controller.table.dataInd[rowIndex];
-            // const tr = controller.table.tBody.querySelector(
-            //   `tr:nth-child(${actualIndex + 1})`
-            // );
-
-            // test fix row index
             const tr = controller.table.tBody.querySelector(
               `tr:nth-child(${rowIndex + 1})`
             );
@@ -1421,9 +1375,6 @@ function HistogramController(data, binrules) {
       });
   };
 
-  // setData(data);
-
-  // set this.table from sorterTable
   this.table = null;
   this.setData(data);
 

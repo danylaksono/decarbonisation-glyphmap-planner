@@ -10,7 +10,7 @@
 <link rel="modulepreload" href="../_observablehq/client.js">
 <link rel="modulepreload" href="../_observablehq/runtime.js">
 <link rel="modulepreload" href="../_observablehq/stdlib.js">
-<link rel="modulepreload" href="../_import/components/sorttable/sorterTableClass.6c30725f.js">
+<link rel="modulepreload" href="../_import/components/sorttable/sorterTableClass.e9501c79.js">
 <link rel="modulepreload" href="../_npm/d3@7.9.0/_esm.js">
 <link rel="modulepreload" href="../_observablehq/stdlib/duckdb.js">
 <link rel="modulepreload" href="../_npm/htl@0.3.1/_esm.js">
@@ -57,11 +57,11 @@ import {define} from "../_observablehq/client.js";
 import {registerFile, FileAttachment} from "../_observablehq/stdlib.js";
 import {registerTable} from "../_observablehq/stdlib/duckdb.js";
 
-registerFile("./../data/oxford_decarbonisation_data.parquet", {"name":"./../data/oxford_decarbonisation_data.parquet","path":"../_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1737935084634});
+registerFile("./../data/oxford_decarbonisation_data.parquet", {"name":"./../data/oxford_decarbonisation_data.parquet","path":"../_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1737979215358});
 registerTable("oxford", FileAttachment("../data/oxford_decarbonisation_data.parquet"));
 
 define({id: "7e768334", outputs: ["sorterTable"], body: async () => {
-const {sorterTable} = await import("../_import/components/sorttable/sorterTableClass.6c30725f.js");
+const {sorterTable} = await import("../_import/components/sorttable/sorterTableClass.e9501c79.js");
 // import { createTable } from "./../components/sorterTable.js";
 
 return {sorterTable};
@@ -134,9 +134,9 @@ const [selected, setSelected] = useState({});
 return {useState,selected,setSelected};
 }});
 
-define({id: "2b5d93f7", outputs: ["columns2"], body: () => {
+define({id: "5c5ba8e4", outputs: ["columns2"], body: () => {
 const columns2 = [
-  { column: "id" },
+  { column: "id", unique: true },
   "lsoa",
   "epc_rating",
   "insulation_ewall",
@@ -514,7 +514,7 @@ return {table};
 <div class="observablehq observablehq--block"><!--:56d16951:--></div>
 <div class="observablehq observablehq--block"><!--:ee098890:--></div>
 <div class="observablehq observablehq--block"><!--:ec01b706:--></div>
-<div class="observablehq observablehq--block"><!--:2b5d93f7:--></div>
+<div class="observablehq observablehq--block"><!--:5c5ba8e4:--></div>
 <div class="observablehq observablehq--block"><!--:1bcb0b2e:--></div>
 <div class="observablehq observablehq--block"><!--:baf2b79f:--></div>
 <div class="observablehq observablehq--block"><!--:72bf4f2c:--></div>
