@@ -107,7 +107,7 @@ function heatmapCell(value, rowData, colorScale) {
   // Implementation: Similar to sparkbar, but use a color scale without the bar, filling the entire cell with the color.
   // Example usage:
   // const colorScale = d3.scaleSequential(d3.interpolateInferno)
-  // .domain([0, d3.max(data, d => d.someValue)]); // Assuming 'someValue' is your numerical column
+  // .domain([0, d3.max(data, d => d.someValue)]);
 
   // const cellRenderers = {
   // someValue: (value, rowData) => heatmapCell(value, rowData, colorScale),

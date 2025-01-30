@@ -124,11 +124,41 @@ export class Histogram {
     let bins;
 
     switch (type) {
+      // case "continuous":
+      //   const threshold =
+      //     this.config.binThreshold || d3.thresholdFreedmanDiaconis;
+      //   const histogram = d3.histogram().value(accessor).thresholds(threshold);
+      //   bins = histogram(data);
+      //   break;
+
       case "continuous":
-        const threshold =
-          this.config.binThreshold || d3.thresholdFreedmanDiaconis;
-        const histogram = d3.histogram().value(accessor).thresholds(threshold);
+        // Extract numeric values
+        const values = data.map(accessor).filter((v) => v != null);
+
+        // Calculate bin width using Freedman-Diaconis rule
+        const iqr = d3.quantile(values, 0.75) - d3.quantile(values, 0.25);
+        const binWidth = 2 * iqr * Math.pow(values.length, -1 / 3);
+
+        // Calculate number of bins
+        const extent = d3.extent(values);
+        const range = extent[1] - extent[0];
+        const binCount = Math.ceil(range / binWidth);
+
+        // Create histogram generator with calculated thresholds
+        const histogram = d3
+          .histogram()
+          .value(accessor)
+          .domain(extent)
+          .thresholds(
+            this.config.binThreshold ||
+              (binCount > 0 ? d3.thresholdSturges(values) : 10)
+          );
+
         bins = histogram(data);
+        // Add mean value to each bin for tooltip/labels
+        bins.forEach((bin) => {
+          bin.mean = d3.mean(bin, (d) => accessor(d));
+        });
         break;
 
       case "date":

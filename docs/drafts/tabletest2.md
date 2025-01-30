@@ -444,7 +444,7 @@ function sparkarea(data, rowData, options = {}) {
     strokeColor = "red",
   } = options;
 
-  // Extract x and y values from the data (assuming your data has a 'history' property)
+  // Extract x and y values from the data
   const X = data.map((d) => d.date); // Assuming 'date' property for x-axis
   const Y = data.map((d) => d.value); // Assuming 'value' property for y-axis
 

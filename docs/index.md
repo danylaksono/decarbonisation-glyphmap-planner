@@ -9,7 +9,7 @@ sql:
 
 <!-- ------------ Imports ------------ -->
 
-```js
+```js run=false
 console.log(">> Importing libraries...");
 const d3 = require("d3", "d3-geo-projection");
 const flubber = require("flubber@0.4");
@@ -42,11 +42,6 @@ import {
 import { createTimelineInterface } from "./components/decarb-model/timeline.js";
 import { LeafletMap } from "./components/leaflet/leaflet-map.js";
 
-// import { createTable } from "./components/sorterTable.js";
-// import {
-//   SummarizeColumn,
-//   createTableFormat,
-// } from "./components/input-table/input-table.js";
 import {
   inferTypes,
   enrichGeoData,
@@ -409,33 +404,6 @@ cancelButton.addEventListener("click", () => {
 ```
 
 ```js
-// display(html`<p>"DATA DATA DATA"</p>`);
-// display(data);
-// // --- Analyze Stacked Results ---
-// display(html`<p>"Stacked Recap.Summary:"</p>`);
-// display(stackedRecap.summary);
-
-// display(html`<p>"Stacked Recap.YearlySummary:"</p>`);
-// display(stackedRecap.yearlySummary);
-
-// display(html`<p>"Stacked Recap.Buildings:"</p>`);
-// display(stackedRecap.buildings);
-
-// display(html`<p>"Stacked Recap.IntervenedBuildings:"</p>`);
-// display(stackedRecap.intervenedBuildings);
-
-// display(html`<p>"List of Intervention Results recap:"</p>`);
-// display(stackedRecap.recap);
-
-// display(html`<p>"Selected Intervention"</p>`);
-// display(
-//   selectedInterventionIndex === null
-//     ? [...buildingsData]
-//     : interventions[selectedInterventionIndex].intervenedBuildings
-// );
-```
-
-```js
 // display(html`<p>"Grouped Intervention"</p>`);
 const groupedData = MiniDecarbModel.group(data, ["lsoa", "interventionYear"]);
 // display(groupedData);
@@ -448,13 +416,6 @@ const timelineDataArray = [
   "carbonSaved",
   "numInterventions",
 ];
-
-const transformedGroupedData = transformInterventionData(
-  groupedData,
-  "E01035740",
-  timelineDataArray
-);
-// display(transformedGroupedData);
 ```
 
 ```js
@@ -1131,10 +1092,10 @@ const data =
 ```js
 // const filteredDatafromTableSession = getFromSession("tableFiltered");
 
-console.log(
-  "Filter By IDS",
-  tableFilteredData.map((d) => d.id)
-);
+// console.log(
+//   "Filter By IDS",
+//   tableFilteredData.map((d) => d.id)
+// );
 ```
 
 ```js
@@ -1202,7 +1163,7 @@ function tableChanged(event) {
   if (event.type === "filter") {
     console.log("Filtered indices:", event.indeces);
     console.log("Filter rule:", event.rule);
-    saveToSession("tableFiltered", event.indeces);
+    // saveToSession("tableFiltered", event.indeces);
 
     setTableFiltered(event.indeces);
   }
@@ -1221,12 +1182,16 @@ function tableChanged(event) {
 ```
 
 ```js
+// const tableFiltered = getFromSession("tableFiltered");
+
 const tableFilteredData = tableFiltered.map((index) => {
   return table.data[index];
 });
 
 console.log("Filtered data:", tableFilteredData);
 ```
+
+<!-- ---------------- Sortable Table ---------------- -->
 
 ```js
 // Define cell renderers
@@ -1247,117 +1212,6 @@ console.log("Filtered data:", tableFilteredData);
 const table = new sorterTable(data, tableColumns, tableChanged, {
   height: "300px",
 });
-```
-
-```js
-// create a function which return rectangle svg node, given width, height, fill
-function createRectangle(width, height, fill) {
-  const rect = d3
-    .select("body")
-    .append("svg")
-    .attr("width", width)
-    .attr("height", height);
-  rect
-    .append("rect")
-    .attr("width", width)
-    .attr("height", height)
-    .attr("fill", fill);
-  return rect;
-  // return rect;
-}
-
-function createTableHeader(fill, headerText) {
-  const header = d3
-    .select("body")
-    .append("svg")
-    .attr("viewBox", "0 0 100 100")
-    .attr("preserveAspectRatio", "none")
-    .style("width", "100%")
-    .style("height", "100%")
-    .style("overflow", "visible");
-
-  // Create the rectangle background
-  header
-    .append("rect")
-    .attr("width", "100%")
-    .attr("height", "100%")
-    .attr("fill", fill)
-    .style("stroke", "#000")
-    .style("stroke-width", "1px");
-
-  // Add centered text
-  header
-    .append("text")
-    .attr("x", "50%")
-    .attr("y", "50%")
-    .attr("text-anchor", "middle")
-    .attr("dominant-baseline", "middle")
-    .style("fill", "#ffffff")
-    .style("font-family", "Arial, sans-serif")
-    .style("font-size", "14px")
-    .style("font-weight", "bold")
-    .text(headerText);
-
-  return header;
-}
-```
-
-```js
-// const tableFormat = createTableFormat(data);
-```
-
-```js
-// const ObsTable = Inputs.table(data, {
-//   columns: tableColumns,
-//   format: tableFormat,
-//   layout: "auto",
-// });
-// // Object.assign(ObsTable, {
-// //   oninput: (event) => event.isTrusted && event.stopImmediatePropagation(),
-// //   onchange: (event) => event.currentTarget.dispatchEvent(new Event("input")),
-// // });
-
-// // Listening to change events
-// ObsTable.addEventListener("change", (event) => {
-//   console.log("Table changed:", event); // Access the event target
-// });
-// const selectedRow = Generators.input(ObsTable);
-```
-
-<!-- ---------------- Sortable Table ---------------- -->
-
-```js
-console.log(">> Define sortable table columns...");
-// columns to show in the table
-const cols = [
-  { column: "id", nominals: null },
-  {
-    column: "isIntervened",
-    nominals: null,
-  },
-  { column: "lsoa", nominals: null },
-  {
-    column: "insulation_rating",
-    ordinals: ["Unknown", "A", "B", "C", "D", "E", "F", "G"],
-  },
-  {
-    column: "insulation_ewall",
-    // ordinals: null,
-    nominals: null,
-    // ordinals: ["Unknown", "A", "B", "C", "D", "E", "F", "G"],
-  },
-  {
-    column: "pv_generation",
-    thresholds: [
-      0, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 20000,
-      30000, 40000, 50000,
-    ],
-  },
-  {
-    column: "ashp_size",
-    thresholds: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30, 40, 50],
-  },
-];
 ```
 
 <!-- ---------------- Glyph Maps ---------------- -->
@@ -2366,165 +2220,6 @@ function createOverallPlot(data, width = 900, height = 600) {
   return container;
 }
 
-// function createOverallPlot(data, width = 900, height = 600) {
-//   // Set up margins and dimensions
-//   const margin = { top: 20, right: 150, bottom: 60, left: 60 };
-//   const innerWidth = width - margin.left - margin.right;
-//   const innerHeight = height - margin.top - margin.bottom;
-
-//   // Create a div container for the chart
-//   const container = document.createElement("div");
-//   container.style.position = "relative";
-//   container.style.width = `${width}px`;
-//   container.style.height = `${height}px`;
-
-//   if (data == null) {
-//     return "add intervention to start";
-//   }
-
-//   // Create SVG container
-//   const svg = d3
-//     .select(container)
-//     .append("svg")
-//     .attr("width", width)
-//     .attr("height", height);
-
-//   const chart = svg
-//     .append("g")
-//     .attr("transform", `translate(${margin.left},${margin.top})`);
-
-//   // Extract unique years
-//   const years = [...new Set(data.map((d) => d.year))];
-
-//   // Flatten data into a long format for stacking
-//   const longData = data.flatMap((d) => [
-//     { year: d.year, value: d.budgetSpent, category: "Budget Spent" },
-//     {
-//       year: d.year,
-//       value: d.buildingsIntervened,
-//       category: "Buildings Intervened",
-//     },
-//     { year: d.year, value: d.totalCarbonSaved, category: "Total Carbon Saved" },
-//   ]);
-
-//   // Calculate the maximum value from the data
-//   const maxValue = d3.max(longData, (d) => d.value);
-
-//   // Define scales
-//   const xScale = d3
-//     .scaleBand()
-//     .domain(years)
-//     .range([0, innerWidth])
-//     .padding(0.1);
-
-//   const yScale = d3
-//     .scaleLinear()
-//     .domain([0, maxValue]) // Adjust domain based on data
-//     .range([innerHeight, 0]);
-
-//   const colorScale = d3
-//     .scaleOrdinal()
-//     .domain(["Budget Spent", "Buildings Intervened", "Total Carbon Saved"])
-//     .range(["#4C78A8", "#F58518", "#E45756"]);
-
-//   // Group data by category
-//   const stack = d3
-//     .stack()
-//     .keys(["Budget Spent", "Buildings Intervened", "Total Carbon Saved"])
-//     .value((group, key) => group.find((d) => d.category === key)?.value || 0);
-
-//   const stackedData = stack(d3.group(longData, (d) => d.year).values());
-
-//   // Define area generator
-//   const area = d3
-//     .area()
-//     .x((d, i) => xScale(years[i]) + xScale.bandwidth() / 2)
-//     .y0((d) => yScale(d[0]))
-//     .y1((d) => yScale(d[1]))
-//     .curve(d3.curveMonotoneX);
-
-//   // Add x-axis
-//   chart
-//     .append("g")
-//     .attr("transform", `translate(0,${innerHeight})`)
-//     .call(d3.axisBottom(xScale).tickFormat(d3.format("d")))
-//     .selectAll("text")
-//     .style("text-anchor", "middle");
-
-//   // Add y-axis
-//   chart.append("g").call(d3.axisLeft(yScale));
-
-//   // Add areas
-//   chart
-//     .selectAll(".area")
-//     .data(stackedData)
-//     .join("path")
-//     .attr("class", "area")
-//     .attr("fill", (d) => colorScale(d.key))
-//     .attr("d", area);
-
-//   // Add tooltips
-//   const tooltip = d3
-//     .select(container)
-//     .append("div")
-//     .style("position", "absolute")
-//     .style("visibility", "hidden")
-//     .style("background", "rgba(169, 151, 151, 0.7)")
-//     .style("color", "#fff")
-//     .style("padding", "5px")
-//     .style("border-radius", "4px")
-//     .style("font-size", "12px");
-
-//   chart
-//     .selectAll(".area")
-//     .on("mousemove", function (event, d) {
-//       const [x] = d3.pointer(event, this); // Get x position
-//       const yearIndex = Math.floor((x / innerWidth) * years.length); // Calculate year index
-//       const year = years[yearIndex]; // Get year from index
-
-//       if (yearIndex >= 0 && yearIndex < d.length) {
-//         const segment = d[yearIndex]; // Get the stack segment for the year
-//         const category = d.key; // Get the category (e.g., "Budget Spent")
-//         const value = segment[1] - segment[0]; // Calculate value from stacked data
-
-//         tooltip
-//           .html(
-//             `<strong>Year:</strong> ${year}<br><strong>Category:</strong> ${category}<br><strong>Value:</strong> ${value.toFixed(
-//               2
-//             )}`
-//           )
-//           .style("top", `${event.offsetY - 30}px`)
-//           .style("left", `${event.offsetX + 10}px`)
-//           .style("visibility", "visible");
-//       }
-//     })
-//     .on("mouseout", function () {
-//       tooltip.style("visibility", "hidden");
-//     });
-
-//   // Add legend
-//   const legend = svg
-//     .append("g")
-//     .attr(
-//       "transform",
-//       `translate(${width - margin.right + 10}, ${margin.top})`
-//     );
-
-//   legend
-//     .selectAll("rect")
-//     .data(colorScale.domain())
-//     .join("rect")
-//     .attr("x", 0)
-//     .attr("y", (d, i) => i * 20)
-//     .attr("width", 15)
-//     .attr("height", 15)
-//     .attr("fill", (d) => colorScale(d));
-
-//   legend
-//     .selectAll("text")
-//     .data(colorScale.domain())
-//     .join("text")
-//     .attr("x", 20)
 //     .attr("y", (d, i) => i * 20 + 12)
 //     .text((d) => d)
 //     .style("font-size", "12px");
