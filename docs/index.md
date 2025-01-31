@@ -9,7 +9,7 @@ sql:
 
 <!-- ------------ Imports ------------ -->
 
-```js run=false
+```js
 console.log(">> Importing libraries...");
 const d3 = require("d3", "d3-geo-projection");
 const flubber = require("flubber@0.4");
@@ -24,22 +24,29 @@ import { sorterTable } from "./components/sorttable/sorterTableClass.js";
 import {
   TimeGlyph,
   GlyphCollection,
-} from "./components/glyph-designs/timeGlyph.js";
-import { StreamGraphGlyph } from "./components/glyph-designs/mirrorTimeGlyph.js";
-import { RadialGlyph } from "./components/glyph-designs/radialglyph.js";
-import { RadialGlyphOverall } from "./components/glyph-designs/radialGlyphOverall.js";
+} from "./components/gridded-glyphmaps/glyph-designs/timeGlyph.js";
+import { StreamGraphGlyph } from "./components/gridded-glyphmaps/glyph-designs/mirrorTimeGlyph.js";
+import { RadialGlyph } from "./components/gridded-glyphmaps/glyph-designs/radialglyph.js";
+// import { RadialGlyphOverall } from "./components/gridded-glyphmaps/glyph-designs/radialGlyphOverall.js";
+
 import {
   glyphMap,
   createDiscretiserValue,
   _drawCellBackground,
 } from "./components/gridded-glyphmaps/index.min.js";
+
 import { OSGB } from "./components/osgb/index.js";
 import { BudgetAllocator } from "./components/decarb-model/budget-allocator.js";
+
 import {
   InterventionManager,
   MiniDecarbModel,
 } from "./components/decarb-model/mini-decarbonisation.js";
 import { createTimelineInterface } from "./components/decarb-model/timeline.js";
+import {
+  plotOverallTimeline,
+  plotOverallPotential,
+} from "./components/plots.js";
 import { LeafletMap } from "./components/leaflet/leaflet-map.js";
 
 import {
@@ -147,6 +154,51 @@ const regular_geodata = FileAttachment(
 const cartogram_geodata = FileAttachment(
   "./data/oxford_lsoas_cartogram.json"
 ).json();
+```
+
+```js
+console.log(">> Defining the glyph variables and colours...");
+timeline_switch;
+const glyphVariables = [
+  "ashp_suitability",
+  "ashp_size",
+  "ashp_total",
+  "gshp_suitability",
+  "gshp_size",
+  "gshp_total",
+  "pv_suitability",
+  "pv_generation",
+  "pv_total",
+];
+const glyphColours = [
+  // ashp = bluish
+  "#1E90FF", // ashp_suitability: DodgerBlue
+  "#4682B4", // ashp_size: SteelBlue
+  "#5F9EA0", // ashp_total: CadetBlue
+
+  // gshp = orangeish
+  "#FFA500", // gshp_suitability: Orange
+  "#FF8C00", // gshp_size: DarkOrange
+  "#FFD700", // gshp_total: Gold
+
+  // pv = greenish
+  "#32CD32", // pv_suitability: LimeGreen
+  "#228B22", // pv_generation: ForestGreen
+  "#006400", // pv_total: DarkGreen
+];
+
+const timelineVariables = [
+  "interventionCost",
+  "carbonSaved",
+  "numInterventions",
+  "interventionTechs",
+];
+const timelineColours = [
+  "#000000", // interventionCost: Black
+  "#0000FF", // carbonSaved: Blue
+  "#00FF00", // numInterventions: Green
+  "#FF0000", // interventionTechs: Red
+];
 ```
 
 <!-- ------------ Getter-Setter ------------ -->
@@ -1100,9 +1152,11 @@ const data =
 
 ```js
 timeline_switch;
-const glyphdata = aggregateValues(data, glyphVariables, "sum", true);
-// console.log(">> Glyph data", glyphdata);
-// console.log(normaliseData([{ a: 100, b: 200, c: 300 }], ["a", "b", "c"]));
+console.log(">> Switching variables...", glyphVariables);
+
+// aggregate and normalise data for whole LA
+const overall_data = aggregateValues(data, glyphVariables, "sum", true);
+const glyphData = glyphVariables.map((key) => overall_data[key]);
 ```
 
 ```js
@@ -1125,8 +1179,8 @@ const excludedColumns = [
   "substation_headroom_pct",
   "substation_peakload",
   "deprivation_decile",
-  // "fuel_poverty_decile",
 ]; // columns to exclude from the table
+
 const customOrder = ["id", "lsoa", "msoa", "EPC_rating"];
 
 const tableColumns = [
@@ -1143,16 +1197,6 @@ const tableColumns = [
     }),
 ];
 
-// const tableColumns = Object.keys(data[0])
-//   .filter((key) => !excludedColumns.includes(key))
-//   .sort((a, b) => {
-//     const indexA = customOrder.indexOf(a);
-//     const indexB = customOrder.indexOf(b);
-//     if (indexA === -1 && indexB === -1) return a.localeCompare(b); // Sort alphabetically if not in customOrder
-//     if (indexA === -1) return 1; // Put a after b
-//     if (indexB === -1) return -1; // Put b after a
-//     return indexA - indexB; // Sort based on customOrder
-//   });
 console.log(">> Define table columns...", tableColumns);
 ```
 
@@ -1221,23 +1265,7 @@ console.log(">> Geo-enrichment...");
 // geo-enrichment - combine geodata with building level properties
 
 // define the aggregation function for each column
-// const aggregations = {
-//   building_area: "sum",
-//   ashp_labour: "sum",
-//   ashp_material: "sum",
-//   pv_labour: "sum",
-//   pv_material: "sum",
-//   gshp_labour: "sum",
-//   gshp_material: "sum",
-//   gshp_size: "sum",
-//   heat_demand: "sum", // type inferrence need to deal with some nullish values
-//   pv_generation: "sum", // type inferrence need to deal with some nullish values
-//   ashp_suitability: "count",
-//   pv_suitability: "count",
-//   gshp_suitability: "count",
-// };
 
-// dum
 const aggregations = {
   // "id": 200004687243,
   isIntervened: "count",
@@ -1445,49 +1473,6 @@ function valueDiscretiser(geomLookup) {
     boundaryFn: (key) => geomLookup[key]?.geometry.coordinates[0],
   });
 }
-```
-
-```js
-const glyphVariables = [
-  "ashp_suitability",
-  "ashp_size",
-  "ashp_total",
-  "gshp_suitability",
-  "gshp_size",
-  "gshp_total",
-  "pv_suitability",
-  "pv_generation",
-  "pv_total",
-];
-const glyphColours = [
-  // ashp = bluish
-  "#1E90FF", // ashp_suitability: DodgerBlue
-  "#4682B4", // ashp_size: SteelBlue
-  "#5F9EA0", // ashp_total: CadetBlue
-
-  // gshp = orangeish
-  "#FFA500", // gshp_suitability: Orange
-  "#FF8C00", // gshp_size: DarkOrange
-  "#FFD700", // gshp_total: Gold
-
-  // pv = greenish
-  "#32CD32", // pv_suitability: LimeGreen
-  "#228B22", // pv_generation: ForestGreen
-  "#006400", // pv_total: DarkGreen
-];
-
-const timelineVariables = [
-  "interventionCost",
-  "carbonSaved",
-  "numInterventions",
-  "interventionTechs",
-];
-const timelineColours = [
-  "#000000", // interventionCost: Black
-  "#0000FF", // carbonSaved: Blue
-  "#00FF00", // numInterventions: Green
-  "#FF0000", // interventionTechs: Red
-];
 ```
 
 ```js
@@ -1758,9 +1743,9 @@ function createGlyphMap(map_aggregate, width, height) {
     return morphGlyphMap;
   } else if (map_aggregate == "LA Level") {
     if (timeline_switch == "Decarbonisation Potentials") {
-      return createOverallPotential(data);
+      return plotOverallPotential(glyphData, glyphColours, glyphVariables);
     } else {
-      return createOverallPlot(yearlySummaryArray);
+      return plotOverallTimeline(yearlySummaryArray);
     }
   }
 }
@@ -1872,358 +1857,4 @@ let keysToNormalise = [
 //   keysToNormalise
 // );
 // console.log(">> Normalised Recap", normalisedYearlyRecap);
-```
-
-```js
-function createOverallPotential(data, width = 1100, height = 800) {
-  const margin = { top: 80, right: 200, bottom: 200, left: 80 };
-
-  const rgOptions = {
-    showTooltips: true,
-    showLegend: true,
-    title: "Overall Decarbonisation Potentials",
-    subtitle: "Aggregated building stock data in Oxford",
-    labels: glyphVariables,
-    tooltipFormatter: (value) => `${(value * 100).toFixed(1)}%`,
-    width: width,
-    height: height,
-    backgroundColor: "#fafafa",
-    titleColor: "#2c3e50",
-    subtitleColor: "#7f8c8d",
-    glyphOpacity: 0.85,
-    glyphStrokeColor: "#ffffff",
-    glyphStrokeWidth: 1.5,
-    margin: margin,
-    legendPosition: "right",
-    titleAlignment: "middle",
-
-    // Enhanced styling
-    titleFont: "system-ui, sans-serif",
-    subtitleFont: "system-ui, sans-serif",
-    legendFont: "system-ui, sans-serif",
-    titleFontSize: "24px",
-    subtitleFontSize: "16px",
-    legendFontSize: "14px",
-    legendSpacing: 30,
-    legendWidth: 180,
-  };
-
-  // Create Radial Glyph
-  const rg = new RadialGlyphOverall(
-    glyphVariables.map((key) => glyphdata[key]),
-    glyphColours,
-    rgOptions
-  );
-
-  // Get the SVG element
-  return rg.createSVG();
-}
-
-// Helper function to clean up tooltips when needed
-function cleanupTooltips() {
-  const tooltip = document.querySelector(".radial-glyph-tooltip");
-  if (tooltip) {
-    tooltip.remove();
-  }
-}
-```
-
-```js
-function createOverallPlot(data, width = 900, height = 600) {
-  const margin = { top: 30, right: 150, bottom: 120, left: 80 };
-  const innerWidth = width - margin.left - margin.right;
-  const innerHeight = height - margin.top - margin.bottom;
-
-  // Create container with message styling
-  const container = document.createElement("div");
-  container.style.position = "relative";
-  container.style.width = `${width}px`;
-  container.style.height = `${height}px`;
-  container.style.display = "flex";
-  container.style.alignItems = "center";
-  container.style.justifyContent = "center";
-  container.style.fontFamily = "Arial, sans-serif";
-  container.style.fontSize = "16px";
-  container.style.color = "#666";
-
-  // Comprehensive data validation
-  if (!data) {
-    container.textContent = "Please provide intervention data";
-    return container;
-  }
-
-  if (!Array.isArray(data)) {
-    container.textContent = "Data must be an array";
-    return container;
-  }
-
-  if (data.length === 0) {
-    container.textContent = "Please add intervention data to start";
-    return container;
-  }
-
-  // Check if data has required properties
-  const requiredFields = [
-    "year",
-    "budgetSpent",
-    "buildingsIntervened",
-    "totalCarbonSaved",
-  ];
-  const invalidItems = data.filter(
-    (item) =>
-      !item ||
-      typeof item !== "object" ||
-      !requiredFields.every((field) => {
-        if (field === "year") {
-          return Number.isInteger(item[field]);
-        }
-        return typeof item[field] === "number" && !isNaN(item[field]);
-      })
-  );
-
-  if (invalidItems.length > 0) {
-    container.textContent =
-      "Invalid data format. Each data point must include: year (integer), budgetSpent (number), buildingsIntervened (number), and totalCarbonSaved (number)";
-    return container;
-  }
-
-  // Clear container styles used for error messages
-  container.style.display = "block";
-  container.style.alignItems = "";
-  container.style.justifyContent = "";
-  container.style.fontFamily = "";
-  container.style.fontSize = "";
-  container.style.color = "";
-
-  const svg = d3
-    .select(container)
-    .append("svg")
-    .attr("width", width)
-    .attr("height", height);
-
-  const chart = svg
-    .append("g")
-    .attr("transform", `translate(${margin.left},${margin.top})`);
-
-  const years = [...new Set(data.map((d) => d.year))].sort((a, b) => a - b);
-
-  const longData = data.flatMap((d) => [
-    { year: d.year, value: d.budgetSpent, category: "Budget Spent" },
-    {
-      year: d.year,
-      value: d.buildingsIntervened,
-      category: "Buildings Intervened",
-    },
-    { year: d.year, value: d.totalCarbonSaved, category: "Total Carbon Saved" },
-  ]);
-
-  const stackedMaxValue = data.reduce(
-    (max, d) => Math.max(max, d.budgetSpent + d.totalCarbonSaved),
-    0
-  );
-
-  const maxBuildingsIntervened = d3.max(data, (d) => d.buildingsIntervened);
-
-  const xScale = d3
-    .scaleBand()
-    .domain(years)
-    .range([0, innerWidth])
-    .padding(0.1);
-
-  const yScale = d3
-    .scaleLinear()
-    .domain([0, stackedMaxValue * 1.1])
-    .range([innerHeight, 0]);
-
-  const yScaleRight = d3
-    .scaleLinear()
-    .domain([0, maxBuildingsIntervened * 1.1])
-    .range([innerHeight, 0]);
-
-  const colorScale = d3
-    .scaleOrdinal()
-    .domain(["Budget Spent", "Buildings Intervened", "Total Carbon Saved"])
-    .range([
-      "#2C699A", // Darker blue for budget
-      "#E63946", // Bright red for buildings line
-      "#2D936C", // Forest green for carbon savings
-    ]);
-
-  const stack = d3
-    .stack()
-    .keys(["Budget Spent", "Total Carbon Saved"])
-    .value((group, key) => group.find((d) => d.category === key)?.value || 0);
-
-  // Group data safely
-  const groupedData = Array.from(
-    d3.group(longData, (d) => d.year),
-    ([key, value]) => value
-  );
-  const stackedData = stack(groupedData);
-
-  const area = d3
-    .area()
-    .x((d, i) => xScale(years[i]) + xScale.bandwidth() / 2)
-    .y0((d) => yScale(d[0]))
-    .y1((d) => yScale(d[1]))
-    .curve(d3.curveMonotoneX);
-
-  // Add areas
-  chart
-    .selectAll(".area")
-    .data(stackedData)
-    .join("path")
-    .attr("class", "area")
-    .attr("fill", (d) => colorScale(d.key))
-    .attr("d", area)
-    .attr("opacity", 0.8);
-
-  // Add line
-  const line = d3
-    .line()
-    .x((d) => xScale(d.year) + xScale.bandwidth() / 2)
-    .y((d) => yScaleRight(d.buildingsIntervened))
-    .curve(d3.curveMonotoneX);
-
-  chart
-    .append("path")
-    .datum(data)
-    .attr("class", "line")
-    .attr("fill", "none")
-    .attr("stroke", colorScale("Buildings Intervened"))
-    .attr("stroke-width", 3.5)
-    .attr("opacity", 0.9)
-    .attr("d", line)
-    .raise();
-
-  // Add axes
-  chart
-    .append("g")
-    .attr("transform", `translate(0,${innerHeight})`)
-    .call(d3.axisBottom(xScale).tickFormat(d3.format("d")))
-    .selectAll("text")
-    .style("text-anchor", "middle");
-
-  chart
-    .append("g")
-    .call(d3.axisLeft(yScale))
-    .append("text")
-    .attr("transform", "rotate(-90)")
-    .attr("y", -60)
-    .attr("x", -innerHeight / 2)
-    .attr("fill", "black")
-    .attr("text-anchor", "middle")
-    .text("Budget & Carbon Saved");
-
-  chart
-    .append("g")
-    .attr("transform", `translate(${innerWidth}, 0)`)
-    .call(d3.axisRight(yScaleRight))
-    .append("text")
-    .attr("transform", "rotate(-90)")
-    .attr("y", 50)
-    .attr("x", -innerHeight / 2)
-    .attr("fill", "black")
-    .attr("text-anchor", "middle")
-    .text("Buildings Intervened");
-
-  // Add tooltip
-  const tooltip = d3
-    .select(container)
-    .append("div")
-    .style("position", "absolute")
-    .style("visibility", "hidden")
-    .style("background", "rgba(255, 255, 255, 0.9)")
-    .style("border", "1px solid #ddd")
-    .style("color", "#333")
-    .style("padding", "8px")
-    .style("border-radius", "4px")
-    .style("font-size", "12px")
-    .style("box-shadow", "2px 2px 6px rgba(0, 0, 0, 0.1)");
-
-  // Add invisible overlay for tooltip
-  const overlay = chart.append("g").attr("class", "overlay");
-
-  overlay
-    .selectAll("rect")
-    .data(years)
-    .join("rect")
-    .attr("x", (d) => xScale(d))
-    .attr("y", 0)
-    .attr("width", xScale.bandwidth())
-    .attr("height", innerHeight)
-    .attr("fill", "none")
-    .attr("pointer-events", "all")
-    .on("mousemove", function (event, year) {
-      const rect = container.getBoundingClientRect();
-      const mouseX = event.clientX - rect.left;
-      const mouseY = event.clientY - rect.top;
-      const yearData = data.find((d) => d.year === year);
-
-      if (yearData) {
-        tooltip
-          .style("visibility", "visible")
-          .style("left", `${mouseX + margin.left - 100}px`)
-          .style("top", `${mouseY - 80}px`).html(`
-            <strong>Year:</strong> ${year}<br>
-            <span style="color: ${colorScale(
-              "Budget Spent"
-            )}"><strong>Budget Spent:</strong> ${yearData.budgetSpent.toFixed(
-          2
-        )}</span><br>
-            <span style="color: ${colorScale(
-              "Total Carbon Saved"
-            )}"><strong>Carbon Saved:</strong> ${yearData.totalCarbonSaved.toFixed(
-          2
-        )}</span><br>
-            <span style="color: ${colorScale(
-              "Buildings Intervened"
-            )}"><strong>Buildings:</strong> ${
-          yearData.buildingsIntervened
-        }</span>
-          `);
-      }
-    })
-    .on("mouseout", function () {
-      tooltip.style("visibility", "hidden");
-    });
-
-  // Add legend
-  const legend = svg
-    .append("g")
-    .attr(
-      "transform",
-      `translate(${margin.left}, ${height - margin.bottom + 50})`
-    );
-
-  const legendSpacing = innerWidth / 3;
-
-  legend
-    .selectAll("rect")
-    .data(colorScale.domain())
-    .join("rect")
-    .attr("x", (d, i) => i * legendSpacing)
-    .attr("y", 0)
-    .attr("width", 15)
-    .attr("height", 15)
-    .attr("fill", (d) => colorScale(d));
-
-  legend
-    .selectAll("text")
-    .data(colorScale.domain())
-    .join("text")
-    .attr("x", (d, i) => i * legendSpacing + 20)
-    .attr("y", 12)
-    .text((d) => d)
-    .style("font-size", "12px");
-
-  return container;
-}
-
-//     .attr("y", (d, i) => i * 20 + 12)
-//     .text((d) => d)
-//     .style("font-size", "12px");
-
-//   return container;
-// }
 ```
