@@ -63,6 +63,8 @@ import {
   aggregateValues,
   // applyTransformationToShapes,
 } from "./components/helpers.js";
+
+import { animate } from "./components/utils.js";
 ```
 
 ```js
@@ -885,30 +887,8 @@ let playing = false; // Track play/pause state
 let direction = 1; // Controls the animation direction (0 to 1 or 1 to 0)
 let animationFrame; // Stores the requestAnimationFrame ID
 
-function animate(currentValue) {
-  // Increment or decrement the value
-  let newValue = currentValue + 0.01 * direction;
-
-  // Reverse direction if boundaries are reached
-  // if (newValue >= 1 || newValue <= 0) {
-  //   direction *= -1;
-  //   newValue = Math.max(0, Math.min(1, newValue)); // Clamp value between 0 and 1
-  // }
-  if (newValue >= 1 || newValue <= 0) {
-    newValue = Math.max(0, Math.min(1, newValue)); // Clamp value
-    playing = false; // Pause animation
-    playButton.innerHTML = '<i class="fas fa-play"></i>'; // Update button
-    cancelAnimationFrame(animationFrame);
-    return; // Stop animation loop
-  }
-
-  // Update the slider and dispatch the "input" event for reactivity
-  set(morphFactorInput, newValue);
-
-  if (playing) {
-    animationFrame = requestAnimationFrame(() => animate(newValue)); // Pass the updated value
-  }
-}
+// Animation loop
+animate(currentValue, animationFrame, playing, direction);
 
 // Button click event listener
 playButton.addEventListener("click", () => {
@@ -1127,13 +1107,6 @@ const flatData = selectedIntervenedBuildings?.map((p) => ({
 
 console.log(">> Intervened buildings", flatData);
 
-// const data =
-//   selectedInterventionIndex === null
-//     ? stackedRecap?.buildings ?? buildingsData
-//     : filteredDatafromTableSession
-//     ? filteredDatafromTableSession
-//     : flatData;
-
 const data =
   selectedInterventionIndex === null
     ? stackedRecap?.buildings ?? buildingsData
@@ -1218,7 +1191,7 @@ function tableChanged(event) {
   }
 
   if (event.type === "selection") {
-    console.log("Selected rows:", event.selection);
+    // console.log("Selected rows:", event.selection);
     setSelectedTableRow(event.selection);
     console.log("Selection rule:", event.rule);
   }
@@ -1292,23 +1265,6 @@ const aggregations = {
   gshp_material: "sum",
   gshp_total: "sum",
   heat_demand: "sum",
-  // insulation_rating: "count",
-  // insulation_cwall: "count",
-  // insulation_cwall_labour: "sum",
-  // insulation_cwall_materials: "sum",
-  // insulation_cwall_total: "sum",
-  // insulation_ewall: "count",
-  // insulation_ewall_labour: "sum",
-  // insulation_ewall_materials: "sum",
-  // insulation_ewall_total: "sum",
-  // insulation_roof: "count",
-  // insulation_roof_labour: "sum",
-  // insulation_roof_materials: "sum",
-  // insulation_roof_total: "sum",
-  // insulation_floor: "count",
-  // insulation_floor_labour: "sum",
-  // insulation_floor_materials: "sum",
-  // insulation_floor_total: "sum",
   pv_suitability: "count",
   pv_size: "sum",
   pv_generation: "sum",
@@ -1350,10 +1306,6 @@ const cartogram_geodata_withproperties = enrichGeoData(
   "code",
   aggregations
 );
-// console.log(
-//   "cartogram_geodata_withproperties_enriched",
-//   cartogram_geodata_withproperties_enriched
-// );
 ```
 
 ```js
@@ -1852,9 +1804,4 @@ let keysToNormalise = [
   "buildingsIntervened",
   "totalCarbonSaved",
 ];
-// const normalisedYearlyRecap = normaliseData(
-//   yearlySummaryArray,
-//   keysToNormalise
-// );
-// console.log(">> Normalised Recap", normalisedYearlyRecap);
 ```
