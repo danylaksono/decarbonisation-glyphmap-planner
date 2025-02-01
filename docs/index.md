@@ -7,6 +7,12 @@ sql:
   oxford: ./data/oxford_decarbonisation_data.parquet
 ---
 
+<!-------- Stylesheets -------->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css">
+<link rel="stylesheet" href="./styles/bulma-quickview.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<link rel="stylesheet" href="./styles/dashboard.css">
+
 <!-- ------------ Imports ------------ -->
 
 ```js
@@ -20,6 +26,7 @@ import * as turf from "@turf/turf";
 import * as bulmaToast from "npm:bulma-toast";
 import * as bulmaQuickview from "npm:bulma-quickview@2.0.0/dist/js/bulma-quickview.js";
 
+import { OSGB } from "./components/osgb/index.js";
 import { sorterTable } from "./components/sorttable/sorterTableClass.js";
 import {
   TimeGlyph,
@@ -27,7 +34,6 @@ import {
 } from "./components/gridded-glyphmaps/glyph-designs/timeGlyph.js";
 import { StreamGraphGlyph } from "./components/gridded-glyphmaps/glyph-designs/mirrorTimeGlyph.js";
 import { RadialGlyph } from "./components/gridded-glyphmaps/glyph-designs/radialglyph.js";
-// import { RadialGlyphOverall } from "./components/gridded-glyphmaps/glyph-designs/radialGlyphOverall.js";
 
 import {
   glyphMap,
@@ -35,9 +41,7 @@ import {
   _drawCellBackground,
 } from "./components/gridded-glyphmaps/index.min.js";
 
-import { OSGB } from "./components/osgb/index.js";
 import { BudgetAllocator } from "./components/decarb-model/budget-allocator.js";
-
 import {
   InterventionManager,
   MiniDecarbModel,
@@ -49,6 +53,7 @@ import {
 } from "./components/plots.js";
 import { LeafletMap } from "./components/leaflet/leaflet-map.js";
 
+import { animate } from "./components/utils.js";
 import {
   inferTypes,
   enrichGeoData,
@@ -63,8 +68,6 @@ import {
   aggregateValues,
   // applyTransformationToShapes,
 } from "./components/helpers.js";
-
-import { animate } from "./components/utils.js";
 ```
 
 ```js
@@ -239,12 +242,6 @@ const [timelineModifications, setTimelineModifications] = useState([]); // list 
 // mutable list of budget allocations
 const [allocations, setAllocations] = useState([]);
 ```
-
-<!-------- Stylesheets -------->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css">
-<link rel="stylesheet" href="./styles/bulma-quickview.min.css">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-<link rel="stylesheet" href="./styles/dashboard.css">
 
 <!-- ---------------- HTML Layout ---------------- -->
 
@@ -801,7 +798,7 @@ addInterventionBtn.addEventListener("click", () => {
     optimizationStrategy: "tech-first",
     tech: techsInput.value,
     priorities: [],
-    filters: [filterByIds(tableFilteredData.map((d) => d.id))],
+    filters: [],
   };
 
   addNewIntervention(formData);
@@ -916,11 +913,17 @@ playButton.addEventListener("click", () => {
 function addNewIntervention(data) {
   // console.log(Date.now(), "Checking allocations now:", allocations);
   const currentAllocation = getFromSession("allocations");
+  const filter = filterByIds(
+    tableFilteredData.map((d) => d?.id).filter(Boolean)
+  );
+  console.log("filter", filter);
+
   console.log(">> Current Allocation from session", currentAllocation);
   const yearlyBudgets = currentAllocation.map((item) => item.budget);
 
   const newConfig = {
     ...data,
+    filters: [filter],
     // priorities: [],
     yearlyBudgets: yearlyBudgets,
   };
@@ -1180,9 +1183,9 @@ function tableChanged(event) {
   if (event.type === "filter") {
     console.log("Filtered indices:", event.indeces);
     console.log("Filter rule:", event.rule);
-    // saveToSession("tableFiltered", event.indeces);
-
-    setTableFiltered(event.indeces);
+    saveToSession("tableFiltered", event.indeces);
+    console.log("++Filtering Table called");
+    // setTableFiltered(event.indeces);
   }
 
   if (event.type === "sort") {
@@ -1200,12 +1203,17 @@ function tableChanged(event) {
 
 ```js
 // const tableFiltered = getFromSession("tableFiltered");
+const tableFiltered = getFromSession("tableFiltered") ?? [];
 
-const tableFilteredData = tableFiltered.map((index) => {
-  return table.data[index];
-});
+const tableFilteredData = tableFiltered
+  .map((index) => table.data?.[index])
+  .filter(Boolean);
 
-console.log("Filtered data:", tableFilteredData);
+// const tableFilteredData = tableFiltered.map((index) => {
+//   return table.data[index];
+// });
+
+// console.log("Filtered data:", tableFilteredData);
 ```
 
 <!-- ---------------- Sortable Table ---------------- -->
@@ -1501,8 +1509,6 @@ function glyphMapSpec(width = 800, height = 600) {
           ...cell,
           data: normalisedData[index],
         }));
-
-        // transformInterventionData
 
         // Update cells with normalized data
         cells.forEach((cell, index) => {

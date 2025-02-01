@@ -10,6 +10,7 @@ sql:
 ```js
 // import { createTable } from "./../components/sorterTable.js";
 import { sorterTable } from "./../components/sorttable/sorterTableClass.js";
+import { Histogram } from "./../components/sorttable/histogram.js";
 ```
 
 # Table Experiments 2
@@ -87,7 +88,9 @@ const columns2 = [
   { column: "pv_generation", alias: "PV Generation" },
   "ashp_size",
   "substation_demand",
-  "heat_demand",
+  "gshp_total",
+  "gshp_suitability",
+  { column: "heat_demand", alias: "Heat Demand", type: "continuous" },
 ];
 ```
 
@@ -167,7 +170,6 @@ table2.applyCustomFilter(customFilter);
 
 ```js
 const table2 = new sorterTable(oxBuildings, columns2, tableChanged, {
-  cellRenderers,
   containerWidth: 300,
 });
 ```
@@ -306,8 +308,35 @@ table {
 } */
 </style>
 
+```js
+function tableChanged(event) {
+  console.log("Table changed:", event);
+
+  if (event.type === "filter") {
+    console.log("Filtered indices:", event);
+    console.log("Filter rule:", event.rule);
+  }
+  if (event.type === "columnSelection") {
+    console.log("Selected column:", event.selectedColumn);
+    // ... do something with the selected column information ...
+  }
+
+  if (event.type === "sort") {
+    console.log("Sorted indices:", event);
+    console.log("Sort criteria:", event.sort);
+  }
+
+  if (event.type === "selection") {
+    console.log("Selected rows:", event.selection);
+    setSelected(event.selection);
+    console.log("Selection rule:", event.rule);
+  }
+}
+```
+
 ## Renderers Demo
 
+<!--
 ```js
 // --- Dummy Data ---
 const buildings = [
@@ -531,31 +560,6 @@ const cellRenderers = {
 };
 ```
 
-```js
-function tableChanged(event) {
-  console.log("Table changed:", event);
-
-  if (event.type === "filter") {
-    console.log("Filtered indices:", event);
-    console.log("Filter rule:", event.rule);
-  }
-  if (event.type === "columnSelection") {
-    console.log("Selected column:", event.selectedColumn);
-    // ... do something with the selected column information ...
-  }
-
-  if (event.type === "sort") {
-    console.log("Sorted indices:", event);
-    console.log("Sort criteria:", event.sort);
-  }
-
-  if (event.type === "selection") {
-    console.log("Selected rows:", event.selection);
-    setSelected(event.selection);
-    console.log("Selection rule:", event.rule);
-  }
-}
-```
 
 ```js
 // --- Create sorterTable Instance ---
@@ -565,4 +569,31 @@ const table = new sorterTable(buildings, columnNames, tableChanged, {
   additionalLines: 5, // Load 5 more rows on scroll
 });
 display(table.getNode());
+``` -->
+
+## Histogram
+
+```js
+const histogram = new Histogram({
+  width: 600,
+  height: 400,
+  column: "gshp_total",
+  colors: ["steelblue", "orange"],
+  selectionMode: "drag",
+  //   axis: true,
+  showLabelsBelow: true,
+});
+
+const svgNode = histogram.createSvg();
+
+histogram.update(oxBuildings);
+display(svgNode);
+```
+
+```js
+histogram.on("selectionChanged", (selectedData) => {
+  console.log("Selected data:", selectedData);
+  display(selectedData);
+});
+// display(selectedData);
 ```

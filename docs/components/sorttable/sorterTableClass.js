@@ -1,33 +1,49 @@
 import * as d3 from "npm:d3";
+import { BinningService } from "./BinningService.js";
 
 export class sorterTable {
   constructor(data, columnNames, changed, options = {}) {
-    this.data = data;
-
-    // create table element
-    this.table = document.createElement("table");
-    this.table.classList.add("sorter-table");
-
-    // Automatically create column definitions with type inference
-    // this.columns = columnNames.map((colName) => ({ column: colName }));
-    // this.initialColumns = columnNames.map((colName) => ({ column: colName }));
-
-    // use alias if provided
+    // Initialize core properties first
+    this.data = this.preprocessData(data, columnNames); // Add preprocessing
+    this.columnTypes = {};
     this.columns = columnNames.map((col) => {
       if (typeof col === "string") {
-        return { column: col, unique: false }; // Default: not unique
+        return { column: col, unique: false };
       } else {
         return {
           column: col.column,
           alias: col.alias,
           unique: col.unique || false,
+          type: col.type || null, // Add support for manual type definition
         };
       }
     });
+
+    // Pre-populate column types if manually specified
+    this.columns.forEach((col) => {
+      if (col.type) {
+        this.columnTypes[col.column] = col.type;
+      }
+    });
+
+    // Initialize the BinningService
+    this.binningService = new BinningService({
+      maxOrdinalBins: options.maxOrdinalBins || 12,
+      continuousBinMethod: options.continuousBinMethod || "scott",
+      dateInterval: options.dateInterval || "day",
+      minBinSize: options.minBinSize || 5,
+      customThresholds: options.customThresholds || null,
+    });
+
+    this.inferColumnTypesAndThresholds(data);
+
+    // create table element
+    this.table = document.createElement("table");
+    this.table.classList.add("sorter-table");
+
     this.initialColumns = JSON.parse(JSON.stringify(this.columns));
 
     console.log("Initial columns:", this.columns);
-    this.inferColumnTypesAndThresholds(data);
 
     this.changed = changed;
     this._isUndoing = false;
@@ -55,7 +71,6 @@ export class sorterTable {
       0, 0.01, 0.02, 0.03, 0.04, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
       0.9, 0.95, 0.96, 0.97, 0.98, 0.99, 1,
     ];
-    this.columnTypes = {};
     this.cellRenderers = {}; // Custom cell renderers
     if (options.cellRenderers) {
       for (const [columnName, renderer] of Object.entries(
@@ -102,6 +117,54 @@ export class sorterTable {
     });
   }
 
+  preprocessData(data, columnNames) {
+    return data.map((row) => {
+      const processed = { ...row };
+      columnNames.forEach((col) => {
+        const colName = typeof col === "string" ? col : col.column;
+        const colType = typeof col === "string" ? null : col.type;
+
+        // Handle continuous columns
+        if (colType === "continuous") {
+          const value = row[colName];
+
+          // Handle different value cases
+          if (value === null || value === undefined || value === "") {
+            // FALLBACK VALUE FOR NUMERICAL COLUMNS
+            processed[colName] = 0;
+          } else if (typeof value === "string") {
+            // Clean string numbers
+            const cleaned = value.replace(/[^0-9.-]/g, "");
+            if (cleaned === "" || isNaN(Number(cleaned))) {
+              processed[colName] = 0; // Fallback for invalid numbers
+            } else {
+              processed[colName] = Number(cleaned);
+            }
+          } else if (typeof value === "number") {
+            if (isNaN(value)) {
+              processed[colName] = 0; // Handle NaN
+            } else {
+              processed[colName] = value; // Keep valid numbers as-is
+            }
+          } else {
+            // Handle any other unexpected types
+            processed[colName] = 0;
+          }
+
+          // Log problematic values for debugging
+          if (processed[colName] === 0 && value !== 0) {
+            console.warn(`Converted invalid value in ${colName}:`, {
+              original: value,
+              converted: processed[colName],
+              rowData: row,
+            });
+          }
+        }
+      });
+      return processed;
+    });
+  }
+
   setColumnType(columnName, type) {
     if (!columnName) {
       console.error("Invalid columnName:", columnName);
@@ -111,106 +174,84 @@ export class sorterTable {
     // console.log("Setting column type:", this.columnTypes);  // DEBUG
   }
 
-  getColumnType(columnName) {
-    if (columnName in this.columnTypes) return this.columnTypes[columnName];
-    return null;
+  getColumnType(data, column) {
+    // If already cached, return the cached type
+    if (this.columnTypes[column]) {
+      return this.columnTypes[column];
+    }
+
+    // Infer type from data
+    for (const d of data) {
+      const value = d[column];
+      if (value === undefined || value === null) continue;
+
+      // Check for date objects
+      if (value instanceof Date) return "date";
+
+      // Check for numbers
+      if (typeof value === "number" || !isNaN(Number(value))) {
+        // Check if it's really continuous or just a few discrete values
+        const uniqueValues = new Set(data.map((d) => d[column])).size;
+        if (uniqueValues > 10) {
+          // Threshold for considering it continuous
+          return "continuous";
+        }
+      }
+
+      // Default to ordinal for strings and small number sets
+      return "ordinal";
+    }
+
+    // Default to ordinal if no clear type is found
+    return "ordinal";
   }
 
   inferColumnTypesAndThresholds(data) {
-    // Helper function to infer the type of a column
-    const getType = (data, column) => {
-      for (const d of data) {
-        const value = d[column];
-        if (value === undefined) {
-          console.warn(`Value undefined for column: ${column}`);
-          continue;
-        }
-        if (value == null) continue;
-        if (typeof value === "number") return "continuous";
-        if (value instanceof Date) return "date";
-        return "ordinal";
-      }
-      // If all values are null or undefined, default to ordinal
-      return "ordinal";
-    };
-
-    // Helper function to calculate thresholds for continuous columns
-    const calculateThresholds = (data, column, numBins = 10) => {
-      // Validate numBins
-      if (
-        typeof numBins !== "number" ||
-        numBins < 1 ||
-        !Number.isInteger(numBins)
-      ) {
-        throw new Error("numBins must be a positive integer greater than 0.");
-      }
-
-      // Extract and filter values
-      const values = data
-        .map((d) => d[column])
-        .filter((v) => v != null && v !== undefined);
-
-      // Handle edge case where no valid values are found
-      if (values.length === 0) {
-        console.warn(
-          `No valid values found for column: ${column}. Using default thresholds.`
-        );
-        return d3.range(1, numBins).map((i) => i); // Default thresholds
-      }
-
-      // Use d3.histogram to calculate bins
-      const histogram = d3
-        .histogram()
-        .domain([d3.min(values), d3.max(values)]) // Set the domain
-        .thresholds(numBins); // Set the number of bins
-
-      const bins = histogram(values);
-
-      // Extract thresholds from the bins
-      const thresholds = bins.slice(1).map((bin) => bin.x0);
-
-      return thresholds;
-    };
-
-    // Helper function to get unique values for ordinal columns
-    const getUniqueValues = (data, column) => {
-      const values = data
-        .map((d) => d[column])
-        .filter((v) => v != null && v !== undefined);
-
-      if (values.length === 0) {
-        console.warn(
-          `No valid values found for column: ${column}. Using empty nominals.`
-        );
-        return []; // Default empty array
-      }
-
-      return [...new Set(values)].sort(); // Get unique values and sort them
-    };
-
-    // Initialize columnTypes if not already initialized
-    if (!this.columnTypes) {
-      this.columnTypes = {};
+    if (!this.binningService) {
+      console.error("BinningService not initialized");
+      return;
     }
 
-    // Iterate over each column and infer its type and properties
     this.columns.forEach((colDef) => {
       const colName = colDef.column;
-      const type = getType(data, colName);
-
-      // Set column type
+      const type = this.getColumnType(data, colName);
       this.setColumnType(colName, type);
 
-      // Calculate thresholds or unique values based on the inferred type
-      if (type === "continuous") {
-        colDef.thresholds = calculateThresholds(data, colName);
-      } else if (type === "ordinal") {
-        colDef.nominals = getUniqueValues(data, colName);
-      } else if (type === "date") {
-        // Specific logic for date columns (e.g., calculate date ranges)
-        colDef.dateRange = d3.extent(
-          data.map((d) => d[colName]).filter((v) => v != null)
-        );
+      if (!colDef.unique) {
+        try {
+          // If the user has predefined thresholds, use them.
+          if (
+            colDef.thresholds &&
+            Array.isArray(colDef.thresholds) &&
+            colDef.thresholds.length
+          ) {
+            console.log(`Using predefined thresholds for ${colName}`);
+          } else {
+            // Otherwise, calculate them via binning service
+            const bins = this.binningService.getBins(data, colName, type);
+
+            if (!bins || bins.length === 0) {
+              console.warn(`No bins generated for column: ${colName}`);
+              return;
+            }
+
+            // For continuous data, use computed bin boundaries
+            if (type === "continuous") {
+              // Avoid filtering out valid values (e.g., 0) by checking for undefined or null explicitly
+              colDef.thresholds = bins.map((bin) =>
+                bin.x0 !== undefined && bin.x0 !== null ? bin.x0 : null
+              );
+            } else if (type === "ordinal") {
+              colDef.nominals = bins
+                .map((bin) => bin.key)
+                .filter((key) => key !== undefined && key !== null);
+            } else if (type === "date") {
+              colDef.dateRange = d3.extent(bins, (bin) => bin.date);
+            }
+          }
+        } catch (error) {
+          console.error(`Error binning column ${colName}:`, error);
+        }
       }
     });
   }
@@ -1237,15 +1278,10 @@ function HistogramController(data, binrules) {
         },
       ];
     } else if ("thresholds" in binrules) {
-      // Handle continuous data with thresholds
-      x = d3
-        .scaleThreshold()
-        .domain(binrules.thresholds)
-        .range([0, 1, 2, 3, 4, 5]);
-
+      // Continuous data
       bins = d3
         .bin()
-        .domain([0, 1000000])
+        .domain([d3.min(data, (d) => d.value), d3.max(data, (d) => d.value)]) // Set the domain based on actual data extent
         .thresholds(binrules.thresholds)
         .value((d) => d.value)(data);
 
@@ -1254,6 +1290,15 @@ function HistogramController(data, binrules) {
         count: b.length,
         indeces: b.map((v) => v.index),
       }));
+
+      // Create x scale based on the extent of the bins
+      x = d3
+        .scaleLinear()
+        .domain([
+          d3.min(this.bins, (d) => d.x0),
+          d3.max(this.bins, (d) => d.x1),
+        ])
+        .range([0, width]);
     } else if ("ordinals" in binrules || "nominals" in binrules) {
       // Handle ordinal or nominal data
       const frequency = d3.rollup(
