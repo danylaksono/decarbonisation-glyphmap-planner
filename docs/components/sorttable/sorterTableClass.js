@@ -919,7 +919,14 @@ export class sorterTable {
       return scoreA - scoreB;
     });
 
+    this.visControllers.forEach((vc, index) => {
+      const columnName = this.columns[index].column;
+      const columnData = this.dataInd.map((i) => this.data[i][columnName]);
+      vc.setData(columnData);
+    });
+
     this.createTable();
+    // this.createHeader();
 
     this.changed({
       type: "sort",
