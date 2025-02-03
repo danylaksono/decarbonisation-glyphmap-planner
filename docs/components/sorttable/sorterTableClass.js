@@ -153,11 +153,12 @@ export class sorterTable {
 
           // Log problematic values for debugging
           if (processed[colName] === 0 && value !== 0) {
-            console.warn(`Converted invalid value in ${colName}:`, {
-              original: value,
-              converted: processed[colName],
-              rowData: row,
-            });
+            // DEBUG
+            // console.warn(`Converted invalid value in ${colName}:`, {
+            //   original: value,
+            //   converted: processed[colName],
+            //   rowData: row,
+            // });
           }
         }
       });
@@ -217,6 +218,7 @@ export class sorterTable {
       const type = this.getColumnType(data, colName);
       this.setColumnType(colName, type);
 
+      // threshold and binning for each type
       if (!colDef.unique) {
         try {
           // If the user has predefined thresholds, use them.
@@ -229,6 +231,7 @@ export class sorterTable {
           } else {
             // Otherwise, calculate them via binning service
             const bins = this.binningService.getBins(data, colName, type);
+            console.log("--------Calculated Bins from service", bins);
 
             if (!bins || bins.length === 0) {
               console.warn(`No bins generated for column: ${colName}`);
@@ -241,11 +244,19 @@ export class sorterTable {
               colDef.thresholds = bins.map((bin) =>
                 bin.x0 !== undefined && bin.x0 !== null ? bin.x0 : null
               );
+              colDef.bins = bins;
+              console.log(
+                "Setting thresholds for continuous column:",
+                colName,
+                colDef
+              );
             } else if (type === "ordinal") {
+              colDef.bins = bins;
               colDef.nominals = bins
                 .map((bin) => bin.key)
                 .filter((key) => key !== undefined && key !== null);
             } else if (type === "date") {
+              colDef.bins = bins;
               colDef.dateRange = d3.extent(bins, (bin) => bin.date);
             }
           }
@@ -295,9 +306,9 @@ export class sorterTable {
       this.sortControllers.splice(targetIndex, 0, columnsToMove.sortController);
 
       // Recreate the table and header
-      this.rebuildTable();
-      // this.createHeader();
-      // this.createTable();
+      // this.rebuildTable();
+      this.createHeader();
+      this.createTable();
 
       // Update data in visualization controllers
       this.visControllers.forEach((vc, idx) => {
@@ -393,14 +404,6 @@ export class sorterTable {
     this.createHeader();
     this.createTable();
   }
-
-  // getSelection() {
-  //   let ret = [];
-  //   this.tBody.querySelectorAll("tr").forEach((tr, i) => {
-  //     if (tr.selected) ret.push({ index: i, data: this.data[this.dataInd[i]] });
-  //   });
-  //   return ret;
-  // }
 
   getSelection() {
     let ret = [];
@@ -671,6 +674,10 @@ export class sorterTable {
       if (c.unique) {
         // For unique columns, create a histogram with a single bin
         let uniqueData = this.dataInd.map((i) => this.data[i][c.column]);
+        const uniqueBinning = [
+          { x0: "Unique", x1: "Unique", values: uniqueData },
+        ];
+        // let visCtrl = new HistogramController(uniqueData, uniqueBinning); // { unique: true });
         let visCtrl = new HistogramController(uniqueData, { unique: true });
         visCtrl.table = this;
         visCtrl.columnName = c.column;
@@ -678,11 +685,15 @@ export class sorterTable {
         visTd.appendChild(visCtrl.getNode());
       } else {
         // Create and add visualization controller (histogram) for non-unique columns
+        console.log(" >>>> Creating histogram for column:", c.column, c);
         let visCtrl = new HistogramController(
           this.dataInd.map((i) => this.data[i][c.column]),
-          this.getColumnType(c.column) === "continuous"
-            ? { thresholds: c.thresholds }
+          c.type === "continuous"
+            ? { thresholds: c.thresholds, binInfo: c.bins }
             : { nominals: c.nominals }
+          // this.getColumnType(c.column) === "continuous"
+          //   ? { thresholds: c.thresholds }
+          //   : { nominals: c.nominals }
         );
         visCtrl.table = this;
         visCtrl.columnName = c.column;
@@ -950,64 +961,6 @@ export class sorterTable {
     } else return -1;
   }
 
-  //   getNode() {
-  //     let container = document.createElement("div");
-  //     container.style.maxHeight = "300px";
-  //     container.style.overflowY = "auto";
-  //     container.style.width = "100%";
-
-  //     this.table.style.width = "100%";
-  //     this.table.style.borderCollapse = "collapse";
-  //     this.table.style.marginTop = "0px";
-
-  //     let tableControllers = document.createElement("table");
-  //     let tableControllersRow = document.createElement("tr");
-  //     tableControllers.appendChild(tableControllersRow);
-
-  //     if (this.showDefaultControls) {
-  //       let tdController = document.createElement("td");
-  //       tableControllersRow.appendChild(tdController);
-  //       let filterController = new FilterController(() => this.filter());
-  //       tdController.appendChild(filterController.getNode());
-
-  //       tdController = document.createElement("td");
-  //       tableControllersRow.appendChild(tdController);
-  //       let undoController = new UndoController(() => this.undo());
-  //       tdController.appendChild(undoController.getNode());
-  //     }
-  //     container.appendChild(tableControllers);
-  //     container.appendChild(this.table);
-
-  //     container.addEventListener("keydown", (event) => {
-  //       if (event.shiftKey) {
-  //         this.shiftDown = true;
-  //       }
-  //       if (event.ctrlKey) this.ctrlDown = true;
-
-  //       event.preventDefault();
-  //     });
-  //     container.addEventListener("keyup", (event) => {
-  //       this.shiftDown = false;
-  //       this.ctrlDown = false;
-  //       event.preventDefault();
-  //     });
-  //     container.setAttribute("tabindex", "0");
-
-  //     container.addEventListener("scroll", () => {
-  //       const threshold = 500;
-  //       const scrollTop = container.scrollTop;
-  //       const scrollHeight = container.scrollHeight;
-  //       const clientHeight = container.clientHeight;
-
-  //       if (scrollTop + clientHeight >= scrollHeight - threshold) {
-  //         this.addTableRows(this.additionalLines);
-  //       }
-  //     });
-
-  //     return container;
-  //   }
-  // }
-
   getNode() {
     let container = document.createElement("div");
     container.style.width = "100%";
@@ -1240,6 +1193,8 @@ function HistogramController(data, binrules) {
   let div = document.createElement("div");
 
   this.bins = [];
+  this.brush = null;
+  this.isBrushing = false;
 
   this.updateData = (d) => this.setData(d);
 
@@ -1249,8 +1204,10 @@ function HistogramController(data, binrules) {
       bin.selected = false;
     });
 
-    svg.selectAll(".bar rect:nth-child(1)").attr("fill", "steelblue");
+    this.svg.selectAll(".bar rect:nth-child(1)").attr("fill", "steelblue");
   };
+
+  // console.log("------------------binrules outside setData: ", binrules);
 
   this.setData = function (dd) {
     div.innerHTML = "";
@@ -1263,17 +1220,15 @@ function HistogramController(data, binrules) {
     const width = svgWidth - margin.left - margin.right;
     const height = svgHeight - margin.top - margin.bottom;
 
-    const svg = d3
+    this.svg = d3
       .select(div)
       .append("svg")
       .attr("width", svgWidth)
       .attr("height", svgHeight);
+    // .append("g")
+    // .attr("transform", `translate(${margin.left},${margin.top})`);
 
-    const chart = svg
-      .append("g")
-      .attr("transform", `translate(${margin.left},${margin.top})`);
-
-    let x = null;
+    console.log("------------------binrules in setData: ", binrules);
 
     if (binrules.unique) {
       // Handle unique columns: create a single bin
@@ -1285,27 +1240,36 @@ function HistogramController(data, binrules) {
         },
       ];
     } else if ("thresholds" in binrules) {
+      console.log("------------------Continuous data----------------------");
       // Continuous data
-      bins = d3
+      console.log("Domain: ", [
+        d3.min(data, (d) => d.value),
+        d3.max(data, (d) => d.value),
+      ]);
+      console.log("Thresholds: ", binrules.thresholds);
+      let contBins = d3
         .bin()
-        .domain([d3.min(data, (d) => d.value), d3.max(data, (d) => d.value)]) // Set the domain based on actual data extent
+        .domain([d3.min(data, (d) => d.value), d3.max(data, (d) => d.value)])
         .thresholds(binrules.thresholds)
         .value((d) => d.value)(data);
 
-      this.bins = bins.map((b) => ({
+      this.bins = contBins.map((b) => ({
         category: b.x0 + "-" + b.x1,
         count: b.length,
         indeces: b.map((v) => v.index),
       }));
 
-      // Create x scale based on the extent of the bins
-      x = d3
-        .scaleLinear()
-        .domain([
-          d3.min(this.bins, (d) => d.x0),
-          d3.max(this.bins, (d) => d.x1),
+      // Initialize brush for continuous data
+      this.brush = d3
+        .brushX()
+        .extent([
+          [0, 0],
+          [svgWidth, svgHeight],
         ])
-        .range([0, width]);
+        .on("end", this.handleBrush);
+
+      // Add brush to svg
+      this.svg.append("g").attr("class", "brush").call(this.brush);
     } else if ("ordinals" in binrules || "nominals" in binrules) {
       // Handle ordinal or nominal data
       const frequency = d3.rollup(
@@ -1319,6 +1283,7 @@ function HistogramController(data, binrules) {
 
       const binType = "ordinals" in binrules ? "ordinals" : "nominals";
 
+      // use predefined bin order if available
       if (binType in binrules && Array.isArray(binrules[binType])) {
         this.bins = binrules[binType].map((v) => ({
           category: v,
@@ -1341,7 +1306,7 @@ function HistogramController(data, binrules) {
       .domain([0, d3.max(this.bins, (d) => d.count)])
       .range([height, 0]);
 
-    const barGroups = svg
+    const barGroups = this.svg
       .selectAll(".bar")
       .data(this.bins)
       .join("g")
@@ -1360,71 +1325,127 @@ function HistogramController(data, binrules) {
       .attr("height", (d) => height - y(d.count))
       .attr("fill", "steelblue");
 
-    // Invisible bars for interaction
-    barGroups
-      .append("rect")
-      .attr("width", (d) => width / this.bins.length)
-      .attr("height", height)
-      .attr("fill", "transparent")
-      .on("mouseover", (event, d) => {
-        if (!d.selected) {
-          d3.select(event.currentTarget.previousSibling).attr("fill", "purple");
-        }
-
-        svg
-          .selectAll(".histogram-label")
-          .data([d])
-          .join("text")
-          .attr("class", "histogram-label")
-          .attr("x", width / 2)
-          .attr("y", height + 10)
-          .attr("font-size", "10px")
-          .attr("fill", "#444444")
-          .attr("text-anchor", "middle")
-          .text(d.category + ": " + d.count);
-      })
-      .on("mouseout", (event, d) => {
-        if (!d.selected) {
-          d3.select(event.currentTarget.previousSibling).attr(
-            "fill",
-            "steelblue"
-          );
-        }
-
-        svg.selectAll(".histogram-label").remove();
-      })
-      .on("click", (event, d) => {
-        d.selected = !d.selected;
-
-        if (d.selected) {
-          d3.select(event.currentTarget.previousSibling).attr("fill", "orange");
-        } else {
-          d3.select(event.currentTarget.previousSibling).attr(
-            "fill",
-            "steelblue"
-          );
-        }
-
-        if (controller.table) {
+    // For continuous data, we don't need the invisible interaction bars
+    // Only add them for ordinal/nominal data
+    if (!("thresholds" in binrules)) {
+      barGroups
+        .append("rect")
+        .attr("width", (d) => width / this.bins.length)
+        .attr("height", height)
+        .attr("fill", "transparent")
+        .on("mouseover", (event, d) => {
           if (!d.selected) {
-            controller.table.clearSelection();
+            d3.select(event.currentTarget.previousSibling).attr(
+              "fill",
+              "purple"
+            );
           }
 
-          this.bins[d.index].indeces.forEach((rowIndex) => {
-            const tr = controller.table.tBody.querySelector(
-              `tr:nth-child(${rowIndex + 1})`
+          svg
+            .selectAll(".histogram-label")
+            .data([d])
+            .join("text")
+            .attr("class", "histogram-label")
+            .attr("x", width / 2)
+            .attr("y", height + 10)
+            .attr("font-size", "10px")
+            .attr("fill", "#444444")
+            .attr("text-anchor", "middle")
+            .text(d.category + ": " + d.count);
+        })
+        .on("mouseout", (event, d) => {
+          if (!d.selected) {
+            d3.select(event.currentTarget.previousSibling).attr(
+              "fill",
+              "steelblue"
             );
-            if (tr) {
-              if (d.selected) {
-                controller.table.selectRow(tr);
-              } else {
-                controller.table.unselectRow(tr);
-              }
+          }
+
+          svg.selectAll(".histogram-label").remove();
+        })
+        .on("click", (event, d) => {
+          d.selected = !d.selected;
+
+          if (d.selected) {
+            d3.select(event.currentTarget.previousSibling).attr(
+              "fill",
+              "orange"
+            );
+          } else {
+            d3.select(event.currentTarget.previousSibling).attr(
+              "fill",
+              "steelblue"
+            );
+          }
+
+          if (controller.table) {
+            if (!d.selected) {
+              controller.table.clearSelection();
             }
-          });
+
+            this.bins[d.index].indeces.forEach((rowIndex) => {
+              const tr = controller.table.tBody.querySelector(
+                `tr:nth-child(${rowIndex + 1})`
+              );
+              if (tr) {
+                if (d.selected) {
+                  controller.table.selectRow(tr);
+                } else {
+                  controller.table.unselectRow(tr);
+                }
+              }
+            });
+            controller.table.selectionUpdated();
+          }
+        });
+    }
+
+    // Add brushing for continuous data
+    // Handle brush end event
+    this.handleBrush = (event) => {
+      if (!event.selection) {
+        // If no selection from brushing, reset everything
+        this.resetSelection();
+        if (controller.table) {
+          controller.table.clearSelection();
           controller.table.selectionUpdated();
         }
+        return;
+      }
+
+      const [x0, x1] = event.selection;
+      const binWidth = width / this.bins.length;
+
+      // Calculate which bins are within the brush selection
+      this.bins.forEach((bin, i) => {
+        const binStart = i * binWidth;
+        const binEnd = (i + 1) * binWidth;
+        bin.selected = binStart <= x1 && binEnd >= x0;
+        console.log("Bin:", i, "Selected:", bin.selected);
+        // Update visual selection
+        this.svg
+          .select(`.bar:nth-child(${i + 1}) rect:nth-child(1)`)
+          .attr("fill", bin.selected ? "orange" : "steelblue");
       });
+
+      // Update table selection if table exists
+      if (controller.table) {
+        controller.table.clearSelection();
+        this.bins.forEach((bin) => {
+          if (bin.selected) {
+            bin.indeces.forEach((rowIndex) => {
+              const tr = controller.table.tBody.querySelector(
+                `tr:nth-child(${rowIndex + 1})`
+              );
+              if (tr) {
+                controller.table.selectRow(tr);
+              }
+            });
+          }
+        });
+        controller.table.selectionUpdated();
+      }
+    };
   };
 
   this.table = null;
@@ -1433,6 +1454,192 @@ function HistogramController(data, binrules) {
   this.getNode = () => div;
   return this;
 }
+
+// function HistogramController(data, binningOrRules) {
+//   let controller = this;
+//   let div = document.createElement("div");
+
+//   // Configuration
+//   this.bins = [];
+//   this.brush = null;
+//   this.xScale = null;
+//   this.isBrushing = false;
+//   this.margin = { top: 5, right: 5, bottom: 8, left: 5 };
+//   this.svgWidth = 100;
+//   this.svgHeight = 50;
+
+//   // Determine input type (binning array or binrules object)
+//   const isBinning = Array.isArray(binningOrRules);
+//   const binning = isBinning ? binningOrRules : null;
+//   const binrules = !isBinning ? binningOrRules : null;
+
+//   // Main update function
+//   this.setData = function (dataArray) {
+//     div.innerHTML = "";
+//     const svg = d3
+//       .select(div)
+//       .append("svg")
+//       .attr("width", this.svgWidth)
+//       .attr("height", this.svgHeight);
+
+//     const width = this.svgWidth - this.margin.left - this.margin.right;
+//     const height = this.svgHeight - this.margin.top - this.margin.bottom;
+
+//     // Process binning data
+//     if (binning) {
+//       this.bins = binning.map((b) => ({
+//         x0: b.x0,
+//         x1: b.x1,
+//         count: b.count || b.length,
+//         values: b.values,
+//         indeces: b.values.map((v) => v.index),
+//         isUnique: b.x0 === b.x1 && binning.length === 1,
+//       }));
+//     } else {
+//       // Existing binrules handling (backward compatibility)
+//       // ... (maintain previous binrules logic here) ...
+//     }
+
+//     // Detect data type
+//     const isContinuous = binning && binning.some((b) => b.x0 < b.x1);
+//     const isCategorical = binning && binning.every((b) => b.x0 === b.x1);
+//     const isUnique = this.bins.length === 1 && this.bins[0].isUnique;
+
+//     // Create scales
+//     if (isContinuous) {
+//       this.xScale = d3
+//         .scaleLinear()
+//         .domain([
+//           d3.min(this.bins, (b) => b.x0),
+//           d3.max(this.bins, (b) => b.x1),
+//         ])
+//         .range([0, width]);
+//     } else {
+//       this.xScale = d3
+//         .scaleBand()
+//         .domain(this.bins.map((b, i) => i))
+//         .range([0, width])
+//         .padding(0.1);
+//     }
+
+//     const yScale = d3
+//       .scaleLinear()
+//       .domain([0, d3.max(this.bins, (b) => b.count)])
+//       .range([height, 0]);
+
+//     // Draw bars
+//     const bars = svg
+//       .append("g")
+//       .attr("transform", `translate(${this.margin.left},${this.margin.top})`)
+//       .selectAll(".bar")
+//       .data(this.bins)
+//       .join("g")
+//       .attr("class", "bar");
+
+//     // Continuous data (brushing)
+//     if (isContinuous) {
+//       bars
+//         .attr("transform", (d) => `translate(${this.xScale(d.x0)},0)`)
+//         .append("rect")
+//         .attr("width", (d) => this.xScale(d.x1) - this.xScale(d.x0))
+//         .attr("y", (d) => yScale(d.count))
+//         .attr("height", (d) => height - yScale(d.count))
+//         .attr("fill", "steelblue");
+
+//       // Add brushing
+//       this.brush = d3
+//         .brushX()
+//         .extent([
+//           [this.margin.left, this.margin.top],
+//           [width + this.margin.left, height + this.margin.top],
+//         ])
+//         .on("end", handleBrush);
+
+//       svg.append("g").call(this.brush);
+//     } else {
+//       // Categorical/unique data (bar selection)
+//       const barWidth = this.xScale.bandwidth();
+
+//       bars
+//         .attr("transform", (d, i) => `translate(${this.xScale(i)},0)`)
+//         .append("rect")
+//         .attr("width", barWidth)
+//         .attr("y", (d) => yScale(d.count))
+//         .attr("height", (d) => height - yScale(d.count))
+//         .attr("fill", "steelblue")
+//         .on("click", handleBarClick);
+
+//       // Add invisible hit targets
+//       bars
+//         .append("rect")
+//         .attr("width", barWidth)
+//         .attr("height", height)
+//         .attr("fill", "transparent")
+//         .on("mouseover", handleBarHover)
+//         .on("mouseout", handleBarHoverEnd);
+//     }
+
+//     // Unique data special case
+//     if (isUnique) {
+//       svg
+//         .append("text")
+//         .attr("x", width / 2)
+//         .attr("y", height / 2)
+//         .attr("text-anchor", "middle")
+//         .text("Unique Values");
+//     }
+
+//     // Interaction handlers
+//     function handleBrush(event) {
+//       if (!event.selection) return;
+//       const [x0, x1] = event.selection.map(controller.xScale.invert);
+//       controller.bins.forEach((b) => {
+//         b.selected = b.x0 < x1 && b.x1 > x0;
+//       });
+//       updateSelections();
+//     }
+
+//     function handleBarClick(event, d) {
+//       d.selected = !d.selected;
+//       d3.select(event.currentTarget).attr(
+//         "fill",
+//         d.selected ? "orange" : "steelblue"
+//       );
+//       updateSelections();
+//     }
+
+//     function handleBarHover(event, d) {
+//       if (!d.selected) {
+//         d3.select(event.currentTarget.previousSibling).attr("fill", "purple");
+//       }
+//     }
+
+//     function handleBarHoverEnd(event, d) {
+//       if (!d.selected) {
+//         d3.select(event.currentTarget.previousSibling).attr(
+//           "fill",
+//           "steelblue"
+//         );
+//       }
+//     }
+
+//     function updateSelections() {
+//       if (controller.table) {
+//         controller.table.clearSelection();
+//         controller.bins.forEach((b) => {
+//           if (b.selected)
+//             b.indeces.forEach((i) => controller.table.selectRow(i));
+//         });
+//         controller.table.selectionUpdated();
+//       }
+//     }
+//   };
+
+//   // Initial setup
+//   this.setData(data);
+//   this.getNode = () => div;
+//   return this;
+// }
 
 function createDynamicFilter(attribute, operator, threshold) {
   // Validate attribute
