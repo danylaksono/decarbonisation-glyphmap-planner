@@ -216,7 +216,10 @@ export class sorterTable {
     this.columns.forEach((colDef) => {
       const colName = colDef.column;
       const type = this.getColumnType(data, colName);
+      colDef.type = type;
       this.setColumnType(colName, type);
+
+      // console.log("Inferred type for column:", colDef, type);
 
       // threshold and binning for each type
       if (!colDef.unique) {
@@ -231,7 +234,7 @@ export class sorterTable {
           } else {
             // Otherwise, calculate them via binning service
             const bins = this.binningService.getBins(data, colName, type);
-            console.log("--------Calculated Bins from service", bins);
+            // console.log("--------Calculated Bins from service", bins);
 
             if (!bins || bins.length === 0) {
               console.warn(`No bins generated for column: ${colName}`);
@@ -685,7 +688,7 @@ export class sorterTable {
         visTd.appendChild(visCtrl.getNode());
       } else {
         // Create and add visualization controller (histogram) for non-unique columns
-        console.log(" >>>> Creating histogram for column:", c.column, c);
+        console.log(" >>>> Creating histogram for column:", c);
         let visCtrl = new HistogramController(
           this.dataInd.map((i) => this.data[i][c.column]),
           c.type === "continuous"
@@ -1242,11 +1245,12 @@ function HistogramController(data, binrules) {
     } else if ("thresholds" in binrules) {
       console.log("------------------Continuous data----------------------");
       // Continuous data
-      console.log("Domain: ", [
-        d3.min(data, (d) => d.value),
-        d3.max(data, (d) => d.value),
-      ]);
-      console.log("Thresholds: ", binrules.thresholds);
+      // console.log("Domain: ", [
+      //   d3.min(data, (d) => d.value),
+      //   d3.max(data, (d) => d.value),
+      // ]);
+
+      // console.log("Thresholds: ", binrules.thresholds);
       let contBins = d3
         .bin()
         .domain([d3.min(data, (d) => d.value), d3.max(data, (d) => d.value)])
@@ -1259,6 +1263,13 @@ function HistogramController(data, binrules) {
         indeces: b.map((v) => v.index),
       }));
 
+      console.log("Brush Bins: ", this.bins);
+
+      this.xScale = d3
+        .scaleLinear()
+        .domain([d3.min(data, (d) => d.value), d3.max(data, (d) => d.value)])
+        .range([0, width]);
+
       // Initialize brush for continuous data
       this.brush = d3
         .brushX()
@@ -1269,7 +1280,12 @@ function HistogramController(data, binrules) {
         .on("end", this.handleBrush);
 
       // Add brush to svg
-      this.svg.append("g").attr("class", "brush").call(this.brush);
+      this.svg
+        .append("g")
+        .attr("class", "brush")
+        .style("position", "absolute")
+        .style("z-index", 90999) // Attempt to force the brush on top
+        .call(this.brush);
     } else if ("ordinals" in binrules || "nominals" in binrules) {
       // Handle ordinal or nominal data
       const frequency = d3.rollup(
@@ -1403,6 +1419,9 @@ function HistogramController(data, binrules) {
     // Add brushing for continuous data
     // Handle brush end event
     this.handleBrush = (event) => {
+      // Remove any existing histogram label(s)
+      this.svg.selectAll(".histogram-label").remove();
+
       if (!event.selection) {
         // If no selection from brushing, reset everything
         this.resetSelection();
@@ -1414,19 +1433,47 @@ function HistogramController(data, binrules) {
       }
 
       const [x0, x1] = event.selection;
+      const [bound1, bound2] = event.selection.map(this.xScale.invert);
       const binWidth = width / this.bins.length;
 
-      // Calculate which bins are within the brush selection
+      // console.log("Brushing event: ", event); // Debugging
+      // console.log("Brushed Data Range:", x0, x1);
+      // console.log("Bins:", this.bins);
+
+      // // Compute selected data range
+      // const selectedBins = this.bins.filter(
+      //   (bin) => this.xScale(bin.x1) >= x0 && this.xScale(bin.x0) <= x1
+      // );
+
+      // console.log("Selected brushed bins: ", selectedBins);
+
+      // // Extract categories or labels from bins
+      // const selectedLabels = selectedBins.map((bin) => bin.category || bin.x0);
+
+      // Compute which bins are selected and update their color
       this.bins.forEach((bin, i) => {
         const binStart = i * binWidth;
         const binEnd = (i + 1) * binWidth;
         bin.selected = binStart <= x1 && binEnd >= x0;
-        console.log("Bin:", i, "Selected:", bin.selected);
-        // Update visual selection
         this.svg
           .select(`.bar:nth-child(${i + 1}) rect:nth-child(1)`)
           .attr("fill", bin.selected ? "orange" : "steelblue");
       });
+
+      // Add histogram label
+      this.svg
+        // .data([d])
+        .append("text")
+        .attr("class", "histogram-label")
+        .join("text")
+        .attr("class", "histogram-label")
+        .attr("x", width / 2)
+        .attr("y", height + 10)
+        .attr("font-size", "10px")
+        .attr("fill", "#444444")
+        .attr("text-anchor", "middle")
+        // .text(`Selected: ${selectedLabels.join(", ")}`);
+        .text(`Range: ${Math.round(bound1)} - ${Math.round(bound2)}`);
 
       // Update table selection if table exists
       if (controller.table) {
