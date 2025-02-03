@@ -812,7 +812,8 @@ export class sorterTable {
         tr.style.backgroundColor = ""; // Reset background color
       });
 
-      this.lastLineAdded++;
+      // this.lastLineAdded++;
+      this.lastLineAdded = row; // Update the last line added
     }
 
     this.addingRows = false;
@@ -1071,13 +1072,15 @@ export class sorterTable {
 
     // Lazy loading listener
     container.addEventListener("scroll", () => {
-      const threshold = 500;
+      const threshold = 100;
       const scrollTop = container.scrollTop;
       const scrollHeight = container.scrollHeight;
       const clientHeight = container.clientHeight;
 
       if (scrollTop + clientHeight >= scrollHeight - threshold) {
-        this.addTableRows(this.additionalLines);
+        if (!this.addingRows) {
+          this.addTableRows(this.additionalLines);
+        }
       }
     });
 
@@ -1263,7 +1266,7 @@ function HistogramController(data, binrules) {
         indeces: b.map((v) => v.index),
       }));
 
-      console.log("Brush Bins: ", this.bins);
+      // console.log("Brush Bins: ", this.bins);
 
       this.xScale = d3
         .scaleLinear()
@@ -1501,192 +1504,6 @@ function HistogramController(data, binrules) {
   this.getNode = () => div;
   return this;
 }
-
-// function HistogramController(data, binningOrRules) {
-//   let controller = this;
-//   let div = document.createElement("div");
-
-//   // Configuration
-//   this.bins = [];
-//   this.brush = null;
-//   this.xScale = null;
-//   this.isBrushing = false;
-//   this.margin = { top: 5, right: 5, bottom: 8, left: 5 };
-//   this.svgWidth = 100;
-//   this.svgHeight = 50;
-
-//   // Determine input type (binning array or binrules object)
-//   const isBinning = Array.isArray(binningOrRules);
-//   const binning = isBinning ? binningOrRules : null;
-//   const binrules = !isBinning ? binningOrRules : null;
-
-//   // Main update function
-//   this.setData = function (dataArray) {
-//     div.innerHTML = "";
-//     const svg = d3
-//       .select(div)
-//       .append("svg")
-//       .attr("width", this.svgWidth)
-//       .attr("height", this.svgHeight);
-
-//     const width = this.svgWidth - this.margin.left - this.margin.right;
-//     const height = this.svgHeight - this.margin.top - this.margin.bottom;
-
-//     // Process binning data
-//     if (binning) {
-//       this.bins = binning.map((b) => ({
-//         x0: b.x0,
-//         x1: b.x1,
-//         count: b.count || b.length,
-//         values: b.values,
-//         indeces: b.values.map((v) => v.index),
-//         isUnique: b.x0 === b.x1 && binning.length === 1,
-//       }));
-//     } else {
-//       // Existing binrules handling (backward compatibility)
-//       // ... (maintain previous binrules logic here) ...
-//     }
-
-//     // Detect data type
-//     const isContinuous = binning && binning.some((b) => b.x0 < b.x1);
-//     const isCategorical = binning && binning.every((b) => b.x0 === b.x1);
-//     const isUnique = this.bins.length === 1 && this.bins[0].isUnique;
-
-//     // Create scales
-//     if (isContinuous) {
-//       this.xScale = d3
-//         .scaleLinear()
-//         .domain([
-//           d3.min(this.bins, (b) => b.x0),
-//           d3.max(this.bins, (b) => b.x1),
-//         ])
-//         .range([0, width]);
-//     } else {
-//       this.xScale = d3
-//         .scaleBand()
-//         .domain(this.bins.map((b, i) => i))
-//         .range([0, width])
-//         .padding(0.1);
-//     }
-
-//     const yScale = d3
-//       .scaleLinear()
-//       .domain([0, d3.max(this.bins, (b) => b.count)])
-//       .range([height, 0]);
-
-//     // Draw bars
-//     const bars = svg
-//       .append("g")
-//       .attr("transform", `translate(${this.margin.left},${this.margin.top})`)
-//       .selectAll(".bar")
-//       .data(this.bins)
-//       .join("g")
-//       .attr("class", "bar");
-
-//     // Continuous data (brushing)
-//     if (isContinuous) {
-//       bars
-//         .attr("transform", (d) => `translate(${this.xScale(d.x0)},0)`)
-//         .append("rect")
-//         .attr("width", (d) => this.xScale(d.x1) - this.xScale(d.x0))
-//         .attr("y", (d) => yScale(d.count))
-//         .attr("height", (d) => height - yScale(d.count))
-//         .attr("fill", "steelblue");
-
-//       // Add brushing
-//       this.brush = d3
-//         .brushX()
-//         .extent([
-//           [this.margin.left, this.margin.top],
-//           [width + this.margin.left, height + this.margin.top],
-//         ])
-//         .on("end", handleBrush);
-
-//       svg.append("g").call(this.brush);
-//     } else {
-//       // Categorical/unique data (bar selection)
-//       const barWidth = this.xScale.bandwidth();
-
-//       bars
-//         .attr("transform", (d, i) => `translate(${this.xScale(i)},0)`)
-//         .append("rect")
-//         .attr("width", barWidth)
-//         .attr("y", (d) => yScale(d.count))
-//         .attr("height", (d) => height - yScale(d.count))
-//         .attr("fill", "steelblue")
-//         .on("click", handleBarClick);
-
-//       // Add invisible hit targets
-//       bars
-//         .append("rect")
-//         .attr("width", barWidth)
-//         .attr("height", height)
-//         .attr("fill", "transparent")
-//         .on("mouseover", handleBarHover)
-//         .on("mouseout", handleBarHoverEnd);
-//     }
-
-//     // Unique data special case
-//     if (isUnique) {
-//       svg
-//         .append("text")
-//         .attr("x", width / 2)
-//         .attr("y", height / 2)
-//         .attr("text-anchor", "middle")
-//         .text("Unique Values");
-//     }
-
-//     // Interaction handlers
-//     function handleBrush(event) {
-//       if (!event.selection) return;
-//       const [x0, x1] = event.selection.map(controller.xScale.invert);
-//       controller.bins.forEach((b) => {
-//         b.selected = b.x0 < x1 && b.x1 > x0;
-//       });
-//       updateSelections();
-//     }
-
-//     function handleBarClick(event, d) {
-//       d.selected = !d.selected;
-//       d3.select(event.currentTarget).attr(
-//         "fill",
-//         d.selected ? "orange" : "steelblue"
-//       );
-//       updateSelections();
-//     }
-
-//     function handleBarHover(event, d) {
-//       if (!d.selected) {
-//         d3.select(event.currentTarget.previousSibling).attr("fill", "purple");
-//       }
-//     }
-
-//     function handleBarHoverEnd(event, d) {
-//       if (!d.selected) {
-//         d3.select(event.currentTarget.previousSibling).attr(
-//           "fill",
-//           "steelblue"
-//         );
-//       }
-//     }
-
-//     function updateSelections() {
-//       if (controller.table) {
-//         controller.table.clearSelection();
-//         controller.bins.forEach((b) => {
-//           if (b.selected)
-//             b.indeces.forEach((i) => controller.table.selectRow(i));
-//         });
-//         controller.table.selectionUpdated();
-//       }
-//     }
-//   };
-
-//   // Initial setup
-//   this.setData(data);
-//   this.getNode = () => div;
-//   return this;
-// }
 
 function createDynamicFilter(attribute, operator, threshold) {
   // Validate attribute
