@@ -1341,7 +1341,7 @@ function HistogramController(data, binrules) {
             );
           }
 
-          svg
+          this.svg
             .selectAll(".histogram-label")
             .data([d])
             .join("text")
@@ -1361,7 +1361,7 @@ function HistogramController(data, binrules) {
             );
           }
 
-          svg.selectAll(".histogram-label").remove();
+          this.svg.selectAll(".histogram-label").remove();
         })
         .on("click", (event, d) => {
           d.selected = !d.selected;
