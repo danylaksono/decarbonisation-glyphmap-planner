@@ -1,10 +1,18 @@
 import * as d3 from "npm:d3";
+// import { DuckDBClient } from "npm:@observablehq/duckdb";
+
 import { BinningService } from "./BinningService.js";
 
 export class sorterTable {
   constructor(data, columnNames, changed, options = {}) {
     // Initialize core properties first
     this.data = this.preprocessData(data, columnNames); // Add preprocessing
+
+    // this.db = DuckDBClient.of({ dataset: data }); // Initialize DuckDBClient
+    // console.log("DuckDBClient initialized:", this.db);
+
+    // console.log("Duckdb query", this.duckFilter());
+
     this.columnTypes = {};
     this.columns = columnNames.map((col) => {
       if (typeof col === "string") {
@@ -116,6 +124,13 @@ export class sorterTable {
       }
     });
   }
+
+  // async duckFilter() {
+  //   // const whereClause = this.getSelectionRuleAsSQL(); // Convert rules to SQL
+  //   const result = await this.db.sql`
+  //     SELECT * FROM dataset`;
+  //   this.dataInd = await result.array(); // Assuming original indices are preserved
+  // }
 
   preprocessData(data, columnNames) {
     return data.map((row) => {

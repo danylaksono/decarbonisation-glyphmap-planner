@@ -1202,6 +1202,17 @@ function tableChanged(event) {
 ```
 
 ```js
+function setTableFilteredData(indices) {
+  console.log("++Filtering Table called");
+  const tableFilteredData = indices.map((index) => {
+    return data[index];
+  });
+  console.log("Filtered data:", tableFilteredData);
+  saveToSession("tableFiltered", tableFilteredData);
+}
+```
+
+```js
 // const tableFiltered = getFromSession("tableFiltered");
 const tableFiltered = getFromSession("tableFiltered") ?? [];
 
