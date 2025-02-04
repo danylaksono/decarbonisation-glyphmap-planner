@@ -17,6 +17,36 @@ export function context2d(width, height, dpi = devicePixelRatio) {
   return context;
 }
 
+export function animate(
+  currentValue,
+  animationFrame,
+  playing = false,
+  direction = 1
+) {
+  // Increment or decrement the value
+  let newValue = currentValue + 0.01 * direction;
+
+  // Reverse direction if boundaries are reached
+  // if (newValue >= 1 || newValue <= 0) {
+  //   direction *= -1;
+  //   newValue = Math.max(0, Math.min(1, newValue)); // Clamp value between 0 and 1
+  // }
+  if (newValue >= 1 || newValue <= 0) {
+    newValue = Math.max(0, Math.min(1, newValue)); // Clamp value
+    playing = false; // Pause animation
+    playButton.innerHTML = '<i class="fas fa-play"></i>'; // Update button
+    cancelAnimationFrame(animationFrame);
+    return; // Stop animation loop
+  }
+
+  // Update the slider and dispatch the "input" event for reactivity
+  set(morphFactorInput, newValue);
+
+  if (playing) {
+    animationFrame = requestAnimationFrame(() => animate(newValue)); // Pass the updated value
+  }
+}
+
 export const downloadBoundaries = function (geogName, permittedCodes) {
   const topojsonUrl =
     "https://gicentre.github.io/data/census21/englandAndWales/" +

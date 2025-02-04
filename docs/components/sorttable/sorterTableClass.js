@@ -1,33 +1,57 @@
 import * as d3 from "npm:d3";
+// import { DuckDBClient } from "npm:@observablehq/duckdb";
+
+import { BinningService } from "./BinningService.js";
 
 export class sorterTable {
   constructor(data, columnNames, changed, options = {}) {
-    this.data = data;
+    // Initialize core properties first
+    this.data = this.preprocessData(data, columnNames); // Add preprocessing
 
-    // create table element
-    this.table = document.createElement("table");
-    this.table.classList.add("sorter-table");
+    // this.db = DuckDBClient.of({ dataset: data }); // Initialize DuckDBClient
+    // console.log("DuckDBClient initialized:", this.db);
 
-    // Automatically create column definitions with type inference
-    // this.columns = columnNames.map((colName) => ({ column: colName }));
-    // this.initialColumns = columnNames.map((colName) => ({ column: colName }));
+    // console.log("Duckdb query", this.duckFilter());
 
-    // use alias if provided
+    this.columnTypes = {};
     this.columns = columnNames.map((col) => {
       if (typeof col === "string") {
-        return { column: col, unique: false }; // Default: not unique
+        return { column: col, unique: false };
       } else {
         return {
           column: col.column,
           alias: col.alias,
           unique: col.unique || false,
+          type: col.type || null, // Add support for manual type definition
         };
       }
     });
+
+    // Pre-populate column types if manually specified
+    this.columns.forEach((col) => {
+      if (col.type) {
+        this.columnTypes[col.column] = col.type;
+      }
+    });
+
+    // Initialize the BinningService
+    this.binningService = new BinningService({
+      maxOrdinalBins: options.maxOrdinalBins || 12,
+      continuousBinMethod: options.continuousBinMethod || "scott",
+      dateInterval: options.dateInterval || "day",
+      minBinSize: options.minBinSize || 5,
+      customThresholds: options.customThresholds || null,
+    });
+
+    this.inferColumnTypesAndThresholds(data);
+
+    // create table element
+    this.table = document.createElement("table");
+    this.table.classList.add("sorter-table");
+
     this.initialColumns = JSON.parse(JSON.stringify(this.columns));
 
     console.log("Initial columns:", this.columns);
-    this.inferColumnTypesAndThresholds(data);
 
     this.changed = changed;
     this._isUndoing = false;
@@ -55,7 +79,6 @@ export class sorterTable {
       0, 0.01, 0.02, 0.03, 0.04, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
       0.9, 0.95, 0.96, 0.97, 0.98, 0.99, 1,
     ];
-    this.columnTypes = {};
     this.cellRenderers = {}; // Custom cell renderers
     if (options.cellRenderers) {
       for (const [columnName, renderer] of Object.entries(
@@ -102,6 +125,62 @@ export class sorterTable {
     });
   }
 
+  // async duckFilter() {
+  //   // const whereClause = this.getSelectionRuleAsSQL(); // Convert rules to SQL
+  //   const result = await this.db.sql`
+  //     SELECT * FROM dataset`;
+  //   this.dataInd = await result.array(); // Assuming original indices are preserved
+  // }
+
+  preprocessData(data, columnNames) {
+    return data.map((row) => {
+      const processed = { ...row };
+      columnNames.forEach((col) => {
+        const colName = typeof col === "string" ? col : col.column;
+        const colType = typeof col === "string" ? null : col.type;
+
+        // Handle continuous columns
+        if (colType === "continuous") {
+          const value = row[colName];
+
+          // Handle different value cases
+          if (value === null || value === undefined || value === "") {
+            // FALLBACK VALUE FOR NUMERICAL COLUMNS
+            processed[colName] = 0;
+          } else if (typeof value === "string") {
+            // Clean string numbers
+            const cleaned = value.replace(/[^0-9.-]/g, "");
+            if (cleaned === "" || isNaN(Number(cleaned))) {
+              processed[colName] = 0; // Fallback for invalid numbers
+            } else {
+              processed[colName] = Number(cleaned);
+            }
+          } else if (typeof value === "number") {
+            if (isNaN(value)) {
+              processed[colName] = 0; // Handle NaN
+            } else {
+              processed[colName] = value; // Keep valid numbers as-is
+            }
+          } else {
+            // Handle any other unexpected types
+            processed[colName] = 0;
+          }
+
+          // Log problematic values for debugging
+          if (processed[colName] === 0 && value !== 0) {
+            // DEBUG
+            // console.warn(`Converted invalid value in ${colName}:`, {
+            //   original: value,
+            //   converted: processed[colName],
+            //   rowData: row,
+            // });
+          }
+        }
+      });
+      return processed;
+    });
+  }
+
   setColumnType(columnName, type) {
     if (!columnName) {
       console.error("Invalid columnName:", columnName);
@@ -111,106 +190,97 @@ export class sorterTable {
     // console.log("Setting column type:", this.columnTypes);  // DEBUG
   }
 
-  getColumnType(columnName) {
-    if (columnName in this.columnTypes) return this.columnTypes[columnName];
-    return null;
+  getColumnType(data, column) {
+    // If already cached, return the cached type
+    if (this.columnTypes[column]) {
+      return this.columnTypes[column];
+    }
+
+    // Infer type from data
+    for (const d of data) {
+      const value = d[column];
+      if (value === undefined || value === null) continue;
+
+      // Check for date objects
+      if (value instanceof Date) return "date";
+
+      // Check for numbers
+      if (typeof value === "number" || !isNaN(Number(value))) {
+        // Check if it's really continuous or just a few discrete values
+        const uniqueValues = new Set(data.map((d) => d[column])).size;
+        if (uniqueValues > 10) {
+          // Threshold for considering it continuous
+          return "continuous";
+        }
+      }
+
+      // Default to ordinal for strings and small number sets
+      return "ordinal";
+    }
+
+    // Default to ordinal if no clear type is found
+    return "ordinal";
   }
 
   inferColumnTypesAndThresholds(data) {
-    // Helper function to infer the type of a column
-    const getType = (data, column) => {
-      for (const d of data) {
-        const value = d[column];
-        if (value === undefined) {
-          console.warn(`Value undefined for column: ${column}`);
-          continue;
-        }
-        if (value == null) continue;
-        if (typeof value === "number") return "continuous";
-        if (value instanceof Date) return "date";
-        return "ordinal";
-      }
-      // If all values are null or undefined, default to ordinal
-      return "ordinal";
-    };
-
-    // Helper function to calculate thresholds for continuous columns
-    const calculateThresholds = (data, column, numBins = 10) => {
-      // Validate numBins
-      if (
-        typeof numBins !== "number" ||
-        numBins < 1 ||
-        !Number.isInteger(numBins)
-      ) {
-        throw new Error("numBins must be a positive integer greater than 0.");
-      }
-
-      // Extract and filter values
-      const values = data
-        .map((d) => d[column])
-        .filter((v) => v != null && v !== undefined);
-
-      // Handle edge case where no valid values are found
-      if (values.length === 0) {
-        console.warn(
-          `No valid values found for column: ${column}. Using default thresholds.`
-        );
-        return d3.range(1, numBins).map((i) => i); // Default thresholds
-      }
-
-      // Use d3.histogram to calculate bins
-      const histogram = d3
-        .histogram()
-        .domain([d3.min(values), d3.max(values)]) // Set the domain
-        .thresholds(numBins); // Set the number of bins
-
-      const bins = histogram(values);
-
-      // Extract thresholds from the bins
-      const thresholds = bins.slice(1).map((bin) => bin.x0);
-
-      return thresholds;
-    };
-
-    // Helper function to get unique values for ordinal columns
-    const getUniqueValues = (data, column) => {
-      const values = data
-        .map((d) => d[column])
-        .filter((v) => v != null && v !== undefined);
-
-      if (values.length === 0) {
-        console.warn(
-          `No valid values found for column: ${column}. Using empty nominals.`
-        );
-        return []; // Default empty array
-      }
-
-      return [...new Set(values)].sort(); // Get unique values and sort them
-    };
-
-    // Initialize columnTypes if not already initialized
-    if (!this.columnTypes) {
-      this.columnTypes = {};
+    if (!this.binningService) {
+      console.error("BinningService not initialized");
+      return;
     }
 
-    // Iterate over each column and infer its type and properties
     this.columns.forEach((colDef) => {
       const colName = colDef.column;
-      const type = getType(data, colName);
-
-      // Set column type
+      const type = this.getColumnType(data, colName);
+      colDef.type = type;
       this.setColumnType(colName, type);
 
-      // Calculate thresholds or unique values based on the inferred type
-      if (type === "continuous") {
-        colDef.thresholds = calculateThresholds(data, colName);
-      } else if (type === "ordinal") {
-        colDef.nominals = getUniqueValues(data, colName);
-      } else if (type === "date") {
-        // Specific logic for date columns (e.g., calculate date ranges)
-        colDef.dateRange = d3.extent(
-          data.map((d) => d[colName]).filter((v) => v != null)
-        );
+      // console.log("Inferred type for column:", colDef, type);
+
+      // threshold and binning for each type
+      if (!colDef.unique) {
+        try {
+          // If the user has predefined thresholds, use them.
+          if (
+            colDef.thresholds &&
+            Array.isArray(colDef.thresholds) &&
+            colDef.thresholds.length
+          ) {
+            console.log(`Using predefined thresholds for ${colName}`);
+          } else {
+            // Otherwise, calculate them via binning service
+            const bins = this.binningService.getBins(data, colName, type);
+            // console.log("--------Calculated Bins from service", bins);
+
+            if (!bins || bins.length === 0) {
+              console.warn(`No bins generated for column: ${colName}`);
+              return;
+            }
+
+            // For continuous data, use computed bin boundaries
+            if (type === "continuous") {
+              // Avoid filtering out valid values (e.g., 0) by checking for undefined or null explicitly
+              colDef.thresholds = bins.map((bin) =>
+                bin.x0 !== undefined && bin.x0 !== null ? bin.x0 : null
+              );
+              colDef.bins = bins;
+              console.log(
+                "Setting thresholds for continuous column:",
+                colName,
+                colDef
+              );
+            } else if (type === "ordinal") {
+              colDef.bins = bins;
+              colDef.nominals = bins
+                .map((bin) => bin.key)
+                .filter((key) => key !== undefined && key !== null);
+            } else if (type === "date") {
+              colDef.bins = bins;
+              colDef.dateRange = d3.extent(bins, (bin) => bin.date);
+            }
+          }
+        } catch (error) {
+          console.error(`Error binning column ${colName}:`, error);
+        }
       }
     });
   }
@@ -254,9 +324,9 @@ export class sorterTable {
       this.sortControllers.splice(targetIndex, 0, columnsToMove.sortController);
 
       // Recreate the table and header
-      this.rebuildTable();
-      // this.createHeader();
-      // this.createTable();
+      // this.rebuildTable();
+      this.createHeader();
+      this.createTable();
 
       // Update data in visualization controllers
       this.visControllers.forEach((vc, idx) => {
@@ -352,14 +422,6 @@ export class sorterTable {
     this.createHeader();
     this.createTable();
   }
-
-  // getSelection() {
-  //   let ret = [];
-  //   this.tBody.querySelectorAll("tr").forEach((tr, i) => {
-  //     if (tr.selected) ret.push({ index: i, data: this.data[this.dataInd[i]] });
-  //   });
-  //   return ret;
-  // }
 
   getSelection() {
     let ret = [];
@@ -630,6 +692,10 @@ export class sorterTable {
       if (c.unique) {
         // For unique columns, create a histogram with a single bin
         let uniqueData = this.dataInd.map((i) => this.data[i][c.column]);
+        const uniqueBinning = [
+          { x0: "Unique", x1: "Unique", values: uniqueData },
+        ];
+        // let visCtrl = new HistogramController(uniqueData, uniqueBinning); // { unique: true });
         let visCtrl = new HistogramController(uniqueData, { unique: true });
         visCtrl.table = this;
         visCtrl.columnName = c.column;
@@ -637,11 +703,15 @@ export class sorterTable {
         visTd.appendChild(visCtrl.getNode());
       } else {
         // Create and add visualization controller (histogram) for non-unique columns
+        console.log(" >>>> Creating histogram for column:", c);
         let visCtrl = new HistogramController(
           this.dataInd.map((i) => this.data[i][c.column]),
-          this.getColumnType(c.column) === "continuous"
-            ? { thresholds: c.thresholds }
+          c.type === "continuous"
+            ? { thresholds: c.thresholds, binInfo: c.bins }
             : { nominals: c.nominals }
+          // this.getColumnType(c.column) === "continuous"
+          //   ? { thresholds: c.thresholds }
+          //   : { nominals: c.nominals }
         );
         visCtrl.table = this;
         visCtrl.columnName = c.column;
@@ -757,7 +827,8 @@ export class sorterTable {
         tr.style.backgroundColor = ""; // Reset background color
       });
 
-      this.lastLineAdded++;
+      // this.lastLineAdded++;
+      this.lastLineAdded = row; // Update the last line added
     }
 
     this.addingRows = false;
@@ -878,7 +949,14 @@ export class sorterTable {
       return scoreA - scoreB;
     });
 
+    this.visControllers.forEach((vc, index) => {
+      const columnName = this.columns[index].column;
+      const columnData = this.dataInd.map((i) => this.data[i][columnName]);
+      vc.setData(columnData);
+    });
+
     this.createTable();
+    // this.createHeader();
 
     this.changed({
       type: "sort",
@@ -901,64 +979,6 @@ export class sorterTable {
       }
     } else return -1;
   }
-
-  //   getNode() {
-  //     let container = document.createElement("div");
-  //     container.style.maxHeight = "300px";
-  //     container.style.overflowY = "auto";
-  //     container.style.width = "100%";
-
-  //     this.table.style.width = "100%";
-  //     this.table.style.borderCollapse = "collapse";
-  //     this.table.style.marginTop = "0px";
-
-  //     let tableControllers = document.createElement("table");
-  //     let tableControllersRow = document.createElement("tr");
-  //     tableControllers.appendChild(tableControllersRow);
-
-  //     if (this.showDefaultControls) {
-  //       let tdController = document.createElement("td");
-  //       tableControllersRow.appendChild(tdController);
-  //       let filterController = new FilterController(() => this.filter());
-  //       tdController.appendChild(filterController.getNode());
-
-  //       tdController = document.createElement("td");
-  //       tableControllersRow.appendChild(tdController);
-  //       let undoController = new UndoController(() => this.undo());
-  //       tdController.appendChild(undoController.getNode());
-  //     }
-  //     container.appendChild(tableControllers);
-  //     container.appendChild(this.table);
-
-  //     container.addEventListener("keydown", (event) => {
-  //       if (event.shiftKey) {
-  //         this.shiftDown = true;
-  //       }
-  //       if (event.ctrlKey) this.ctrlDown = true;
-
-  //       event.preventDefault();
-  //     });
-  //     container.addEventListener("keyup", (event) => {
-  //       this.shiftDown = false;
-  //       this.ctrlDown = false;
-  //       event.preventDefault();
-  //     });
-  //     container.setAttribute("tabindex", "0");
-
-  //     container.addEventListener("scroll", () => {
-  //       const threshold = 500;
-  //       const scrollTop = container.scrollTop;
-  //       const scrollHeight = container.scrollHeight;
-  //       const clientHeight = container.clientHeight;
-
-  //       if (scrollTop + clientHeight >= scrollHeight - threshold) {
-  //         this.addTableRows(this.additionalLines);
-  //       }
-  //     });
-
-  //     return container;
-  //   }
-  // }
 
   getNode() {
     let container = document.createElement("div");
@@ -1067,13 +1087,15 @@ export class sorterTable {
 
     // Lazy loading listener
     container.addEventListener("scroll", () => {
-      const threshold = 500;
+      const threshold = 100;
       const scrollTop = container.scrollTop;
       const scrollHeight = container.scrollHeight;
       const clientHeight = container.clientHeight;
 
       if (scrollTop + clientHeight >= scrollHeight - threshold) {
-        this.addTableRows(this.additionalLines);
+        if (!this.addingRows) {
+          this.addTableRows(this.additionalLines);
+        }
       }
     });
 
@@ -1192,6 +1214,8 @@ function HistogramController(data, binrules) {
   let div = document.createElement("div");
 
   this.bins = [];
+  this.brush = null;
+  this.isBrushing = false;
 
   this.updateData = (d) => this.setData(d);
 
@@ -1201,8 +1225,10 @@ function HistogramController(data, binrules) {
       bin.selected = false;
     });
 
-    svg.selectAll(".bar rect:nth-child(1)").attr("fill", "steelblue");
+    this.svg.selectAll(".bar rect:nth-child(1)").attr("fill", "steelblue");
   };
+
+  // console.log("------------------binrules outside setData: ", binrules);
 
   this.setData = function (dd) {
     div.innerHTML = "";
@@ -1215,17 +1241,15 @@ function HistogramController(data, binrules) {
     const width = svgWidth - margin.left - margin.right;
     const height = svgHeight - margin.top - margin.bottom;
 
-    const svg = d3
+    this.svg = d3
       .select(div)
       .append("svg")
       .attr("width", svgWidth)
       .attr("height", svgHeight);
+    // .append("g")
+    // .attr("transform", `translate(${margin.left},${margin.top})`);
 
-    const chart = svg
-      .append("g")
-      .attr("transform", `translate(${margin.left},${margin.top})`);
-
-    let x = null;
+    console.log("------------------binrules in setData: ", binrules);
 
     if (binrules.unique) {
       // Handle unique columns: create a single bin
@@ -1237,23 +1261,49 @@ function HistogramController(data, binrules) {
         },
       ];
     } else if ("thresholds" in binrules) {
-      // Handle continuous data with thresholds
-      x = d3
-        .scaleThreshold()
-        .domain(binrules.thresholds)
-        .range([0, 1, 2, 3, 4, 5]);
+      console.log("------------------Continuous data----------------------");
+      // Continuous data
+      // console.log("Domain: ", [
+      //   d3.min(data, (d) => d.value),
+      //   d3.max(data, (d) => d.value),
+      // ]);
 
-      bins = d3
+      // console.log("Thresholds: ", binrules.thresholds);
+      let contBins = d3
         .bin()
-        .domain([0, 1000000])
+        .domain([d3.min(data, (d) => d.value), d3.max(data, (d) => d.value)])
         .thresholds(binrules.thresholds)
         .value((d) => d.value)(data);
 
-      this.bins = bins.map((b) => ({
+      this.bins = contBins.map((b) => ({
         category: b.x0 + "-" + b.x1,
         count: b.length,
         indeces: b.map((v) => v.index),
       }));
+
+      // console.log("Brush Bins: ", this.bins);
+
+      this.xScale = d3
+        .scaleLinear()
+        .domain([d3.min(data, (d) => d.value), d3.max(data, (d) => d.value)])
+        .range([0, width]);
+
+      // Initialize brush for continuous data
+      this.brush = d3
+        .brushX()
+        .extent([
+          [0, 0],
+          [svgWidth, svgHeight],
+        ])
+        .on("end", this.handleBrush);
+
+      // Add brush to svg
+      this.svg
+        .append("g")
+        .attr("class", "brush")
+        .style("position", "absolute")
+        .style("z-index", 90999) // Attempt to force the brush on top
+        .call(this.brush);
     } else if ("ordinals" in binrules || "nominals" in binrules) {
       // Handle ordinal or nominal data
       const frequency = d3.rollup(
@@ -1267,6 +1317,7 @@ function HistogramController(data, binrules) {
 
       const binType = "ordinals" in binrules ? "ordinals" : "nominals";
 
+      // use predefined bin order if available
       if (binType in binrules && Array.isArray(binrules[binType])) {
         this.bins = binrules[binType].map((v) => ({
           category: v,
@@ -1289,7 +1340,7 @@ function HistogramController(data, binrules) {
       .domain([0, d3.max(this.bins, (d) => d.count)])
       .range([height, 0]);
 
-    const barGroups = svg
+    const barGroups = this.svg
       .selectAll(".bar")
       .data(this.bins)
       .join("g")
@@ -1308,71 +1359,158 @@ function HistogramController(data, binrules) {
       .attr("height", (d) => height - y(d.count))
       .attr("fill", "steelblue");
 
-    // Invisible bars for interaction
-    barGroups
-      .append("rect")
-      .attr("width", (d) => width / this.bins.length)
-      .attr("height", height)
-      .attr("fill", "transparent")
-      .on("mouseover", (event, d) => {
-        if (!d.selected) {
-          d3.select(event.currentTarget.previousSibling).attr("fill", "purple");
-        }
-
-        svg
-          .selectAll(".histogram-label")
-          .data([d])
-          .join("text")
-          .attr("class", "histogram-label")
-          .attr("x", width / 2)
-          .attr("y", height + 10)
-          .attr("font-size", "10px")
-          .attr("fill", "#444444")
-          .attr("text-anchor", "middle")
-          .text(d.category + ": " + d.count);
-      })
-      .on("mouseout", (event, d) => {
-        if (!d.selected) {
-          d3.select(event.currentTarget.previousSibling).attr(
-            "fill",
-            "steelblue"
-          );
-        }
-
-        svg.selectAll(".histogram-label").remove();
-      })
-      .on("click", (event, d) => {
-        d.selected = !d.selected;
-
-        if (d.selected) {
-          d3.select(event.currentTarget.previousSibling).attr("fill", "orange");
-        } else {
-          d3.select(event.currentTarget.previousSibling).attr(
-            "fill",
-            "steelblue"
-          );
-        }
-
-        if (controller.table) {
+    // For continuous data, we don't need the invisible interaction bars
+    // Only add them for ordinal/nominal data
+    if (!("thresholds" in binrules)) {
+      barGroups
+        .append("rect")
+        .attr("width", (d) => width / this.bins.length)
+        .attr("height", height)
+        .attr("fill", "transparent")
+        .on("mouseover", (event, d) => {
           if (!d.selected) {
-            controller.table.clearSelection();
+            d3.select(event.currentTarget.previousSibling).attr(
+              "fill",
+              "purple"
+            );
           }
 
-          this.bins[d.index].indeces.forEach((rowIndex) => {
-            const tr = controller.table.tBody.querySelector(
-              `tr:nth-child(${rowIndex + 1})`
+          this.svg
+            .selectAll(".histogram-label")
+            .data([d])
+            .join("text")
+            .attr("class", "histogram-label")
+            .attr("x", width / 2)
+            .attr("y", height + 10)
+            .attr("font-size", "10px")
+            .attr("fill", "#444444")
+            .attr("text-anchor", "middle")
+            .text(d.category + ": " + d.count);
+        })
+        .on("mouseout", (event, d) => {
+          if (!d.selected) {
+            d3.select(event.currentTarget.previousSibling).attr(
+              "fill",
+              "steelblue"
             );
-            if (tr) {
-              if (d.selected) {
-                controller.table.selectRow(tr);
-              } else {
-                controller.table.unselectRow(tr);
-              }
+          }
+
+          this.svg.selectAll(".histogram-label").remove();
+        })
+        .on("click", (event, d) => {
+          d.selected = !d.selected;
+
+          if (d.selected) {
+            d3.select(event.currentTarget.previousSibling).attr(
+              "fill",
+              "orange"
+            );
+          } else {
+            d3.select(event.currentTarget.previousSibling).attr(
+              "fill",
+              "steelblue"
+            );
+          }
+
+          if (controller.table) {
+            if (!d.selected) {
+              controller.table.clearSelection();
             }
-          });
+
+            this.bins[d.index].indeces.forEach((rowIndex) => {
+              const tr = controller.table.tBody.querySelector(
+                `tr:nth-child(${rowIndex + 1})`
+              );
+              if (tr) {
+                if (d.selected) {
+                  controller.table.selectRow(tr);
+                } else {
+                  controller.table.unselectRow(tr);
+                }
+              }
+            });
+            controller.table.selectionUpdated();
+          }
+        });
+    }
+
+    // Add brushing for continuous data
+    // Handle brush end event
+    this.handleBrush = (event) => {
+      // Remove any existing histogram label(s)
+      this.svg.selectAll(".histogram-label").remove();
+
+      if (!event.selection) {
+        // If no selection from brushing, reset everything
+        this.resetSelection();
+        if (controller.table) {
+          controller.table.clearSelection();
           controller.table.selectionUpdated();
         }
+        return;
+      }
+
+      const [x0, x1] = event.selection;
+      const [bound1, bound2] = event.selection.map(this.xScale.invert);
+      const binWidth = width / this.bins.length;
+
+      // console.log("Brushing event: ", event); // Debugging
+      // console.log("Brushed Data Range:", x0, x1);
+      // console.log("Bins:", this.bins);
+
+      // // Compute selected data range
+      // const selectedBins = this.bins.filter(
+      //   (bin) => this.xScale(bin.x1) >= x0 && this.xScale(bin.x0) <= x1
+      // );
+
+      // console.log("Selected brushed bins: ", selectedBins);
+
+      // // Extract categories or labels from bins
+      // const selectedLabels = selectedBins.map((bin) => bin.category || bin.x0);
+
+      // Compute which bins are selected and update their color
+      this.bins.forEach((bin, i) => {
+        const binStart = i * binWidth;
+        const binEnd = (i + 1) * binWidth;
+        bin.selected = binStart <= x1 && binEnd >= x0;
+        this.svg
+          .select(`.bar:nth-child(${i + 1}) rect:nth-child(1)`)
+          .attr("fill", bin.selected ? "orange" : "steelblue");
       });
+
+      // Add histogram label
+      this.svg
+        // .data([d])
+        .append("text")
+        .attr("class", "histogram-label")
+        .join("text")
+        .attr("class", "histogram-label")
+        .attr("x", width / 2)
+        .attr("y", height + 10)
+        .attr("font-size", "10px")
+        .attr("fill", "#444444")
+        .attr("text-anchor", "middle")
+        // .text(`Selected: ${selectedLabels.join(", ")}`);
+        .text(`Range: ${Math.round(bound1)} - ${Math.round(bound2)}`);
+
+      // Update table selection if table exists
+      if (controller.table) {
+        controller.table.clearSelection();
+        this.bins.forEach((bin) => {
+          if (bin.selected) {
+            bin.indeces.forEach((rowIndex) => {
+              const tr = controller.table.tBody.querySelector(
+                `tr:nth-child(${rowIndex + 1})`
+              );
+              if (tr) {
+                controller.table.selectRow(tr);
+              }
+            });
+          }
+        });
+        controller.table.selectionUpdated();
+      }
+    };
   };
 
   this.table = null;
