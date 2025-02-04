@@ -10,7 +10,8 @@
 <link rel="modulepreload" href="../_observablehq/client.js">
 <link rel="modulepreload" href="../_observablehq/runtime.js">
 <link rel="modulepreload" href="../_observablehq/stdlib.js">
-<link rel="modulepreload" href="../_import/components/sorttable/sorterTableClass.e9501c79.js">
+<link rel="modulepreload" href="../_import/components/sorttable/sorterTableClass.623bab39.js">
+<link rel="modulepreload" href="../_import/components/sorttable/BinningService.e57ff818.js">
 <link rel="modulepreload" href="../_npm/d3@7.9.0/_esm.js">
 <link rel="modulepreload" href="../_observablehq/stdlib/duckdb.js">
 <link rel="modulepreload" href="../_npm/htl@0.3.1/_esm.js">
@@ -57,11 +58,11 @@ import {define} from "../_observablehq/client.js";
 import {registerFile, FileAttachment} from "../_observablehq/stdlib.js";
 import {registerTable} from "../_observablehq/stdlib/duckdb.js";
 
-registerFile("./../data/oxford_decarbonisation_data.parquet", {"name":"./../data/oxford_decarbonisation_data.parquet","path":"../_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1737979215358});
+registerFile("./../data/oxford_decarbonisation_data.parquet", {"name":"./../data/oxford_decarbonisation_data.parquet","path":"../_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1738708974068});
 registerTable("oxford", FileAttachment("../data/oxford_decarbonisation_data.parquet"));
 
 define({id: "7e768334", outputs: ["sorterTable"], body: async () => {
-const {sorterTable} = await import("../_import/components/sorttable/sorterTableClass.e9501c79.js");
+const {sorterTable} = await import("../_import/components/sorttable/sorterTableClass.623bab39.js");
 // import { createTable } from "./../components/sorterTable.js";
 
 return {sorterTable};
@@ -134,7 +135,7 @@ const [selected, setSelected] = useState({});
 return {useState,selected,setSelected};
 }});
 
-define({id: "5c5ba8e4", outputs: ["columns2"], body: () => {
+define({id: "85ab9eb3", outputs: ["columns2"], body: () => {
 const columns2 = [
   { column: "id", unique: true },
   "lsoa",
@@ -143,7 +144,9 @@ const columns2 = [
   { column: "pv_generation", alias: "PV Generation" },
   "ashp_size",
   "substation_demand",
-  "heat_demand",
+  "gshp_total",
+  "gshp_suitability",
+  { column: "heat_demand", alias: "Heat Demand", type: "continuous" },
 ];
 return {columns2};
 }});
@@ -224,9 +227,8 @@ table2.applyCustomFilter(customFilter);
 return {userAttribute,userOperator,userThreshold,customFilter};
 }});
 
-define({id: "72bf4f2c", inputs: ["sorterTable","oxBuildings","columns2","tableChanged","cellRenderers"], outputs: ["table2"], body: (sorterTable,oxBuildings,columns2,tableChanged,cellRenderers) => {
+define({id: "43c8f2c9", inputs: ["sorterTable","oxBuildings","columns2","tableChanged"], outputs: ["table2"], body: (sorterTable,oxBuildings,columns2,tableChanged) => {
 const table2 = new sorterTable(oxBuildings, columns2, tableChanged, {
-  cellRenderers,
   containerWidth: 300,
 });
 return {table2};
@@ -239,233 +241,6 @@ display(table2.getNode());
 define({id: "c720684d", inputs: ["html","display","selected"], body: (html,display,selected) => {
 html`Selected`;
 display(selected);
-}});
-
-define({id: "27a46bb1", outputs: ["buildings","columnNames"], body: () => {
-// --- Dummy Data ---
-const buildings = [
-  {
-    id: "A1",
-    lsoa: "E01000001",
-    insulation_rating: "C",
-    insulation_ewall: "Good",
-    pv_generation: 3500,
-    ashp_size: 120,
-    substation_demand: 45.5,
-    history: [
-      { date: new Date("2023-01-01"), value: 10 },
-      { date: new Date("2023-02-01"), value: 15 },
-      { date: new Date("2023-03-01"), value: 8 },
-      { date: new Date("2023-04-01"), value: 12 },
-      { date: new Date("2023-05-01"), value: 18 },
-    ],
-  },
-  {
-    id: "A2",
-    lsoa: "E01000002",
-    insulation_rating: "B",
-    insulation_ewall: "Very Good",
-    pv_generation: 8100,
-    ashp_size: 200,
-    substation_demand: 60.2,
-    history: [
-      { date: new Date("2023-01-01"), value: 22 },
-      { date: new Date("2023-02-01"), value: 18 },
-      { date: new Date("2023-03-01"), value: 25 },
-      { date: new Date("2023-04-01"), value: 20 },
-      { date: new Date("2023-05-01"), value: 15 },
-    ],
-  },
-  {
-    id: "A3",
-    lsoa: "E01000003",
-    insulation_rating: "D",
-    insulation_ewall: "Average",
-    pv_generation: 1500,
-    ashp_size: 90,
-    substation_demand: 38.0,
-    history: [
-      { date: new Date("2023-01-01"), value: 5 },
-      { date: new Date("2023-02-01"), value: 8 },
-      { date: new Date("2023-03-01"), value: 6 },
-      { date: new Date("2023-04-01"), value: 9 },
-      { date: new Date("2023-05-01"), value: 7 },
-    ],
-  },
-  {
-    id: "A4",
-    lsoa: "E01000004",
-    insulation_rating: "A",
-    insulation_ewall: "Excellent",
-    pv_generation: 12500,
-    ashp_size: 350,
-    substation_demand: 75.8,
-    history: [
-      { date: new Date("2023-01-01"), value: 30 },
-      { date: new Date("2023-02-01"), value: 33 },
-      { date: new Date("2023-03-01"), value: 28 },
-      { date: new Date("2023-04-01"), value: 35 },
-      { date: new Date("2023-05-01"), value: 29 },
-    ],
-  },
-  {
-    id: "A5",
-    lsoa: "E01000005",
-    insulation_rating: "E",
-    insulation_ewall: "Poor",
-    pv_generation: 500,
-    ashp_size: 50,
-    substation_demand: 25.3,
-    history: [
-      { date: new Date("2023-01-01"), value: 12 },
-      { date: new Date("2023-02-01"), value: 10 },
-      { date: new Date("2023-03-01"), value: 14 },
-      { date: new Date("2023-04-01"), value: 9 },
-      { date: new Date("2023-05-01"), value: 11 },
-    ],
-  },
-];
-
-// --- Column Definitions ---
-const columnNames = [
-  { column: "id", unique: true },
-  "lsoa",
-  { column: "insulation_rating", alias: "Insulation Rating" },
-  { column: "insulation_ewall", alias: "Wall Insulation" },
-  {
-    column: "pv_generation",
-    alias: "PV Generation",
-    thresholds: [0, 5000, 10000, 20000, 50000],
-  },
-  { column: "ashp_size", alias: "ASHP Size" },
-  { column: "substation_demand", alias: "Substation Demand" },
-  { column: "history", alias: "History" }, // For sparkline
-];
-return {buildings,columnNames};
-}});
-
-define({id: "456fc21f", inputs: ["d3","buildings"], outputs: ["colorScale"], body: (d3,buildings) => {
-// --- Color Scale ---
-const colorScale = d3
-  .scaleSequential(d3.interpolateGreens)
-  .domain([0, d3.max(buildings, (d) => d.pv_generation)]);
-return {colorScale};
-}});
-
-define({id: "c41eecd9", inputs: ["d3"], outputs: ["sparkbar","sparkarea","ratingRenderer"], body: (d3) => {
-// --- Custom Renderer Functions ---
-function sparkbar(max, colorScale, alpha = 0.6) {
-  return (x, rowData) => {
-    const color = "blue"; // d3.color(colorScale(x));
-    // color.opacity = alpha;
-    const div = document.createElement("div");
-    div.style.background = color;
-    div.style.width = `${(100 * x) / max}%`;
-    div.style.height = "10px"; // Ensure visibility
-    // div.style.float = "right";
-    div.style.boxSizing = "border-box";
-    div.style.overflow = "hidden";
-    div.style.display = "block";
-    div.title = x.toLocaleString("en"); // Tooltip text
-    return div;
-  };
-}
-
-function sparkarea(data, rowData, options = {}) {
-  const {
-    width = 240,
-    height = 20,
-    fillColor = "#faa",
-    strokeColor = "red",
-  } = options;
-
-  // Extract x and y values from the data (assuming your data has a 'history' property)
-  const X = data.map((d) => d.date); // Assuming 'date' property for x-axis
-  const Y = data.map((d) => d.value); // Assuming 'value' property for y-axis
-
-  // Handle cases where there is not enough data for an area chart
-  if (X.length < 2 || Y.length < 2) {
-    const message = document.createElement("div");
-    message.innerText = "Not enough data";
-    return message;
-  }
-
-  const x = d3
-    .scaleTime() // Use scaleTime for dates
-    .domain(d3.extent(X))
-    .range([0, width]);
-  const y = d3.scaleLinear().domain(d3.extent(Y)).range([height, 0]);
-
-  const area = d3
-    .area()
-    .x((d, i) => x(X[i]))
-    .y1((d, i) => y(Y[i]))
-    .y0(height)
-    .defined((d, i) => !isNaN(X[i]) && !isNaN(Y[i]));
-
-  // Create the SVG element
-  const svg = d3
-    .create("svg")
-    .attr("width", width)
-    .attr("height", height)
-    .style("vertical-align", "middle")
-    .style("margin", "-3px 0")
-    .node(); // Get the actual SVG element
-
-  // Add the area path
-  d3.select(svg).append("path").attr("fill", fillColor).attr("d", area(data));
-
-  // Add the outline path
-  d3.select(svg)
-    .append("path")
-    .attr("fill", "none")
-    .attr("stroke", strokeColor)
-    .attr("d", area.lineY1()(data));
-
-  // Create a container div
-  const container = document.createElement("div");
-  container.appendChild(svg);
-
-  return container;
-}
-
-function ratingRenderer(rating, rowData, maxRating = 5) {
-  const fullStar = "★";
-  const emptyStar = "☆";
-  const container = document.createElement("div");
-
-  for (let i = 0; i < maxRating; i++) {
-    const star = document.createElement("span");
-    star.innerText = i < rating ? fullStar : emptyStar;
-    star.style.color = "gold";
-    star.style.fontSize = "16px";
-    container.appendChild(star);
-  }
-
-  return container;
-}
-return {sparkbar,sparkarea,ratingRenderer};
-}});
-
-define({id: "db2ad6db", inputs: ["d3","buildings","sparkbar","colorScale","sparkarea","ratingRenderer"], outputs: ["cellRenderers"], body: (d3,buildings,sparkbar,colorScale,sparkarea,ratingRenderer) => {
-// --- Cell Renderers ---
-const cellRenderers = {
-  pv_generation: (value, rowData) => {
-    const max = d3.max(buildings, (d) => d.pv_generation);
-    return sparkbar(max, colorScale)(value, rowData);
-  },
-  ashp_size: (data) => {
-    const span = document.createElement("span");
-    span.innerText = data >= 180 ? "Large" : "Small";
-    return span;
-  },
-  history: (data, rowData) => sparkarea(data, rowData),
-  insulation_rating: (rating) => {
-    const ratingNumber = { A: 5, B: 4, C: 3, D: 2, E: 1, Unknown: 0 }; // Example mapping
-    return ratingRenderer(ratingNumber[rating], {}); // Use {} if rowData is not needed
-  },
-};
-return {cellRenderers};
 }});
 
 define({id: "5d0f3363", inputs: ["setSelected"], outputs: ["tableChanged"], body: (setSelected) => {
@@ -495,17 +270,6 @@ function tableChanged(event) {
 return {tableChanged};
 }});
 
-define({id: "cd07fd9e", inputs: ["sorterTable","buildings","columnNames","tableChanged","cellRenderers","display"], outputs: ["table"], body: (sorterTable,buildings,columnNames,tableChanged,cellRenderers,display) => {
-// --- Create sorterTable Instance ---
-const table = new sorterTable(buildings, columnNames, tableChanged, {
-  cellRenderers,
-  defaultLines: 5, // Show 5 rows initially
-  additionalLines: 5, // Load 5 more rows on scroll
-});
-display(table.getNode());
-return {table};
-}});
-
 </script>
 <div id="observablehq-center">
 <main id="observablehq-main" class="observablehq">
@@ -514,10 +278,10 @@ return {table};
 <div class="observablehq observablehq--block"><!--:56d16951:--></div>
 <div class="observablehq observablehq--block"><!--:ee098890:--></div>
 <div class="observablehq observablehq--block"><!--:ec01b706:--></div>
-<div class="observablehq observablehq--block"><!--:5c5ba8e4:--></div>
+<div class="observablehq observablehq--block"><!--:85ab9eb3:--></div>
 <div class="observablehq observablehq--block"><!--:1bcb0b2e:--></div>
 <div class="observablehq observablehq--block"><!--:baf2b79f:--></div>
-<div class="observablehq observablehq--block"><!--:72bf4f2c:--></div>
+<div class="observablehq observablehq--block"><!--:43c8f2c9:--></div>
 <div class="observablehq observablehq--block"><!--:1ee36312:--></div>
 <div class="observablehq observablehq--block"><!--:c720684d:--></div>
 <!--
@@ -642,12 +406,241 @@ table {
   display: block; /* Make the span a block element */
 } */
 </style>
-<h2 id="renderers-demo" tabindex="-1"><a class="observablehq-header-anchor" href="#renderers-demo">Renderers Demo</a></h2>
-<div class="observablehq observablehq--block"><!--:27a46bb1:--></div>
-<div class="observablehq observablehq--block"><!--:456fc21f:--></div>
-<div class="observablehq observablehq--block"><!--:c41eecd9:--></div>
-<div class="observablehq observablehq--block"><!--:db2ad6db:--></div>
 <div class="observablehq observablehq--block"><!--:5d0f3363:--></div>
-<div class="observablehq observablehq--block"><!--:cd07fd9e:--></div>
+<h2 id="renderers-demo" tabindex="-1"><a class="observablehq-header-anchor" href="#renderers-demo">Renderers Demo</a></h2>
+<!--
+```js
+// --- Dummy Data ---
+const buildings = [
+  {
+    id: "A1",
+    lsoa: "E01000001",
+    insulation_rating: "C",
+    insulation_ewall: "Good",
+    pv_generation: 3500,
+    ashp_size: 120,
+    substation_demand: 45.5,
+    history: [
+      { date: new Date("2023-01-01"), value: 10 },
+      { date: new Date("2023-02-01"), value: 15 },
+      { date: new Date("2023-03-01"), value: 8 },
+      { date: new Date("2023-04-01"), value: 12 },
+      { date: new Date("2023-05-01"), value: 18 },
+    ],
+  },
+  {
+    id: "A2",
+    lsoa: "E01000002",
+    insulation_rating: "B",
+    insulation_ewall: "Very Good",
+    pv_generation: 8100,
+    ashp_size: 200,
+    substation_demand: 60.2,
+    history: [
+      { date: new Date("2023-01-01"), value: 22 },
+      { date: new Date("2023-02-01"), value: 18 },
+      { date: new Date("2023-03-01"), value: 25 },
+      { date: new Date("2023-04-01"), value: 20 },
+      { date: new Date("2023-05-01"), value: 15 },
+    ],
+  },
+  {
+    id: "A3",
+    lsoa: "E01000003",
+    insulation_rating: "D",
+    insulation_ewall: "Average",
+    pv_generation: 1500,
+    ashp_size: 90,
+    substation_demand: 38.0,
+    history: [
+      { date: new Date("2023-01-01"), value: 5 },
+      { date: new Date("2023-02-01"), value: 8 },
+      { date: new Date("2023-03-01"), value: 6 },
+      { date: new Date("2023-04-01"), value: 9 },
+      { date: new Date("2023-05-01"), value: 7 },
+    ],
+  },
+  {
+    id: "A4",
+    lsoa: "E01000004",
+    insulation_rating: "A",
+    insulation_ewall: "Excellent",
+    pv_generation: 12500,
+    ashp_size: 350,
+    substation_demand: 75.8,
+    history: [
+      { date: new Date("2023-01-01"), value: 30 },
+      { date: new Date("2023-02-01"), value: 33 },
+      { date: new Date("2023-03-01"), value: 28 },
+      { date: new Date("2023-04-01"), value: 35 },
+      { date: new Date("2023-05-01"), value: 29 },
+    ],
+  },
+  {
+    id: "A5",
+    lsoa: "E01000005",
+    insulation_rating: "E",
+    insulation_ewall: "Poor",
+    pv_generation: 500,
+    ashp_size: 50,
+    substation_demand: 25.3,
+    history: [
+      { date: new Date("2023-01-01"), value: 12 },
+      { date: new Date("2023-02-01"), value: 10 },
+      { date: new Date("2023-03-01"), value: 14 },
+      { date: new Date("2023-04-01"), value: 9 },
+      { date: new Date("2023-05-01"), value: 11 },
+    ],
+  },
+];
+
+// --- Column Definitions ---
+const columnNames = [
+  { column: "id", unique: true },
+  "lsoa",
+  { column: "insulation_rating", alias: "Insulation Rating" },
+  { column: "insulation_ewall", alias: "Wall Insulation" },
+  {
+    column: "pv_generation",
+    alias: "PV Generation",
+    thresholds: [0, 5000, 10000, 20000, 50000],
+  },
+  { column: "ashp_size", alias: "ASHP Size" },
+  { column: "substation_demand", alias: "Substation Demand" },
+  { column: "history", alias: "History" }, // For sparkline
+];
+```
+
+```js
+// --- Color Scale ---
+const colorScale = d3
+  .scaleSequential(d3.interpolateGreens)
+  .domain([0, d3.max(buildings, (d) => d.pv_generation)]);
+```
+
+```js
+// --- Custom Renderer Functions ---
+function sparkbar(max, colorScale, alpha = 0.6) {
+  return (x, rowData) => {
+    const color = "blue"; // d3.color(colorScale(x));
+    // color.opacity = alpha;
+    const div = document.createElement("div");
+    div.style.background = color;
+    div.style.width = `${(100 * x) / max}%`;
+    div.style.height = "10px"; // Ensure visibility
+    // div.style.float = "right";
+    div.style.boxSizing = "border-box";
+    div.style.overflow = "hidden";
+    div.style.display = "block";
+    div.title = x.toLocaleString("en"); // Tooltip text
+    return div;
+  };
+}
+
+function sparkarea(data, rowData, options = {}) {
+  const {
+    width = 240,
+    height = 20,
+    fillColor = "#faa",
+    strokeColor = "red",
+  } = options;
+
+  // Extract x and y values from the data
+  const X = data.map((d) => d.date); // Assuming 'date' property for x-axis
+  const Y = data.map((d) => d.value); // Assuming 'value' property for y-axis
+
+  // Handle cases where there is not enough data for an area chart
+  if (X.length < 2 || Y.length < 2) {
+    const message = document.createElement("div");
+    message.innerText = "Not enough data";
+    return message;
+  }
+
+  const x = d3
+    .scaleTime() // Use scaleTime for dates
+    .domain(d3.extent(X))
+    .range([0, width]);
+  const y = d3.scaleLinear().domain(d3.extent(Y)).range([height, 0]);
+
+  const area = d3
+    .area()
+    .x((d, i) => x(X[i]))
+    .y1((d, i) => y(Y[i]))
+    .y0(height)
+    .defined((d, i) => !isNaN(X[i]) && !isNaN(Y[i]));
+
+  // Create the SVG element
+  const svg = d3
+    .create("svg")
+    .attr("width", width)
+    .attr("height", height)
+    .style("vertical-align", "middle")
+    .style("margin", "-3px 0")
+    .node(); // Get the actual SVG element
+
+  // Add the area path
+  d3.select(svg).append("path").attr("fill", fillColor).attr("d", area(data));
+
+  // Add the outline path
+  d3.select(svg)
+    .append("path")
+    .attr("fill", "none")
+    .attr("stroke", strokeColor)
+    .attr("d", area.lineY1()(data));
+
+  // Create a container div
+  const container = document.createElement("div");
+  container.appendChild(svg);
+
+  return container;
+}
+
+function ratingRenderer(rating, rowData, maxRating = 5) {
+  const fullStar = "★";
+  const emptyStar = "☆";
+  const container = document.createElement("div");
+
+  for (let i = 0; i < maxRating; i++) {
+    const star = document.createElement("span");
+    star.innerText = i < rating ? fullStar : emptyStar;
+    star.style.color = "gold";
+    star.style.fontSize = "16px";
+    container.appendChild(star);
+  }
+
+  return container;
+}
+```
+
+```js
+// --- Cell Renderers ---
+const cellRenderers = {
+  pv_generation: (value, rowData) => {
+    const max = d3.max(buildings, (d) => d.pv_generation);
+    return sparkbar(max, colorScale)(value, rowData);
+  },
+  ashp_size: (data) => {
+    const span = document.createElement("span");
+    span.innerText = data >= 180 ? "Large" : "Small";
+    return span;
+  },
+  history: (data, rowData) => sparkarea(data, rowData),
+  insulation_rating: (rating) => {
+    const ratingNumber = { A: 5, B: 4, C: 3, D: 2, E: 1, Unknown: 0 }; // Example mapping
+    return ratingRenderer(ratingNumber[rating], {}); // Use {} if rowData is not needed
+  },
+};
+```
+
+
+```js
+// --- Create sorterTable Instance ---
+const table = new sorterTable(buildings, columnNames, tableChanged, {
+  cellRenderers,
+  defaultLines: 5, // Show 5 rows initially
+  additionalLines: 5, // Load 5 more rows on scroll
+});
+display(table.getNode());
+``` -->
 </main>
 </div>

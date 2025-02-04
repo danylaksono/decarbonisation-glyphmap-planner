@@ -1,0 +1,1541 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Morphing Glyphmaps 2 | Decarbonisation Glyphmap Planner</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Source+Serif+Pro:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&amp;display=swap" crossorigin>
+<link rel="preload" as="style" href="../../_observablehq/theme-air,near-midnight,alt,wide.css">
+<link rel="preload" as="style" href="../../_observablehq/stdlib/inputs.css">
+<link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css2?family=Source+Serif+Pro:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&amp;display=swap" crossorigin>
+<link rel="stylesheet" type="text/css" href="../../_observablehq/theme-air,near-midnight,alt,wide.css">
+<link rel="stylesheet" type="text/css" href="../../_observablehq/stdlib/inputs.css">
+<link rel="modulepreload" href="../../_observablehq/client.js">
+<link rel="modulepreload" href="../../_observablehq/runtime.js">
+<link rel="modulepreload" href="../../_observablehq/stdlib.js">
+<link rel="modulepreload" href="../../_node/@turf/turf@7.1.0/index.js">
+<link rel="modulepreload" href="../../_npm/d3-require@1.3.0/_esm.js">
+<link rel="modulepreload" href="../components/radialglyph.js">
+<link rel="modulepreload" href="../components/gridded-glyphmaps/index.min.js">
+<link rel="modulepreload" href="../components/osgb/index.js">
+<link rel="modulepreload" href="../components/utils.js">
+<link rel="modulepreload" href="../../_npm/lodash@4.17.21/_esm.js">
+<link rel="modulepreload" href="../../_observablehq/stdlib/duckdb.js">
+<link rel="modulepreload" href="../../_npm/htl@0.3.1/_esm.js">
+<link rel="modulepreload" href="../../_observablehq/stdlib/inputs.js">
+<link rel="modulepreload" href="../../_npm/@observablehq/plot@0.6.16/_esm.js">
+<link rel="modulepreload" href="../../_npm/@duckdb/duckdb-wasm@1.28.0/_esm.js">
+<link rel="modulepreload" href="../../_npm/isoformat@0.2.1/_esm.js">
+<link rel="modulepreload" href="../../_node/@turf/along@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/angle@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/area@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/bbox@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/bbox-clip@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/bbox-polygon@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/bearing@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/bezier-spline@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/boolean-clockwise@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/boolean-concave@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/boolean-contains@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/boolean-crosses@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/boolean-disjoint@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/boolean-equal@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/boolean-intersects@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/boolean-overlap@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/boolean-parallel@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/boolean-point-in-polygon@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/boolean-point-on-line@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/boolean-touches@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/boolean-valid@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/boolean-within@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/buffer@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/center@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/center-mean@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/center-median@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/center-of-mass@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/centroid@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/circle@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/clean-coords@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/clone@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/clusters@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/clusters-dbscan@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/clusters-kmeans@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/collect@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/combine@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/concave@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/convex@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/destination@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/difference@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/dissolve@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/distance@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/distance-weight@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/ellipse@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/envelope@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/explode@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/flatten@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/flip@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/geojson-rbush@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/great-circle@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/helpers@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/hex-grid@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/interpolate@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/intersect@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/invariant@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/isobands@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/isolines@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/kinks@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/length@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/line-arc@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/line-chunk@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/line-intersect@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/line-offset@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/line-overlap@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/line-segment@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/line-slice@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/line-slice-along@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/line-split@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/line-to-polygon@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/mask@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/meta@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/midpoint@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/moran-index@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/nearest-neighbor-analysis@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/nearest-point@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/nearest-point-on-line@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/nearest-point-to-line@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/planepoint@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/point-grid@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/point-on-feature@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/points-within-polygon@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/point-to-line-distance@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/polygonize@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/polygon-smooth@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/polygon-tangents@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/polygon-to-line@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/projection@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/quadrat-analysis@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/random@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/rectangle-grid@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/rewind@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/rhumb-bearing@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/rhumb-destination@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/rhumb-distance@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/sample@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/sector@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/shortest-path@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/simplify@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/square@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/square-grid@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/standard-deviational-ellipse@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/tag@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/tesselate@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/tin@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/transform-rotate@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/transform-scale@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/transform-translate@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/triangle-grid@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/truncate@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/union@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/unkink-polygon@7.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/voronoi@7.1.0/index.js">
+<link rel="modulepreload" href="../../_npm/d3@7.9.0/_esm.js">
+<link rel="modulepreload" href="../../_npm/interval-tree-1d@1.0.4/_esm.js">
+<link rel="modulepreload" href="../../_npm/apache-arrow@19.0.0/_esm.js">
+<link rel="modulepreload" href="../../_node/geojson-equality-ts@1.0.2/index.js">
+<link rel="modulepreload" href="../../_node/point-in-polygon-hao@1.1.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/jsts@2.7.1/index.js">
+<link rel="modulepreload" href="../../_node/d3-geo@1.7.1/index.js">
+<link rel="modulepreload" href="../../_node/rbush@3.0.1/index.js">
+<link rel="modulepreload" href="../../_node/skmeans@0.9.7/index.js">
+<link rel="modulepreload" href="../../_node/topojson-client@3.1.0/index.js">
+<link rel="modulepreload" href="../../_node/topojson-server@3.0.1/index.js">
+<link rel="modulepreload" href="../../_node/concaveman@1.2.1/index.js">
+<link rel="modulepreload" href="../../_node/polygon-clipping@0.15.7/index.js">
+<link rel="modulepreload" href="../../_node/marchingsquares@1.3.3/index.js">
+<link rel="modulepreload" href="../../_node/sweepline-intersections@1.5.0/index.js">
+<link rel="modulepreload" href="../../_node/fast-deep-equal@3.1.3/index.js">
+<link rel="modulepreload" href="../../_node/earcut@2.2.4/index.js">
+<link rel="modulepreload" href="../../_node/d3-voronoi@1.1.2/index.js">
+<link rel="modulepreload" href="../../_npm/d3-array@3.2.4/_esm.js">
+<link rel="modulepreload" href="../../_npm/d3-axis@3.0.0/_esm.js">
+<link rel="modulepreload" href="../../_npm/d3-brush@3.0.0/_esm.js">
+<link rel="modulepreload" href="../../_npm/d3-chord@3.0.1/_esm.js">
+<link rel="modulepreload" href="../../_npm/d3-color@3.1.0/_esm.js">
+<link rel="modulepreload" href="../../_npm/d3-contour@4.0.2/_esm.js">
+<link rel="modulepreload" href="../../_npm/d3-delaunay@6.0.4/_esm.js">
+<link rel="modulepreload" href="../../_npm/d3-dispatch@3.0.1/_esm.js">
+<link rel="modulepreload" href="../../_npm/d3-drag@3.0.0/_esm.js">
+<link rel="modulepreload" href="../../_npm/d3-dsv@3.0.1/_esm.js">
+<link rel="modulepreload" href="../../_npm/d3-ease@3.0.1/_esm.js">
+<link rel="modulepreload" href="../../_npm/d3-fetch@3.0.1/_esm.js">
+<link rel="modulepreload" href="../../_npm/d3-force@3.0.0/_esm.js">
+<link rel="modulepreload" href="../../_npm/d3-format@3.1.0/_esm.js">
+<link rel="modulepreload" href="../../_npm/d3-geo@3.1.1/_esm.js">
+<link rel="modulepreload" href="../../_npm/d3-hierarchy@3.1.2/_esm.js">
+<link rel="modulepreload" href="../../_npm/d3-interpolate@3.0.1/_esm.js">
+<link rel="modulepreload" href="../../_npm/d3-path@3.1.0/_esm.js">
+<link rel="modulepreload" href="../../_npm/d3-polygon@3.0.1/_esm.js">
+<link rel="modulepreload" href="../../_npm/d3-quadtree@3.0.1/_esm.js">
+<link rel="modulepreload" href="../../_npm/d3-random@3.0.1/_esm.js">
+<link rel="modulepreload" href="../../_npm/d3-scale@4.0.2/_esm.js">
+<link rel="modulepreload" href="../../_npm/d3-scale-chromatic@3.1.0/_esm.js">
+<link rel="modulepreload" href="../../_npm/d3-selection@3.0.0/_esm.js">
+<link rel="modulepreload" href="../../_npm/d3-shape@3.2.0/_esm.js">
+<link rel="modulepreload" href="../../_npm/d3-time@3.1.0/_esm.js">
+<link rel="modulepreload" href="../../_npm/d3-time-format@4.1.0/_esm.js">
+<link rel="modulepreload" href="../../_npm/d3-timer@3.0.1/_esm.js">
+<link rel="modulepreload" href="../../_npm/d3-transition@3.0.1/_esm.js">
+<link rel="modulepreload" href="../../_npm/d3-zoom@3.0.0/_esm.js">
+<link rel="modulepreload" href="../../_npm/binary-search-bounds@2.0.5/_esm.js">
+<link rel="modulepreload" href="../../_npm/tslib@2.8.1/_esm.js">
+<link rel="modulepreload" href="../../_npm/flatbuffers@24.12.23/_esm.js">
+<link rel="modulepreload" href="../../_node/d3-array@1.2.4/index.js">
+<link rel="modulepreload" href="../../_node/tinyqueue@2.0.3/index.js">
+<link rel="modulepreload" href="../../_node/point-in-polygon@1.1.0/index.js">
+<link rel="modulepreload" href="../../_node/robust-predicates@2.0.4/umd/orient2d.min.js">
+<link rel="modulepreload" href="../../_npm/internmap@2.0.3/_esm.js">
+<link rel="modulepreload" href="../../_npm/delaunator@5.0.1/_esm.js">
+<link rel="modulepreload" href="../../_npm/robust-predicates@3.0.2/_esm.js">
+<script type="module">
+
+import {define} from "../../_observablehq/client.js";
+import {registerFile, FileAttachment} from "../../_observablehq/stdlib.js";
+import {registerTable} from "../../_observablehq/stdlib/duckdb.js";
+
+registerFile("./../data/census_data_output.parquet", {"name":"./../data/census_data_output.parquet","path":"./../data/census_data_output.parquet"});
+registerFile("./../data/geo.csv", {"name":"./../data/geo.csv","mimeType":"text/csv","path":"./../data/geo.csv"});
+registerTable("geo", FileAttachment("../data/geo.csv"));
+registerTable("census_data_source", FileAttachment("../data/census_data_output.parquet"));
+
+define({id: "f8ff4578", outputs: ["turf","require","d3","flubber","RadialGlyph","glyphMap","createDiscretiserValue","_drawCellBackground","OSGB","downloadBoundaries","joinCensusDataToGeoJSON","convertGridCsvToGeoJson","context2d"], body: async () => {
+const [turf, {require}, {RadialGlyph}, {glyphMap, createDiscretiserValue, _drawCellBackground}, {OSGB}, {downloadBoundaries, joinCensusDataToGeoJSON, convertGridCsvToGeoJson, context2d}] = await Promise.all([import("../../_node/@turf/turf@7.1.0/index.js"), import("../../_npm/d3-require@1.3.0/_esm.js"), import("./../components/radialglyph.js"), import("./../components/gridded-glyphmaps/index.min.js"), import("./../components/osgb/index.js"), import("./../components/utils.js")]);
+// import * as d3 from "npm:d3";
+const d3 = require("d3", "d3-geo-projection");
+const flubber = require("flubber@0.4");
+// import {
+//   inSituMorphMouse,
+//   prepareGeoJsonForMorphingLib,
+// } from "./components/morpher.js";
+return {turf,require,d3,flubber,RadialGlyph,glyphMap,createDiscretiserValue,_drawCellBackground,OSGB,downloadBoundaries,joinCensusDataToGeoJSON,convertGridCsvToGeoJson,context2d};
+}});
+
+define({id: "5dd85f8f", inputs: ["OSGB"], outputs: ["proj"], body: (OSGB) => {
+const proj = new OSGB();
+return {proj};
+}});
+
+define({id: "2d300212", mode: "inline", inputs: ["localAuthorityInput","display"], body: async (localAuthorityInput,display) => {
+display(await(
+localAuthorityInput
+))
+}});
+
+define({id: "71bd6feb", mode: "inline", inputs: ["geogNameInput","display"], body: async (geogNameInput,display) => {
+display(await(
+geogNameInput
+))
+}});
+
+define({id: "c0e452dc", mode: "inline", inputs: ["glyphmapTypeInput","display"], body: async (glyphmapTypeInput,display) => {
+display(await(
+glyphmapTypeInput
+))
+}});
+
+define({id: "d5a91e5c", mode: "inline", inputs: ["tInput","display"], body: async (tInput,display) => {
+display(await(
+tInput
+))
+}});
+
+define({id: "271c02bf", mode: "inline", inputs: ["resize","createGlyphMap","glyphmapType","display"], body: async (resize,createGlyphMap,glyphmapType,display) => {
+display(await(
+resize((width, height) => createGlyphMap(glyphmapType, {width, height}))
+))
+}});
+
+define({id: "2ad25b31", mode: "inline", inputs: ["Plot","dataInMorph","display"], body: async (Plot,dataInMorph,display) => {
+display(await(
+Plot.geo(dataInMorph).plot({projection: { type: "identity", domain: dataInMorph }})
+))
+}});
+
+define({id: "17a1fc11", inputs: ["Inputs","list_la","Generators"], outputs: ["localAuthorityInput","local_authority"], body: (Inputs,list_la,Generators) => {
+const localAuthorityInput = Inputs.select(
+  [...list_la].map((item) => item.label),
+  {
+    value: "Bradford",
+    label: "Local Authority:",
+  }
+);
+const local_authority = Generators.input(localAuthorityInput);
+return {localAuthorityInput,local_authority};
+}});
+
+define({id: "0bef96a5", inputs: ["Inputs","Generators"], outputs: ["geogNameInput","geogName"], body: (Inputs,Generators) => {
+const geogNameInput = Inputs.radio(["LSOA", "MSOA"], {
+  value: "MSOA",
+  label: "Geography",
+});
+
+const geogName = Generators.input(geogNameInput);
+// display(geogName);
+return {geogNameInput,geogName};
+}});
+
+define({id: "4d5f9e9a", inputs: ["html","Generators"], outputs: ["tInput","t"], body: (html,Generators) => {
+const tInput = html`<input
+  style="width: 100%; max-width:200px;"
+  type="range"
+  value="1"
+  step="0.05"
+  min="0"
+  max="1"
+/>`;
+
+const t = Generators.input(tInput);
+return {tInput,t};
+}});
+
+define({id: "76ba71c3", inputs: ["list_la","local_authority","geogName"], outputs: ["la_code","geogBoundary"], body: (list_la,local_authority,geogName) => {
+const la_code = [...list_la].find((row) => row.label === local_authority).code;
+const geogBoundary = geogName.toLowerCase() + "s";
+return {la_code,geogBoundary};
+}});
+
+define({id: "ac7e408e", inputs: ["sql"], outputs: ["list_la"], body: async (sql) => {
+const list_la = await sql`select distinct label, code from geo where geography = 'LA' order by label`;
+return {list_la};
+}});
+
+define({id: "cad06486", inputs: ["sql","geogName","la_code"], outputs: ["list_of_codes"], body: async (sql,geogName,la_code) => {
+const list_of_codes = await sql`SELECT code
+FROM geo
+WHERE geo.geography = (SELECT replace(${geogName}, '"', ''''))
+AND geo.LA = (SELECT replace(${la_code}, '"', ''''))`;
+return {list_of_codes};
+}});
+
+define({id: "27ac10e4", inputs: ["list_of_codes","downloadBoundaries","geogBoundary"], outputs: ["list_of_code","regular_geodata"], body: async (list_of_codes,downloadBoundaries,geogBoundary) => {
+const list_of_code = [...list_of_codes].map((row) => row.code);
+const regular_geodata = await downloadBoundaries(geogBoundary, list_of_code);
+// display(transformCoordinates(turf.bbox(regular_geodata)));
+return {list_of_code,regular_geodata};
+}});
+
+define({id: "0edc8540", inputs: ["d3","convertGridCsvToGeoJson","local_authority","geogBoundary","turf","regular_geodata","display"], outputs: ["convertGridIfExists","filename","bb","grid_geodata"], body: async (d3,convertGridCsvToGeoJson,local_authority,geogBoundary,turf,regular_geodata,display) => {
+async function convertGridIfExists(filename, bb) {
+  // take from stored preprocessed grids for now
+  // future version will use the grid generation code
+  const gridPath = `https://www.danylaksono.com/datasets/cartogram/${filename}.csv`;
+
+  try {
+    const gridCsv = await d3.csv(gridPath);
+    return convertGridCsvToGeoJson(gridCsv, bb);
+  } catch (error) {
+    // console.log(`Grid file ${filename}.csv not found or couldn't be loaded.`);
+    return error;
+  }
+}
+
+const filename = `${local_authority.toLowerCase()}_${geogBoundary}_grids`;
+const bb = turf.bbox(regular_geodata);
+
+// display(filename);
+
+const grid_geodata = await convertGridIfExists(filename, bb);
+if (grid_geodata instanceof Error) {
+  display("Grid file not found or couldn't be loaded.");
+  // return;
+}
+// display(bb);
+// display(grid_geodata);
+return {convertGridIfExists,filename,bb,grid_geodata};
+}});
+
+define({id: "47b53055", inputs: ["sql"], outputs: ["census_data"], body: async (sql) => {
+const census_data = await sql`--  Load the census data --
+select * from census_data_source;`;
+return {census_data};
+}});
+
+define({id: "352d8c82", inputs: ["regular_geodata_withcensus","d3","_"], outputs: ["normalizeValue","data"], body: (regular_geodata_withcensus,d3,_) => {
+// normalise the data
+function normalizeValue(paramName, value) {
+  const values = regular_geodata_withcensus.features.map(
+    (feature) => feature.properties[paramName]
+  );
+  const min = d3.min(values);
+  const max = d3.max(values);
+
+  return (value - min) / (max - min);
+}
+
+const data = _.keyBy(
+  regular_geodata_withcensus.features.map((feat) => {
+    return {
+      code: feat.properties.code,
+      population: +feat.properties.population,
+      data: feat.properties,
+      deprivation: normalizeValue(
+        "deprivation_value",
+        feat.properties.deprivation_value
+      ),
+      vehicle: normalizeValue("vehicle_value", feat.properties.vehicle_value),
+      heating: normalizeValue("heating_value", feat.properties.heating_value),
+      health: normalizeValue("health_value", feat.properties.health_value),
+    };
+  }),
+  "code"
+);
+// display(data);
+return {normalizeValue,data};
+}});
+
+define({id: "7fd98eeb", inputs: ["joinCensusDataToGeoJSON","census_data","regular_geodata","grid_geodata"], outputs: ["regular_geodata_withcensus","grid_geodata_withcensus"], body: (joinCensusDataToGeoJSON,census_data,regular_geodata,grid_geodata) => {
+// joining census data to geodata
+const regular_geodata_withcensus = joinCensusDataToGeoJSON(
+  [...census_data],
+  regular_geodata
+);
+const grid_geodata_withcensus = joinCensusDataToGeoJSON(
+  [...census_data],
+  grid_geodata
+);
+
+// display("regular geodata with census data");
+// display(regular_geodata_withcensus);
+return {regular_geodata_withcensus,grid_geodata_withcensus};
+}});
+
+define({id: "3fee57e5", body: () => {
+// display(
+//   prepareGeoJsonForMorphingLib(regular_geodata, regular_geodata, 300, 300)
+// );
+}});
+
+define({id: "5acb849c", inputs: ["d3","data","prepareGeoJsonForMorphingLib","regular_geodata","local_authority","geogName","grid_geodata"], outputs: ["colourScalePop","layouts"], body: (d3,data,prepareGeoJsonForMorphingLib,regular_geodata,local_authority,geogName,grid_geodata) => {
+const colourScalePop = d3
+  .scaleSequential(d3.interpolateBlues)
+  .domain([0, d3.max(Object.values(data).map((row) => row.population))]);
+
+const layouts = [
+  {
+    shapes: prepareGeoJsonForMorphingLib(
+      regular_geodata,
+      regular_geodata,
+      200,
+      200
+    ),
+    colourFn: (key) => colourScalePop(data[key].population),
+    description: local_authority + " " + geogName + " Choropleth Map.",
+  },
+  {
+    shapes: prepareGeoJsonForMorphingLib(
+      grid_geodata,
+      regular_geodata,
+      200,
+      200
+    ),
+    colourFn: (key) => colourScalePop(data[key].population),
+    description: local_authority + " " + geogName + "Gridmaps.",
+  },
+];
+
+// const morphers = inSituMorphMouse({
+//   interactive: true,
+//   showDescription: false,
+//   layouts,
+// });
+return {colourScalePop,layouts};
+}});
+
+define({id: "30d51695", body: () => {
+// using observable framework resize callback function
+// const morphers = resize((width, height) =>
+//   inSituMorphMouse(
+//     {
+//       interactive: true,
+//       showDescription: false,
+//       layouts2,
+//       width,
+//     },
+//     width
+//   )
+// );
+
+// display(morphers);
+}});
+
+define({id: "147250e0", inputs: ["d3","_","turf","context2d","flubber","OffscreenCanvas"], outputs: ["inSituMorphMouse","_insertIntermediateLayouts","intermTranslate","prepareGeoJsonForMorphingLib","intermTranslateV","intermCircles","intermChangeShape","intermBbSize"], body: (d3,_,turf,context2d,flubber,OffscreenCanvas) => {
+// ---------------------- Functions for morphing ----------------------
+
+function inSituMorphMouse(options, width) {
+  //interactive: true|false Whether responds to mouse for animation
+  //layouts: is an array of layouts with the following structure
+  //   shape: {key,feature}
+  //   colourFn: (key)=>colour
+  //   staggered: EITHER true/false OR function (key)=> delay (delay based on values' keys) OR an object with indivDelayFn an indivDuration
+  let layouts = options.layouts;
+  let interactive = options.interactive;
+  let showDescription = options.showDescription;
+  let restrictWidthToChart = options.restrictWidthToChart;
+  let isAnimating = false;
+  let curStepAndAmt = 0; //only use as read only
+  let frame;
+  layouts = _insertIntermediateLayouts(layouts); //also parses the string shortcuts
+
+  let thisSelectorFn = () => false;
+  let thisSelectorColour = d3.color("red");
+
+  //work out which are fades and which are tweens
+  const transitions = [];
+  for (let i = 0; i < layouts.length - 1; i++) {
+    // console.log(layouts[i].shapes);
+    // console.log(layouts[i + 1].shapes);
+    if (
+      _.intersection(
+        Object.keys(layouts[i].shapes),
+        Object.keys(layouts[i + 1].shapes)
+      ).length > 0
+    )
+      transitions.push("tween");
+    else transitions.push("fade");
+  }
+
+  //find bb of the union of all shapes
+  const bb = turf.bbox(
+    turf.featureCollection(
+      _.flatten(
+        layouts
+          .map((layout) => layout.shapes)
+          .map((shape) => Object.values(shape))
+      )
+    )
+  );
+
+  const chartWH = bb[3];
+
+  const throttled = _.throttle((stepAndAmt) => draw(stepAndAmt), 100);
+  // const context = context2d(restrictWidthToChart ? chartWH : width, chartWH);
+  const context = context2d(
+    width || (restrictWidthToChart ? chartWH : options.width),
+    chartWH
+  );
+  // const context = DOM.context2d(
+  //   restrictWidthToChart ? chartWH : width,
+  //   chartWH
+  // );
+
+  if (interactive) {
+    let amtValue = 0; // initialize amtValue
+    let increasing = true; // direction flag to track the direction of change
+    document.addEventListener("keydown", (e) => {
+      if (e.code === "Space") {
+        // console.log("Spacebar pressed");
+        if (frame) cancelAnimationFrame(frame);
+        isAnimating = false;
+
+        if (increasing) {
+          amtValue += 0.1;
+          if (amtValue >= 1) {
+            amtValue = 1;
+            increasing = false;
+          }
+        } else {
+          amtValue -= 0.1;
+          if (amtValue <= 0) {
+            amtValue = 0;
+            increasing = true;
+          }
+        }
+
+        throttled(amtValue);
+      }
+    });
+  }
+
+  // if (interactive)
+  //   context.canvas.addEventListener("mousemove", (e) => {
+  //     if (e.shiftKey) {
+  //       if (frame) cancelAnimationFrame(frame);
+  //       isAnimating = false;
+  //       const mouseX = d3.pointer(e)[0];
+  //       const amtValue = _.clamp(Math.min(mouseX, chartWH) / chartWH, 0, 1);
+  //       throttled(amtValue);
+  //     }
+  //   });
+
+  //Calculate all the necessary flubber interpolators for everything
+  const flubbers = [];
+  for (let i = 0; i < layouts.length - 1; i++) {
+    flubbers.push(
+      Object.fromEntries(
+        _.intersection(
+          Object.keys(layouts[i].shapes),
+          Object.keys(layouts[i + 1].shapes)
+        ).map((key) => [
+          key,
+          flubber.interpolate(
+            d3.geoPath()(layouts[i].shapes[key]),
+            d3.geoPath()(layouts[i + 1].shapes[key]),
+            { string: false }
+          ),
+        ])
+      )
+    );
+  }
+
+  function calcStepAndAmt(amtValue) {
+    let transitionDurations = layouts
+      .slice(0, -1)
+      .map((row) => (row.transitionDuration ? row.transitionDuration : 1));
+    let maxAmt = d3.sum(transitionDurations);
+
+    let st = 0;
+    let i = 0;
+    let cumDur = 0;
+    while (cumDur + transitionDurations[i] < maxAmt * amtValue) {
+      cumDur += transitionDurations[i];
+      i++;
+    }
+    let step = i;
+    let amt = (amtValue * maxAmt - cumDur) / transitionDurations[i];
+    if (step >= layouts.length - 1) {
+      step = layouts.length - 1;
+      amt = 1;
+    }
+    return [step, amt];
+  }
+
+  function draw(amtValue) {
+    const stepAndAmt = calcStepAndAmt(amtValue);
+    const step = stepAndAmt[0];
+    const amt = stepAndAmt[1];
+    curStepAndAmt = amtValue;
+    if (transitions[step] == "tween") animateShapes(step, amt);
+    else fadeShapes(step, amt);
+
+    if (showDescription) {
+      context.font = "14px serif";
+      const colour = d3.color("black");
+      for (let i = 0; i < layouts.length; i++) {
+        if (i == step)
+          colour.opacity = 1 - d3.scaleLinear([0, 1], [0.1, 1])(amt);
+        else if (i == step + 1)
+          colour.opacity = d3.scaleLinear([0, 1], [0.1, 1])(amt);
+        else colour.opacity = 0.1;
+
+        context.fillStyle = colour;
+        context.fillText(
+          layouts[i].description ? layouts[i].description : "",
+          chartWH,
+          i * 14 + 14
+        );
+      }
+    }
+  }
+
+  function animateShapes(layoutIdx, amt) {
+    context.clearRect(0, 0, width, chartWH);
+    let keys = _.intersection(
+      (Object.keys(layouts[layoutIdx].shapes),
+      Object.keys(layouts[layoutIdx + 1].shapes))
+    );
+    let maxDelay = 1;
+    if (layouts[layoutIdx].staggered === true) maxDelay = keys.length;
+    else if (layouts[layoutIdx].staggered) {
+      if (_.isFunction(layouts[layoutIdx].staggered)) {
+        maxDelay = d3.max(keys, (key) => layouts[layoutIdx].staggered(key));
+      } else if (
+        layouts[layoutIdx].staggered.indivDelayFn &&
+        _.isFunction(layouts[layoutIdx].staggered.indivDelayFn)
+      ) {
+        maxDelay = d3.max(keys, (key) =>
+          layouts[layoutIdx].staggered.indivDelayFn(key)
+        );
+      }
+    }
+    let dur = maxDelay;
+    if (
+      layouts[layoutIdx].staggered &&
+      layouts[layoutIdx].staggered.indivDuration
+    )
+      dur = layouts[layoutIdx].staggered.indivDuration;
+    maxDelay += dur; //This makes sure the last duration is animated
+
+    if (thisSelectorFn) {
+      keys = _.sortBy(keys, (key) => thisSelectorFn(key));
+    }
+
+    let i = 0;
+    for (const key of keys) {
+      let indivDelay = 0;
+      if (layouts[layoutIdx].staggered === true) indivDelay = i;
+      else if (layouts[layoutIdx].staggered) {
+        if (_.isFunction(layouts[layoutIdx].staggered))
+          indivDelay = layouts[layoutIdx].staggered(key);
+        else if (_.isFunction(layouts[layoutIdx].staggered.indivDelayFn))
+          indivDelay = layouts[layoutIdx].staggered.indivDelayFn(key);
+      }
+
+      let combinedAmt = amt;
+      if (layouts[layoutIdx].staggered) {
+        combinedAmt = _.clamp(
+          d3.scaleLinear(
+            [indivDelay / maxDelay, (indivDelay + dur) / maxDelay],
+            [0, 1]
+          )(amt),
+          0,
+          1
+        );
+      }
+
+      const cs = flubbers[layoutIdx][key](combinedAmt);
+      context.beginPath();
+      d3.geoPath().context(context)(turf.polygon([[...cs, cs[0]]]));
+
+      let colour = 0;
+      if (thisSelectorFn && thisSelectorFn(key)) {
+        colour = thisSelectorColour;
+      } else {
+        const fromColour = layouts[layoutIdx].colourFn
+          ? layouts[layoutIdx].colourFn(key)
+          : "#ddd";
+        const toColour = layouts[layoutIdx + 1].colourFn
+          ? layouts[layoutIdx + 1].colourFn(key)
+          : "#ddd";
+        colour = d3.interpolateRgb(fromColour, toColour)(amt);
+      }
+      context.fillStyle = colour;
+      context.fill();
+      i++;
+    }
+  }
+
+  function fadeShapes(layoutIdx, amt) {
+    context.clearRect(0, 0, width, chartWH);
+    for (const key of Object.keys(layouts[layoutIdx].shapes)) {
+      context.beginPath();
+      d3.geoPath().context(context)(layouts[layoutIdx].shapes[key]);
+      context.fillStyle =
+        thisSelectorFn && thisSelectorFn(key)
+          ? thisSelectorColour
+          : layouts[layoutIdx].colourFn(key);
+      context.fill();
+    }
+
+    const offScreen = new OffscreenCanvas(chartWH, chartWH);
+    const offScreenContext = offScreen.getContext("2d");
+
+    offScreenContext.beginPath();
+    d3.geoPath().context(offScreenContext)(
+      turf.bboxPolygon([0, 0, width, chartWH])
+    );
+    offScreenContext.fillStyle = "rgb(255,255,255)";
+    offScreenContext.fill();
+
+    for (const key of Object.keys(layouts[layoutIdx + 1].shapes)) {
+      offScreenContext.beginPath();
+      d3.geoPath().context(offScreenContext)(
+        layouts[layoutIdx + 1].shapes[key]
+      );
+      offScreenContext.fillStyle =
+        thisSelectorFn && thisSelectorFn(key)
+          ? thisSelectorColour
+          : layouts[layoutIdx + 1].colourFn(key);
+
+      offScreenContext.fill();
+    }
+    context.globalAlpha = amt;
+    context.drawImage(offScreen, 0, 0);
+    context.globalAlpha = 1;
+  }
+
+  draw(0);
+
+  context.canvas.highlightShapes = (
+    selectorFn,
+    selectorColour = "rgb(230, 195, 73)"
+  ) => {
+    thisSelectorFn = selectorFn;
+    thisSelectorColour = selectorColour;
+    draw(curStepAndAmt);
+  };
+
+  context.canvas.draw = (amtValue) => draw(amtValue);
+
+  context.canvas.animate = (inc) => {
+    if (frame) cancelAnimationFrame(frame);
+    isAnimating = true;
+    let forward = true;
+    let st = curStepAndAmt;
+    function tick() {
+      if (forward) {
+        st += inc;
+        if (st > 1) {
+          st = 1;
+          forward = false;
+        }
+      }
+      if (!forward) {
+        st -= inc;
+        if (st < 0) {
+          st = 0;
+          forward = true;
+        }
+      }
+      if (isAnimating) {
+        draw(st);
+        frame = requestAnimationFrame(tick);
+      } else cancelAnimationFrame(frame);
+    }
+    requestAnimationFrame(tick);
+  };
+
+  return context.canvas;
+}
+
+function _insertIntermediateLayouts(layouts) {
+  //first insert the intermediate layouts
+  const newLayouts = [];
+  //first insert intermediate layouts
+  for (let i = 0; i < layouts.length - 1; i++) {
+    if (layouts[i].staged) {
+      if (!_.isArray(layouts[i].staged))
+        layouts[i].staged = [layouts[i].staged];
+      const intermediateLayouts = [];
+      let prevShapes = layouts[i].shapes;
+      const numStages = layouts[i].staged.length;
+      for (const intermediateSpec of layouts[i].staged) {
+        let newShapes;
+        if (_.isFunction(intermediateSpec)) {
+          newShapes = intermediateSpec(
+            prevShapes,
+            layouts[i + 1].shapes,
+            layouts[i].shapes
+          );
+          prevShapes = newShapes;
+        } else {
+          for (const intermediateSpecPart of intermediateSpec.split("&")) {
+            if (intermediateSpecPart == "translateX")
+              newShapes = intermTranslate(
+                prevShapes,
+                layouts[i + 1].shapes,
+                "x"
+              );
+            if (intermediateSpecPart.startsWith("translateX=")) {
+              const amount = +intermediateSpecPart.split("=")[1];
+              // console.log(amount);
+              newShapes = intermTranslateV(prevShapes, [amount, 0]);
+            } else if (intermediateSpecPart == "translateY")
+              newShapes = intermTranslate(
+                prevShapes,
+                layouts[i + 1].shapes,
+                "y"
+              );
+            else if (intermediateSpecPart == "translate")
+              newShapes = intermTranslate(prevShapes, layouts[i + 1].shapes);
+            else if (intermediateSpecPart == "changeShapeCircle")
+              newShapes = intermCircles(prevShapes, 10);
+            else if (intermediateSpecPart == "changeShape")
+              newShapes = intermChangeShape(prevShapes, layouts[i + 1].shapes);
+            else if (intermediateSpecPart == "changeShapeOriginal")
+              newShapes = intermChangeShape(prevShapes, layouts[i].shapes);
+            else if (intermediateSpecPart == "changeBbSize")
+              newShapes = intermBbSize(prevShapes, layouts[i + 1].shapes);
+            else if (intermediateSpecPart == "changeBbSizeOriginal")
+              newShapes = intermBbSize(prevShapes, layouts[i].shapes);
+            if (newShapes) prevShapes = newShapes;
+          }
+        }
+        if (newShapes) {
+          intermediateLayouts.push({
+            ...layouts[i],
+            shapes: newShapes,
+            transitionDuration: layouts[i].transitionDuration
+              ? layouts[i].transitionDuration / numStages
+              : undefined,
+          });
+          prevShapes = newShapes;
+        }
+      }
+      newLayouts.push(layouts[i]);
+      newLayouts.push(...intermediateLayouts);
+    } else {
+      newLayouts.push(layouts[i]);
+    }
+  }
+  newLayouts.push(layouts[layouts.length - 1]);
+  return newLayouts;
+}
+
+function intermTranslate(layout, toLayout, type = "xy") {
+  const centroids = _.mapValues(toLayout, (value) =>
+    turf.getCoord(turf.centroid(value))
+  );
+  return _.mapValues(layout, (value, key) => {
+    const centroid1 = turf.getCoord(turf.centroid(value));
+    const centroid2 = centroids[key];
+
+    if (type == "xy")
+      return d3.geoProject(
+        value,
+        d3
+          .geoIdentity()
+          .translate([centroid2[0] - centroid1[0], centroid2[1] - centroid1[1]])
+      );
+    else if (type == "x")
+      return d3.geoProject(
+        value,
+        d3.geoIdentity().translate([centroid2[0] - centroid1[0], 0])
+      );
+    else if (type == "y")
+      return d3.geoProject(
+        value,
+        d3.geoIdentity().translate([0, centroid2[1] - centroid1[1]])
+      );
+  });
+}
+
+const prepareGeoJsonForMorphingLib = function (geoJson, extentGeoJson, w, h) {
+  if (!geoJson || !geoJson.features || geoJson.features.length === 0) {
+    console.error("GeoJSON features are not ready yet");
+    return {};
+  }
+
+  const polyFeats = d3.geoProject(
+    geoJson,
+    d3
+      .geoIdentity()
+      .reflectY(true)
+      .fitExtent(
+        [
+          [0, 0],
+          [w, h],
+        ],
+        geoJson
+      )
+  );
+  return _.keyBy(
+    polyFeats.features.map((feat) => feat),
+    (feat) => feat.properties.code
+  );
+};
+
+function intermTranslateV(layout, xy) {
+  return _.mapValues(layout, (value, key) => {
+    const centroid1 = turf.getCoord(turf.centroid(value));
+
+    return d3.geoProject(value, d3.geoIdentity().translate(xy));
+  });
+}
+
+function intermCircles(layout, radius, align) {
+  const steps = 20;
+  return _.mapValues(layout, (value, key) => {
+    const bb = turf.bbox(value);
+    let circleCentre;
+    if (align == "topLeft") circleCentre = [bb[0], bb[1]];
+    else if (align == "topRight") circleCentre = [bb[2], bb[1]];
+    else if (align == "bottomRight") circleCentre = [bb[2], bb[3]];
+    else if (align == "bottomLeft") circleCentre = [bb[0], bb[3]];
+    else if (align == "top")
+      circleCentre = [bb[0] + (bb[2] - bb[0]) / 2, bb[1]];
+    else if (!align || align == "centre")
+      circleCentre = [bb[0] + (bb[2] - bb[0]) / 2, bb[1] + (bb[3] - bb[1]) / 2];
+    // console.log(circleCentre);
+    const circleCoords = [];
+    //https://stackoverflow.com/questions/155649/circle-coordinates-to-array-in-javascript
+    for (let i = 0; i < steps; i++) {
+      circleCoords.push([
+        circleCentre[0] + radius * Math.cos((2 * Math.PI * i) / steps),
+        circleCentre[1] + radius * Math.sin((2 * Math.PI * i) / steps),
+      ]);
+    }
+    circleCoords.push(circleCoords[0]);
+    return turf.polygon([circleCoords]);
+  });
+}
+
+function intermChangeShape(layout, toLayout) {
+  const centroids = _.mapValues(layout, (value) =>
+    turf.getCoord(turf.centroid(value))
+  );
+  return _.mapValues(toLayout, (value, key) => {
+    const shapeCentroid = turf.getCoord(turf.centroid(value));
+    const targetCentroid = centroids[key];
+    if (targetCentroid)
+      return d3.geoProject(
+        value,
+        d3
+          .geoIdentity()
+          .translate([
+            targetCentroid[0] - shapeCentroid[0],
+            targetCentroid[1] - shapeCentroid[1],
+          ])
+      );
+  });
+}
+
+function intermBbSize(layout, toLayout) {
+  const bbs = _.mapValues(toLayout, (value) => turf.bbox(value));
+  return _.mapValues(layout, (value, key) => {
+    const toBbSize = bbs[key];
+    const bb = turf.bbox(value);
+
+    const toBbSizeW = toBbSize[2] - toBbSize[0];
+    const toBbSizeH = toBbSize[3] - toBbSize[1];
+    const bbW = bb[2] - bb[0];
+    const bbH = bb[3] - bb[1];
+
+    return d3.geoProject(
+      value,
+      d3.geoIdentity().fitExtent(
+        [
+          [bb[0] + bbW / 2 - toBbSizeW / 2, bb[1] + bbH / 2 - toBbSizeH / 2],
+          [bb[0] + bbW / 2 + toBbSizeW / 2, bb[1] + bbH / 2 + toBbSizeH / 2],
+        ],
+        turf.bboxPolygon(bb)
+      )
+    );
+  });
+}
+return {inSituMorphMouse,_insertIntermediateLayouts,intermTranslate,prepareGeoJsonForMorphingLib,intermTranslateV,intermCircles,intermChangeShape,intermBbSize};
+}});
+
+define({id: "e38f4f2a", inputs: ["proj"], outputs: ["transformCoordinates","transformGeometry","applyTransformationToShapes"], body: (proj) => {
+// Coordinate transformation utilities
+function transformCoordinates(coords) {
+  if (coords.length === 4 && !Array.isArray(coords[0])) {
+    // bounding box
+    return [
+      ...proj.toGeo([coords[0], coords[1]]),
+      ...proj.toGeo([coords[2], coords[3]]),
+    ];
+  } else if (Array.isArray(coords[0])) {
+    // arrays of coordinates
+    return coords.map(transformCoordinates);
+  } else {
+    // individual coordinate pairs
+    return proj.toGeo(coords);
+  }
+}
+
+function transformGeometry(geometry) {
+  if (geometry.type === "GeometryCollection") {
+    return {
+      ...geometry,
+      geometries: geometry.geometries.map(transformGeometry),
+    };
+  }
+
+  return {
+    ...geometry,
+    coordinates: transformCoordinates(geometry.coordinates),
+  };
+}
+
+// Function to apply transformation to geographicShapes
+function applyTransformationToShapes(geographicShapes) {
+  return Object.fromEntries(
+    Object.entries(geographicShapes).map(([code, feature]) => [
+      code,
+      {
+        ...feature,
+        geometry: transformGeometry(feature.geometry),
+      },
+    ])
+  );
+}
+
+// check to see if it works
+// display(transformCoordinates([547764, 180871]));
+return {transformCoordinates,transformGeometry,applyTransformationToShapes};
+}});
+
+define({id: "b82b6a6c", inputs: ["OSGB","turf","regular_geodata_withcensus"], outputs: ["osgb","clone","regularGeodataCensusWgs84"], body: (OSGB,turf,regular_geodata_withcensus) => {
+const osgb = new OSGB();
+let clone = turf.clone(regular_geodata_withcensus);
+turf.coordEach(clone, (currentCoord) => {
+  const newCoord = osgb.toGeo(currentCoord);
+  currentCoord[0] = newCoord[0];
+  currentCoord[1] = newCoord[1];
+});
+const regularGeodataCensusWgs84 = clone;
+
+// display("regularGeodataCensusWgs84");
+// display(regularGeodataCensusWgs84);
+return {osgb,clone,regularGeodataCensusWgs84};
+}});
+
+define({id: "f78d3444", inputs: ["OSGB","turf","grid_geodata_withcensus"], outputs: ["osgb","clone","gridGeodataCensusWgs84"], body: (OSGB,turf,grid_geodata_withcensus) => {
+const osgb = new OSGB();
+let clone = turf.clone(grid_geodata_withcensus);
+turf.coordEach(clone, (currentCoord) => {
+  const newCoord = osgb.toGeo(currentCoord);
+  currentCoord[0] = newCoord[0];
+  currentCoord[1] = newCoord[1];
+});
+const gridGeodataCensusWgs84 = clone;
+
+// display("gridGeodataCensusWgs84");
+// display(gridGeodataCensusWgs84);
+return {osgb,clone,gridGeodataCensusWgs84};
+}});
+
+define({id: "c7a15d60", inputs: ["_","regular_geodata_withcensus","turf","grid_geodata_withcensus","transformGeometry"], outputs: ["regularGeodataLookup","gridGeodataLookup","regularGeodataLookupWGS84","gridGeodataLookupWGS84"], body: (_,regular_geodata_withcensus,turf,grid_geodata_withcensus,transformGeometry) => {
+const regularGeodataLookup = _.keyBy(
+  regular_geodata_withcensus.features.map((feat) => {
+    return { ...feat, centroid: turf.getCoord(turf.centroid(feat.geometry)) };
+  }),
+  (feat) => feat.properties.code
+);
+
+const gridGeodataLookup = _.keyBy(
+  grid_geodata_withcensus.features.map((feat) => {
+    return { ...feat, centroid: turf.getCoord(turf.centroid(feat.geometry)) };
+  }),
+  (feat) => feat.properties.code
+);
+
+const regularGeodataLookupWGS84 = _.keyBy(
+  regular_geodata_withcensus.features.map((feat) => {
+    const transformedGeometry = transformGeometry(feat.geometry);
+    const centroid = turf.getCoord(turf.centroid(transformedGeometry));
+    return {
+      ...feat,
+      geometry: transformedGeometry,
+      centroid: centroid,
+    };
+  }),
+  (feat) => feat.properties.code
+);
+
+const gridGeodataLookupWGS84 = _.keyBy(
+  grid_geodata_withcensus.features.map((feat) => {
+    const transformedGeometry = transformGeometry(feat.geometry);
+    const centroid = turf.getCoord(turf.centroid(transformedGeometry));
+    return {
+      ...feat,
+      geometry: transformedGeometry,
+      centroid: centroid,
+    };
+  }),
+  (feat) => feat.properties.code
+);
+
+// const transformedShapesLookup = _.keyBy(
+//   transformedShapes.features.map((feat) => {
+//     return { ...feat, centroid: turf.getCoord(turf.centroid(feat.geometry)) };
+//   }),
+//   (feat) => feat.properties.code
+// );
+
+// display("regulargeodatalookup");
+// display(regularGeodataLookup);
+
+// display("transformedShapesLookup");
+// display(transformedShapesLookup);
+return {regularGeodataLookup,gridGeodataLookup,regularGeodataLookupWGS84,gridGeodataLookupWGS84};
+}});
+
+define({id: "43eaa4b6", inputs: ["gridGeodataLookupWGS84","regularGeodataLookupWGS84","flubber","turf","_","t"], outputs: ["flubbers","tweenWGS84Lookup"], body: (gridGeodataLookupWGS84,regularGeodataLookupWGS84,flubber,turf,_,t) => {
+const flubbers = {};
+
+for (const key of Object.keys(gridGeodataLookupWGS84)) {
+  if (regularGeodataLookupWGS84[key] && gridGeodataLookupWGS84[key]) {
+    flubbers[key] = flubber.interpolate(
+      turf.getCoords(regularGeodataLookupWGS84[key])[0],
+      turf.getCoords(gridGeodataLookupWGS84[key])[0],
+      { string: false }
+    );
+  }
+}
+const tweenWGS84Lookup = _.mapValues(flubbers, (v, k) => {
+  const feat = turf.multiLineString([v(t)], { code: k });
+  feat.centroid = turf.getCoord(turf.centroid(feat.geometry));
+  return feat;
+});
+
+// display("tweenWGS84Lookup");
+// display(tweenWGS84Lookup);
+return {flubbers,tweenWGS84Lookup};
+}});
+
+define({id: "21da4792", inputs: ["Inputs","Generators","createDiscretiserValue"], outputs: ["glyphmapTypeInput","glyphmapType","valueDiscretiser"], body: (Inputs,Generators,createDiscretiserValue) => {
+const glyphmapTypeInput = Inputs.radio(["Polygons", "Gridmap", "Gridded"], {
+  label: "Type of map",
+  value: "Polygons",
+});
+const glyphmapType = Generators.input(glyphmapTypeInput);
+
+function valueDiscretiser(geomLookup) {
+  return createDiscretiserValue({
+    //... and adds a discretisation function that aggregates by CODE and supplies the polygons for each cell
+    valueFn: (row) => {
+      return row.code;
+    },
+    glyphLocationFn: (key) => geomLookup[key]?.centroid,
+    boundaryFn: (key) => geomLookup[key]?.geometry.coordinates[0],
+  });
+}
+return {glyphmapTypeInput,glyphmapType,valueDiscretiser};
+}});
+
+define({id: "36d82749", inputs: ["turf","createDiscretiserValue"], outputs: ["valueDiscretiserInMorph"], body: (turf,createDiscretiserValue) => {
+function valueDiscretiserInMorph(inp) {
+  // create lookup on the fly
+  let geomLookup = Object.fromEntries(
+    inp.features.map((feature) => {
+      const centroid = turf.centroid(feature).geometry.coordinates; // calculate centroid
+      return [
+        feature.properties.code,
+        {
+          ...feature,
+          centroid, // store centroid
+        },
+      ];
+    })
+  );
+
+  // console.log(geomLookup);
+
+  return createDiscretiserValue({
+    valueFn: (row) => row.code,
+    glyphLocationFn: (key) => geomLookup[key]?.centroid, // Use the calculated centroid
+    boundaryFn: (key) => geomLookup[key]?.geometry.coordinates[0], // Access the boundary (first set of coordinates)
+  });
+}
+return {valueDiscretiserInMorph};
+}});
+
+define({id: "417b699c", inputs: ["transformCoordinates","turf","regular_geodata","data","regularGeodataLookup","d3","insideCell","drawRadialMultivariateGlyph"], outputs: ["glyphMapSpec"], body: (transformCoordinates,turf,regular_geodata,data,regularGeodataLookup,d3,insideCell,drawRadialMultivariateGlyph) => {
+// glyphmap basic specs
+// function glyphMapSpec(width = 800, height = 600) {
+// console.log("in glyphmapspec", width, height);
+const glyphMapSpec = {
+  coordType: "notmercator",
+  initialBB: transformCoordinates(turf.bbox(regular_geodata)),
+  data: Object.values(data),
+  getLocationFn: (row) => regularGeodataLookup[row.code]?.centroid,
+  discretisationShape: "grid",
+  mapType: "CartoPositron",
+  interactiveCellSize: true,
+  cellSize: 30,
+
+  width: 800,
+  height: 600,
+  // width: width,
+  // height: height,
+
+  customMap: {
+    scaleParams: [],
+
+    // discretiserFn: valueDiscretiser(regularGeodataLookup),
+
+    initFn: (cells, cellSize, global, panel) => {
+      // console.log("initFn", cells, cellSize, global, panel);
+    },
+
+    preAggrFn: (cells, cellSize, global, panel) => {
+      // console.log("global", global);
+    },
+
+    aggrFn: (cell, row, weight, global, panel) => {
+      if (cell.population) {
+        cell.population += row.population;
+        cell.deprivation += row.deprivation;
+        cell.vehicle += row.vehicle;
+        cell.heating += row.heating;
+        cell.health += row.health;
+      } else {
+        cell.population = row.population;
+        cell.deprivation = row.deprivation;
+        cell.vehicle = row.vehicle;
+        cell.heating = row.heating;
+        cell.health = row.health;
+      }
+    },
+
+    postAggrFn: (cells, cellSize, global, panel) => {
+      //add cell interaction
+      let canvas = d3.select(panel).select("canvas").node();
+
+      canvas.addEventListener("click", function (evt) {
+        //check which cell the click was in
+        const rect = canvas.getBoundingClientRect();
+        let x = evt.clientX - rect.left;
+        let y = evt.clientY - rect.top;
+        global.clickedCell = null;
+        for (let i = 0; i < cells.length; i++)
+          if (insideCell(cells[i], x, y)) global.clickedCell = cells[i];
+      });
+    },
+
+    preDrawFn: (cells, cellSize, ctx, global, panel) => {
+      if (!cells || cells.length === 0) {
+        console.error("No cells data available");
+        return;
+      }
+      global.pathGenerator = d3.geoPath().context(ctx);
+      global.colourScalePop = d3
+        .scaleSequential(d3.interpolateBlues)
+        .domain([0, d3.max(cells.map((row) => row.population))]);
+    },
+
+    drawFn: (cell, x, y, cellSize, ctx, global, panel) => {
+      const boundary = cell.getBoundary(0);
+
+      // console.log("boundary", boundary);
+
+      if (boundary[0] != boundary[boundary.length - 1]) {
+        boundary.push(boundary[0]);
+      }
+      const boundaryFeat = turf.polygon([boundary]);
+
+      ctx.beginPath();
+      global.pathGenerator(boundaryFeat);
+      ctx.fillStyle = global.colourScalePop(cell.population);
+      ctx.fill();
+
+      //add contour to clicked cells
+      if (global.clickedCell == cell) {
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = "rgb(250,250,250)";
+        ctx.stroke();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = "rgb(50,50,50)";
+        ctx.stroke();
+      }
+
+      //draw a radial glyph -> change the array to real data (between 0 and 1)
+      drawRadialMultivariateGlyph([0.5, 0.1, 0.9, 0.3], x, y, cellSize, ctx);
+    },
+
+    postDrawFn: (cells, cellSize, ctx, global, panel) => {},
+
+    tooltipTextFn: (cell) => {},
+  },
+};
+return {glyphMapSpec};
+}});
+
+define({id: "504498f3", inputs: ["t","morphGlyphMap","valueDiscretiser","tweenWGS84Lookup"], body: (t,morphGlyphMap,valueDiscretiser,tweenWGS84Lookup) => {
+t; //causes code to run whenever the slider is moved
+// display(t);
+morphGlyphMap.setGlyph({ discretiserFn: valueDiscretiser(tweenWGS84Lookup) });
+}});
+
+define({id: "c0cea466", inputs: ["glyphMapSpec","turf","regularGeodataCensusWgs84","regularGeodataLookupWGS84"], outputs: ["glyphMapSpecWgs84"], body: (glyphMapSpec,turf,regularGeodataCensusWgs84,regularGeodataLookupWGS84) => {
+const glyphMapSpecWgs84 = {
+  ...glyphMapSpec,
+  coordType: "mercator", //project from lat/lon rather then using local Cartesian coordinates
+  initialBB: turf.bbox(regularGeodataCensusWgs84), //use the WGS84 extent
+  getLocationFn: (row) => regularGeodataLookupWGS84[row.code]?.centroid, //use the WGS84 location (needed for the gridded glyphmaps)
+};
+// display("glyphMapSpecWgs84");
+// display(glyphMapSpecWgs84);
+return {glyphMapSpecWgs84};
+}});
+
+define({id: "e6841bbe", inputs: ["glyphMap","glyphMapSpecWgs84"], outputs: ["createMorphGlyphMap","morphGlyphMap"], body: (glyphMap,glyphMapSpecWgs84) => {
+//morphGlyphMap as a factory function returning an object with setGlyph
+function createMorphGlyphMap(width, height) {
+  // Create the glyph map instance with the WGS84 specifications
+  const glyphMapInstance = glyphMap({
+    ...glyphMapSpecWgs84, //takes the base spec...
+    width: width,
+    height: height,
+  });
+
+  return glyphMapInstance;
+}
+const morphGlyphMap = createMorphGlyphMap(800, 600);
+return {createMorphGlyphMap,morphGlyphMap};
+}});
+
+define({id: "7428bbdc", body: () => {
+// function morphGlyphMap(width, height) {
+//   return glyphMap({
+//     // ...glyphMapSpec, // this is for non-mercator CRS
+//     ...glyphMapSpecWgs84, //takes the base spec...
+//     width: width,
+//     height: height,
+//     //discretiserFn: valueDiscretiser(intermed) //uses the polyon lookup for spatialunits
+//   });
+// }
+// display("morphGlyphMap");
+}});
+
+define({id: "c1325318", inputs: ["glyphMap","glyphMapSpec","valueDiscretiser","regularGeodataLookup","morphGlyphMap"], outputs: ["createGlyphMap"], body: (glyphMap,glyphMapSpec,valueDiscretiser,regularGeodataLookup,morphGlyphMap) => {
+function createGlyphMap(glyphmapType, { width, height }) {
+  // console.log(width, height);
+  if (glyphmapType == "Polygons") {
+    return glyphMap({
+      ...glyphMapSpec(width, height), //takes the base spec...
+      discretiserFn: valueDiscretiser(regularGeodataLookup),
+    });
+  } else if (glyphmapType == "Gridmap") {
+    return morphGlyphMap;
+  } else if (glyphmapType == "Gridded") {
+    return glyphMap(glyphMapSpec(width, height)); //uses the base spec as it (by default, it grids)
+  }
+}
+
+// const glyphmap = glyphMapSpec();
+
+// display(createGlyphMap(glyphmapType));
+// display(valueDiscretiser(regularGeodataLookup));
+return {createGlyphMap};
+}});
+
+define({id: "246c80d3", inputs: ["d3","drawPieSlice"], outputs: ["drawRadialMultivariateGlyph"], body: (d3,drawPieSlice) => {
+function drawRadialMultivariateGlyph(normalisedData, x, y, size, ctx) {
+  let angle = (2 * Math.PI) / normalisedData.length;
+  let centerX = x;
+  let centerY = y;
+  let radius = size / 2;
+  // console.log(radius);
+
+  //get a colour palette
+  let colors = d3
+    .scaleOrdinal(d3.schemeTableau10)
+    .domain(d3.range(normalisedData.length));
+
+  normalisedData.map((d, i) => {
+    drawPieSlice(
+      ctx,
+      centerX,
+      centerY,
+      radius * 0.9,
+      angle * (i + 0.1),
+      angle * (i + 0.9),
+      "rgba(0,0,0,0.05)"
+    );
+    drawPieSlice(
+      ctx,
+      centerX,
+      centerY,
+      radius * Math.sqrt(d) * 0.95,
+      angle * (i + 0.1),
+      angle * (i + 0.9),
+      colors(i)
+    );
+  });
+}
+return {drawRadialMultivariateGlyph};
+}});
+
+define({id: "9d040433", outputs: ["drawPieSlice"], body: () => {
+function drawPieSlice(ctx, cx, cy, r, angleStart, angleEnd, color) {
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.arc(cx, cy, r, angleStart, angleEnd);
+  ctx.lineTo(cx, cy);
+  ctx.fillStyle = color;
+  ctx.fill();
+}
+return {drawPieSlice};
+}});
+
+define({id: "520e6d60", outputs: ["insideCell"], body: () => {
+function insideCell(c, x, y) {
+  // console.log(x + " " + y  + " " + c.getXCentre() + " " + c.getYCentre() + " " + c.getCellSize());
+  if (
+    x >= c.getXCentre() - c.getCellSize() &&
+    x <= c.getXCentre() + c.getCellSize() &&
+    y >= c.getYCentre() - c.getCellSize() &&
+    y <= c.getYCentre() + c.getCellSize()
+  )
+    return true;
+  return false;
+}
+return {insideCell};
+}});
+
+</script>
+<div id="observablehq-center">
+<main id="observablehq-main" class="observablehq">
+<!-- ------------------ # Imports ------------------  -->
+<div class="observablehq observablehq--block"><!--:f8ff4578:--></div>
+<div class="observablehq observablehq--block"><!--:5dd85f8f:--></div>
+<!-- ------------ The HTML Layout ------------ -->
+<!-------- Stylesheets -------->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.0/css/bulma.min.css">
+<style>
+body, html {
+  height: 100%;
+  margin: 0 !important;
+  /* overflow: hidden; */
+  padding: 0;
+}
+
+#observablehq-main, #observablehq-header, #observablehq-footer {
+    margin: 0 !important;
+    /* width: 100% !important; */
+    max-width: 100% !important;
+}
+
+</style>
+<div id="left-panel" class="grid grid-cols-4" style="padding:8px; height:92vh;">
+    <div class="card grid-colspan-1">
+         <div style="padding:10px;"> <observablehq-loading></observablehq-loading><!--:2d300212:--> </div>
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<div style="padding:10px;"> <observablehq-loading></observablehq-loading><!--:71bd6feb:--> </div>
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<div style="padding:10px;"> <observablehq-loading></observablehq-loading><!--:c0e452dc:--> </div>
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<div style="padding:10px;"> <small>Drag to morph (choose 'Gridmap')</small> <observablehq-loading></observablehq-loading><!--:d5a91e5c:--> </div>
+        <hr>
+        <div style="padding:10px;"> List of layers</div>
+    </div>
+    <div id="main-panel" class="card glyphmaps grid-colspan-3" style="padding:8px; height:92vh;">
+     <observablehq-loading></observablehq-loading><!--:271c02bf:-->
+    </div>
+    <div id="right-panel" class="grid-colspan-1" style="display: flex; flex-direction: column; padding:8px; height:92vh;">
+        <div class="card" style="flex-grow: 1;">
+          Glyph view here
+        </div>
+        <div class="card" style="flex-grow: 1;">
+            <div style="padding:15px;">Animated morphing glyphmaps</div>
+            <div>
+                <observablehq-loading></observablehq-loading><!--:2ad25b31:-->
+            </div>
+        </div>
+    </div>
+</div>
+<!-- ------------------ # Data and Inputs ------------------  -->
+<!-- Select the Local authority from the list below -->
+<div class="observablehq observablehq--block"><!--:17a1fc11:--></div>
+<div class="observablehq observablehq--block"><!--:0bef96a5:--></div>
+<div class="observablehq observablehq--block"><!--:4d5f9e9a:--></div>
+<div class="observablehq observablehq--block"><!--:76ba71c3:--></div>
+<div class="observablehq observablehq--block"><!--:ac7e408e:--></div>
+<div class="observablehq observablehq--block"><!--:cad06486:--></div>
+<div class="observablehq observablehq--block"><!--:27ac10e4:--></div>
+<div class="observablehq observablehq--block"><!--:0edc8540:--></div>
+<div class="observablehq observablehq--block"><!--:47b53055:--></div>
+<!-- ------------------ # Morphing Geometry Functions ------------------  -->
+<div class="observablehq observablehq--block"><!--:352d8c82:--></div>
+<div class="observablehq observablehq--block"><!--:7fd98eeb:--></div>
+<div class="observablehq observablehq--block"><!--:3fee57e5:--></div>
+<div class="observablehq observablehq--block"><!--:5acb849c:--></div>
+<div class="observablehq observablehq--block"><!--:30d51695:--></div>
+<div class="observablehq observablehq--block"><!--:147250e0:--></div>
+<!-- ------------------ # Gridded-Glyphmap Functions ------------------  -->
+<div class="observablehq observablehq--block"><!--:e38f4f2a:--></div>
+<!-- ------------------ # Gridded-Glyphmap Data Functions ------------------  -->
+<div class="observablehq observablehq--block"><!--:b82b6a6c:--></div>
+<div class="observablehq observablehq--block"><!--:f78d3444:--></div>
+<div class="observablehq observablehq--block"><!--:c7a15d60:--></div>
+<div class="observablehq observablehq--block"><!--:43eaa4b6:--></div>
+<div class="observablehq observablehq--block"><!--:21da4792:--></div>
+<div class="observablehq observablehq--block"><!--:36d82749:--></div>
+<div class="observablehq observablehq--block"><!--:417b699c:--></div>
+<div class="observablehq observablehq--block"><!--:504498f3:--></div>
+<div class="observablehq observablehq--block"><!--:c0cea466:--></div>
+<div class="observablehq observablehq--block"><!--:e6841bbe:--></div>
+<div class="observablehq observablehq--block"><!--:7428bbdc:--></div>
+<div class="observablehq observablehq--block"><!--:c1325318:--></div>
+<div class="observablehq observablehq--block"><!--:246c80d3:--></div>
+<div class="observablehq observablehq--block"><!--:9d040433:--></div>
+<div class="observablehq observablehq--block"><!--:520e6d60:--></div>
+</main>
+</div>

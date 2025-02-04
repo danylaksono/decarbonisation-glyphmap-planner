@@ -13,64 +13,30 @@
 <link rel="modulepreload" href="../_observablehq/runtime.js">
 <link rel="modulepreload" href="../_observablehq/stdlib.js">
 <link rel="modulepreload" href="../_npm/leaflet@1.9.4/_esm.js">
-<link rel="modulepreload" href="../_import/components/glyph-designs/timeGlyph.a1969fec.js">
+<link rel="modulepreload" href="../components/glyph-designs/timeGlyph.js">
 <link rel="modulepreload" href="../_import/components/decarb-model/mini-decarbonisation.96368c2a.js">
 <link rel="modulepreload" href="../_import/components/leaflet/leaflet-map.498e936b.js">
-<link rel="modulepreload" href="../_npm/d3@7.9.0/_esm.js">
 <link rel="modulepreload" href="../_import/components/decarb-model/priority-queue.aea4e806.js">
 <link rel="modulepreload" href="../_import/components/leaflet/basemaps.e55f05f5.js">
 <link rel="modulepreload" href="../_npm/supercluster@8.0.1/_esm.js">
 <link rel="modulepreload" href="../_observablehq/stdlib/duckdb.js">
 <link rel="modulepreload" href="../_npm/htl@0.3.1/_esm.js">
 <link rel="modulepreload" href="../_npm/@duckdb/duckdb-wasm@1.28.0/_esm.js">
-<link rel="modulepreload" href="../_npm/d3-array@3.2.4/_esm.js">
-<link rel="modulepreload" href="../_npm/d3-axis@3.0.0/_esm.js">
-<link rel="modulepreload" href="../_npm/d3-brush@3.0.0/_esm.js">
-<link rel="modulepreload" href="../_npm/d3-chord@3.0.1/_esm.js">
-<link rel="modulepreload" href="../_npm/d3-color@3.1.0/_esm.js">
-<link rel="modulepreload" href="../_npm/d3-contour@4.0.2/_esm.js">
-<link rel="modulepreload" href="../_npm/d3-delaunay@6.0.4/_esm.js">
-<link rel="modulepreload" href="../_npm/d3-dispatch@3.0.1/_esm.js">
-<link rel="modulepreload" href="../_npm/d3-drag@3.0.0/_esm.js">
-<link rel="modulepreload" href="../_npm/d3-dsv@3.0.1/_esm.js">
-<link rel="modulepreload" href="../_npm/d3-ease@3.0.1/_esm.js">
-<link rel="modulepreload" href="../_npm/d3-fetch@3.0.1/_esm.js">
-<link rel="modulepreload" href="../_npm/d3-force@3.0.0/_esm.js">
-<link rel="modulepreload" href="../_npm/d3-format@3.1.0/_esm.js">
-<link rel="modulepreload" href="../_npm/d3-geo@3.1.1/_esm.js">
-<link rel="modulepreload" href="../_npm/d3-hierarchy@3.1.2/_esm.js">
-<link rel="modulepreload" href="../_npm/d3-interpolate@3.0.1/_esm.js">
-<link rel="modulepreload" href="../_npm/d3-path@3.1.0/_esm.js">
-<link rel="modulepreload" href="../_npm/d3-polygon@3.0.1/_esm.js">
-<link rel="modulepreload" href="../_npm/d3-quadtree@3.0.1/_esm.js">
-<link rel="modulepreload" href="../_npm/d3-random@3.0.1/_esm.js">
-<link rel="modulepreload" href="../_npm/d3-scale@4.0.2/_esm.js">
-<link rel="modulepreload" href="../_npm/d3-scale-chromatic@3.1.0/_esm.js">
-<link rel="modulepreload" href="../_npm/d3-selection@3.0.0/_esm.js">
-<link rel="modulepreload" href="../_npm/d3-shape@3.2.0/_esm.js">
-<link rel="modulepreload" href="../_npm/d3-time@3.1.0/_esm.js">
-<link rel="modulepreload" href="../_npm/d3-time-format@4.1.0/_esm.js">
-<link rel="modulepreload" href="../_npm/d3-timer@3.0.1/_esm.js">
-<link rel="modulepreload" href="../_npm/d3-transition@3.0.1/_esm.js">
-<link rel="modulepreload" href="../_npm/d3-zoom@3.0.0/_esm.js">
 <link rel="modulepreload" href="../_npm/kdbush@4.0.2/_esm.js">
 <link rel="modulepreload" href="../_npm/apache-arrow@19.0.0/_esm.js">
-<link rel="modulepreload" href="../_npm/internmap@2.0.3/_esm.js">
-<link rel="modulepreload" href="../_npm/delaunator@5.0.1/_esm.js">
 <link rel="modulepreload" href="../_npm/tslib@2.8.1/_esm.js">
 <link rel="modulepreload" href="../_npm/flatbuffers@24.12.23/_esm.js">
-<link rel="modulepreload" href="../_npm/robust-predicates@3.0.2/_esm.js">
 <script type="module">
 
 import {define} from "../_observablehq/client.js";
 import {registerFile, FileAttachment} from "../_observablehq/stdlib.js";
 import {registerTable} from "../_observablehq/stdlib/duckdb.js";
 
-registerFile("./../data/oxford_decarbonisation_data.parquet", {"name":"./../data/oxford_decarbonisation_data.parquet","path":"../_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1737979215358});
+registerFile("./../data/oxford_decarbonisation_data.parquet", {"name":"./../data/oxford_decarbonisation_data.parquet","path":"../_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1738708974068});
 registerTable("oxford", FileAttachment("../data/oxford_decarbonisation_data.parquet"));
 
 define({id: "800c160e", outputs: ["L","TimeGlyph","GlyphCollection","InterventionManager","MiniDecarbModel","LeafletMap"], body: async () => {
-const [L, {TimeGlyph, GlyphCollection}, {InterventionManager, MiniDecarbModel}, {LeafletMap}] = await Promise.all([import("../_npm/leaflet@1.9.4/_esm.js"), import("../_import/components/glyph-designs/timeGlyph.a1969fec.js"), import("../_import/components/decarb-model/mini-decarbonisation.96368c2a.js"), import("../_import/components/leaflet/leaflet-map.498e936b.js")]);
+const [L, {TimeGlyph, GlyphCollection}, {InterventionManager, MiniDecarbModel}, {LeafletMap}] = await Promise.all([import("../_npm/leaflet@1.9.4/_esm.js"), import("./../components/glyph-designs/timeGlyph.js"), import("../_import/components/decarb-model/mini-decarbonisation.96368c2a.js"), import("../_import/components/leaflet/leaflet-map.498e936b.js")]);
 
 return {L,TimeGlyph,GlyphCollection,InterventionManager,MiniDecarbModel,LeafletMap};
 }});
