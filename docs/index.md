@@ -66,6 +66,7 @@ import {
   transformGeometry,
   normalisebyGroup,
   aggregateValues,
+  set,
   // applyTransformationToShapes,
 } from "./components/helpers.js";
 ```
@@ -866,16 +867,6 @@ setSelectedAllocation(allocator.getAllocations());
 }
 ```
 
-```js
-// <!-- dealing with observable input reactivity -->
-// two ways Obs input
-function set(input, value) {
-  input.value = value;
-  input.dispatchEvent(new Event("input", { bubbles: true }));
-  // console.log("input value:", input.value);
-}
-```
-
 <!-- morph animation logic -->
 
 ```js
@@ -913,17 +904,13 @@ playButton.addEventListener("click", () => {
 function addNewIntervention(data) {
   // console.log(Date.now(), "Checking allocations now:", allocations);
   const currentAllocation = getFromSession("allocations");
-  const filter = filterByIds(
-    tableFilteredData.map((d) => d?.id).filter(Boolean)
-  );
-  console.log("filter", filter);
 
   console.log(">> Current Allocation from session", currentAllocation);
   const yearlyBudgets = currentAllocation.map((item) => item.budget);
 
   const newConfig = {
     ...data,
-    filters: [filter],
+    // filters: [],
     // priorities: [],
     yearlyBudgets: yearlyBudgets,
   };
@@ -935,16 +922,6 @@ function addNewIntervention(data) {
   // run the model
   runModel();
 }
-```
-
-```js
-// This updates the stored interventions
-const interventions = getInterventions;
-console.log(">> Interventions", interventions);
-```
-
-```js
-const stackedRecap = getResults;
 ```
 
 ```js
@@ -1025,28 +1002,6 @@ function reorderIntervention(array, index, direction) {
 ```
 
 ```js
-// update timeline drawing
-function updateTimeline() {
-  const timelinePanel = document.getElementById("timeline-panel");
-  timelinePanel.innerHTML = "";
-  timelinePanel.appendChild(
-    createTimelineInterface(
-      interventions,
-      (change) => {
-        console.log("timeline change", change);
-      },
-      (click) => {
-        setSelectedInterventionIndex(click);
-        console.log("timeline clicked block", interventions[click]);
-      },
-      450,
-      200
-    )
-  );
-}
-```
-
-```js
 // function to update the selected intervention
 function modifyIntervention(index, newConfig) {
   if (!newConfig) {
@@ -1097,6 +1052,44 @@ function modifyIntervention(index, newConfig) {
 }
 ```
 
+```js
+// function to update building filter
+function updateBuildingFilter(column, value) {
+  console.log(">> Updating building filter...", column, value);
+  const filter = filterByIds(
+    table.data
+      .filter((d) => d[column] === value)
+      .map((d) => d?.id)
+      .filter(Boolean)
+  );
+  console.log(">> Filter", filter);
+  manager.addFilter(filter);
+  runModel();
+}
+```
+
+```js
+// update timeline drawing
+function updateTimeline() {
+  const timelinePanel = document.getElementById("timeline-panel");
+  timelinePanel.innerHTML = "";
+  timelinePanel.appendChild(
+    createTimelineInterface(
+      interventions,
+      (change) => {
+        console.log("timeline change", change);
+      },
+      (click) => {
+        setSelectedInterventionIndex(click);
+        console.log("timeline clicked block", interventions[click]);
+      },
+      450,
+      200
+    )
+  );
+}
+```
+
 <!-- ----------------  D A T A  ---------------- -->
 
 ```js
@@ -1118,12 +1111,13 @@ const data =
 ```
 
 ```js
-// const filteredDatafromTableSession = getFromSession("tableFiltered");
+// This updates the stored interventions
+const interventions = getInterventions;
+console.log(">> Interventions", interventions);
+```
 
-// console.log(
-//   "Filter By IDS",
-//   tableFilteredData.map((d) => d.id)
-// );
+```js
+const stackedRecap = getResults;
 ```
 
 ```js
@@ -1134,6 +1128,8 @@ console.log(">> Switching variables...", glyphVariables);
 const overall_data = aggregateValues(data, glyphVariables, "sum", true);
 const glyphData = glyphVariables.map((key) => overall_data[key]);
 ```
+
+<!-- ---------------- Sortable Table ---------------- -->
 
 ```js
 // Table Data
@@ -1183,9 +1179,9 @@ function tableChanged(event) {
   if (event.type === "filter") {
     console.log("Filtered indices:", event.indeces);
     console.log("Filter rule:", event.rule);
-    saveToSession("tableFiltered", event.indeces);
+    // saveToSession("tableFiltered", event.indeces);
     console.log("++Filtering Table called");
-    // setTableFiltered(event.indeces);
+    setTableFiltered(event.indeces);
   }
 
   if (event.type === "sort") {
@@ -1202,32 +1198,13 @@ function tableChanged(event) {
 ```
 
 ```js
-function setTableFilteredData(indices) {
-  console.log("++Filtering Table called");
-  const tableFilteredData = indices.map((index) => {
-    return data[index];
-  });
-  console.log("Filtered data:", tableFilteredData);
-  saveToSession("tableFiltered", tableFilteredData);
-}
-```
-
-```js
-// const tableFiltered = getFromSession("tableFiltered");
-const tableFiltered = getFromSession("tableFiltered") ?? [];
-
+// Filter table data
 const tableFilteredData = tableFiltered
   .map((index) => table.data?.[index])
   .filter(Boolean);
 
-// const tableFilteredData = tableFiltered.map((index) => {
-//   return table.data[index];
-// });
-
-// console.log("Filtered data:", tableFilteredData);
+console.log("Filtered table data:", tableFilteredData);
 ```
-
-<!-- ---------------- Sortable Table ---------------- -->
 
 ```js
 // Define cell renderers
@@ -1245,6 +1222,7 @@ const tableFilteredData = tableFiltered
 ```
 
 ```js
+console.log(">> Create sortable table... with data", data);
 const table = new sorterTable(data, tableColumns, tableChanged, {
   height: "300px",
 });
@@ -1257,7 +1235,6 @@ console.log(">> Geo-enrichment...");
 // geo-enrichment - combine geodata with building level properties
 
 // define the aggregation function for each column
-
 const aggregations = {
   // "id": 200004687243,
   isIntervened: "count",
@@ -1647,6 +1624,7 @@ function glyphMapSpec(width = 800, height = 600) {
 ```
 
 ```js
+// Trigger Morphing function
 {
   console.log(">> Morphing...", morph_factor);
   morph_factor; //causes code to run whenever the slider is moved

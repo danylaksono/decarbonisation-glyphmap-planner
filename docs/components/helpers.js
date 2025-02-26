@@ -527,6 +527,14 @@ export function normaliseData(data, keysToNormalise) {
   });
 }
 
+// <!-- dealing with observable input reactivity -->
+// two ways Obs input
+export function set(input, value) {
+  input.value = value;
+  input.dispatchEvent(new Event("input", { bubbles: true }));
+  // console.log("input value:", input.value);
+}
+
 export function aggregateValues(
   data,
   selectedParameters,
