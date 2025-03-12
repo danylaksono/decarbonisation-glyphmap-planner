@@ -26,34 +26,34 @@ import * as turf from "@turf/turf";
 import * as bulmaToast from "npm:bulma-toast";
 import * as bulmaQuickview from "npm:bulma-quickview@2.0.0/dist/js/bulma-quickview.js";
 
-import { OSGB } from "./components/osgb/index.js";
-import { sorterTable } from "./components/sorttable/sorterTableClass.js";
+import { OSGB } from "./components/libs/osgb/index.js";
+import { sorterTable } from "./components/libs/sorttable/sorterTableClass.js";
 import {
   TimeGlyph,
   GlyphCollection,
-} from "./components/gridded-glyphmaps/glyph-designs/timeGlyph.js";
-import { StreamGraphGlyph } from "./components/gridded-glyphmaps/glyph-designs/mirrorTimeGlyph.js";
-import { RadialGlyph } from "./components/gridded-glyphmaps/glyph-designs/radialglyph.js";
+} from "./components/libs/gridded-glyphmaps/glyph-designs/timeGlyph.js";
+import { StreamGraphGlyph } from "./components/libs/gridded-glyphmaps/glyph-designs/mirrorTimeGlyph.js";
+import { RadialGlyph } from "./components/libs/gridded-glyphmaps/glyph-designs/radialglyph.js";
 
 import {
   glyphMap,
   createDiscretiserValue,
   _drawCellBackground,
-} from "./components/gridded-glyphmaps/index.min.js";
+} from "./components/libs/gridded-glyphmaps/index.min.js";
 
-import { BudgetAllocator } from "./components/decarb-model/budget-allocator.js";
+import { BudgetAllocator } from "./components/libs/decarb-model/budget-allocator.js";
 import {
   InterventionManager,
   MiniDecarbModel,
-} from "./components/decarb-model/mini-decarbonisation.js";
-import { createTimelineInterface } from "./components/decarb-model/timeline.js";
+} from "./components/libs/decarb-model/mini-decarbonisation.js";
+import { createTimelineInterface } from "./components/libs/decarb-model/timeline.js";
 import {
   plotOverallTimeline,
   plotOverallPotential,
-} from "./components/plots.js";
-import { LeafletMap } from "./components/leaflet/leaflet-map.js";
+} from "./components/libs/plots.js";
+import { LeafletMap } from "./components/libs/leaflet/leaflet-map.js";
 
-import { animate } from "./components/utils.js";
+import { animate } from "./components/libs/utils.js";
 import {
   inferTypes,
   enrichGeoData,
@@ -68,7 +68,7 @@ import {
   aggregateValues,
   set,
   // applyTransformationToShapes,
-} from "./components/helpers.js";
+} from "./components/libs/helpers.js";
 ```
 
 ```js
@@ -1755,6 +1755,26 @@ function createLeafletMap(data, width, height) {
 // display(leafletContainer);
 ```
 
+<!-- ----------------  Main Plot  ---------------- -->
+
+```js
+selectedInterventionIndex;
+// Step 1: Transform recap object into an array for easier processing
+const yearlySummaryArray = stackedRecap.yearlySummary
+  ? Object.entries(stackedRecap.yearlySummary).map(([year, values]) => ({
+      year: Number(year),
+      ...values,
+    }))
+  : null;
+
+// Step 2: Normalize the data
+let keysToNormalise = [
+  "budgetSpent",
+  "buildingsIntervened",
+  "totalCarbonSaved",
+];
+```
+
 <!-- ----------------  Link Table to Leaflet Map  ---------------- -->
 
 ```js
@@ -1779,24 +1799,4 @@ function createLeafletMap(data, width, height) {
 // }
 
 // display([getSelectedRow().x, getSelectedRow().y]);
-```
-
-<!-- ----------------  Main Plot  ---------------- -->
-
-```js
-selectedInterventionIndex;
-// Step 1: Transform recap object into an array for easier processing
-const yearlySummaryArray = stackedRecap.yearlySummary
-  ? Object.entries(stackedRecap.yearlySummary).map(([year, values]) => ({
-      year: Number(year),
-      ...values,
-    }))
-  : null;
-
-// Step 2: Normalize the data
-let keysToNormalise = [
-  "budgetSpent",
-  "buildingsIntervened",
-  "totalCarbonSaved",
-];
 ```
