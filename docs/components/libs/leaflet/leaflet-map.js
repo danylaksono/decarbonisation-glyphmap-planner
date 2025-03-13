@@ -83,11 +83,11 @@ export class LeafletMap {
     });
 
     // Add toggle selection mode button
-    const selectionButton = L.control({ position: "topright" });
+    const selectionButton = L.control({ position: "bottomleft" });
     selectionButton.onAdd = () => {
       const div = L.DomUtil.create("div", "selection-button leaflet-bar");
       div.innerHTML =
-        '<a href="#" title="Toggle Selection Mode" style="font-weight: bold;">S</a>';
+        '<a href="#" title="Toggle Selection Mode" class="map-control-button"><i class="fa fa-object-group"></i></a>';
       div.firstChild.onclick = (e) => {
         e.preventDefault();
         this.toggleSelectionMode();
@@ -97,10 +97,11 @@ export class LeafletMap {
     selectionButton.addTo(this.map);
 
     // Add Filter button
-    const filterButton = L.control({ position: "topright" });
+    const filterButton = L.control({ position: "bottomleft" });
     filterButton.onAdd = () => {
       const div = L.DomUtil.create("div", "filter-button leaflet-bar");
-      div.innerHTML = '<a href="#" title="Filter Selection">F</a>';
+      div.innerHTML =
+        '<a href="#" title="Filter Selection" class="map-control-button"><i class="fa fa-filter"></i></a>';
       div.firstChild.onclick = (e) => {
         e.preventDefault();
         this.filterPoints(this.selectionLayerId);
@@ -110,10 +111,11 @@ export class LeafletMap {
     filterButton.addTo(this.map);
 
     // Add clear selection button
-    const clearSelectionButton = L.control({ position: "topright" });
+    const clearSelectionButton = L.control({ position: "bottomleft" });
     clearSelectionButton.onAdd = () => {
       const div = L.DomUtil.create("div", "clear-selection-button leaflet-bar");
-      div.innerHTML = '<a href="#" title="Clear Selection">C</a>';
+      div.innerHTML =
+        '<a href="#" title="Clear Selection" class="map-control-button"><i class="fa fa-times"></i></a>';
       div.firstChild.onclick = (e) => {
         e.preventDefault();
         this.clearSelection(this.selectionLayerId);
@@ -633,7 +635,7 @@ export class LeafletMap {
       // Update button state
       const selButton = document.querySelector(".selection-button a");
       if (selButton) {
-        selButton.style.backgroundColor = "#ffeb3b";
+        selButton.classList.add("active");
       }
     } else {
       // Disable selection mode
@@ -647,7 +649,7 @@ export class LeafletMap {
       // Update button state
       const selButton = document.querySelector(".selection-button a");
       if (selButton) {
-        selButton.style.backgroundColor = "";
+        selButton.classList.remove("active");
       }
     }
   }

@@ -287,3 +287,29 @@ html {
 .switch input {
   display: none;
 }
+
+.leaflet-control .map-control-button {
+  width: 30px;
+  height: 30px;
+  line-height: 30px;
+  text-align: center;
+  display: block;
+  font-size: 16px;
+  background-color: #fff;
+  border-radius: 4px;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.15);
+  transition: all 0.2s ease;
+}
+
+.leaflet-control .map-control-button:hover {
+  background-color: #f4f4f4;
+}
+
+.selection-button .map-control-button.active {
+  background-color: #ffeb3b;
+}
+
+/* Add spacing between control groups */
+.leaflet-bottom .leaflet-control {
+  margin-bottom: 12px;
+}
