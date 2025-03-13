@@ -74,7 +74,7 @@ export class LeafletMap {
       draw: {
         polygon: {
           allowIntersection: false,
-          showArea: true,
+          showArea: false,
           shapeOptions: {
             color: "#3388ff",
           },
