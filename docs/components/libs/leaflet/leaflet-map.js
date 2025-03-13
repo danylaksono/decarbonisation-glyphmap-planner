@@ -70,12 +70,35 @@ export class LeafletMap {
 
     // Create Leaflet Draw control but don't add it yet
     this.drawControl = new L.Control.Draw({
-      position: "topright",
+      position: "bottomleft",
       draw: {
-        polygon: true,
+        polygon: {
+          allowIntersection: false,
+          showArea: true,
+          shapeOptions: {
+            color: "#3388ff",
+          },
+          // metric: true,
+        },
         polyline: false,
-        rectangle: true,
-        circle: true,
+        rectangle: {
+          showArea: false,
+          shapeOptions: {
+            color: "#3388ff",
+            fillOpacity: 0.2,
+            weight: 2,
+          },
+          metric: true,
+        },
+        circle: {
+          showRadius: true,
+          shapeOptions: {
+            color: "#3388ff",
+            fillOpacity: 0.2,
+            weight: 2,
+          },
+          metric: true,
+        },
         marker: false,
         circlemarker: false,
       },
@@ -129,45 +152,57 @@ export class LeafletMap {
       if (!this.isSelectionMode) return;
 
       const layer = e.layer;
-      const type = e.layerType;
+      const layerType = e.layerType;
       const layerId = this.selectionLayerId;
 
       if (!layerId || !this.geoJsonData.has(layerId)) {
         return;
       }
 
-      const points = this.geoJsonData.get(layerId);
-      let selectedFeatures;
+      try {
+        const points = this.geoJsonData.get(layerId);
+        let selectedFeatures;
 
-      if (type === "polygon" || type === "rectangle") {
-        const polygon = layer.toGeoJSON();
-        selectedFeatures = turf.pointsWithinPolygon(points, polygon);
-      } else if (type === "circle") {
-        const circle = layer.toGeoJSON();
-        const radius = circle.properties.radius; // in meters
-        const center = circle.geometry;
-        const buffered = turf.buffer(center, radius, { units: "meters" });
-        selectedFeatures = turf.pointsWithinPolygon(points, buffered);
-      } else {
-        return;
-      }
+        if (layerType === "polygon" || layerType === "rectangle") {
+          const polygon = layer.toGeoJSON();
+          selectedFeatures = turf.pointsWithinPolygon(points, polygon);
+        } else if (layerType === "circle") {
+          const center = layer.getLatLng();
+          const radius = layer.getRadius(); // Gets radius in meters
+          const centerPoint = turf.point([center.lng, center.lat]);
+          const buffered = turf.buffer(centerPoint, radius / 1000, {
+            units: "kilometers",
+          });
+          selectedFeatures = turf.pointsWithinPolygon(points, buffered);
+        } else {
+          return;
+        }
 
-      // Clear previous selections
-      points.features.forEach((feature) => {
-        delete feature.properties.selected;
-      });
+        // Clear previous selections
+        points.features.forEach((feature) => {
+          feature.properties.selected = false;
+        });
 
-      // Mark new selected features
-      selectedFeatures.features.forEach((feature) => {
-        feature.properties.selected = true;
-      });
+        // Mark new selected features
+        if (selectedFeatures && selectedFeatures.features) {
+          selectedFeatures.features.forEach((feature) => {
+            feature.properties.selected = true;
+          });
+        }
 
-      // Update markers to reflect selection
-      this._updateMarkers(layerId);
+        // Update markers to reflect selection
+        this._updateMarkers(layerId);
 
-      // Trigger onSelect callback if set
-      if (this.options.onSelect) {
-        this.options.onSelect(selectedFeatures.features);
+        // Clean up the temporary drawn shape
+        layer.remove();
+
+        // Trigger onSelect callback if set
+        if (this.options.onSelect) {
+          this.options.onSelect(selectedFeatures.features);
+        }
+      } catch (error) {
+        console.error("Error during selection:", error);
+        layer.remove();
       }
     });
   }
