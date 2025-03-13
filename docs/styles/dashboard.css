@@ -79,40 +79,10 @@ html {
   /* align-items: center; Vertically center content */
   /* text-align: center; Center text alignment for multiline */
   /* border: 1px darkgray solid; */
-  padding: 8px;
+  padding: 0px;
   margin: 0 !important;
   border-radius: 0.5em !important;
-  box-sizing: border-box;
-}
-
-.card {
-  --bulma-card-color: var(--bulma-text);
-  --bulma-card-background-color: var(--bulma-scheme-main);
-  --bulma-card-shadow: var(--bulma-shadow);
-  --bulma-card-radius: 0.75rem;
-  --bulma-card-header-background-color: transparent;
-  --bulma-card-header-color: var(--bulma-text-strong);
-  --bulma-card-header-padding: 0.75rem 1rem;
-  --bulma-card-header-shadow: 0 0.125em 0.25em
-    hsla(
-      var(--bulma-scheme-h),
-      var(--bulma-scheme-s),
-      var(--bulma-scheme-invert-l),
-      0.1
-    );
-  --bulma-card-header-weight: var(--bulma-weight-bold);
-  --bulma-card-content-background-color: transparent;
-  --bulma-card-content-padding: 1.5rem;
-  --bulma-card-footer-background-color: transparent;
-  --bulma-card-footer-border-top: 1px solid var(--bulma-border-weak);
-  --bulma-card-footer-padding: 0.75rem;
-  --bulma-card-media-margin: var(--bulma-block-spacing);
-  background-color: var(--bulma-card-background-color);
-  border-radius: var(--bulma-card-radius);
-  box-shadow: var(--bulma-card-shadow);
-  color: var(--bulma-card-color);
-  max-width: 100%;
-  position: relative;
+  /* box-sizing: border-box; */
 }
 
 .left-top .left-bottom .card {

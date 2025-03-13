@@ -246,6 +246,16 @@ const [allocations, setAllocations] = useState([]);
 
 <!-- ---------------- HTML Layout ---------------- -->
 
+<!-- <div class="card">
+  <div class="card-content">
+    Cell 1
+    ${resize((width, height) => {
+        return html`<div style="width:${width}px;background-color:lightblue">${width} ${height}</div>`;
+    })}
+    ${resize((width, height) => console.log("width and height 1", {width, height}))}
+  </div>
+</div> -->
+
 <div class="grid-container" style="padding:2px; height:100vh;">
   <div id="left-panel" style="overflow-x:hidden; overflow-y:hidden; height:96vh;">
     <div class="left-top">
