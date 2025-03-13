@@ -10,9 +10,11 @@
   },
   "dependencies": {
     "@observablehq/framework": "latest",
-    "@turf/turf": "^7.1.0",
+    "@turf/turf": "^7.2.0",
     "d3-dsv": "^3.0.1",
-    "d3-time-format": "^4.1.0"
+    "d3-time-format": "^4.1.0",
+    "leaflet-draw": "^1.0.4",
+    "turf": "^3.0.14"
   },
   "devDependencies": {
     "jest": "^29.7.0",

@@ -1,12 +1,13 @@
 import * as L from "npm:leaflet";
 import Supercluster from "npm:supercluster";
+import "leaflet-draw"; // Leaflet Draw for drawing shapes
+import * as turf from "turf"; // Turf.js for geospatial operations
 import { tileDictionary } from "./basemaps.js";
-
-console.log("Leaflet version:", L.version);
+// import "leaflet-draw/dist/leaflet.draw.css";
 
 export class LeafletMap {
   constructor(container, options = {}) {
-    // Default options
+    // Default options with new callbacks for select and filter
     this.options = {
       width: "100%",
       height: "400px",
@@ -19,8 +20,10 @@ export class LeafletMap {
         "Carto Positron Light NoLabel",
         "OpenStreetMap",
         "Carto Voyager",
-      ], // Default visible basemaps
-      tooltipFormatter: null, // Add default tooltip formatter option
+      ],
+      tooltipFormatter: null,
+      onSelect: null, // Callback for when points are selected
+      onFilter: null, // Callback for when points are filtered
       ...options,
     };
 
@@ -34,13 +37,15 @@ export class LeafletMap {
     this.tileDictionary = { ...tileDictionary };
     this.overlayLayers = new Map(); // Store overlay layers for layer control
     this.layerControl = null;
-    // Add bounds property
     this.dataBounds = null;
+    this.geoJsonData = new Map(); // Store GeoJSON data for each layer
+    this.selectionLayerId = null; // Layer ID for selection and filtering
+    this.isSelectionMode = false;
+    this.drawControl = null;
 
     this._initializeMap();
   }
 
-  // Initialize the map
   _initializeMap() {
     const width =
       typeof this.options.width === "number"
@@ -51,138 +56,192 @@ export class LeafletMap {
         ? `${this.options.height}px`
         : this.options.height;
 
-    // Set container dimensions
     this.container.style.width = width;
     this.container.style.height = height;
 
-    // Create map instance
     this.map = L.map(this.container, {
       maxZoom: this.options.maxZoom,
       minZoom: this.options.minZoom,
     });
-
-    // Set initial view to [0,0] with zoom level 2
     this.map.setView([0, 0], 2);
 
-    // Initialize base layers
     this._initializeBaseLayers();
-
-    // Set default base layer
     this.setBaseLayer(this.options.defaultTile);
 
-    // Add default tile layer
-    // this.baseLayer = L.tileLayer(this.options.tileLayer, {
-    //   attribution: this.options.attribution,
-    // }).addTo(this.map);
+    // Create Leaflet Draw control but don't add it yet
+    this.drawControl = new L.Control.Draw({
+      position: "topright",
+      draw: {
+        polygon: true,
+        polyline: false,
+        rectangle: true,
+        circle: true,
+        marker: false,
+        circlemarker: false,
+      },
+      edit: false,
+    });
+
+    // Add toggle selection mode button
+    const selectionButton = L.control({ position: "topright" });
+    selectionButton.onAdd = () => {
+      const div = L.DomUtil.create("div", "selection-button leaflet-bar");
+      div.innerHTML =
+        '<a href="#" title="Toggle Selection Mode" style="font-weight: bold;">S</a>';
+      div.firstChild.onclick = (e) => {
+        e.preventDefault();
+        this.toggleSelectionMode();
+      };
+      return div;
+    };
+    selectionButton.addTo(this.map);
+
+    // Add Filter button
+    const filterButton = L.control({ position: "topright" });
+    filterButton.onAdd = () => {
+      const div = L.DomUtil.create("div", "filter-button leaflet-bar");
+      div.innerHTML = '<a href="#" title="Filter Selection">F</a>';
+      div.firstChild.onclick = (e) => {
+        e.preventDefault();
+        this.filterPoints(this.selectionLayerId);
+      };
+      return div;
+    };
+    filterButton.addTo(this.map);
+
+    // Handle drawing events for selection
+    this.map.on("draw:created", (e) => {
+      if (!this.isSelectionMode) return;
+
+      const layer = e.layer;
+      const type = e.layerType;
+      const layerId = this.selectionLayerId;
+
+      if (!layerId || !this.geoJsonData.has(layerId)) {
+        return;
+      }
+
+      const points = this.geoJsonData.get(layerId);
+      let selectedFeatures;
+
+      if (type === "polygon" || type === "rectangle") {
+        const polygon = layer.toGeoJSON();
+        selectedFeatures = turf.pointsWithinPolygon(points, polygon);
+      } else if (type === "circle") {
+        const circle = layer.toGeoJSON();
+        const radius = circle.properties.radius; // in meters
+        const center = circle.geometry;
+        const buffered = turf.buffer(center, radius, { units: "meters" });
+        selectedFeatures = turf.pointsWithinPolygon(points, buffered);
+      } else {
+        return;
+      }
+
+      // Clear previous selections
+      points.features.forEach((feature) => {
+        delete feature.properties.selected;
+      });
+
+      // Mark new selected features
+      selectedFeatures.features.forEach((feature) => {
+        feature.properties.selected = true;
+      });
+
+      // Update markers to reflect selection
+      this._updateMarkers(layerId);
+
+      // Trigger onSelect callback if set
+      if (this.options.onSelect) {
+        this.options.onSelect(selectedFeatures.features);
+      }
+    });
   }
 
   _initializeBaseLayers() {
-    // Create tile layers for all entries in tileDictionary
     Object.entries(this.tileDictionary).forEach(([name, config]) => {
       const layer = L.tileLayer(config.url, config.options);
       this.baseLayers.set(name, layer);
     });
   }
 
-  // Get available base layer names
   getAvailableBaseLayers() {
     return Array.from(this.baseLayers.keys());
   }
 
-  // Set active base layer
   setBaseLayer(layerName) {
     if (!this.baseLayers.has(layerName)) {
-      console.warn(`Base layer "${layerName}" not found in available layers`);
+      console.warn(`Base layer "${layerName}" not found`);
       return false;
     }
-
-    // Remove current base layer if exists
     if (this.activeBaseLayer) {
       this.activeBaseLayer.remove();
     }
-
-    // Add new base layer
     const newBaseLayer = this.baseLayers.get(layerName);
     newBaseLayer.addTo(this.map);
     this.activeBaseLayer = newBaseLayer;
-
     return true;
   }
 
-  // Get current base layer name
   getCurrentBaseLayer() {
     for (const [name, layer] of this.baseLayers.entries()) {
-      if (layer === this.activeBaseLayer) {
-        return name;
-      }
+      if (layer === this.activeBaseLayer) return name;
     }
     return null;
   }
 
-  // Add a new base layer
   addBaseLayer(name, url, options = {}) {
     if (this.baseLayers.has(name)) {
       console.warn(`Base layer "${name}" already exists`);
       return false;
     }
-
     const layer = L.tileLayer(url, options);
     this.baseLayers.set(name, layer);
     return true;
   }
 
-  // Remove a base layer
   removeBaseLayer(name) {
-    if (!this.baseLayers.has(name)) {
-      return false;
-    }
-
+    if (!this.baseLayers.has(name)) return false;
     const layer = this.baseLayers.get(name);
     if (layer === this.activeBaseLayer) {
       layer.remove();
       this.activeBaseLayer = null;
     }
-
     this.baseLayers.delete(name);
     return true;
   }
 
-  // Convert data to GeoJSON format
   _toGeoJSON(data) {
-    return data.map((point) => ({
-      type: "Feature",
-      properties: { ...point },
-      geometry: {
-        type: "Point",
-        coordinates: [point.x, point.y],
-      },
-    }));
+    return {
+      type: "FeatureCollection",
+      features: data.map((point) => ({
+        type: "Feature",
+        properties: { ...point },
+        geometry: {
+          type: "Point",
+          coordinates: [point.x, point.y],
+        },
+      })),
+    };
   }
 
-  // Initialize clustering for a layer
-  _initializeCluster(geoJsonData, options = {}) {
+  _initializeCluster(geoJsonFeatures, options = {}) {
     const cluster = new Supercluster({
       radius: options.clusterRadius || this.options.clusterRadius,
       maxZoom: options.maxZoom || this.options.maxZoom,
       minPoints: options.minPoints || this.options.minPoints,
       ...options.clusterOptions,
     });
-
-    cluster.load(geoJsonData);
+    cluster.load(geoJsonFeatures);
     return cluster;
   }
 
-  // Update markers for a specific layer
   _updateMarkers(layerId) {
     const layer = this.layers.get(layerId);
     const cluster = this.clusters.get(layerId);
-
     if (!layer || !cluster) return;
 
     const bounds = this.map.getBounds();
     const zoom = Math.floor(this.map.getZoom());
-
-    // Get clusters for current viewport
     const clusters = cluster.getClusters(
       [
         bounds.getWest(),
@@ -193,41 +252,30 @@ export class LeafletMap {
       zoom
     );
 
-    // Clear existing markers
     layer.clearLayers();
-
-    // Add new markers
     clusters.forEach((cluster) => {
       const [lng, lat] = cluster.geometry.coordinates;
-
       if (cluster.properties.cluster) {
-        // Create cluster marker
         const marker = L.marker([lat, lng], {
           icon: this._createClusterIcon(cluster.properties.point_count),
         });
-
         marker.on("click", () => {
           const expansionZoom = cluster.getClusterExpansionZoom(cluster.id);
           this.map.setView([lat, lng], expansionZoom);
         });
-
         layer.addLayer(marker);
       } else {
-        // Create individual marker
         const marker = L.marker([lat, lng], {
-          icon: this._createMarkerIcon(),
+          icon: this._createMarkerIcon(cluster.properties),
         });
-
         if (cluster.properties) {
           marker.bindPopup(this._createPopupContent(cluster.properties));
         }
-
         layer.addLayer(marker);
       }
     });
   }
 
-  // Create cluster icon
   _createClusterIcon(count) {
     return L.divIcon({
       html: `<div style="
@@ -245,29 +293,24 @@ export class LeafletMap {
     });
   }
 
-  // Create marker icon
-  _createMarkerIcon() {
+  _createMarkerIcon(properties = {}) {
+    const color = properties.selected ? "#ff0000" : "#dc3545"; // Red for selected, default otherwise
     return L.divIcon({
-      html: '<div style="background-color: #dc3545; border-radius: 50%; width: 8px; height: 8px;"></div>',
+      html: `<div style="background-color: ${color}; border-radius: 50%; width: 8px; height: 8px;"></div>`,
       className: "marker-individual",
     });
   }
 
-  // Create popup content
   _createPopupContent(properties) {
-    // Use custom formatter if available
     if (this.options.tooltipFormatter) {
       return this.options.tooltipFormatter(properties);
     }
-
-    // Default formatting
     return Object.entries(properties)
-      .filter(([key]) => !["cluster", "cluster_id"].includes(key))
+      .filter(([key]) => !["cluster", "cluster_id", "selected"].includes(key))
       .map(([key, value]) => `${key}: ${value}`)
       .join("<br>");
   }
 
-  // Add new method to set tooltip formatter
   setTooltipFormatter(formatter) {
     if (typeof formatter !== "function") {
       throw new Error("Tooltip formatter must be a function");
@@ -275,9 +318,6 @@ export class LeafletMap {
     this.options.tooltipFormatter = formatter;
   }
 
-  // Public Methods
-
-  // Add a new data layer with clustering
   addLayer(layerId, data, options = {}) {
     if (this.layers.has(layerId)) {
       console.warn(`Layer ${layerId} already exists. Use updateLayer instead.`);
@@ -285,15 +325,20 @@ export class LeafletMap {
     }
 
     const geoJsonData = this._toGeoJSON(data);
-    this.dataBounds = this._calculateBounds(geoJsonData);
-    const cluster = this._initializeCluster(geoJsonData, options);
+    this.geoJsonData.set(layerId, geoJsonData);
+    this.dataBounds = this._calculateBounds(geoJsonData.features);
+    const cluster = this._initializeCluster(geoJsonData.features, options);
     const layer = L.layerGroup().addTo(this.map);
 
     this.layers.set(layerId, layer);
     this.clusters.set(layerId, cluster);
-    this.overlayLayers.set(layerId, layer); // Add to overlay layers for control
+    this.overlayLayers.set(layerId, layer);
 
-    // Add update listener if not already added
+    // Set as selection layer if none is set
+    if (!this.selectionLayerId) {
+      this.selectionLayerId = layerId;
+    }
+
     if (!this.eventListeners.has(layerId)) {
       const updateFn = () => this._updateMarkers(layerId);
       this.map.on("moveend", updateFn);
@@ -301,16 +346,14 @@ export class LeafletMap {
     }
 
     this._updateMarkers(layerId);
-    this._updateLayerControl(); // Update layer control
+    this._updateLayerControl();
 
-    // Fit bounds if specified
     if (options.fitBounds !== false && data.length > 0) {
       const bounds = L.latLngBounds(data.map((point) => [point.y, point.x]));
       this.map.fitBounds(bounds, { padding: [50, 50] });
     }
   }
 
-  // Update existing layer with new data
   updateLayer(layerId, data, options = {}) {
     if (!this.layers.has(layerId)) {
       console.warn(`Layer ${layerId} doesn't exist. Use addLayer instead.`);
@@ -318,8 +361,9 @@ export class LeafletMap {
     }
 
     const geoJsonData = this._toGeoJSON(data);
-    this.dataBounds = this._calculateBounds(geoJsonData);
-    const cluster = this._initializeCluster(geoJsonData, options);
+    this.geoJsonData.set(layerId, geoJsonData);
+    this.dataBounds = this._calculateBounds(geoJsonData.features);
+    const cluster = this._initializeCluster(geoJsonData.features, options);
 
     this.clusters.set(layerId, cluster);
     this._updateMarkers(layerId);
@@ -330,7 +374,6 @@ export class LeafletMap {
     }
   }
 
-  // Remove a layer
   removeLayer(layerId) {
     const layer = this.layers.get(layerId);
     const updateFn = this.eventListeners.get(layerId);
@@ -339,8 +382,12 @@ export class LeafletMap {
       layer.remove();
       this.layers.delete(layerId);
       this.clusters.delete(layerId);
-      this.overlayLayers.delete(layerId); // Remove from overlay layers
-      this._updateLayerControl(); // Update layer control
+      this.geoJsonData.delete(layerId);
+      this.overlayLayers.delete(layerId);
+      this._updateLayerControl();
+      if (this.selectionLayerId === layerId) {
+        this.selectionLayerId = null;
+      }
     }
 
     if (updateFn) {
@@ -349,19 +396,14 @@ export class LeafletMap {
     }
   }
 
-  // Set layer visibility
   setLayerVisibility(layerId, visible) {
     const layer = this.layers.get(layerId);
     if (layer) {
-      if (visible) {
-        layer.addTo(this.map);
-      } else {
-        layer.remove();
-      }
+      if (visible) layer.addTo(this.map);
+      else layer.remove();
     }
   }
 
-  // Add a custom tile layer
   addTileLayer(url, options = {}) {
     return L.tileLayer(url, {
       attribution: options.attribution || "",
@@ -369,72 +411,52 @@ export class LeafletMap {
     }).addTo(this.map);
   }
 
-  // Set map view
   setView(center, zoom) {
     this.map.setView([center.y, center.x], zoom);
   }
 
-  // Fit bounds to show all markers in a layer
   fitLayerBounds(layerId) {
     const layer = this.layers.get(layerId);
-    if (layer) {
-      const bounds = layer.getBounds();
-      if (bounds.isValid()) {
-        this.map.fitBounds(bounds, { padding: [50, 50] });
-      }
+    if (layer && layer.getBounds().isValid()) {
+      this.map.fitBounds(layer.getBounds(), { padding: [50, 50] });
     }
   }
 
-  // Add event listener
   on(event, callback) {
     this.map.on(event, callback);
   }
 
-  // Remove event listener
   off(event, callback) {
     this.map.off(event, callback);
   }
 
-  // Add new methods
   addGeoJSONLayer(layerId, geojson, options = {}) {
     if (this.overlayLayers.has(layerId)) {
       console.warn(`Layer ${layerId} already exists`);
       return;
     }
-
     const layer = L.geoJSON(geojson, {
       style: options.style,
       pointToLayer: options.pointToLayer,
       onEachFeature: options.onEachFeature,
     }).addTo(this.map);
-
     this.overlayLayers.set(layerId, layer);
     this._updateLayerControl();
-
     return layer;
   }
 
   _updateLayerControl() {
-    // Remove existing control if it exists
-    if (this.layerControl) {
-      this.layerControl.remove();
-    }
-
-    // Create base layers object
+    if (this.layerControl) this.layerControl.remove();
     const baseLayers = {};
     this.baseLayers.forEach((layer, name) => {
       if (this.options.visibleBaseLayers.includes(name)) {
         baseLayers[name] = layer;
       }
     });
-
-    // Create overlay layers object
     const overlays = {};
     this.overlayLayers.forEach((layer, name) => {
       overlays[name] = layer;
     });
-
-    // Create new control
     this.layerControl = L.control.layers(baseLayers, overlays).addTo(this.map);
   }
 
@@ -455,66 +477,122 @@ export class LeafletMap {
   flyTo(center, zoom) {
     return new Promise((resolve) => {
       this.map.flyTo([center.y, center.x], zoom || this.options.maxZoom, {
-        duration: 2, // Animation duration in seconds
+        duration: 2,
         easeLinearity: 0.5,
       });
-
-      this.map.once("moveend", () => {
-        resolve();
-      });
+      this.map.once("moveend", () => resolve());
     });
   }
 
-  // Clean up
   destroy() {
-    // Remove all event listeners
     this.eventListeners.forEach((updateFn, layerId) => {
       this.map.off("moveend", updateFn);
     });
-
-    // Clear all maps
     this.layers.clear();
     this.clusters.clear();
     this.eventListeners.clear();
     this.baseLayers.clear();
     this.overlayLayers.clear();
-    if (this.layerControl) {
-      this.layerControl.remove();
-    }
-
-    // Remove the map
+    this.geoJsonData.clear();
+    if (this.layerControl) this.layerControl.remove();
     this.map.remove();
   }
 
-  // Calculate bounds from GeoJSON data
-  _calculateBounds(geoJsonData) {
-    const coordinates = geoJsonData.map(
+  _calculateBounds(geoJsonFeatures) {
+    const coordinates = geoJsonFeatures.map(
       (feature) => feature.geometry.coordinates
     );
-
-    const bounds = L.latLngBounds(
-      coordinates.map((coord) => [coord[1], coord[0]])
-    );
-    return bounds;
+    return L.latLngBounds(coordinates.map((coord) => [coord[1], coord[0]]));
   }
 
-  // Public method to zoom to data bounds
   zoomToDataBounds(animate = true) {
-    if (!this.dataBounds || !this.dataBounds.isValid()) {
-      return false;
-    }
-
+    if (!this.dataBounds || !this.dataBounds.isValid()) return false;
     if (animate) {
-      this.map.flyToBounds(this.dataBounds, {
-        padding: [50, 50],
-        duration: 1,
-      });
+      this.map.flyToBounds(this.dataBounds, { padding: [50, 50], duration: 1 });
     } else {
-      this.map.fitBounds(this.dataBounds, {
-        padding: [50, 50],
-      });
+      this.map.fitBounds(this.dataBounds, { padding: [50, 50] });
     }
     return true;
+  }
+
+  /**
+   * Sets the layer to be used for selection and filtering operations.
+   * @param {string} layerId - The ID of the layer to set as the selection layer.
+   */
+  setSelectionLayer(layerId) {
+    if (this.layers.has(layerId)) {
+      this.selectionLayerId = layerId;
+    } else {
+      console.warn(`Layer ${layerId} does not exist`);
+    }
+  }
+
+  /**
+   * Filters the specified layer to display only the selected points.
+   * Triggers the onFilter callback with the filtered features if set.
+   * @param {string} layerId - The ID of the layer to filter.
+   */
+  filterPoints(layerId) {
+    const geoJsonData = this.geoJsonData.get(layerId);
+    if (!geoJsonData) return;
+
+    const selectedFeatures = geoJsonData.features.filter(
+      (feature) => feature.properties.selected
+    );
+
+    const selectedGeoJson = {
+      type: "FeatureCollection",
+      features: selectedFeatures,
+    };
+
+    const cluster = this._initializeCluster(selectedFeatures);
+    this.clusters.set(layerId, cluster);
+    this._updateMarkers(layerId);
+
+    if (this.options.onFilter) {
+      this.options.onFilter(selectedFeatures);
+    }
+  }
+
+  /**
+   * Toggles selection mode on/off
+   */
+  toggleSelectionMode() {
+    this.isSelectionMode = !this.isSelectionMode;
+
+    if (this.isSelectionMode) {
+      // Enable selection mode
+      this.map.addControl(this.drawControl);
+
+      // Disable other interactions
+      this.layers.forEach((layer) => {
+        layer.eachLayer((marker) => {
+          if (marker.getPopup()) {
+            marker.unbindPopup();
+          }
+        });
+      });
+
+      // Update button state
+      const selButton = document.querySelector(".selection-button a");
+      if (selButton) {
+        selButton.style.backgroundColor = "#ffeb3b";
+      }
+    } else {
+      // Disable selection mode
+      this.map.removeControl(this.drawControl);
+
+      // Re-enable other interactions
+      this.layers.forEach((layer, layerId) => {
+        this._updateMarkers(layerId);
+      });
+
+      // Update button state
+      const selButton = document.querySelector(".selection-button a");
+      if (selButton) {
+        selButton.style.backgroundColor = "";
+      }
+    }
   }
 }
 

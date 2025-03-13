@@ -11,6 +11,7 @@ sql:
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css">
 <link rel="stylesheet" href="./styles/bulma-quickview.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet-draw/dist/leaflet.draw.css" />
 <link rel="stylesheet" href="./styles/dashboard.css">
 
 <!-- ------------ Imports ------------ -->
@@ -1740,6 +1741,10 @@ function createLeafletMap(data, width, height) {
   const mapInstance = new LeafletMap(leafletContainer, {
     width: width,
     height: height || "600px",
+    onSelect: (selectedFeatures) =>
+      console.log("Map Selected:", selectedFeatures),
+    onFilter: (filteredFeatures) =>
+      console.log("Map Filtered:", filteredFeatures),
     tooltipFormatter: (props) => `<strong>${props.id}</strong>`,
   });
 
@@ -1747,6 +1752,8 @@ function createLeafletMap(data, width, height) {
     clusterRadius: 50,
     fitBounds: true,
   });
+
+  mapInstance.setSelectionLayer("buildings");
 
   mapInstance.addGeoJSONLayer("LSOA Boundary", lsoa_boundary, {
     style: {
