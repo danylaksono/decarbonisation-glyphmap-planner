@@ -109,6 +109,19 @@ export class LeafletMap {
     };
     filterButton.addTo(this.map);
 
+    // Add clear selection button
+    const clearSelectionButton = L.control({ position: "topright" });
+    clearSelectionButton.onAdd = () => {
+      const div = L.DomUtil.create("div", "clear-selection-button leaflet-bar");
+      div.innerHTML = '<a href="#" title="Clear Selection">C</a>';
+      div.firstChild.onclick = (e) => {
+        e.preventDefault();
+        this.clearSelection(this.selectionLayerId);
+      };
+      return div;
+    };
+    clearSelectionButton.addTo(this.map);
+
     // Handle drawing events for selection
     this.map.on("draw:created", (e) => {
       if (!this.isSelectionMode) return;
@@ -268,6 +281,37 @@ export class LeafletMap {
         const marker = L.marker([lat, lng], {
           icon: this._createMarkerIcon(cluster.properties),
         });
+
+        // Add click handler for selection/deselection
+        marker.on("click", () => {
+          if (!this.isSelectionMode) return;
+
+          // Toggle selection state
+          cluster.properties.selected = !cluster.properties.selected;
+
+          // Update marker appearance
+          marker.setIcon(this._createMarkerIcon(cluster.properties));
+
+          // Update the underlying data
+          const geoJsonData = this.geoJsonData.get(layerId);
+          const feature = geoJsonData.features.find(
+            (f) =>
+              f.geometry.coordinates[0] === lng &&
+              f.geometry.coordinates[1] === lat
+          );
+          if (feature) {
+            feature.properties.selected = cluster.properties.selected;
+          }
+
+          // Trigger onSelect callback if set
+          if (this.options.onSelect) {
+            const selectedFeatures = geoJsonData.features.filter(
+              (f) => f.properties.selected
+            );
+            this.options.onSelect(selectedFeatures);
+          }
+        });
+
         if (cluster.properties) {
           marker.bindPopup(this._createPopupContent(cluster.properties));
         }
@@ -294,9 +338,22 @@ export class LeafletMap {
   }
 
   _createMarkerIcon(properties = {}) {
-    const color = properties.selected ? "#ff0000" : "#dc3545"; // Red for selected, default otherwise
+    // Use more distinct colours and sizes for selected vs unselected points
+    const size = properties.selected ? "12px" : "8px";
+    const color = properties.selected ? "#ff3860" : "#3388ff"; // Bright red for selected, blue for default
+    const border = properties.selected ? "2px solid #fff" : "none"; // White border for selected points
+    const boxShadow = properties.selected ? "0 0 4px rgba(0,0,0,0.4)" : "none"; // Shadow for selected points
+
     return L.divIcon({
-      html: `<div style="background-color: ${color}; border-radius: 50%; width: 8px; height: 8px;"></div>`,
+      html: `<div style="
+        background-color: ${color};
+        border-radius: 50%;
+        width: ${size};
+        height: ${size};
+        border: ${border};
+        box-shadow: ${boxShadow};
+        transition: all 0.2s ease-in-out;
+      "></div>`,
       className: "marker-individual",
     });
   }
@@ -592,6 +649,28 @@ export class LeafletMap {
       if (selButton) {
         selButton.style.backgroundColor = "";
       }
+    }
+  }
+
+  /**
+   * Clears all selections from the specified layer
+   * @param {string} layerId - The ID of the layer to clear selections from
+   */
+  clearSelection(layerId) {
+    const geoJsonData = this.geoJsonData.get(layerId);
+    if (!geoJsonData) return;
+
+    // Clear selected state from all features
+    geoJsonData.features.forEach((feature) => {
+      feature.properties.selected = false;
+    });
+
+    // Update markers to reflect cleared selection
+    this._updateMarkers(layerId);
+
+    // Trigger onSelect callback with empty selection
+    if (this.options.onSelect) {
+      this.options.onSelect([]);
     }
   }
 }
