@@ -1,7 +1,7 @@
 import * as L from "npm:leaflet";
 import Supercluster from "npm:supercluster";
 import "leaflet-draw"; // Leaflet Draw for drawing shapes
-import * as turf from "turf"; // Turf.js for geospatial operations
+import * as turf from "@turf/turf"; // Correct import for Turf.js
 import { tileDictionary } from "./basemaps.js";
 // import "leaflet-draw/dist/leaflet.draw.css";
 
