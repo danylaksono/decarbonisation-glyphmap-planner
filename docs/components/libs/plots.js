@@ -1,4 +1,5 @@
 import { RadialGlyphOverall } from "./gridded-glyphmaps/glyph-designs/radialGlyphOverall.js";
+import * as d3 from "npm:d3";
 
 export function plotOverallPotential(
   data, // array of objects with keys as glyph variables

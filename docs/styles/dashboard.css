@@ -313,3 +313,8 @@ html {
 .leaflet-bottom .leaflet-control {
   margin-bottom: 12px;
 }
+
+table {
+  margin: 0 !important;
+  width: 100%;
+}
