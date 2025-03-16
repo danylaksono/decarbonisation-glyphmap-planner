@@ -232,10 +232,6 @@ const [currentConfig, setCurrentConfig] = useState({}); // current configuration
 ```
 
 ```js
-const [getSelection, updateSelection] = selectionFactory([], "UPRN");
-```
-
-```js
 const [tableFiltered, setTableFiltered] = useState([]); // filtered table
 ```
 

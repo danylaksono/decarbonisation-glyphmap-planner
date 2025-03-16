@@ -1,11 +1,47 @@
 // import * as d3 from "npm:d3";
 import * as topojson from "npm:topojson-client";
 import { require } from "npm:d3-require";
+import { Mutable } from "observablehq:stdlib";
 import * as turf from "@turf/turf";
 
 import * as d3 from "npm:d3";
 // import * as d3Geo from "npm:d3-geo@3.1.1";
 // import * as d3GeoProjection from "npm:d3-geo-projection@4";
+
+export function selectionFactory(initialValue, idField) {
+  // Initialize a mutable selection (e.g., an empty array)
+  const selection = Mutable(initialValue);
+
+  // Define the update function with selection logic
+  const updateSelection = (newSelection, mode) => {
+    if (mode === "single") {
+      // Replace the current selection with the new one
+      selection.value = newSelection;
+    } else if (mode === "union") {
+      // Get IDs from the new selection using the specified idField
+      const newIds = new Set(newSelection.map((obj) => obj[idField]));
+      // Add objects from the current selection that aren’t in newSelection
+      const additional = selection.value.filter(
+        (obj) => !newIds.has(obj[idField])
+      );
+      // Combine the two sets
+      selection.value = [...newSelection, ...additional];
+    } else if (mode === "intersect") {
+      // Get IDs from the current selection using the specified idField
+      const currentIds = new Set(selection.value.map((obj) => obj[idField]));
+      // Keep only objects from newSelection that are in currentIds
+      selection.value = newSelection.filter((obj) =>
+        currentIds.has(obj[idField])
+      );
+    } else {
+      // Handle invalid mode
+      throw new Error("Invalid mode");
+    }
+  };
+
+  // Return the getter (selection) and setter (update function)
+  return [selection, updateSelection];
+}
 
 export function context2d(width, height, dpi = devicePixelRatio) {
   const canvas = document.createElement("canvas");
