@@ -340,6 +340,37 @@ export class sorterTable {
     }
   }
 
+  setSelectedData(selectedIndices) {
+    if (!Array.isArray(selectedIndices)) {
+      console.error("setSelectedData: selectedIndices must be an array.");
+      return;
+    }
+
+    // Clear existing selection
+    this.clearSelection();
+
+    // Validate indices and select rows
+    selectedIndices.forEach((index) => {
+      if (index >= 0 && index < this.dataInd.length) {
+        // Find the corresponding table row element
+        const tr = this.tBody.querySelector(`tr:nth-child(${index + 1})`); // +1 because nth-child is 1-based
+        if (tr) {
+          this.selectRow(tr);
+        } else {
+          console.warn(
+            `setSelectedData: Could not find row with index ${index}`
+          );
+        }
+      } else {
+        console.warn(
+          `setSelectedData: Invalid index ${index}.  Out of bounds.`
+        );
+      }
+    });
+
+    this.selectionUpdated();
+  }
+
   filter() {
     this.rules.push(this.getSelectionRule());
     this.dataInd = this.getSelection().map((s) => this.dataInd[s.index]);

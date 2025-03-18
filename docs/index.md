@@ -54,7 +54,7 @@ import {
 } from "./components/libs/plots.js";
 import { LeafletMap } from "./components/libs/leaflet/leaflet-map.js";
 
-import { animate, selectionFactory } from "./components/libs/utils.js";
+import { animate } from "./components/libs/utils.js";
 import {
   inferTypes,
   enrichGeoData,
@@ -219,6 +219,29 @@ function useState(value) {
 ```
 
 ```js
+function updateSelection(targetSelection, newSelection, mode, idField) {
+  if (mode === "single") {
+    targetSelection.value = newSelection;
+  } else if (mode === "union") {
+    const newIds = new Set(newSelection.map((obj) => obj[idField]));
+    const additional = targetSelection.value.filter(
+      (obj) => !newIds.has(obj[idField])
+    );
+    targetSelection.value = [...newSelection, ...additional];
+  } else if (mode === "intersect") {
+    const currentIds = new Set(
+      targetSelection.value.map((obj) => obj[idField])
+    );
+    targetSelection.value = newSelection.filter((obj) =>
+      currentIds.has(obj[idField])
+    );
+  } else {
+    throw new Error("Invalid mode");
+  }
+}
+```
+
+```js
 console.log(">> Getters and Setters...");
 const [getSelectedAllocation, setSelectedAllocation] = useState([]); // selected allocation
 const [getSelectedTableRow, setSelectedTableRow] = useState([]); // selected table row
@@ -232,7 +255,7 @@ const [currentConfig, setCurrentConfig] = useState({}); // current configuration
 ```
 
 ```js
-const [getSelection, updateSelection] = selectionFactory([], "UPRN");
+const [getInitialFilter, setInitialFilter] = useState(null); // INITIAL FILTER
 ```
 
 ```js
@@ -272,7 +295,6 @@ const [allocations, setAllocations] = useState([]);
             <div class="content">
               <!-- ${ObsTable} -->
               ${table.getNode()}
-              ${tableFilteredData ? html`<p> No. of Filtered Data: ${tableFilteredData.length} </p>`: "" }
             </div>
           </div>
         </div>
@@ -286,6 +308,7 @@ const [allocations, setAllocations] = useState([]);
           <div class="content">
             <div id="graph-container">
               <div id="timeline-panel">
+                ${getInitialFilter ? html`<p> No. of Filtered Data: ${getInitialFilter.length} </p>`: "" }
                 ${createTimelineInterface(
                 interventions,
                 (change) => {
@@ -729,10 +752,10 @@ const glyphmapType = Generators.input(glyphmapTypeInput);
 ```js
 // --- map aggregation ---
 const mapAggregationInput = Inputs.radio(
-  ["LA Level", "LSOA Level", "Building Level"],
+  ["Building Level", "LSOA Level", "LA Level"],
   {
     label: "Level of Detail",
-    value: "LSOA Level",
+    value: "Building Level",
   }
 );
 const map_aggregate = Generators.input(mapAggregationInput);
@@ -1196,7 +1219,8 @@ function tableChanged(event) {
     console.log("Filter rule:", event.rule);
     // saveToSession("tableFiltered", event.indeces);
     console.log("++Filtering Table called");
-    setTableFiltered(event.indeces);
+    // setTableFiltered(event.indeces);
+    setInitialFilter(event.indeces);
   }
 
   if (event.type === "sort") {
@@ -1747,8 +1771,10 @@ function createLeafletMap(data, width, height) {
     height: height || "600px",
     onSelect: (selectedFeatures) =>
       console.log("Map Selected:", selectedFeatures),
-    onFilter: (filteredFeatures) =>
-      console.log("Map Filtered:", filteredFeatures),
+    onFilter: (filteredFeatures) => {
+      console.log("Map Filtered:", filteredFeatures);
+      setInitialFilter(filteredFeatures);
+    },
     tooltipFormatter: (props) => `<strong>${props.id}</strong>`,
   });
 
