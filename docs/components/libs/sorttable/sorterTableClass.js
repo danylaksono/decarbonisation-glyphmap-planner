@@ -371,6 +371,51 @@ export class sorterTable {
     this.selectionUpdated();
   }
 
+  setSelectedDataByIds(ids, idPropertyName = "id") {
+    if (!Array.isArray(ids)) {
+      console.error("setSelectedDataByIds: ids must be an array.");
+      return;
+    }
+
+    // Use a Set for efficient lookup
+    const idSet = new Set(ids);
+
+    // Clear the current selection
+    this.clearSelection();
+
+    // Iterate through the *currently visible* data (dataInd)
+    this.dataInd.forEach((dataIndex, tableRowIndex) => {
+      // Get the data object for this row
+      const dataObject = this.data[dataIndex];
+
+      // Check if the data object has the specified ID property
+      if (dataObject && dataObject.hasOwnProperty(idPropertyName)) {
+        // Check if the ID is in the set of IDs to select
+        if (idSet.has(dataObject[idPropertyName])) {
+          // Find the corresponding table row element.  Crucially, we use
+          // tableRowIndex here, NOT dataIndex.  tableRowIndex is the index
+          // within the *currently displayed* rows.
+          const tr = this.tBody.querySelector(
+            `tr:nth-child(${tableRowIndex + 1})`
+          );
+          if (tr) {
+            this.selectRow(tr);
+          } else {
+            console.warn(
+              `setSelectedDataByIds: Could not find row with dataIndex ${dataIndex} (tableRowIndex: ${tableRowIndex})`
+            );
+          }
+        }
+      } else {
+        console.warn(
+          `setSelectedDataByIds: Data object at index ${dataIndex} does not have property '${idPropertyName}'`
+        );
+      }
+    });
+
+    this.selectionUpdated();
+  }
+
   filter() {
     this.rules.push(this.getSelectionRule());
     this.dataInd = this.getSelection().map((s) => this.dataInd[s.index]);

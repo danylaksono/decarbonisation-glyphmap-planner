@@ -244,45 +244,25 @@ function updateSelection(targetSelection, newSelection, mode, idField) {
 ```js
 console.log(">> Getters and Setters...");
 const [getSelectedAllocation, setSelectedAllocation] = useState([]); // selected allocation
+const [detailOnDemand, setDetailOnDemand] = useState(null); // detail on demand on map
+const [currentConfig, setCurrentConfig] = useState({}); // current configuration
+const [tableFiltered, setTableFiltered] = useState([]); // filtered table
+const [allocations, setAllocations] = useState([]);
+```
+
+```js
+// ---- REMAPPING DATA FLOW ----
+const [getInitialFilter, setInitialFilter] = useState(null); // INITIAL FILTER
 const [getSelectedTableRow, setSelectedTableRow] = useState([]); // selected table row
 const [getInterventions, setInterventions] = useState([]); // list of interventions
 const [getResults, setResults] = useState([]); // list of results, from running model
 const [selectedIntervention, setSelectedIntervention] = useState(null); // selected intervention in timeline
 const [selectedInterventionIndex, setSelectedInterventionIndex] =
   useState(null); // selected intervention index
-const [detailOnDemand, setDetailOnDemand] = useState(null); // detail on demand on map
-const [currentConfig, setCurrentConfig] = useState({}); // current configuration
-```
-
-```js
-const [getInitialFilter, setInitialFilter] = useState(null); // INITIAL FILTER
-```
-
-```js
-const [tableFiltered, setTableFiltered] = useState([]); // filtered table
-```
-
-```js
-// mutable modified timeline
 const [timelineModifications, setTimelineModifications] = useState([]); // list of budget allocations
 ```
 
-```js
-// mutable list of budget allocations
-const [allocations, setAllocations] = useState([]);
-```
-
 <!-- ---------------- HTML Layout ---------------- -->
-
-<!-- <div class="card">
-  <div class="card-content">
-    Cell 1
-    ${resize((width, height) => {
-        return html`<div style="width:${width}px;background-color:lightblue">${width} ${height}</div>`;
-    })}
-    ${resize((width, height) => console.log("width and height 1", {width, height}))}
-  </div>
-</div> -->
 
 <div class="grid-container" style="padding:2px; height:100vh;">
   <div id="left-panel" style="overflow-x:hidden; overflow-y:hidden; height:96vh;">
@@ -290,13 +270,13 @@ const [allocations, setAllocations] = useState([]);
       <div class="card" style="overflow-x:hidden;">
           <header class="quickview-header">
             <p class="title">Table View </p>
-          </header>
-          <div class="card-content">
-            <div class="content">
-              <!-- ${ObsTable} -->
-              ${table.getNode()}
-            </div>
-          </div>
+          </header>              
+          ${resize((width, height) => drawSorterTable(data, tableColumns, tableChanged, {
+            width: width,
+            height: height,
+          })
+          )
+          }
         </div>
     </div> <!-- left top -->
     <div class="left-bottom">
@@ -304,24 +284,25 @@ const [allocations, setAllocations] = useState([]);
         <header class="quickview-header">
           <p class="title">Decarbonisation Timeline</p>
         </header>
-        <div class="card-content">
-          <div class="content">
+        ${getInitialFilter ? html`<p> No. of Filtered Data: ${getInitialFilter.length} </p>`: "" }
             <div id="graph-container">
               <div id="timeline-panel">
-                ${getInitialFilter ? html`<p> No. of Filtered Data: ${getInitialFilter.length} </p>`: "" }
-                ${createTimelineInterface(
-                interventions,
-                (change) => {
-                  console.log("Timeline changed", change);
-                  setTimelineModifications(change);
-                },
-                (click) => {
-                  setSelectedInterventionIndex(click);
-                  console.log("Clicked Interventions", click, interventions[click]);
-                },
-                450,
-                220
-              )}
+                ${resize((width, height) => {
+                  createTimelineInterface(
+                  interventions,
+                  (change) => {
+                    console.log("Timeline changed", change);
+                    setTimelineModifications(change);
+                  },
+                  (click) => {
+                    setSelectedInterventionIndex(click);
+                    console.log("Clicked Interventions", click, interventions[click]);
+                  },
+                  width,
+                  height
+                )}
+                )
+              }
               </div> <!-- timeline panel -->
               <nav id="timeline-buttons">
                 <button id="openQuickviewButton" data-show="quickview" class="btn tooltip" data-tooltip="Add New Intervention" aria-label="Add">
@@ -365,8 +346,6 @@ const [allocations, setAllocations] = useState([]);
               </button>`}
               </nav>
             </div> <!-- graph container -->
-          </div>
-        </div>
       </div> <!-- card -->
     </div> <!-- left bottom -->
     </div> <!-- left panel -->
@@ -376,17 +355,12 @@ const [allocations, setAllocations] = useState([]);
       <header class="quickview-header">
         <p class="title">Map View</p>
       </header>
-      <div class="card-content">
-        <div class="content">
           ${mapAggregationInput}
           ${(map_aggregate === "Building Level") ? "": timelineSwitchInput}
           ${(map_aggregate === "Building Level") ? toggleGridmaps : ""}
           ${(map_aggregate === "LSOA Level") ? html`${playButton} ${morphFactorInput}` : ""}
           <!-- ${html`${playButton} ${morphFactorInput}`} -->
           ${resize((width, height) => createGlyphMap(map_aggregate, width, height))}
-          ${resize((width, height) => console.log("width and height", {width, height}))}
-        </div>
-      </div>
     </div>
   </div>
 </div>
@@ -398,7 +372,7 @@ const [allocations, setAllocations] = useState([]);
     <span class="delete" data-dismiss="quickview" id="closeQuickviewButton"></span>
   </header>
   <div class="quickview-body">
-    ${tableFilteredData ? html`<i> Using ${tableFilteredData.length} Filtered Data </i>`: "" }
+    ${getInitialFilter ? html`<i> Using ${getInitialFilter.length} Filtered Data </i>`: "" }
     <div class="quickview-block">
       <form id="quickviewForm">
         <!-- Technology Selection -->
@@ -594,6 +568,7 @@ const listOfTech = {
 };
 
 // --- Create an InterventionManager instance ---
+const initialData = getInitialFilter ? getInitialFilter : buildingsData;
 const manager = new InterventionManager(buildingsData, listOfTech);
 ```
 
@@ -1246,25 +1221,18 @@ console.log("Filtered table data:", tableFilteredData);
 ```
 
 ```js
-// Define cell renderers
-// const cellRenderers = {
-//   pv_generation: (value, rowData) => {
-//     const max = d3.max(data, (d) => d.pv_generation); // Calculate max dynamically
-//     return sparkbar(max, colorScale)(value, rowData); // Call sparkbar with calculated max
-//   },
-//   ashp_size: (data) => {
-//     const span = document.createElement("span");
-//     span.innerText = data >= 180 ? "More" : "Less";
-//     return span;
-//   },
-// };
-```
-
-```js
 console.log(">> Create sortable table... with data", data);
 const table = new sorterTable(data, tableColumns, tableChanged, {
   height: "300px",
 });
+```
+
+```js
+// factory function for sorter table
+function drawSorterTable(data, columns, callback, options) {
+  const table = new sorterTable(data, columns, callback, options);
+  return table.getNode();
+}
 ```
 
 <!-- ---------------- Glyph Maps ---------------- -->
@@ -1820,30 +1788,4 @@ let keysToNormalise = [
   "buildingsIntervened",
   "totalCarbonSaved",
 ];
-```
-
-<!-- ----------------  Link Table to Leaflet Map  ---------------- -->
-
-```js
-// get last element of the selectedRow if more than one columns are selected,
-// else return the first element
-// function getSelectedRow() {
-//   if (selectedRow.length > 1) {
-//     return selectedRow[selectedRow.length - 1];
-//   } else {
-//     return selectedRow[0];
-//   }
-// }
-
-// if (selectedRow) {
-//   await mapInstance.flyTo({
-//     x: getSelectedRow().x,
-//     y: getSelectedRow().y,
-//   });
-// } else {
-//   console.log("No selected row");
-//   mapInstance.zoomtoDataBounds();
-// }
-
-// display([getSelectedRow().x, getSelectedRow().y]);
 ```
