@@ -273,7 +273,7 @@ const [timelineModifications, setTimelineModifications] = useState([]); // list 
           </header>              
           ${resize((width, height) => drawSorterTable(data, tableColumns, tableChanged, {
             width: width,
-            height: height,
+            height: height-100,
           })
           )
           }
@@ -284,25 +284,22 @@ const [timelineModifications, setTimelineModifications] = useState([]); // list 
         <header class="quickview-header">
           <p class="title">Decarbonisation Timeline</p>
         </header>
-        ${getInitialFilter ? html`<p> No. of Filtered Data: ${getInitialFilter.length} </p>`: "" }
             <div id="graph-container">
               <div id="timeline-panel">
-                ${resize((width, height) => {
-                  createTimelineInterface(
-                  interventions,
-                  (change) => {
-                    console.log("Timeline changed", change);
-                    setTimelineModifications(change);
-                  },
-                  (click) => {
-                    setSelectedInterventionIndex(click);
-                    console.log("Clicked Interventions", click, interventions[click]);
-                  },
-                  width,
-                  height
-                )}
-                )
-              }
+                ${getInitialFilter ? html`<p> No. of Filtered Data: ${getInitialFilter.length} </p>`: "" }
+                ${createTimelineInterface(
+                interventions,
+                (change) => {
+                  console.log("Timeline changed", change);
+                  setTimelineModifications(change);
+                },
+                (click) => {
+                  setSelectedInterventionIndex(click);
+                  console.log("Clicked Interventions", click, interventions[click]);
+                },
+                400,
+                250
+              )}
               </div> <!-- timeline panel -->
               <nav id="timeline-buttons">
                 <button id="openQuickviewButton" data-show="quickview" class="btn tooltip" data-tooltip="Add New Intervention" aria-label="Add">
@@ -360,7 +357,7 @@ const [timelineModifications, setTimelineModifications] = useState([]); // list 
           ${(map_aggregate === "Building Level") ? toggleGridmaps : ""}
           ${(map_aggregate === "LSOA Level") ? html`${playButton} ${morphFactorInput}` : ""}
           <!-- ${html`${playButton} ${morphFactorInput}`} -->
-          ${resize((width, height) => createGlyphMap(map_aggregate, width, height))}
+          ${resize((width, height) => createGlyphMap(map_aggregate, width, height-80))}
     </div>
   </div>
 </div>
@@ -456,6 +453,7 @@ const cancelButton = document.getElementById("cancelButton");
 
 openQuickviewButton.addEventListener("click", () => {
   quickviewDefault.classList.add("is-active");
+  console.log("Open quickview");
 });
 
 closeQuickviewButton.addEventListener("click", () => {

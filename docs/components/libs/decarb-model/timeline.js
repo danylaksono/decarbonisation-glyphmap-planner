@@ -5,7 +5,8 @@ export function createTimelineInterface(
   onChange,
   onClick,
   width = 800,
-  height = 400
+  height = 400,
+  tooltipsEnabled = false
 ) {
   // validate interventions
   console.log("Received interventions for timeline: ", interventions);
@@ -101,6 +102,9 @@ export function createTimelineInterface(
     .attr("width", 200)
     .attr("height", 150);
 
+  // Track tooltip state
+  let areTooltipsEnabled = tooltipsEnabled;
+
   // Create main group element with margins
   const g = svg
     .append("g")
@@ -133,6 +137,111 @@ export function createTimelineInterface(
         onClick(null); // Pass null to indicate deselection
       }
     });
+
+  // Ensure style element exists before trying to modify it
+  if (svg.select("style").empty()) {
+    svg.append("style").text("");
+  }
+
+  // Add drag-to-select functionality
+  let selectionRect = null;
+  let selectionStart = null;
+
+  g.on("mousedown", function (event) {
+    // Only initiate on background, not on blocks
+    if (event.target.classList.contains("block")) return;
+
+    // Remove existing selection rectangle if any
+    if (selectionRect) selectionRect.remove();
+
+    // Store starting position
+    selectionStart = d3.pointer(event);
+
+    // Create new selection rectangle
+    selectionRect = g
+      .append("rect")
+      .attr("class", "selection-area")
+      .attr("x", selectionStart[0])
+      .attr("y", selectionStart[1])
+      .attr("width", 0)
+      .attr("height", 0)
+      .attr("fill", "rgba(0, 0, 255, 0.3)");
+  })
+    .on("mousemove", function (event) {
+      // Only proceed if we have a selection rectangle
+      if (!selectionRect || !selectionStart) return;
+
+      const currentPos = d3.pointer(event);
+
+      // Calculate rectangle dimensions
+      const x = Math.min(selectionStart[0], currentPos[0]);
+      const y = Math.min(selectionStart[1], currentPos[1]);
+      const width = Math.abs(currentPos[0] - selectionStart[0]);
+      const height = Math.abs(currentPos[1] - selectionStart[1]);
+
+      // Update rectangle position and size
+      selectionRect
+        .attr("x", x)
+        .attr("y", y)
+        .attr("width", width)
+        .attr("height", height);
+    })
+    .on("mouseup", function () {
+      // Only proceed if we have a selection rectangle
+      if (!selectionRect || !selectionStart) return;
+
+      // Get the selection rectangle's bounds
+      const selectX = parseFloat(selectionRect.attr("x"));
+      const selectY = parseFloat(selectionRect.attr("y"));
+      const selectWidth = parseFloat(selectionRect.attr("width"));
+      const selectHeight = parseFloat(selectionRect.attr("height"));
+
+      // Find all blocks that intersect with the selection rectangle
+      const selectedIndexes = [];
+      g.selectAll(".block").each(function (d, i) {
+        const block = d3.select(this);
+        const blockX = parseFloat(block.attr("x"));
+        const blockY = parseFloat(block.attr("y"));
+        const blockWidth = parseFloat(block.attr("width"));
+        const blockHeight = parseFloat(block.attr("height"));
+
+        // Check for rectangle intersection
+        if (
+          blockX < selectX + selectWidth &&
+          blockX + blockWidth > selectX &&
+          blockY < selectY + selectHeight &&
+          blockY + blockHeight > selectY
+        ) {
+          block.classed("highlight", true);
+          selectedIndexes.push(i);
+        } else {
+          block.classed("highlight", false);
+        }
+      });
+
+      // Call the onClick callback with the array of selected indexes
+      if (onClick && selectedIndexes.length > 0) {
+        onClick(selectedIndexes);
+      } else if (onClick && selectedIndexes.length === 0) {
+        // If nothing was selected, pass null
+        onClick(null);
+      }
+
+      // Remove the selection rectangle
+      selectionRect.remove();
+      selectionRect = null;
+      selectionStart = null;
+    });
+
+  // Update CSS styles for selection interaction
+  svg.select("style").text(
+    svg.select("style").text() +
+      `
+    .selection-area {
+      pointer-events: none;
+    }
+  `
+  );
 
   // Intervention blocks
   const blocks = g
@@ -442,21 +551,41 @@ export function createTimelineInterface(
     }
   }
 
-  // Apply tooltip behavior
-  blocks
-    .selectAll(".block")
-    .on("mouseover", function (event, d) {
-      tooltip.style("opacity", 1);
-      updateTooltip(d);
-    })
-    .on("mousemove", function (event) {
-      tooltip
-        .style("left", event.pageX + 10 + "px")
-        .style("top", event.pageY - 10 + "px");
-    })
-    .on("mouseout", function () {
-      tooltip.style("opacity", 0);
-    });
+  // Apply tooltip behavior if enabled
+  function applyTooltipBehavior() {
+    if (areTooltipsEnabled) {
+      blocks
+        .selectAll(".block")
+        .on("mouseover", function (event, d) {
+          tooltip.style("opacity", 1);
+          updateTooltip(d);
+        })
+        .on("mousemove", function (event) {
+          tooltip
+            .style("left", event.pageX + 10 + "px")
+            .style("top", event.pageY - 10 + "px");
+        })
+        .on("mouseout", function () {
+          tooltip.style("opacity", 0);
+        });
+    } else {
+      blocks
+        .selectAll(".block")
+        .on("mouseover", null)
+        .on("mousemove", null)
+        .on("mouseout", null);
+    }
+  }
+
+  // Initial application of tooltip behavior based on initial state
+  applyTooltipBehavior();
+
+  // Method to toggle tooltips on/off
+  function toggleTooltips(enabled) {
+    areTooltipsEnabled = enabled;
+    applyTooltipBehavior();
+    return svg.node(); // Return the SVG node for chaining
+  }
 
   // Check if data is empty
   if (interventions.length === 0) {
@@ -497,8 +626,13 @@ export function createTimelineInterface(
       font-size: 16px;
       fill: #999;
     }
+    .selection-area {
+      pointer-events: none;
+    }
   `);
 
-  // Return
-  return svg.node();
+  // Return the SVG node with added methods
+  const svgNode = svg.node();
+  svgNode.toggleTooltips = toggleTooltips;
+  return svgNode;
 }
