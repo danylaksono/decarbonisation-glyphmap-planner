@@ -1219,7 +1219,7 @@ console.log("Filtered table data:", tableFilteredData);
 ```
 
 ```js
-console.log(">> Create sortable table... with data", data);
+// console.log(">> Create sortable table... with data", data);
 const table = new sorterTable(data, tableColumns, tableChanged, {
   height: "300px",
 });

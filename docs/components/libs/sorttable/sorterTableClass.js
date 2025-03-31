@@ -416,6 +416,53 @@ export class sorterTable {
     this.selectionUpdated();
   }
 
+  setFilteredDataById(ids, idPropertyName = "id") {
+    if (!Array.isArray(ids)) {
+      console.error("setFilteredDataById: ids must be an array.");
+      return;
+    }
+
+    // Use a Set for efficient lookup
+    const idSet = new Set(ids);
+
+    // Store the original dataInd for history
+    const originalDataInd = [...this.dataInd];
+
+    // Push to history before modifying
+    this.history.push({ type: "filter", data: originalDataInd });
+
+    // Filter the dataInd to include only rows with matching IDs
+    this.dataInd = this.dataInd.filter((dataIndex) => {
+      const dataObject = this.data[dataIndex];
+
+      // Check if the data object has the specified ID property
+      if (dataObject && dataObject.hasOwnProperty(idPropertyName)) {
+        // Include only if the ID is in our set
+        return idSet.has(dataObject[idPropertyName]);
+      }
+
+      return false; // Exclude if no matching ID property
+    });
+
+    // Re-render the table with the filtered data
+    this.createTable();
+
+    // Update visualisations
+    this.visControllers.forEach((vc, vci) => {
+      if (vc && vc.updateData) {
+        const columnName = this.columns[vci].column;
+        vc.updateData(this.dataInd.map((i) => this.data[i][columnName]));
+      }
+    });
+
+    // Notify about the filter change
+    this.changed({
+      type: "filter",
+      indeces: this.dataInd,
+      rule: `Filtered by ${idPropertyName} in provided list`,
+    });
+  }
+
   filter() {
     this.rules.push(this.getSelectionRule());
     this.dataInd = this.getSelection().map((s) => this.dataInd[s.index]);
