@@ -39,9 +39,10 @@ export class LeafletMap {
     this.layerControl = null;
     this.dataBounds = null;
     this.geoJsonData = new Map(); // Store GeoJSON data for each layer
+    this.originalGeoJsonData = new Map(); // Store original GeoJSON data for reset functionality
     this.selectionLayerId = null; // Layer ID for selection and filtering
     this.isSelectionMode = false;
-    this.drawControl = null;
+    this.clearSelectionButton = null; // Reference to clear selection button control
 
     this._initializeMap();
   }
@@ -134,8 +135,8 @@ export class LeafletMap {
     filterButton.addTo(this.map);
 
     // Add clear selection button
-    const clearSelectionButton = L.control({ position: "bottomleft" });
-    clearSelectionButton.onAdd = () => {
+    this.clearSelectionButton = L.control({ position: "bottomleft" });
+    this.clearSelectionButton.onAdd = () => {
       const div = L.DomUtil.create("div", "clear-selection-button leaflet-bar");
       div.innerHTML =
         '<a href="#" title="Clear Selection" class="map-control-button"><i class="fa fa-times"></i></a>';
@@ -145,7 +146,21 @@ export class LeafletMap {
       };
       return div;
     };
-    clearSelectionButton.addTo(this.map);
+
+    // Add reset button
+    const resetButton = L.control({ position: "bottomleft" });
+    resetButton.onAdd = () => {
+      const div = L.DomUtil.create("div", "reset-button leaflet-bar");
+      div.innerHTML =
+        '<a href="#" title="Reset Map" class="map-control-button"><i class="fa fa-refresh"></i></a>';
+      div.firstChild.onclick = (e) => {
+        e.preventDefault();
+        console.log("Resetting map...");
+        this.resetMap();
+      };
+      return div;
+    };
+    resetButton.addTo(this.map);
 
     // Handle drawing events for selection
     this.map.on("draw:created", (e) => {
@@ -419,7 +434,14 @@ export class LeafletMap {
     }
 
     const geoJsonData = this._toGeoJSON(data);
+
+    // Store both current and original data for reset functionality
     this.geoJsonData.set(layerId, geoJsonData);
+
+    // Store a deep copy of the original data
+    const originalCopy = JSON.parse(JSON.stringify(geoJsonData));
+    this.originalGeoJsonData.set(layerId, originalCopy);
+
     this.dataBounds = this._calculateBounds(geoJsonData.features);
     const cluster = this._initializeCluster(geoJsonData.features, options);
     const layer = L.layerGroup().addTo(this.map);
@@ -667,6 +689,9 @@ export class LeafletMap {
         });
       });
 
+      // Show clear selection button
+      this.clearSelectionButton.addTo(this.map);
+
       // Update button state
       const selButton = document.querySelector(".selection-button a");
       if (selButton) {
@@ -680,6 +705,9 @@ export class LeafletMap {
       this.layers.forEach((layer, layerId) => {
         this._updateMarkers(layerId);
       });
+
+      // Hide clear selection button
+      this.clearSelectionButton.remove();
 
       // Update button state
       const selButton = document.querySelector(".selection-button a");
@@ -709,6 +737,137 @@ export class LeafletMap {
     if (this.options.onSelect) {
       this.options.onSelect([]);
     }
+  }
+
+  /**
+   * Resets the map to its initial state
+   */
+  resetMap() {
+    // Create new Map with deep copies of the original data
+    this.geoJsonData = new Map();
+
+    // Properly deep copy each layer's original data
+    this.originalGeoJsonData.forEach((originalData, layerId) => {
+      // Create a proper deep copy to avoid reference issues
+      const deepCopy = JSON.parse(JSON.stringify(originalData));
+      this.geoJsonData.set(layerId, deepCopy);
+
+      // Recreate clusters for each layer with the original data
+      const cluster = this._initializeCluster(deepCopy.features);
+      this.clusters.set(layerId, cluster);
+    });
+
+    // Update all map layers
+    this.layers.forEach((layer, layerId) => {
+      this._updateMarkers(layerId);
+    });
+  }
+
+  /**
+   * Programmatically selects points based on IDs or a filter function
+   * @param {string} layerId - The ID of the layer to select points from
+   * @param {Object} options - Selection options
+   * @param {Array<string|number>} options.ids - Array of IDs to select
+   * @param {string} options.idField - Field name to match IDs against (default: "id")
+   * @param {Function} options.filterFn - Custom filter function that receives feature.properties
+   * @returns {Array} - The selected features
+   */
+  setSelectedData(layerId, options = {}) {
+    const geoJsonData = this.geoJsonData.get(layerId);
+    if (!geoJsonData) return [];
+
+    const { ids, idField = "id", filterFn } = options;
+
+    // Clear any current selection
+    geoJsonData.features.forEach((feature) => {
+      feature.properties.selected = false;
+    });
+
+    // Apply selection based on IDs or filter function
+    if (Array.isArray(ids) && ids.length > 0) {
+      geoJsonData.features.forEach((feature) => {
+        if (ids.includes(feature.properties[idField])) {
+          feature.properties.selected = true;
+        }
+      });
+    } else if (typeof filterFn === "function") {
+      geoJsonData.features.forEach((feature) => {
+        if (filterFn(feature.properties)) {
+          feature.properties.selected = true;
+        }
+      });
+    }
+
+    // Update the map visualization
+    this._updateMarkers(layerId);
+
+    // Return selected features for convenience
+    const selectedFeatures = geoJsonData.features.filter(
+      (feature) => feature.properties.selected
+    );
+
+    // Trigger onSelect callback if set
+    if (this.options.onSelect) {
+      this.options.onSelect(selectedFeatures);
+    }
+
+    return selectedFeatures;
+  }
+
+  /**
+   * Apply a custom filter to the map data, showing only points that match criteria
+   * @param {string} layerId - The ID of the layer to filter
+   * @param {Object} options - Filter options
+   * @param {Array<string|number>} options.ids - Array of IDs to include
+   * @param {string} options.idField - Field name to match IDs against (default: "id")
+   * @param {Function} options.filterFn - Custom filter function that receives feature.properties
+   * @param {boolean} options.updateOriginal - Whether to update the original data (default: false)
+   * @returns {Array} - The filtered features
+   */
+  setFilteredData(layerId, options = {}) {
+    const geoJsonData = this.geoJsonData.get(layerId);
+    if (!geoJsonData) return [];
+
+    const { ids, idField = "id", filterFn, updateOriginal = false } = options;
+
+    let filteredFeatures = [];
+
+    // Apply filtering based on IDs or filter function
+    if (Array.isArray(ids) && ids.length > 0) {
+      filteredFeatures = geoJsonData.features.filter((feature) =>
+        ids.includes(feature.properties[idField])
+      );
+    } else if (typeof filterFn === "function") {
+      filteredFeatures = geoJsonData.features.filter((feature) =>
+        filterFn(feature.properties)
+      );
+    } else {
+      return geoJsonData.features; // Nothing to filter by
+    }
+
+    // Create a new filtered GeoJSON
+    const filteredGeoJson = {
+      type: "FeatureCollection",
+      features: filteredFeatures,
+    };
+
+    // Update the internal data structure
+    if (updateOriginal) {
+      this.originalGeoJsonData.set(layerId, this.geoJsonData.get(layerId));
+    }
+    this.geoJsonData.set(layerId, filteredGeoJson);
+
+    // Update the cluster and markers
+    const cluster = this._initializeCluster(filteredFeatures);
+    this.clusters.set(layerId, cluster);
+    this._updateMarkers(layerId);
+
+    // Trigger onFilter callback if set
+    if (this.options.onFilter) {
+      this.options.onFilter(filteredFeatures);
+    }
+
+    return filteredFeatures;
   }
 }
 

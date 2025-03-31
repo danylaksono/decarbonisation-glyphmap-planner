@@ -165,7 +165,9 @@ export function createTimelineInterface(
       .attr("y", selectionStart[1])
       .attr("width", 0)
       .attr("height", 0)
-      .attr("fill", "rgba(0, 0, 255, 0.3)");
+      .attr("fill", "rgba(158, 202, 225, 0.3)")
+      .attr("stroke", "rgb(107, 174, 214)")
+      .attr("stroke-width", 1);
   })
     .on("mousemove", function (event) {
       // Only proceed if we have a selection rectangle
@@ -196,6 +198,9 @@ export function createTimelineInterface(
       const selectWidth = parseFloat(selectionRect.attr("width"));
       const selectHeight = parseFloat(selectionRect.attr("height"));
 
+      // Clear any previous selection
+      g.selectAll(".block").classed("highlight", false);
+
       // Find all blocks that intersect with the selection rectangle
       const selectedIndexes = [];
       g.selectAll(".block").each(function (d, i) {
@@ -212,16 +217,17 @@ export function createTimelineInterface(
           blockY < selectY + selectHeight &&
           blockY + blockHeight > selectY
         ) {
+          // Highlight selected block
           block.classed("highlight", true);
-          selectedIndexes.push(i);
-        } else {
-          block.classed("highlight", false);
+          selectedIndexes.push(interventions.indexOf(d));
         }
       });
 
       // Call the onClick callback with the array of selected indexes
       if (onClick && selectedIndexes.length > 0) {
-        onClick(selectedIndexes);
+        onClick(
+          selectedIndexes.length === 1 ? selectedIndexes[0] : selectedIndexes
+        );
       } else if (onClick && selectedIndexes.length === 0) {
         // If nothing was selected, pass null
         onClick(null);
@@ -256,7 +262,6 @@ export function createTimelineInterface(
     .append("rect")
     .attr("class", "block")
     .attr("x", (d) => xScale(d.initialYear))
-    // .attr("y", (d, i) => yScale(i))
     .attr("y", (d, i) => {
       if (interventions.length === 1) {
         return innerHeight / 2 - maxBlockHeight / 2; // Center vertically
@@ -268,20 +273,23 @@ export function createTimelineInterface(
       "width",
       (d) => xScale(d.initialYear + d.duration) - xScale(d.initialYear)
     )
-    // .attr("height", yScale.bandwidth())
     .attr("height", (d, i) => Math.min(yScale.bandwidth(), maxBlockHeight))
-    // .attr("height", 30)
     .attr("fill", "steelblue")
     .on("click", function (event, d) {
+      // Clear any existing selection
       g.selectAll(".block").classed("highlight", false);
+
       // Highlight the clicked block
       d3.select(this).classed("highlight", true);
+
       // Trigger the click callback
       if (onClick) {
-        // onClick(d);
         const index = interventions.indexOf(d);
         onClick(index);
       }
+
+      // Stop event propagation to prevent background click
+      event.stopPropagation();
     });
 
   // Add text labels to the intervention blocks
