@@ -318,3 +318,15 @@ table {
   margin: 0 !important;
   width: 100%;
 }
+
+/* Column selection styling for sorter table */
+.sorter-table .selected-column {
+  background-color: #e3f2fd !important;
+  box-shadow: 0 0 5px rgba(33, 150, 243, 0.5) !important;
+  border-top: 2px solid #2196f3 !important;
+  border-bottom: 2px solid #2196f3 !important;
+}
+
+.sorter-table th.selected-column span {
+  background-color: #1976d2 !important;
+}

@@ -27,6 +27,21 @@ export class sorterTable {
       }
     });
 
+    // Add CSS styles for column selection
+    const style = document.createElement("style");
+    style.textContent = `
+      .sorter-table .selected-column {
+        background-color: #e3f2fd !important; 
+        box-shadow: 0 0 5px rgba(33, 150, 243, 0.5) !important;
+        border-top: 2px solid #2196F3 !important;
+        border-bottom: 2px solid #2196F3 !important;
+      }
+      .sorter-table th.selected-column span {
+        color: #1976D2 !important;
+      }
+    `;
+    document.head.appendChild(style);
+
     // Pre-populate column types if manually specified
     this.columns.forEach((col) => {
       if (col.type) {
@@ -657,16 +672,63 @@ export class sorterTable {
     console.log("Selected column:", columnName);
     this.selectedColumn = columnName;
 
+    // Remove styling from all headers first
     this.tHead.querySelectorAll("th").forEach((th) => {
-      th.classList.remove("selected-column"); // Remove previous selection
+      th.style.backgroundColor = "";
+      th.style.boxShadow = "";
+      th.style.borderTop = "";
+      th.style.borderBottom = "";
+
+      if (th.querySelector("span")) {
+        th.querySelector("span").style.color = "";
+      }
+
+      // Log that styling has been removed
+      console.log(
+        "Removed styling from header:",
+        th.querySelector("span")?.innerText
+      );
     });
 
+    // Find the column index and apply styling directly
     const columnIndex = this.columns.findIndex((c) => c.column === columnName);
     if (columnIndex !== -1) {
-      this.tHead
-        .querySelectorAll("th")
-        [columnIndex].classList.add("selected-column");
+      const headerCell = this.tHead.querySelectorAll("th")[columnIndex];
+
+      // Apply direct inline styling
+      headerCell.style.backgroundColor = "#e3f2fd";
+      headerCell.style.boxShadow = "0 0 5px rgba(33, 150, 243, 0.5)";
+      headerCell.style.borderTop = "2px solid #2196F3";
+      headerCell.style.borderBottom = "2px solid #2196F3";
+
+      // Style the span element within the th for better visibility
+      if (headerCell.querySelector("span")) {
+        headerCell.querySelector("span").style.color = "#1976D2";
+      }
+
+      // Log that styling has been applied
+      console.log(
+        "Applied styling to header:",
+        headerCell.querySelector("span")?.innerText
+      );
+      console.log("Current headerCell styles:", {
+        backgroundColor: headerCell.style.backgroundColor,
+        boxShadow: headerCell.style.boxShadow,
+        borderTop: headerCell.style.borderTop,
+        borderBottom: headerCell.style.borderBottom,
+        textColor: headerCell.querySelector("span")?.style.color,
+      });
+
+      // Scroll the header into view if needed
+      headerCell.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+        inline: "center",
+      });
+    } else {
+      console.error("Column not found:", columnName);
     }
+
     this.changed({
       type: "columnSelection",
       selectedColumn: this.selectedColumn,
