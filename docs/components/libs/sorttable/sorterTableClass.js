@@ -27,7 +27,7 @@ export class sorterTable {
       }
     });
 
-    // Add CSS styles for column selection
+    // Add CSS styles for column selection and animation
     const style = document.createElement("style");
     style.textContent = `
       .sorter-table .selected-column {
@@ -38,6 +38,11 @@ export class sorterTable {
       }
       .sorter-table th.selected-column span {
         color: #1976D2 !important;
+      }
+      @keyframes pulse {
+        0% { background-color: #e3f2fd; }
+        50% { background-color: #bbdefb; }
+        100% { background-color: #e3f2fd; }
       }
     `;
     document.head.appendChild(style);
@@ -65,6 +70,7 @@ export class sorterTable {
     this.table.classList.add("sorter-table");
 
     this.initialColumns = JSON.parse(JSON.stringify(this.columns));
+    this.initialData = [...data]; // Store a copy of the original data
 
     console.log("Initial columns:", this.columns);
 
@@ -90,6 +96,7 @@ export class sorterTable {
     this.addingRows = false;
     this.rules = [];
     this.selectedRows = new Set();
+    this.isAggregated = false; // Track if the table is currently showing aggregated data
     this.percentiles = [
       0, 0.01, 0.02, 0.03, 0.04, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
       0.9, 0.95, 0.96, 0.97, 0.98, 0.99, 1,
@@ -552,6 +559,16 @@ export class sorterTable {
         const reverseDir = u.dir === "left" ? "right" : "left";
         this.shiftCol(u.columnName, reverseDir);
         this._isUndoing = false;
+      } else if (u.type === "aggregate") {
+        this.data = u.data;
+        this.dataInd = u.dataInd;
+        this.isAggregated = false;
+        this.rebuildTable();
+        this.changed({
+          type: "undo",
+          indeces: this.dataInd,
+          sort: this.compoundSorting,
+        });
       }
     }
   }
@@ -1204,6 +1221,21 @@ export class sorterTable {
     });
     sidebar.appendChild(filterIcon);
 
+    // --- Aggregate Icon ---
+    let aggregateIcon = document.createElement("i");
+    aggregateIcon.classList.add("fas", "fa-chart-bar");
+    Object.assign(aggregateIcon.style, {
+      cursor: "pointer",
+      marginBottom: "15px",
+      color: "gray",
+    });
+    aggregateIcon.setAttribute("title", "Aggregate by Selected Column");
+    aggregateIcon.addEventListener("click", (event) => {
+      event.stopPropagation();
+      this.aggregate();
+    });
+    sidebar.appendChild(aggregateIcon);
+
     // --- Undo Icon ---
     let undoIcon = document.createElement("i");
     undoIcon.classList.add("fas", "fa-undo");
@@ -1306,6 +1338,177 @@ export class sorterTable {
     });
 
     return container;
+  }
+
+  aggregate() {
+    // Check if a column is selected
+    if (!this.selectedColumn) {
+      alert(
+        "Please select a column to aggregate by (long press on a column header)"
+      );
+      return;
+    }
+
+    // Check if the selected column is ordinal type
+    const columnObj = this.columns.find(
+      (c) => c.column === this.selectedColumn
+    );
+    const columnType = this.columnTypes[this.selectedColumn];
+
+    if (columnType !== "ordinal") {
+      alert(
+        "Aggregation is only available for ordinal columns. The selected column is " +
+          columnType
+      );
+      return;
+    }
+
+    // Save the current state for potential undo
+    this.history.push({
+      type: "aggregate",
+      data: [...this.data],
+      dataInd: [...this.dataInd],
+    });
+
+    // Visual feedback - pulse the column header
+    const columnIndex = this.columns.findIndex(
+      (c) => c.column === this.selectedColumn
+    );
+    if (columnIndex !== -1) {
+      const headerCell = this.tHead.querySelectorAll("th")[columnIndex];
+      headerCell.style.animation = "pulse 0.5s";
+      headerCell.style.backgroundColor = "#e3f2fd";
+
+      // Reset animation after it completes
+      setTimeout(() => {
+        headerCell.style.animation = "";
+      }, 500);
+    }
+
+    // Perform aggregation with appropriate functions for each column type
+    const aggregatedData = [];
+    const ordinalValues = new Set();
+
+    // First pass: collect all unique values of the ordinal column
+    this.dataInd.forEach((index) => {
+      ordinalValues.add(this.data[index][this.selectedColumn]);
+    });
+
+    // Second pass: aggregate each group
+    Array.from(ordinalValues).forEach((value) => {
+      // Find all rows with this ordinal value
+      const rowsWithValue = this.dataInd.filter(
+        (index) => this.data[index][this.selectedColumn] === value
+      );
+
+      // Skip if no rows found (shouldn't happen)
+      if (rowsWithValue.length === 0) return;
+
+      // Create a new aggregated row
+      const aggregatedRow = { [this.selectedColumn]: value };
+
+      // For each column, apply the appropriate aggregation
+      this.columns.forEach((col) => {
+        const colName = col.column;
+
+        // Skip the column we're aggregating by
+        if (colName === this.selectedColumn) return;
+
+        const colType = this.columnTypes[colName];
+        const values = rowsWithValue.map((i) => this.data[i][colName]);
+
+        // Apply different aggregation based on column type
+        if (colType === "continuous" || colType === "number") {
+          // For numerical columns: calculate mean
+          const validValues = values.filter((v) => v !== null && !isNaN(v));
+          if (validValues.length > 0) {
+            aggregatedRow[colName] = d3.mean(validValues);
+
+            // Format to 2 decimal places if it's a calculated mean
+            if (
+              typeof aggregatedRow[colName] === "number" &&
+              !Number.isInteger(aggregatedRow[colName])
+            ) {
+              aggregatedRow[colName] = parseFloat(
+                aggregatedRow[colName].toFixed(2)
+              );
+            }
+          } else {
+            aggregatedRow[colName] = 0;
+          }
+        } else if (colType === "date") {
+          // For date columns: count
+          aggregatedRow[colName] = values.filter(
+            (v) => v !== null && v !== undefined
+          ).length;
+        } else {
+          // For ordinal columns: count
+          aggregatedRow[colName] = values.filter(
+            (v) => v !== null && v !== undefined
+          ).length;
+        }
+      });
+
+      aggregatedData.push(aggregatedRow);
+    });
+
+    // Replace data with aggregated data
+    this.originalData = this.data;
+    this.data = aggregatedData;
+    this.dataInd = d3.range(aggregatedData.length);
+    this.isAggregated = true;
+
+    // Rebuild the table with the new aggregated data
+    this.rebuildTable();
+
+    // Inform listeners that data has been aggregated
+    this.changed({
+      type: "aggregate",
+      selectedColumn: this.selectedColumn,
+      aggregatedData: this.data,
+    });
+  }
+
+  aggregateData(ordinalColumn, aggregationFunction) {
+    if (!ordinalColumn || typeof ordinalColumn !== "string") {
+      console.error("Invalid ordinalColumn:", ordinalColumn);
+      return;
+    }
+
+    if (typeof aggregationFunction !== "function") {
+      console.error("Invalid aggregationFunction:", aggregationFunction);
+      return;
+    }
+
+    const ordinalValues = new Set(this.data.map((d) => d[ordinalColumn]));
+
+    const aggregatedData = Array.from(ordinalValues).map((value) => {
+      const filteredData = this.data.filter((d) => d[ordinalColumn] === value);
+      const aggregatedRow = { [ordinalColumn]: value };
+
+      this.columns.forEach((col) => {
+        if (col.column !== ordinalColumn) {
+          aggregatedRow[col.column] = aggregationFunction(
+            filteredData.map((d) => d[col.column])
+          );
+        }
+      });
+
+      return aggregatedRow;
+    });
+
+    this.data = aggregatedData;
+    this.dataInd = d3.range(this.data.length);
+    this.isAggregated = true;
+
+    this.createTable();
+    this.visControllers.forEach((vc, index) => {
+      const columnName = this.columns[index].column;
+      const columnData = this.dataInd.map((i) => this.data[i][columnName]);
+      vc.updateData(columnData);
+    });
+
+    this.changed({ type: "aggregate", data: this.data });
   }
 }
 
