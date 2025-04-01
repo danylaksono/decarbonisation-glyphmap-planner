@@ -305,7 +305,13 @@ export class BinningService {
       values: otherBins.flatMap((bin) => bin.values),
       originalCategories: otherBins.map((bin) => bin.key),
       ...this.getBinStats(
-        otherBins.flatMap((bin) => bin.values.map((d) => d[column]))
+        // Fix: Access the value property from the first bin's first value to get the column name
+        otherBins.flatMap((bin) =>
+          bin.values.map((d) => {
+            // Use the key from the bin since this represents the column value
+            return bin.key;
+          })
+        )
       ),
     };
 

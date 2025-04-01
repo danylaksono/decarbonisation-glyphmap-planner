@@ -1402,6 +1402,8 @@ function HistogramController(data, binrules) {
         category: b.x0 + "-" + b.x1,
         count: b.length,
         indeces: b.map((v) => v.index),
+        x0: b.x0,
+        x1: b.x1,
       }));
 
       // console.log("Brush Bins: ", this.bins);
@@ -1418,7 +1420,7 @@ function HistogramController(data, binrules) {
           [0, 0],
           [svgWidth, svgHeight],
         ])
-        .on("end", this.handleBrush);
+        .on("end", (event) => this.handleBrush(event));
 
       // Add brush to svg
       this.svg
@@ -1557,7 +1559,6 @@ function HistogramController(data, binrules) {
         });
     }
 
-    // Add brushing for continuous data
     // Handle brush end event
     this.handleBrush = (event) => {
       // Remove any existing histogram label(s)
@@ -1577,60 +1578,71 @@ function HistogramController(data, binrules) {
       const [bound1, bound2] = event.selection.map(this.xScale.invert);
       const binWidth = width / this.bins.length;
 
-      // console.log("Brushing event: ", event); // Debugging
-      // console.log("Brushed Data Range:", x0, x1);
-      // console.log("Bins:", this.bins);
+      // Find which bins fall within the selected range
+      const selectedIndices = new Set();
 
-      // // Compute selected data range
-      // const selectedBins = this.bins.filter(
-      //   (bin) => this.xScale(bin.x1) >= x0 && this.xScale(bin.x0) <= x1
-      // );
-
-      // console.log("Selected brushed bins: ", selectedBins);
-
-      // // Extract categories or labels from bins
-      // const selectedLabels = selectedBins.map((bin) => bin.category || bin.x0);
-
-      // Compute which bins are selected and update their color
+      // Mark bins as selected if they overlap with the brush
       this.bins.forEach((bin, i) => {
-        const binStart = i * binWidth;
-        const binEnd = (i + 1) * binWidth;
-        bin.selected = binStart <= x1 && binEnd >= x0;
-        this.svg
-          .select(`.bar:nth-child(${i + 1}) rect:nth-child(1)`)
-          .attr("fill", bin.selected ? "orange" : "steelblue");
+        // For continuous data, use actual data values to check selection
+        if (bin.x0 !== undefined && bin.x1 !== undefined) {
+          // Check if bin overlaps with selection
+          const binStart = this.xScale(bin.x0);
+          const binEnd = this.xScale(bin.x1);
+
+          bin.selected = binEnd >= x0 && binStart <= x1;
+
+          // Update visual representation
+          this.svg
+            .select(`.bar:nth-child(${i + 1}) rect:nth-child(1)`)
+            .attr("fill", bin.selected ? "orange" : "steelblue");
+
+          // Collect all row indices from selected bins
+          if (bin.selected && bin.indeces) {
+            bin.indeces.forEach((idx) => selectedIndices.add(idx));
+          }
+        } else {
+          // Fallback to position-based selection for other data types
+          const binStart = i * binWidth;
+          const binEnd = (i + 1) * binWidth;
+          bin.selected = binStart <= x1 && binEnd >= x0;
+
+          this.svg
+            .select(`.bar:nth-child(${i + 1}) rect:nth-child(1)`)
+            .attr("fill", bin.selected ? "orange" : "steelblue");
+
+          if (bin.selected && bin.indeces) {
+            bin.indeces.forEach((idx) => selectedIndices.add(idx));
+          }
+        }
       });
 
-      // Add histogram label
+      // Add histogram label showing the selection range
       this.svg
-        // .data([d])
         .append("text")
-        .attr("class", "histogram-label")
-        .join("text")
         .attr("class", "histogram-label")
         .attr("x", width / 2)
         .attr("y", height + 10)
         .attr("font-size", "10px")
         .attr("fill", "#444444")
         .attr("text-anchor", "middle")
-        // .text(`Selected: ${selectedLabels.join(", ")}`);
         .text(`Range: ${Math.round(bound1)} - ${Math.round(bound2)}`);
 
-      // Update table selection if table exists
+      // Update table selection
       if (controller.table) {
         controller.table.clearSelection();
-        this.bins.forEach((bin) => {
-          if (bin.selected) {
-            bin.indeces.forEach((rowIndex) => {
-              const tr = controller.table.tBody.querySelector(
-                `tr:nth-child(${rowIndex + 1})`
-              );
-              if (tr) {
-                controller.table.selectRow(tr);
-              }
-            });
+
+        // Convert the Set to an Array for easier processing
+        const rowIndices = Array.from(selectedIndices);
+
+        rowIndices.forEach((rowIndex) => {
+          const tr = controller.table.tBody.querySelector(
+            `tr:nth-child(${rowIndex + 1})`
+          );
+          if (tr) {
+            controller.table.selectRow(tr);
           }
         });
+
         controller.table.selectionUpdated();
       }
     };
