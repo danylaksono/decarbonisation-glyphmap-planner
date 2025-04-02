@@ -1037,31 +1037,44 @@ export class sorterTable {
   }
 
   resetTable() {
-    // Reset data and indices to initial state
+    // If we're in an aggregated state, restore the original data
+    if (this.isAggregated && this.initialData) {
+      this.data = [...this.initialData];
+      this.isAggregated = false;
+    }
+
+    // Reset data indices to initial state
     this.dataInd = d3.range(this.data.length);
     this.selectedRows.clear();
     this.compoundSorting = {};
     this.rules = [];
     this.history = [];
+    this.selectedColumn = null; // Clear any column selection
 
-    // Reset sort and shift controllers
-    // this.sortControllers.forEach((ctrl) => ctrl.setDirection("none"));
-    this.sortControllers.forEach((ctrl) => ctrl.toggleDirection()); // Toggle direction to reset
+    // Reset sort controllers
+    this.sortControllers.forEach((ctrl) => {
+      // Reset to default state - used to avoid potential toggle issues
+      if (ctrl.getDirection() !== "none") {
+        ctrl.toggleDirection();
+      }
+    });
 
     // Update column order to the initial state
     this.columns = this.initialColumns.map((col) => ({ ...col }));
 
-    // Update vis controllers
-    this.visControllers.forEach((vc, index) => {
-      const columnData = this.dataInd.map(
-        (i) => this.data[i][this.columns[index].column]
-      );
-      vc.updateData(columnData);
-    });
-
     // Re-render the table
     this.createHeader();
     this.createTable();
+
+    // Update visualisation controllers with the restored data
+    this.visControllers.forEach((vc, index) => {
+      if (vc && vc.updateData) {
+        const columnData = this.dataInd.map(
+          (i) => this.data[i][this.columns[index].column]
+        );
+        vc.updateData(columnData);
+      }
+    });
 
     // Notify about the reset
     this.changed({ type: "reset" });
