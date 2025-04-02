@@ -219,7 +219,12 @@ function useState(value) {
 ```
 
 ```js
-function updateSelection(targetSelection, newSelection, mode, idField) {
+function updateSelection(
+  targetSelection,
+  newSelection,
+  mode = "intersect",
+  idField
+) {
   if (mode === "single") {
     targetSelection.value = newSelection;
   } else if (mode === "union") {
@@ -1191,7 +1196,8 @@ function tableChanged(event) {
     console.log("Filtered indices:", event.indeces);
     console.log("Filter rule:", event.rule);
     // saveToSession("tableFiltered", event.indeces);
-    console.log("++Filtering Table called");
+    console.log("Filtered IDs:", event.ids);
+    // console.log("++Filtering Table called");
     // setTableFiltered(event.indeces);
     setInitialFilter(event.indeces);
   }
@@ -1738,7 +1744,12 @@ function createLeafletMap(data, width, height) {
     onSelect: (selectedFeatures) =>
       console.log("Map Selected:", selectedFeatures),
     onFilter: (filteredFeatures) => {
-      console.log("Map Filtered:", filteredFeatures);
+      const filteredIds = filteredFeatures
+        .map((feature) => ({
+          id: feature.properties?.id,
+        }))
+        .filter((obj) => obj.id !== undefined);
+      console.log("Map Filtered:", filteredIds);
       setInitialFilter(filteredFeatures);
     },
     tooltipFormatter: (props) => `<strong>${props.id}</strong>`,

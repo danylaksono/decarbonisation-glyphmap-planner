@@ -454,8 +454,8 @@ export class sorterTable {
     this.history.push({ type: "filter", data: originalDataInd });
 
     // Filter the dataInd to include only rows with matching IDs
-    this.dataInd = this.dataInd.filter((dataIndex) => {
-      const dataObject = this.data[dataIndex];
+    this.dataInd = this.dataInd.filter((index) => {
+      const dataObject = this.data[index];
 
       // Check if the data object has the specified ID property
       if (dataObject && dataObject.hasOwnProperty(idPropertyName)) {
@@ -509,9 +509,28 @@ export class sorterTable {
       }
     });
 
+    // Collect ids from the filtered data (use 'id' property by default, or specify a different one)
+    const idColumn = "id"; // Default id column name
+    // const filteredIds = this.dataInd.map((i) => {
+    //   // Check if the row has an id property, otherwise return the index as fallback
+    //   return this.data[i]?.[idColumn] !== undefined
+    //     ? this.data[i][idColumn]
+    //     : i;
+    // });
+
+    const filteredIds = this.dataInd.map((i) => {
+      // Check if the row has an id property, otherwise use the index as fallback
+      const idValue =
+        this.data[i]?.[idColumn] !== undefined ? this.data[i][idColumn] : i;
+
+      // Return as an object with id property
+      return { id: idValue };
+    });
+
     this.changed({
       type: "filter",
       indeces: this.dataInd,
+      ids: filteredIds, // Include the ids in the response
       rule: this.getSelectionRule(),
     });
   }
