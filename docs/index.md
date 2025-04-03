@@ -318,14 +318,17 @@ function handleSelection(source, newSelection, mode = "intersect") {
 ```
 
 ```js
+// filter the map by providing IDs
 const applyMapFilter = (suitableIds) => {
+  const idValues = suitableIds.map((item) => item.id);
+
   mapInstance.setFilteredData("buildings", {
-    ids: suitableIds,
+    ids: idValues,
   });
 
   return {
-    filterName: `Buildings with IDs in provided list (${suitableIds.length} buildings)`,
-    filterFunction: (building) => suitableIds.includes(building.id),
+    filterName: `Buildings with IDs in provided list (${idValues.length} buildings)`,
+    filterFunction: (building) => idValues.includes(building.id),
   };
 };
 ```
@@ -1795,49 +1798,52 @@ function interactiveDrawFn(mode) {
 ```
 
 ```js
+const leafletContainer = document.createElement("div");
+document.body.appendChild(leafletContainer);
+
+const mapInstance = new LeafletMap(leafletContainer, {
+  width: "300px",
+  height: "300px",
+  onSelect: (selectedFeatures) => log("Map Selected:", selectedFeatures),
+  onFilter: (filteredFeatures) => {
+    const filteredIds = filteredFeatures
+      .map((feature) => ({
+        id: feature.properties?.id,
+      }))
+      .filter((obj) => obj.id !== undefined);
+    log("Map Filtered:", filteredIds);
+    setInitialData(filteredIds);
+
+    // setInitialFilter(filteredFeatures);
+    //   handleSelection("table", filteredIds, "union");
+  },
+  tooltipFormatter: (props) => `<strong>${props.id}</strong>`,
+});
+
+mapInstance.addLayer("buildings", data, {
+  clusterRadius: 50,
+  fitBounds: true,
+});
+
+mapInstance.setSelectionLayer("buildings");
+
+mapInstance.addGeoJSONLayer("LSOA Boundary", lsoa_boundary, {
+  style: {
+    color: "#f7a55e",
+    weight: 2,
+    opacity: 0.65,
+  },
+  onEachFeature: (feature, layer) => {
+    layer.bindPopup(feature.properties.LSOA21NM);
+  },
+});
+```
+
+```js
 // Leaflet map
 function createLeafletMap(data, width, height) {
-  const leafletContainer = document.createElement("div");
-  document.body.appendChild(leafletContainer);
-
   // log(">> Create Leaflet Map with... ", width, height);
-
-  const mapInstance = new LeafletMap(leafletContainer, {
-    width: width,
-    height: height || "600px",
-    onSelect: (selectedFeatures) => log("Map Selected:", selectedFeatures),
-    onFilter: (filteredFeatures) => {
-      const filteredIds = filteredFeatures
-        .map((feature) => ({
-          id: feature.properties?.id,
-        }))
-        .filter((obj) => obj.id !== undefined);
-      log("Map Filtered:", filteredIds);
-      setInitialData(filteredIds);
-
-      // setInitialFilter(filteredFeatures);
-      //   handleSelection("table", filteredIds, "union");
-    },
-    tooltipFormatter: (props) => `<strong>${props.id}</strong>`,
-  });
-
-  mapInstance.addLayer("buildings", data, {
-    clusterRadius: 50,
-    fitBounds: true,
-  });
-
-  mapInstance.setSelectionLayer("buildings");
-
-  mapInstance.addGeoJSONLayer("LSOA Boundary", lsoa_boundary, {
-    style: {
-      color: "#f7a55e",
-      weight: 2,
-      opacity: 0.65,
-    },
-    onEachFeature: (feature, layer) => {
-      layer.bindPopup(feature.properties.LSOA21NM);
-    },
-  });
+  mapInstance.setDimensions(width, height);
 
   return { leafletContainer, mapInstance };
 }
