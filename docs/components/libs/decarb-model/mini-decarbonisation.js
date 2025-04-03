@@ -1,4 +1,5 @@
 import { PriorityQueue } from "./priority-queue.js";
+import { log, warn, error } from "../logger.js";
 
 // ------------------------ Building class ------------------------
 class Building {
@@ -31,7 +32,7 @@ export class InterventionManager {
   // Method to modify an existing intervention configuration
   modifyIntervention(index, updates) {
     if (index < 0 || index >= this.interventionConfigs.length) {
-      console.error("Invalid intervention index");
+      error("Invalid intervention index");
       return this;
     }
 
@@ -57,9 +58,9 @@ export class InterventionManager {
   addIntervention(config) {
     this.interventionConfigs.push(config);
     this.currentOrder.push(this.interventionConfigs.length - 1); // Add new index to order
-    console.log("Intervention added:", config.id);
+    log("Intervention added:", config.id);
     if (this.autoRun) {
-      console.log("Auto-run enabled. Running interventions...");
+      log("Auto-run enabled. Running interventions...");
       this.runInterventions();
     }
     return this; // Allow method chaining
@@ -96,14 +97,14 @@ export class InterventionManager {
       // Clear cached results
       this._cachedResults = null;
 
-      console.log(`Intervention ${removedId} at index ${index} removed.`);
+      log(`Intervention ${removedId} at index ${index} removed.`);
 
       if (this.autoRun) {
-        console.log("Auto-run enabled. Running interventions...");
+        log("Auto-run enabled. Running interventions...");
         this.runInterventions();
       }
     } else {
-      console.error(`Error: Invalid index or ID '${indexOrId}' for removal.`);
+      error(`Error: Invalid index or ID '${indexOrId}' for removal.`);
     }
 
     return this;
@@ -114,9 +115,9 @@ export class InterventionManager {
     this.currentOrder = [];
     this.results = [];
     this.currentRolloverBudget = 0;
-    console.log("All interventions cleared.");
+    log("All interventions cleared.");
     if (this.autoRun) {
-      console.log("Auto-run enabled. Running interventions...");
+      log("Auto-run enabled. Running interventions...");
       this.runInterventions();
     }
     return this;
@@ -125,14 +126,14 @@ export class InterventionManager {
   // Updated to handle order dynamically
   setInterventionOrder(newOrder) {
     if (!this.isValidOrder(newOrder)) {
-      console.error(
+      error(
         "Error: Invalid intervention order. Check for duplicates or out-of-range indices."
       );
       return;
     }
 
     if (newOrder.length !== this.interventionConfigs.length) {
-      console.error(
+      error(
         "Error: newOrder array must have the same length as interventionConfigs."
       );
       return;
@@ -153,10 +154,10 @@ export class InterventionManager {
     // Update currentOrder to reflect the new order
     this.currentOrder = newOrder;
 
-    console.log("New intervention order set:", this.currentOrder);
+    log("New intervention order set:", this.currentOrder);
 
     if (this.autoRun) {
-      console.log("Auto-run enabled. Running interventions...");
+      log("Auto-run enabled. Running interventions...");
       this.runInterventions();
     }
     return this;
@@ -184,7 +185,7 @@ export class InterventionManager {
       // Create a deep copy of the config to avoid modifying the original
       const configCopy = JSON.parse(JSON.stringify(config));
 
-      console.log(
+      log(
         `Running intervention: ${configCopy.id}, Initial Rollover: ${currentRolloverBudget}`
       );
 
@@ -204,7 +205,7 @@ export class InterventionManager {
             configCopy.yearlyBudgets[0].toFixed(2)
           );
 
-          console.log(
+          log(
             `  config ${
               configCopy.id
             }: Remaining budget from previous intervention (${currentRolloverBudget}) added to year ${
@@ -215,7 +216,7 @@ export class InterventionManager {
           // Reset currentRolloverBudget to 0 since it's been applied
           currentRolloverBudget = 0;
         } else {
-          console.log(
+          log(
             `  config ${configCopy.id}: No rollover applied (previous year: ${lastYearOfPreviousIntervention}, current year: ${configCopy.initialYear})`
           );
         }
@@ -240,9 +241,7 @@ export class InterventionManager {
           if (this.listOfTech[techName]) {
             model.addTechnology(this.listOfTech[techName]);
           } else {
-            console.error(
-              `  Error: Technology "${techName}" not found in listOfTech.`
-            );
+            error(`  Error: Technology "${techName}" not found in listOfTech.`);
           }
         });
       } else if (configCopy.tech && this.listOfTech[configCopy.tech]) {
@@ -280,17 +279,14 @@ export class InterventionManager {
       // Update previousRecap for the next iteration
       previousRecap = recap;
 
-      console.log(
+      log(
         `  config ${configCopy.id}: Intervention run completed. Remaining budget: ${recap.remainingBudget}`
       );
 
       return recap;
     });
 
-    console.log(
-      "All interventions with rollover successfully run. Recaps:",
-      recaps
-    );
+    log("All interventions with rollover successfully run. Recaps:", recaps);
     this._cachedResults = recaps; // Cache the results
     return recaps;
   }
@@ -321,18 +317,14 @@ export class InterventionManager {
           if (this.listOfTech[techName]) {
             model.addTechnology(this.listOfTech[techName]);
           } else {
-            console.error(
-              `Error: Technology "${techName}" not found in listOfTech.`
-            );
+            error(`Error: Technology "${techName}" not found in listOfTech.`);
           }
         });
       } else if (config.tech) {
         if (this.listOfTech[config.tech]) {
           model.addTechnology(this.listOfTech[config.tech]);
         } else {
-          console.error(
-            `Error: Technology "${config.tech}" not found in listOfTech.`
-          );
+          error(`Error: Technology "${config.tech}" not found in listOfTech.`);
         }
       }
 
@@ -366,10 +358,10 @@ export class InterventionManager {
       this.currentRolloverBudget = recap.remainingBudget;
     }
 
-    console.log("Interventions run. Results:", this.results);
+    log("Interventions run. Results:", this.results);
     // model runtime in seconds
     const endTime = performance.now();
-    console.log("Model run time:", (endTime - startTime) / 1000, "s");
+    log("Model run time:", (endTime - startTime) / 1000, "s");
 
     return this.results;
   }
@@ -386,10 +378,10 @@ export class InterventionManager {
   }
 
   logCurrentState() {
-    console.log("Current Intervention Order:", this.currentOrder);
-    console.log("Intervention Configurations:", this.interventionConfigs);
-    console.log("Current Rollover Budget:", this.currentRolloverBudget);
-    console.log("Results:", this.results);
+    log("Current Intervention Order:", this.currentOrder);
+    log("Intervention Configurations:", this.interventionConfigs);
+    log("Current Rollover Budget:", this.currentRolloverBudget);
+    log("Results:", this.results);
   }
 }
 
@@ -500,7 +492,7 @@ export class MiniDecarbModel {
   }
 
   addTechnology(techConfig) {
-    console.log("Adding technology", techConfig);
+    log("Adding technology", techConfig);
     if (this.config.optimizationStrategy === "carbon-first") {
       this.config.technologies.push(techConfig);
     } else {
@@ -542,7 +534,7 @@ export class MiniDecarbModel {
       }
     }
 
-    // console.log("Suitable buildings", this.suitableBuildings);
+    // log("Suitable buildings", this.suitableBuildings);
     this.suitableBuildingsNeedUpdate = false; // Reset the flag after filtering
   }
 
@@ -573,7 +565,7 @@ export class MiniDecarbModel {
 
     this.suitableBuildingsNeedUpdate = true;
 
-    console.log(`Filter "${filterName}" applied:`, filterResult);
+    log(`Filter "${filterName}" applied:`, filterResult);
     return this;
 
     // this.suitableBuildings = this.suitableBuildings.filter(filterFn);
@@ -639,7 +631,7 @@ export class MiniDecarbModel {
         this.getBuildingCost(building);
       }
     }
-    // console.log(
+    // log(
     //   "precalculateBuildingCosts buildingCosts Map:",
     //   this._buildingCosts
     // );
@@ -673,7 +665,7 @@ export class MiniDecarbModel {
     }
 
     // Log the calculated cost and cache key for debugging
-    // console.log("getBuildingCost - Building ID:", building.id, "Tech:", technology?.name, "Cost:", cost, "Cache Key:", cacheKey);
+    // log("getBuildingCost - Building ID:", building.id, "Tech:", technology?.name, "Cost:", cost, "Cache Key:", cacheKey);
 
     // Store the calculated cost in the cache
     this._buildingCosts.set(cacheKey, cost);
@@ -759,7 +751,7 @@ export class MiniDecarbModel {
       // Carbon-first: tech is passed as argument
       const cost = this.getBuildingCost(building, technology);
       if (cost === undefined) {
-        console.warn(
+        warn(
           `Warning: Cost not found for building ${building.id} and tech ${technology.name}. Check getBuildingCost.`
         );
         return 0; // Or handle it in some other appropriate way, like returning a very large negative number
@@ -768,7 +760,7 @@ export class MiniDecarbModel {
       const carbonSaved = building.properties[technology.config.savingsKey];
 
       if (carbonSaved === undefined) {
-        console.warn(
+        warn(
           `Warning: Carbon savings not found for building ${building.id} and tech ${technology.name}. Check technology config.`
         );
         return 0; // Or handle it appropriately
@@ -779,7 +771,7 @@ export class MiniDecarbModel {
       // Tech-first: this.config.tech is used
       const cost = this.getBuildingCost(building);
       if (cost === undefined) {
-        console.warn(
+        warn(
           `Warning: Cost not found for building ${building.id} and tech ${this.config.tech.name}. Check getBuildingCost.`
         );
         return 0; // Or handle it appropriately
@@ -788,7 +780,7 @@ export class MiniDecarbModel {
         building.properties[this.config.tech.config.savingsKey];
 
       if (carbonSaved === undefined) {
-        console.warn(
+        warn(
           `Warning: Carbon savings not found for building ${building.id} and tech ${this.config.tech.name}. Check technology config.`
         );
         return 0; // Or handle it appropriately
@@ -800,7 +792,7 @@ export class MiniDecarbModel {
     const endTime = performance.now();
 
     // DEBUG: Log building ID, tech name, and carbon efficiency
-    // console.log(
+    // log(
     //   `Building ID: ${building.id}, Tech: ${
     //     technology ? technology.name : this.config.tech.name
     //   }, Carbon Efficiency: ${carbonEfficiency}`
@@ -844,7 +836,7 @@ export class MiniDecarbModel {
           this._potentialInterventions.set(building.id, buildingInterventions);
         }
 
-        // console.log("Potential Interventions:", buildingInterventions);
+        // log("Potential Interventions:", buildingInterventions);
       }
     }
 
@@ -873,8 +865,8 @@ export class MiniDecarbModel {
       }
     }
 
-    // console.log("pq:", pq);
-    // console.log("Priority Queue (before interventions):", pq._heap);
+    // log("pq:", pq);
+    // log("Priority Queue (before interventions):", pq._heap);
 
     for (let year = 0; year < this.config.numYears; year++) {
       const yearBudget = this.config.yearly_budgets[year] + remainingBudget;
@@ -893,7 +885,7 @@ export class MiniDecarbModel {
         processedInterventions.add(intervention);
 
         // Check again if the building has been intervened in the meantime
-        // console.log(
+        // log(
         //   "Building ID:",
         //   building.id,
         //   "Intervened:",
@@ -904,8 +896,8 @@ export class MiniDecarbModel {
           spent += cost;
           buildingsIntervened.push(building);
 
-          //   console.log("Intervention applied:", building.id, tech.name, cost);
-          //   console.log("Spent this year:", spent, "Year Budget:", yearBudget);
+          //   log("Intervention applied:", building.id, tech.name, cost);
+          //   log("Spent this year:", spent, "Year Budget:", yearBudget);
         }
       }
 
@@ -951,7 +943,7 @@ export class MiniDecarbModel {
         );
 
         // Log for debugging
-        // console.log(
+        // log(
         //   "Building ID:",
         //   building.id,
         //   "Tech:",
@@ -961,7 +953,7 @@ export class MiniDecarbModel {
         // );
 
         if (cost === undefined) {
-          console.warn(
+          warn(
             `Warning: Cost not found for building ${building.id} and tech ${this.config.tech.name}. Check precalculateBuildingCosts.`
           );
           continue;
@@ -1030,16 +1022,16 @@ export class MiniDecarbModel {
     }
 
     if (this.config.optimizationStrategy === "carbon-first") {
-      console.log("Running carbon-first model");
+      log("Running carbon-first model");
       this.runCarbonFirstModel();
     } else {
-      console.log("Running tech-first model");
+      log("Running tech-first model");
       this.runTechFirstModel();
     }
 
     // // model runtime in seconds
     // const endTime = performance.now();
-    // console.log("Model run time:", (endTime - startTime) / 1000, "s");
+    // log("Model run time:", (endTime - startTime) / 1000, "s");
 
     return this.getRecap();
   }
@@ -1333,15 +1325,13 @@ export class MiniDecarbModel {
     // Return the filter function with proper error handling
     return function (building) {
       if (!building || typeof building !== "object") {
-        console.warn("Invalid building object passed to the filter function.");
+        warn("Invalid building object passed to the filter function.");
         return false; // Exclude invalid buildings
       }
 
       const value = building.properties?.[attribute];
       if (value === undefined) {
-        console.warn(
-          `Attribute "${attribute}" not found in building properties.`
-        );
+        warn(`Attribute "${attribute}" not found in building properties.`);
         return false; // Exclude buildings missing the attribute
       }
 
@@ -1364,7 +1354,7 @@ export class MiniDecarbModel {
             throw new Error(`Unexpected operator: ${operator}`);
         }
       } catch (error) {
-        console.error(
+        error(
           `Error evaluating filter: ${attribute} ${operator} ${threshold} - ${error.message}`
         );
         return false; // Exclude buildings if an error occurs

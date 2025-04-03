@@ -17,7 +17,7 @@ sql:
 <!-- ------------ Imports ------------ -->
 
 ```js
-console.log(">> Importing libraries...");
+log(">> Importing libraries...");
 const d3 = require("d3", "d3-geo-projection");
 const flubber = require("flubber@0.4");
 
@@ -70,10 +70,21 @@ import {
   set,
   // applyTransformationToShapes,
 } from "./components/libs/helpers.js";
+
+import {
+  log,
+  warn,
+  error,
+  setDebugMode,
+  startGroup,
+  endGroup,
+} from "./components/libs/logger.js";
 ```
 
 ```js
-// const proj = new OSGB();
+// Control debug output - set to true during development, false in production
+const DEBUG = true;
+setDebugMode(DEBUG);
 ```
 
 <!-- ---------------- Loading Raw Data ---------------- -->
@@ -137,7 +148,7 @@ FROM oxford b;
 
 ```js
 // >> declare data
-console.log(">> Loading Data...");
+log(">> Loading Data...");
 const buildingsData = [...oxford_data];
 // const buildingsData = oxford_data.slice(); // copy data
 ```
@@ -146,11 +157,11 @@ const buildingsData = [...oxford_data];
 // const flatData = buildingsData.map((p) => ({ ...p })); // very slow
 // const flatData = buildingsData.map((p) => Object.assign({}, p)); // even slower
 const allColumns = Object.keys(buildingsData[0]);
-console.log(">>  Loading Data Done");
+log(">>  Loading Data Done");
 ```
 
 ```js
-console.log(">> Define and Load boundary data...");
+log(">> Define and Load boundary data...");
 // oxford boundary data
 const lsoa_boundary = FileAttachment(
   "./data/oxford_lsoa_boundary.geojson"
@@ -164,7 +175,7 @@ const cartogram_geodata = FileAttachment(
 ```
 
 ```js
-console.log(">> Defining the glyph variables and colours...");
+log(">> Defining the glyph variables and colours...");
 timeline_switch;
 const glyphVariables = [
   "ashp_suitability",
@@ -219,35 +230,7 @@ function useState(value) {
 ```
 
 ```js
-function updateSelection(
-  targetSelection,
-  newSelection,
-  mode = "intersect",
-  idField
-) {
-  if (mode === "single") {
-    targetSelection.value = newSelection;
-  } else if (mode === "union") {
-    const newIds = new Set(newSelection.map((obj) => obj[idField]));
-    const additional = targetSelection.value.filter(
-      (obj) => !newIds.has(obj[idField])
-    );
-    targetSelection.value = [...newSelection, ...additional];
-  } else if (mode === "intersect") {
-    const currentIds = new Set(
-      targetSelection.value.map((obj) => obj[idField])
-    );
-    targetSelection.value = newSelection.filter((obj) =>
-      currentIds.has(obj[idField])
-    );
-  } else {
-    throw new Error("Invalid mode");
-  }
-}
-```
-
-```js
-console.log(">> Getters and Setters...");
+log(">> Getters and Setters...");
 const [getSelectedAllocation, setSelectedAllocation] = useState([]); // selected allocation
 const [detailOnDemand, setDetailOnDemand] = useState(null); // detail on demand on map
 const [currentConfig, setCurrentConfig] = useState({}); // current configuration
@@ -265,6 +248,73 @@ const [selectedIntervention, setSelectedIntervention] = useState(null); // selec
 const [selectedInterventionIndex, setSelectedInterventionIndex] =
   useState(null); // selected intervention index
 const [timelineModifications, setTimelineModifications] = useState([]); // list of budget allocations
+```
+
+<!------------ HANDLE BI-DIRECTIONAL SELECTION -------------->
+
+```js
+const [getInitialData, setInitialData] = useState([]); // INITIAL DATA
+```
+
+```js
+function updateSelection(
+  targetSelection,
+  newSelection,
+  mode = "intersect",
+  idField
+) {
+  if (mode === "single") {
+    return newSelection;
+  } else if (mode === "union") {
+    const newIds = new Set(newSelection.map((obj) => obj[idField]));
+    const additional = targetSelection.filter(
+      (obj) => !newIds.has(obj[idField])
+    );
+    return [...newSelection, ...additional];
+  } else if (mode === "intersect") {
+    const currentIds = new Set(targetSelection.map((obj) => obj[idField]));
+    return newSelection.filter((obj) => currentIds.has(obj[idField]));
+  } else {
+    throw new Error("Invalid mode");
+  }
+}
+```
+
+```js
+// HANDLE MAP AND TABLE SELECTION
+function handleSelection(source, newSelection, mode = "intersect") {
+  log(`Updating selection from ${source} with mode ${mode}:`, newSelection);
+
+  let selectedFeatures = updateSelection(
+    getInitialData,
+    newSelection,
+    mode,
+    "id"
+  );
+  setInitialData(selectedFeatures);
+
+  // if (getInitialData.length === 0) {
+  //   // if no features are selected, set the initial data to the new selection
+  //   setInitialData(newSelection);
+  // } else {
+  //   let selectedFeatures = updateSelection(
+  //     getInitialData,
+  //     newSelection,
+  //     mode,
+  //     "id"
+  //   );
+  //   setInitialData(selectedFeatures);
+  // }
+  // // update the initial data
+
+  if (source === "map") {
+    // renderTable(selectedFeatures); // Update the table
+    log("updating the table");
+  } else if (source === "table") {
+    log("updating the map");
+    // updateMapHighlight(selectedFeatures); // Update the map
+  }
+}
 ```
 
 <!-- ---------------- HTML Layout ---------------- -->
@@ -295,12 +345,12 @@ const [timelineModifications, setTimelineModifications] = useState([]); // list 
                 ${createTimelineInterface(
                 interventions,
                 (change) => {
-                  console.log("Timeline changed", change);
+                  log("Timeline changed", change);
                   setTimelineModifications(change);
                 },
                 (click) => {
                   setSelectedInterventionIndex(click);
-                  console.log("Clicked Interventions", click, interventions[click]);
+                  log("Clicked Interventions", click, interventions[click]);
                 },
                 400,
                 250
@@ -313,7 +363,7 @@ const [timelineModifications, setTimelineModifications] = useState([]); // list 
                 ${html`<button class="btn edit tooltip" data-tooltip="Apply Modification" aria-label="Edit"
                   onclick=${(e) => {
                     e.stopPropagation();
-                    console.log("Modify intervention ", selectedInterventionIndex);
+                    log("Modify intervention ", selectedInterventionIndex);
                     modifyIntervention(selectedInterventionIndex, timelineModifications[selectedInterventionIndex]);
                  }
                 }>
@@ -322,7 +372,7 @@ const [timelineModifications, setTimelineModifications] = useState([]); // list 
                 ${html`<button class="btn erase tooltip" data-tooltip="Remove Intervention" aria-label="Delete"
                   onclick=${(e) => {
                     e.stopPropagation();
-                    console.log("Delete intervention ", selectedInterventionIndex);
+                    log("Delete intervention ", selectedInterventionIndex);
                     manager.setAutoRun(true).removeIntervention(selectedInterventionIndex);
                     runModel();
                  }
@@ -340,7 +390,7 @@ const [timelineModifications, setTimelineModifications] = useState([]); // list 
                 ${html`<button class="btn move-down tooltip" data-tooltip="Move Down" aria-label="Move Down"
                   onclick=${(e) => {
                     e.stopPropagation();
-                    console.log(manager.currentOrder);
+                    log(manager.currentOrder);
                     reorderIntervention(manager.currentOrder, selectedInterventionIndex, "down");
                     runModel();
                 }}>
@@ -458,7 +508,7 @@ const cancelButton = document.getElementById("cancelButton");
 
 openQuickviewButton.addEventListener("click", () => {
   quickviewDefault.classList.add("is-active");
-  console.log("Open quickview");
+  log("Open quickview");
 });
 
 closeQuickviewButton.addEventListener("click", () => {
@@ -505,7 +555,7 @@ function transformInterventionData(data, lsoaCode, fields) {
 
     // Aggregate data from all interventions in the year
     interventions.forEach((intervention) => {
-      // console.log(">>> transforming interventions", intervention);
+      // log(">>> transforming interventions", intervention);
       if (intervention) {
         fields.forEach((field) => {
           if (intervention[field] !== undefined) {
@@ -609,7 +659,7 @@ Object.assign(totalBudgetInput, {
   onchange: (event) => event.currentTarget.dispatchEvent(new Event("input")),
 });
 const total_budget = Generators.input(totalBudgetInput);
-// console.log("totalBudgetInput total: ", total_budget);
+// log("totalBudgetInput total: ", total_budget);
 
 totalBudgetInput.addEventListener("input", (event) => {
   // Remove existing formatting
@@ -645,7 +695,7 @@ Object.assign(startYearInput, {
   oninput: (event) => event.isTrusted && event.stopImmediatePropagation(),
   onchange: (event) => event.currentTarget.dispatchEvent(new Event("input")),
 });
-// console.log("startYearInput.style", startYearInput.columns);
+// log("startYearInput.style", startYearInput.columns);
 const start_year = Generators.input(startYearInput);
 ```
 
@@ -806,7 +856,7 @@ const addInterventionBtn = document.getElementById("addInterventionBtn");
 
 // Add New Intervention button logic
 addInterventionBtn.addEventListener("click", () => {
-  // console.log("Intervention button clicked");
+  // log("Intervention button clicked");
 
   const formData = {
     id: techsInput.value + "_" + startYearInput.value.toString(),
@@ -825,10 +875,10 @@ addInterventionBtn.addEventListener("click", () => {
 
 ```js
 const getNumericBudget = (value) => {
-  // console.log("getNumericBudget", value);
+  // log("getNumericBudget", value);
   // Remove commas and parse the value as a number
   let budget = parseFloat(value.replace(/,/g, "").replace(/£/g, ""));
-  // console.log("budget in billions", budget * 1e6);
+  // log("budget in billions", budget * 1e6);
   return budget * 1000;
 };
 ```
@@ -836,7 +886,7 @@ const getNumericBudget = (value) => {
 <!--------------- Budget Allocator ---------------->
 
 ```js
-console.log(">> Budget Allocator...");
+log(">> Budget Allocator...");
 
 // Budget Allocator
 const allocator = new BudgetAllocator(
@@ -861,7 +911,7 @@ if (allocation_type === "linear") {
 const budgetVisualiser = allocator.visualise(
   initialAllocations,
   (changes) => {
-    // console.log("On Budget Updated", changes);
+    // log("On Budget Updated", changes);
     setSelectedAllocation(changes);
   },
   400,
@@ -878,7 +928,7 @@ setSelectedAllocation(allocator.getAllocations());
 {
   allocator;
   // const newAllocation = selected ? selected : allocator.getAllocations();
-  // console.log("newAllocation", newAllocation);
+  // log("newAllocation", newAllocation);
   saveToSession("allocations", getSelectedAllocation);
 }
 ```
@@ -886,7 +936,7 @@ setSelectedAllocation(allocator.getAllocations());
 <!-- morph animation logic -->
 
 ```js
-console.log(">> Morph animation logic...");
+log(">> Morph animation logic...");
 let playing = false; // Track play/pause state
 let direction = 1; // Controls the animation direction (0 to 1 or 1 to 0)
 let animationFrame; // Stores the requestAnimationFrame ID
@@ -918,10 +968,10 @@ playButton.addEventListener("click", () => {
 ```js
 // Handle form submission: add new intervention
 function addNewIntervention(data) {
-  // console.log(Date.now(), "Checking allocations now:", allocations);
+  // log(Date.now(), "Checking allocations now:", allocations);
   const currentAllocation = getFromSession("allocations");
 
-  console.log(">> Current Allocation from session", currentAllocation);
+  log(">> Current Allocation from session", currentAllocation);
   const yearlyBudgets = currentAllocation.map((item) => item.budget);
 
   const newConfig = {
@@ -930,7 +980,7 @@ function addNewIntervention(data) {
     // priorities: [],
     yearlyBudgets: yearlyBudgets,
   };
-  console.log(">> CONFIG from session", newConfig);
+  log(">> CONFIG from session", newConfig);
 
   // add the new intervention to the model
   manager.addIntervention(newConfig);
@@ -943,7 +993,7 @@ function addNewIntervention(data) {
 ```js
 // function to run the model
 function runModel() {
-  console.log(">>>> Running the decarbonisation model...");
+  log(">>>> Running the decarbonisation model...");
   const recaps = manager.runInterventions();
   const formatRecaps = recaps.map((r) => {
     return {
@@ -965,7 +1015,7 @@ function runModel() {
 ```js
 // Reorder intervention
 function reorderIntervention(array, index, direction) {
-  console.log(
+  log(
     ">> Reordering intervention...",
     getInterventions[index].interventionId,
     direction
@@ -1006,12 +1056,12 @@ function reorderIntervention(array, index, direction) {
       if (!manager.setInterventionOrder(newArray)) {
         throw new Error("Failed to update intervention order");
       }
-      console.log("Interventions reordered:", newArray);
+      log("Interventions reordered:", newArray);
     }
 
     return newArray;
   } catch (error) {
-    console.error("Reorder failed:", error.message);
+    error("Reorder failed:", error.message);
     return array; // Return original array if reordering fails
   }
 }
@@ -1021,17 +1071,17 @@ function reorderIntervention(array, index, direction) {
 // function to update the selected intervention
 function modifyIntervention(index, newConfig) {
   if (!newConfig) {
-    console.info("No change detected for intervention", index);
+    log("No change detected for intervention", index);
     return;
   }
 
-  console.log(" The new config", index, newConfig);
+  log(" The new config", index, newConfig);
 
   // const currentConfig = interventions[index];
   let yearlyBudgets;
 
   if (newConfig.duration !== newConfig.projectDuration) {
-    console.log("Assigning new budget allocations..");
+    log("Assigning new budget allocations..");
 
     // calculate yearlyBudgets by creating an array of newConfig.projectDuration length where each item's value is from initialBudget divided by newConfig.projectDuration.
     const initialBudget = newConfig.initialBudget;
@@ -1042,7 +1092,7 @@ function modifyIntervention(index, newConfig) {
     yearlyBudgets = newConfig.yearlyBudgets;
   }
 
-  console.log("GIVEN Yearly budgets", yearlyBudgets);
+  log("GIVEN Yearly budgets", yearlyBudgets);
 
   const modifiedConfig = {
     ...newConfig,
@@ -1052,9 +1102,9 @@ function modifyIntervention(index, newConfig) {
     duration: newConfig.projectDuration,
   };
 
-  console.log(">> Modifying intervention.. ", index, modifiedConfig);
+  log(">> Modifying intervention.. ", index, modifiedConfig);
   // const newResults = manager.modifyAndRunIntervention(index, modifiedConfig);
-  // console.log(" result from modifications", newResults);
+  // log(" result from modifications", newResults);
   // store to current interventions
   // setInterventions(newResults);
   // const stackedRecap = manager.getStackedResults();
@@ -1071,14 +1121,14 @@ function modifyIntervention(index, newConfig) {
 ```js
 // function to update building filter
 function updateBuildingFilter(column, value) {
-  console.log(">> Updating building filter...", column, value);
+  log(">> Updating building filter...", column, value);
   const filter = filterByIds(
     table.data
       .filter((d) => d[column] === value)
       .map((d) => d?.id)
       .filter(Boolean)
   );
-  console.log(">> Filter", filter);
+  log(">> Filter", filter);
   manager.addFilter(filter);
   runModel();
 }
@@ -1093,11 +1143,11 @@ function updateTimeline() {
     createTimelineInterface(
       interventions,
       (change) => {
-        console.log("timeline change", change);
+        log("timeline change", change);
       },
       (click) => {
         setSelectedInterventionIndex(click);
-        console.log("timeline clicked block", interventions[click]);
+        log("timeline clicked block", interventions[click]);
       },
       450,
       200
@@ -1117,19 +1167,19 @@ const flatData = selectedIntervenedBuildings?.map((p) => ({
   ...p.properties,
 }));
 
-console.log(">> Intervened buildings", flatData);
+log(">> Intervened buildings", flatData);
 
 const data =
   selectedInterventionIndex === null
     ? stackedRecap?.buildings ?? buildingsData
     : flatData;
-// console.log(">> DATA DATA DATA", data);
+// log(">> DATA DATA DATA", data);
 ```
 
 ```js
 // This updates the stored interventions
 const interventions = getInterventions;
-console.log(">> Interventions", interventions);
+log(">> Interventions", interventions);
 ```
 
 ```js
@@ -1138,7 +1188,7 @@ const stackedRecap = getResults;
 
 ```js
 timeline_switch;
-console.log(">> Switching variables...", glyphVariables);
+log(">> Switching variables...", glyphVariables);
 
 // aggregate and normalise data for whole LA
 const overall_data = aggregateValues(data, glyphVariables, "sum", true);
@@ -1185,47 +1235,50 @@ const tableColumns = [
     }),
 ];
 
-console.log(">> Define table columns...", tableColumns);
+log(">> Define table columns...", tableColumns);
 ```
 
 ```js
+// Table events
 function tableChanged(event) {
-  console.log("Table changed:", event);
+  log("Table changed:", event);
 
   if (event.type === "filter") {
-    console.log("Filtered indices:", event.indeces);
-    console.log("Filter rule:", event.rule);
+    // log("Filtered indices:", event.indeces);
+    // log("Filter rule:", event.rule);
     // saveToSession("tableFiltered", event.indeces);
-    console.log("Filtered IDs:", event.ids);
-    // console.log("++Filtering Table called");
+    log("Filtered IDs:", event.ids);
+    setInitialData(event.ids);
+    // handleSelection("map", event.ids, "intersect");
+    // log("++Filtering Table called");
     // setTableFiltered(event.indeces);
-    setInitialFilter(event.indeces);
+    // setInitialFilter(event.indeces);
   }
 
   if (event.type === "sort") {
-    console.log("Sorted indices:", event.indeces);
-    console.log("Sort criteria:", event.sort);
+    log("Sorted indices:", event.indeces);
+    log("Sort criteria:", event.sort);
   }
 
   if (event.type === "selection") {
-    // console.log("Selected rows:", event.selection);
+    // log("Selected rows:", event.selection);
     setSelectedTableRow(event.selection);
-    console.log("Selection rule:", event.rule);
+    log("Selection rule:", event.rule);
   }
 }
 ```
 
 ```js
 // Filter table data
-const tableFilteredData = tableFiltered
-  .map((index) => table.data?.[index])
-  .filter(Boolean);
+// const tableFilteredData = tableFiltered
+//   .map((index) => table.data?.[index])
+//   .filter(Boolean);
 
-console.log("Filtered table data:", tableFilteredData);
+log("Initial Data Fixed: ", getInitialData);
 ```
 
 ```js
-// console.log(">> Create sortable table... with data", data);
+// log(">> Create sortable table... with data", data);
 const table = new sorterTable(data, tableColumns, tableChanged, {
   height: "300px",
 });
@@ -1242,7 +1295,7 @@ function drawSorterTable(data, columns, callback, options) {
 <!-- ---------------- Glyph Maps ---------------- -->
 
 ```js
-console.log(">> Geo-enrichment...");
+log(">> Geo-enrichment...");
 // geo-enrichment - combine geodata with building level properties
 
 // define the aggregation function for each column
@@ -1300,10 +1353,7 @@ const regular_geodata_withproperties = enrichGeoData(
   aggregations
 );
 
-console.log(
-  "regular_geodata_withproperties_enriched",
-  regular_geodata_withproperties
-);
+log("regular_geodata_withproperties_enriched", regular_geodata_withproperties);
 
 const cartogram_geodata_withproperties = enrichGeoData(
   // buildingsData,
@@ -1317,7 +1367,7 @@ const cartogram_geodata_withproperties = enrichGeoData(
 
 ```js
 // Data processing functions
-console.log(">> Data processing functions: Regular LSOA...");
+log(">> Data processing functions: Regular LSOA...");
 const osgb = new OSGB();
 let clone = turf.clone(regular_geodata);
 turf.coordEach(clone, (currentCoord) => {
@@ -1330,7 +1380,7 @@ const regularGeodataLsoaWgs84 = clone;
 
 ```js
 // Data processing functions
-console.log(">> Data processing functions: Cartogram LSOA...");
+log(">> Data processing functions: Cartogram LSOA...");
 const osgb = new OSGB();
 let clone = turf.clone(cartogram_geodata);
 turf.coordEach(clone, (currentCoord) => {
@@ -1345,7 +1395,7 @@ const cartogramGeodataLsoaWgs84 = clone;
 ```js
 // Create a lookup table for the key data - geography
 // this is already aggregated by LSOA in EnrichGeoData
-console.log(">> Create lookup tables...");
+log(">> Create lookup tables...");
 const keydata = _.keyBy(
   regular_geodata_withproperties.features.map((feat) => {
     return {
@@ -1356,7 +1406,7 @@ const keydata = _.keyBy(
   }),
   "code"
 );
-console.log(">>> Keydata", keydata);
+log(">>> Keydata", keydata);
 
 const regularGeodataLookup = _.keyBy(
   regular_geodata_withproperties.features.map((feat) => {
@@ -1435,8 +1485,8 @@ function valueDiscretiser(geomLookup) {
 ```
 
 ```js
-console.log(">> Initialize the GlyphMap Specification...");
-// console.log("Sample x y from Data in Glyph", [data[0].x, data[0].y]);
+log(">> Initialize the GlyphMap Specification...");
+// log("Sample x y from Data in Glyph", [data[0].x, data[0].y]);
 function glyphMapSpec(width = 800, height = 600) {
   // const glyphMapSpec = {
   return {
@@ -1464,15 +1514,15 @@ function glyphMapSpec(width = 800, height = 600) {
       scaleParams: [],
 
       initFn: (cells, cellSize, global, panel) => {
-        // console.log("initFn", cells, cellSize, global, panel);
+        // log("initFn", cells, cellSize, global, panel);
       },
 
       preAggrFn: (cells, cellSize, global, panel) => {
-        // console.log("preaggregate cells", cells);
+        // log("preaggregate cells", cells);
       },
 
       aggrFn: (cell, row, weight, global, panel) => {
-        // console.log("  >> Data aggregation in GlyphMap...", row);
+        // log("  >> Data aggregation in GlyphMap...", row);
         if (!cell.records) cell.records = []; //if the cell doesn't currently have a records property, make one
         cell.records.push(row);
 
@@ -1513,7 +1563,7 @@ function glyphMapSpec(width = 800, height = 600) {
         cells.forEach((cell, index) => {
           cell.data = normalisedData[index];
         });
-        // console.log(">>>> cells data ", normalisedCells);
+        // log(">>>> cells data ", normalisedCells);
 
         // Prepare cell interaction
         let canvas = d3.select(panel).select("canvas").node();
@@ -1547,9 +1597,9 @@ function glyphMapSpec(width = 800, height = 600) {
           ? cell.records[0].data.properties
           : cell.data; // when map_aggregate == "Building Level", use individual data
 
-        // console.log("cell data to draw >>>", cellData);
+        // log("cell data to draw >>>", cellData);
         let timeData = cell.data[0];
-        // console.log("timeData", timeData);
+        // log("timeData", timeData);
 
         const boundary = cell.getBoundary(0);
         if (boundary[0] != boundary[boundary.length - 1]) {
@@ -1584,7 +1634,7 @@ function glyphMapSpec(width = 800, height = 600) {
         //   );
         //   rg.draw(ctx, x, y, cellSize / 2);
         // } else if (map_aggregate === "LSOA Level") {
-        //   console.log;
+        //   log;
         //   // format config for streamgraph
         //   let customConfig = {
         //     upwardKeys: ["carbonSaved"],
@@ -1594,7 +1644,7 @@ function glyphMapSpec(width = 800, height = 600) {
         //   let tg = new StreamGraphGlyph(timeData, "year", null, customConfig);
         //   tg.draw(ctx, x, y, cellSize / 2);
         // }
-        // console.log(
+        // log(
         //   "Drawn in order >>>",
         //   glyphVariables.map((key) => cellData[key])
         // );
@@ -1609,8 +1659,8 @@ function glyphMapSpec(width = 800, height = 600) {
 
       tooltipTextFn: (cell) => {
         if (cell) {
-          console.log("cell on tooltip", cell.data);
-          // console.log("cell on tooltip", cell.records[0].code);
+          log("cell on tooltip", cell.data);
+          // log("cell on tooltip", cell.records[0].code);
           // setDetailOnDemand(cell.data);
           // return cell.data.ashp_total;
           return glyphVariables
@@ -1637,7 +1687,7 @@ function glyphMapSpec(width = 800, height = 600) {
 ```js
 // Trigger Morphing function
 {
-  console.log(">> Morphing...", morph_factor);
+  log(">> Morphing...", morph_factor);
   morph_factor; //causes code to run whenever the slider is moved
   morphGlyphMap.setGlyph({
     discretiserFn: valueDiscretiser(tweenWGS84Lookup),
@@ -1688,7 +1738,7 @@ const morphGlyphMap = createMorphGlyphMap(1000, 800);
 
 ```js
 function createGlyphMap(map_aggregate, width, height) {
-  // console.log(width, height);
+  // log(width, height);
   if (map_aggregate == "Building Level") {
     if (toggle_grids) {
       return glyphMap({
@@ -1736,21 +1786,23 @@ function createLeafletMap(data, width, height) {
   const leafletContainer = document.createElement("div");
   document.body.appendChild(leafletContainer);
 
-  // console.log(">> Create Leaflet Map with... ", width, height);
+  // log(">> Create Leaflet Map with... ", width, height);
 
   const mapInstance = new LeafletMap(leafletContainer, {
     width: width,
     height: height || "600px",
-    onSelect: (selectedFeatures) =>
-      console.log("Map Selected:", selectedFeatures),
+    onSelect: (selectedFeatures) => log("Map Selected:", selectedFeatures),
     onFilter: (filteredFeatures) => {
       const filteredIds = filteredFeatures
         .map((feature) => ({
           id: feature.properties?.id,
         }))
         .filter((obj) => obj.id !== undefined);
-      console.log("Map Filtered:", filteredIds);
-      setInitialFilter(filteredFeatures);
+      log("Map Filtered:", filteredIds);
+      setInitialData(filteredIds);
+
+      // setInitialFilter(filteredFeatures);
+      //   handleSelection("table", filteredIds, "union");
     },
     tooltipFormatter: (props) => `<strong>${props.id}</strong>`,
   });

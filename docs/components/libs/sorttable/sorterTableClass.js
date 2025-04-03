@@ -3,15 +3,23 @@ import * as d3 from "npm:d3";
 
 import { BinningService } from "./BinningService.js";
 
+// Control debug output - set to true during development, false in production
+const DEBUG = false;
+
+// Custom logging functions that respect the DEBUG flag
+const logDebug = (...args) => DEBUG && console.log(...args);
+const warnDebug = (...args) => DEBUG && console.warn(...args);
+const errorDebug = (...args) => console.error(...args); // Errors always show
+
 export class sorterTable {
   constructor(data, columnNames, changed, options = {}) {
     // Initialize core properties first
     this.data = this.preprocessData(data, columnNames); // Add preprocessing
 
     // this.db = DuckDBClient.of({ dataset: data }); // Initialize DuckDBClient
-    // console.log("DuckDBClient initialized:", this.db);
+    // logDebug("DuckDBClient initialized:", this.db);
 
-    // console.log("Duckdb query", this.duckFilter());
+    // logDebug("Duckdb query", this.duckFilter());
 
     this.columnTypes = {};
     this.columns = columnNames.map((col) => {
@@ -72,7 +80,7 @@ export class sorterTable {
     this.initialColumns = JSON.parse(JSON.stringify(this.columns));
     this.initialData = [...data]; // Store a copy of the original data
 
-    console.log("Initial columns:", this.columns);
+    logDebug("Initial columns:", this.columns);
 
     this.changed = changed;
     this._isUndoing = false;
@@ -111,7 +119,7 @@ export class sorterTable {
         if (column) {
           this.cellRenderers[columnName] = renderer;
         } else {
-          console.warn(`No column found for cell renderer: ${columnName}`);
+          warnDebug(`No column found for cell renderer: ${columnName}`);
         }
       }
     }
@@ -191,7 +199,7 @@ export class sorterTable {
           // Log problematic values for debugging
           if (processed[colName] === 0 && value !== 0) {
             // DEBUG
-            // console.warn(`Converted invalid value in ${colName}:`, {
+            // warnDebug(`Converted invalid value in ${colName}:`, {
             //   original: value,
             //   converted: processed[colName],
             //   rowData: row,
@@ -205,11 +213,11 @@ export class sorterTable {
 
   setColumnType(columnName, type) {
     if (!columnName) {
-      console.error("Invalid columnName:", columnName);
+      errorDebug("Invalid columnName:", columnName);
       return;
     }
     this.columnTypes[columnName] = type;
-    // console.log("Setting column type:", this.columnTypes);  // DEBUG
+    // logDebug("Setting column type:", this.columnTypes);  // DEBUG
   }
 
   getColumnType(data, column) {
@@ -246,7 +254,7 @@ export class sorterTable {
 
   inferColumnTypesAndThresholds(data) {
     if (!this.binningService) {
-      console.error("BinningService not initialized");
+      errorDebug("BinningService not initialized");
       return;
     }
 
@@ -256,7 +264,7 @@ export class sorterTable {
       colDef.type = type;
       this.setColumnType(colName, type);
 
-      // console.log("Inferred type for column:", colDef, type);
+      // logDebug("Inferred type for column:", colDef, type);
 
       // threshold and binning for each type
       if (!colDef.unique) {
@@ -267,14 +275,14 @@ export class sorterTable {
             Array.isArray(colDef.thresholds) &&
             colDef.thresholds.length
           ) {
-            console.log(`Using predefined thresholds for ${colName}`);
+            logDebug(`Using predefined thresholds for ${colName}`);
           } else {
             // Otherwise, calculate them via binning service
             const bins = this.binningService.getBins(data, colName, type);
-            // console.log("--------Calculated Bins from service", bins);
+            // logDebug("--------Calculated Bins from service", bins);
 
             if (!bins || bins.length === 0) {
-              console.warn(`No bins generated for column: ${colName}`);
+              warnDebug(`No bins generated for column: ${colName}`);
               return;
             }
 
@@ -285,7 +293,7 @@ export class sorterTable {
                 bin.x0 !== undefined && bin.x0 !== null ? bin.x0 : null
               );
               colDef.bins = bins;
-              console.log(
+              logDebug(
                 "Setting thresholds for continuous column:",
                 colName,
                 colDef
@@ -301,7 +309,7 @@ export class sorterTable {
             }
           }
         } catch (error) {
-          console.error(`Error binning column ${colName}:`, error);
+          errorDebug(`Error binning column ${colName}:`, error);
         }
       }
     });
@@ -309,13 +317,13 @@ export class sorterTable {
 
   // Shift column position using visController
   shiftCol(columnName, dir) {
-    // console.log("Shifting column:", columnName, "direction:", dir);
+    // logDebug("Shifting column:", columnName, "direction:", dir);
 
     let colIndex = this.columns.findIndex((c) => c.column === columnName);
-    // console.log("Found column at index:", colIndex);
+    // logDebug("Found column at index:", colIndex);
 
     const targetIndex = dir === "left" ? colIndex - 1 : colIndex + 1;
-    // console.log("Target index:", targetIndex);
+    // logDebug("Target index:", targetIndex);
 
     if (targetIndex >= 0 && targetIndex < this.columns.length) {
       if (!this._isUndoing) {
@@ -364,7 +372,7 @@ export class sorterTable {
 
   setSelectedData(selectedIndices) {
     if (!Array.isArray(selectedIndices)) {
-      console.error("setSelectedData: selectedIndices must be an array.");
+      errorDebug("setSelectedData: selectedIndices must be an array.");
       return;
     }
 
@@ -379,14 +387,10 @@ export class sorterTable {
         if (tr) {
           this.selectRow(tr);
         } else {
-          console.warn(
-            `setSelectedData: Could not find row with index ${index}`
-          );
+          warnDebug(`setSelectedData: Could not find row with index ${index}`);
         }
       } else {
-        console.warn(
-          `setSelectedData: Invalid index ${index}.  Out of bounds.`
-        );
+        warnDebug(`setSelectedData: Invalid index ${index}.  Out of bounds.`);
       }
     });
 
@@ -395,7 +399,7 @@ export class sorterTable {
 
   setSelectedDataByIds(ids, idPropertyName = "id") {
     if (!Array.isArray(ids)) {
-      console.error("setSelectedDataByIds: ids must be an array.");
+      errorDebug("setSelectedDataByIds: ids must be an array.");
       return;
     }
 
@@ -423,13 +427,13 @@ export class sorterTable {
           if (tr) {
             this.selectRow(tr);
           } else {
-            console.warn(
+            warnDebug(
               `setSelectedDataByIds: Could not find row with dataIndex ${dataIndex} (tableRowIndex: ${tableRowIndex})`
             );
           }
         }
       } else {
-        console.warn(
+        warnDebug(
           `setSelectedDataByIds: Data object at index ${dataIndex} does not have property '${idPropertyName}'`
         );
       }
@@ -440,7 +444,7 @@ export class sorterTable {
 
   setFilteredDataById(ids, idPropertyName = "id") {
     if (!Array.isArray(ids)) {
-      console.error("setFilteredDataById: ids must be an array.");
+      errorDebug("setFilteredDataById: ids must be an array.");
       return;
     }
 
@@ -492,11 +496,11 @@ export class sorterTable {
     this.createTable();
 
     this.visControllers.forEach((vc, vci) => {
-      // console.log("Updating visualization controller:", vci);
+      // logDebug("Updating visualization controller:", vci);
       if (vc instanceof HistogramController) {
         // Get the correct column name associated with this histogram
         const columnName = this.columns[vci].column;
-        // console.log("By Column:", vci, columnName);
+        // logDebug("By Column:", vci, columnName);
 
         // Filter data for the specific column and maintain original index
         const columnData = this.dataInd.map((i) => ({
@@ -607,7 +611,7 @@ export class sorterTable {
         });
       }
     });
-    // console.log("Selection result:", ret);
+    // logDebug("Selection result:", ret);
     this.selected = ret;
     return ret;
   }
@@ -705,7 +709,7 @@ export class sorterTable {
   }
 
   selectColumn(columnName) {
-    console.log("Selected column:", columnName);
+    logDebug("Selected column:", columnName);
     this.selectedColumn = columnName;
 
     // Remove styling from all headers first
@@ -720,7 +724,7 @@ export class sorterTable {
       }
 
       // Log that styling has been removed
-      console.log(
+      logDebug(
         "Removed styling from header:",
         th.querySelector("span")?.innerText
       );
@@ -743,11 +747,11 @@ export class sorterTable {
       }
 
       // Log that styling has been applied
-      console.log(
+      logDebug(
         "Applied styling to header:",
         headerCell.querySelector("span")?.innerText
       );
-      console.log("Current headerCell styles:", {
+      logDebug("Current headerCell styles:", {
         backgroundColor: headerCell.style.backgroundColor,
         boxShadow: headerCell.style.boxShadow,
         borderTop: headerCell.style.borderTop,
@@ -762,7 +766,7 @@ export class sorterTable {
         inline: "center",
       });
     } else {
-      console.error("Column not found:", columnName);
+      errorDebug("Column not found:", columnName);
     }
 
     this.changed({
@@ -924,7 +928,7 @@ export class sorterTable {
         visTd.appendChild(visCtrl.getNode());
       } else {
         // Create and add visualization controller (histogram) for non-unique columns
-        console.log(" >>>> Creating histogram for column:", c);
+        logDebug(" >>>> Creating histogram for column:", c);
         let visCtrl = new HistogramController(
           this.dataInd.map((i) => this.data[i][c.column]),
           c.type === "continuous"
@@ -1503,12 +1507,12 @@ export class sorterTable {
 
   aggregateData(ordinalColumn, aggregationFunction) {
     if (!ordinalColumn || typeof ordinalColumn !== "string") {
-      console.error("Invalid ordinalColumn:", ordinalColumn);
+      errorDebug("Invalid ordinalColumn:", ordinalColumn);
       return;
     }
 
     if (typeof aggregationFunction !== "function") {
-      console.error("Invalid aggregationFunction:", aggregationFunction);
+      errorDebug("Invalid aggregationFunction:", aggregationFunction);
       return;
     }
 
@@ -1648,7 +1652,7 @@ function HistogramController(data, binrules) {
     this.svg.selectAll(".bar rect:nth-child(1)").attr("fill", "steelblue");
   };
 
-  // console.log("------------------binrules outside setData: ", binrules);
+  // logDebug("------------------binrules outside setData: ", binrules);
 
   this.setData = function (dd) {
     div.innerHTML = "";
@@ -1669,7 +1673,7 @@ function HistogramController(data, binrules) {
     // .append("g")
     // .attr("transform", `translate(${margin.left},${margin.top})`);
 
-    console.log("------------------binrules in setData: ", binrules);
+    logDebug("------------------binrules in setData: ", binrules);
 
     if (binrules.unique) {
       // Handle unique columns: create a single bin
@@ -1681,14 +1685,14 @@ function HistogramController(data, binrules) {
         },
       ];
     } else if ("thresholds" in binrules) {
-      console.log("------------------Continuous data----------------------");
+      logDebug("------------------Continuous data----------------------");
       // Continuous data
-      // console.log("Domain: ", [
+      // logDebug("Domain: ", [
       //   d3.min(data, (d) => d.value),
       //   d3.max(data, (d) => d.value),
       // ]);
 
-      // console.log("Thresholds: ", binrules.thresholds);
+      // logDebug("Thresholds: ", binrules.thresholds);
       let contBins = d3
         .bin()
         .domain([d3.min(data, (d) => d.value), d3.max(data, (d) => d.value)])
@@ -1703,7 +1707,7 @@ function HistogramController(data, binrules) {
         x1: b.x1,
       }));
 
-      // console.log("Brush Bins: ", this.bins);
+      // logDebug("Brush Bins: ", this.bins);
 
       this.xScale = d3
         .scaleLinear()
@@ -1979,7 +1983,7 @@ function createDynamicFilter(attribute, operator, threshold) {
     const value = dataObj[attribute];
 
     if (value === undefined) {
-      console.warn(`Attribute "${attribute}" not found in data object.`);
+      warnDebug(`Attribute "${attribute}" not found in data object.`);
       return false; // Exclude data objects missing the attribute
     }
 
@@ -2002,7 +2006,7 @@ function createDynamicFilter(attribute, operator, threshold) {
           throw new Error(`Unexpected operator: ${operator}`);
       }
     } catch (error) {
-      console.error(
+      errorDebug(
         `Error evaluating filter: ${attribute} ${operator} ${threshold} - ${error.message}`
       );
       return false;
