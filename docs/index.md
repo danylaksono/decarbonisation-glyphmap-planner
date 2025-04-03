@@ -317,6 +317,19 @@ function handleSelection(source, newSelection, mode = "intersect") {
 }
 ```
 
+```js
+const applyMapFilter = (suitableIds) => {
+  mapInstance.setFilteredData("buildings", {
+    ids: suitableIds,
+  });
+
+  return {
+    filterName: `Buildings with IDs in provided list (${suitableIds.length} buildings)`,
+    filterFunction: (building) => suitableIds.includes(building.id),
+  };
+};
+```
+
 <!-- ---------------- HTML Layout ---------------- -->
 
 <div class="grid-container" style="padding:2px; height:100vh;">
@@ -1249,6 +1262,7 @@ function tableChanged(event) {
     // saveToSession("tableFiltered", event.indeces);
     log("Filtered IDs:", event.ids);
     setInitialData(event.ids);
+    applyMapFilter(event.ids);
     // handleSelection("map", event.ids, "intersect");
     // log("++Filtering Table called");
     // setTableFiltered(event.indeces);

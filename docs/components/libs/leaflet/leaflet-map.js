@@ -869,6 +869,28 @@ export class LeafletMap {
 
     return filteredFeatures;
   }
+
+  /**
+   * Updates the dimensions of the map container after initialization
+   * @param {string|number} width - New width as number (pixels) or CSS string (e.g. '100%')
+   * @param {string|number} height - New height as number (pixels) or CSS string (e.g. '400px')
+   */
+  setDimensions(width, height) {
+    // Convert numeric values to pixel strings
+    const widthValue = typeof width === "number" ? `${width}px` : width;
+    const heightValue = typeof height === "number" ? `${height}px` : height;
+
+    // Update container dimensions
+    if (width) this.container.style.width = widthValue;
+    if (height) this.container.style.height = heightValue;
+
+    // Invalidate size to force Leaflet to recalculate dimensions
+    this.map.invalidateSize();
+
+    // Update stored options
+    if (width) this.options.width = width;
+    if (height) this.options.height = height;
+  }
 }
 
 // Usage example:
