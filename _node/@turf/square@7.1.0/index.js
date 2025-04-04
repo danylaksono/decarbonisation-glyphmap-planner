@@ -1,1 +1,0 @@
-import{distance as f}from"../distance@7.1.0/index.js";function l(e){var a=e[0],s=e[1],t=e[2],i=e[3],c=f(e.slice(0,2),[t,s]),o=f(e.slice(0,2),[a,i]);if(c>=o){var r=(s+i)/2;return[a,r-(t-a)/2,t,r+(t-a)/2]}else{var n=(a+t)/2;return[n-(i-s)/2,s,n+(i-s)/2,i]}}var u=l;export{u as default,l as square};

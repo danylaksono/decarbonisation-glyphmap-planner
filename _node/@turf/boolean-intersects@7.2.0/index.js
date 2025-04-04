@@ -1,0 +1,1 @@
+import{booleanDisjoint as f}from"../boolean-disjoint@7.2.0/index.js";import{flattenEach as t}from"../meta@7.2.0/index.js";function r(o,n,{ignoreSelfIntersections:i=!0}={}){let e=!1;return t(o,s=>{t(n,a=>{if(e===!0)return!0;e=!f(s.geometry,a.geometry,{ignoreSelfIntersections:i})})}),e}var l=r;export{r as booleanIntersects,l as default};

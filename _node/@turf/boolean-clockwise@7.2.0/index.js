@@ -1,0 +1,1 @@
+import{getCoords as s}from"../invariant@7.2.0/index.js";function a(l){const t=s(l);let n=0,e=1,r,o;for(;e<t.length;)r=o||t[0],o=t[e],n+=(o[0]-r[0])*(o[1]+r[1]),e++;return n>0}var f=a;export{a as booleanClockwise,f as default};

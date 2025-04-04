@@ -1,1 +1,0 @@
-import{booleanDisjoint as c}from"../boolean-disjoint@7.1.0/index.js";import{flattenEach as r}from"../meta@7.1.0/index.js";function o(n,s,i={}){var t;const a=(t=i.ignoreSelfIntersections)!=null?t:!1;let e=!1;return r(n,l=>{r(s,f=>{if(e===!0)return!0;e=!c(l.geometry,f.geometry,{ignoreSelfIntersections:a})})}),e}var m=o;export{o as booleanIntersects,m as default};

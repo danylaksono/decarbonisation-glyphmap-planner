@@ -1,0 +1,1 @@
+import{flattenEach as n}from"../meta@7.2.0/index.js";import{featureCollection as a}from"../helpers@7.2.0/index.js";function o(r){if(!r)throw new Error("geojson is required");var e=[];return n(r,function(t){e.push(t)}),a(e)}var f=o;export{f as default,o as flatten};

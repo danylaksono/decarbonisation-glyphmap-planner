@@ -1,1 +1,0 @@
-import{point as a}from"../helpers@7.1.0/index.js";import{coordEach as c}from"../meta@7.1.0/index.js";function n(i,p={}){let t=0,o=0,r=0;return c(i,function(e){t+=e[0],o+=e[1],r++},!0),a([t/r,o/r],p.properties)}var f=n;export{n as centroid,f as default};

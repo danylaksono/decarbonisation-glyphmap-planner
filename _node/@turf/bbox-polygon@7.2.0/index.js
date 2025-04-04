@@ -1,0 +1,1 @@
+import{polygon as t}from"../helpers@7.2.0/index.js";function s(o,r={}){const e=Number(o[0]),n=Number(o[1]),b=Number(o[2]),i=Number(o[3]);if(o.length===6)throw new Error("@turf/bbox-polygon does not support BBox with 6 positions");const p=[e,n];return t([[p,[b,n],[b,i],[e,i],p]],r.properties,{bbox:o,id:r.id})}var u=s;export{s as bboxPolygon,u as default};
