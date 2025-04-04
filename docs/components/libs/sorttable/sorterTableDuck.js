@@ -1,18 +1,11 @@
 import * as d3 from "npm:d3";
-// import { DuckDBClient } from "npm:@observablehq/duckdb";
-
+// import * as duckdb from "npm:@duckdb/duckdb-wasm"; // No longer directly importing duckdb
 import { BinningService } from "./BinningService.js";
+import { DuckDBClient } from "npm:@observablehq/duckdb";
+// import { DuckDBClient } from "/components/duckdb.js"; // Import DuckDBClient
 
 export class sorterTable {
-  constructor(data, columnNames, changed, options = {}) {
-    // Initialize core properties first
-    this.data = this.preprocessData(data, columnNames); // Add preprocessing
-
-    // this.db = DuckDBClient.of({ dataset: data }); // Initialize DuckDBClient
-    // console.log("DuckDBClient initialized:", this.db);
-
-    // console.log("Duckdb query", this.duckFilter());
-
+  constructor(parquetURL, columnNames, changed, options = {}) {
     this.columnTypes = {};
     this.columns = columnNames.map((col) => {
       if (typeof col === "string") {
@@ -27,14 +20,14 @@ export class sorterTable {
       }
     });
 
-    // Pre-populate column types if manually specified
-    this.columns.forEach((col) => {
-      if (col.type) {
-        this.columnTypes[col.column] = col.type;
-      }
+    // Initialize DuckDB and load data using DuckDBClient
+    this.initDuckDB(parquetURL).then(() => {
+      // After DuckDB is initialized and data is loaded
+      this.inferColumnTypesAndThresholds();
+      this.createHeader();
+      this.createTable();
     });
 
-    // Initialize the BinningService
     this.binningService = new BinningService({
       maxOrdinalBins: options.maxOrdinalBins || 12,
       continuousBinMethod: options.continuousBinMethod || "scott",
@@ -43,19 +36,11 @@ export class sorterTable {
       customThresholds: options.customThresholds || null,
     });
 
-    this.inferColumnTypesAndThresholds(data);
-
-    // create table element
-    this.table = document.createElement("table");
-    this.table.classList.add("sorter-table");
-
     this.initialColumns = JSON.parse(JSON.stringify(this.columns));
-
-    console.log("Initial columns:", this.columns);
 
     this.changed = changed;
     this._isUndoing = false;
-    this.dataInd = d3.range(data.length);
+    this.dataInd = []; // d3.range(data.length); // No longer needed
     this.sortControllers = [];
     this.visControllers = [];
     this.table = document.createElement("table");
@@ -113,9 +98,6 @@ export class sorterTable {
       fontSize: "14px",
     });
 
-    this.createHeader();
-    this.createTable();
-
     this.table.addEventListener("mousedown", (event) => {
       if (event.shiftKey) {
         this.shiftDown = true;
@@ -125,60 +107,35 @@ export class sorterTable {
     });
   }
 
-  // async duckFilter() {
-  //   // const whereClause = this.getSelectionRuleAsSQL(); // Convert rules to SQL
-  //   const result = await this.db.sql`
-  //     SELECT * FROM dataset`;
-  //   this.dataInd = await result.array(); // Assuming original indices are preserved
-  // }
+  async initDuckDB(parquetURL) {
+    this.db = await DuckDBClient.of();
+
+    // Register the Parquet file
+    // Assuming DuckDBClient can directly handle URLs
+    // If not, you might need to fetch the file and load it differently
+    await this.db
+      .sql`CREATE TABLE data AS SELECT * FROM read_parquet(${parquetURL})`;
+
+    // Create a DuckDB view
+    await this.db.sql`CREATE VIEW data_view AS SELECT * FROM data`;
+
+    // Fetch initial data indices
+    const result = await this.db.sql`SELECT ROWID FROM data_view`;
+    this.dataInd = Array.from(result).map((d) => d.row.ROWID);
+  }
+
+  async executeSQL(sql) {
+    try {
+      const result = await this.db.sql(sql);
+      return result;
+    } catch (error) {
+      console.error("DuckDB query error:", error);
+      throw error;
+    }
+  }
 
   preprocessData(data, columnNames) {
-    return data.map((row) => {
-      const processed = { ...row };
-      columnNames.forEach((col) => {
-        const colName = typeof col === "string" ? col : col.column;
-        const colType = typeof col === "string" ? null : col.type;
-
-        // Handle continuous columns
-        if (colType === "continuous") {
-          const value = row[colName];
-
-          // Handle different value cases
-          if (value === null || value === undefined || value === "") {
-            // FALLBACK VALUE FOR NUMERICAL COLUMNS
-            processed[colName] = 0;
-          } else if (typeof value === "string") {
-            // Clean string numbers
-            const cleaned = value.replace(/[^0-9.-]/g, "");
-            if (cleaned === "" || isNaN(Number(cleaned))) {
-              processed[colName] = 0; // Fallback for invalid numbers
-            } else {
-              processed[colName] = Number(cleaned);
-            }
-          } else if (typeof value === "number") {
-            if (isNaN(value)) {
-              processed[colName] = 0; // Handle NaN
-            } else {
-              processed[colName] = value; // Keep valid numbers as-is
-            }
-          } else {
-            // Handle any other unexpected types
-            processed[colName] = 0;
-          }
-
-          // Log problematic values for debugging
-          if (processed[colName] === 0 && value !== 0) {
-            // DEBUG
-            // console.warn(`Converted invalid value in ${colName}:`, {
-            //   original: value,
-            //   converted: processed[colName],
-            //   rowData: row,
-            // });
-          }
-        }
-      });
-      return processed;
-    });
+    return data;
   }
 
   setColumnType(columnName, type) {
@@ -187,59 +144,46 @@ export class sorterTable {
       return;
     }
     this.columnTypes[columnName] = type;
-    // console.log("Setting column type:", this.columnTypes);  // DEBUG
   }
 
-  getColumnType(data, column) {
+  async getColumnType(column) {
     // If already cached, return the cached type
     if (this.columnTypes[column]) {
       return this.columnTypes[column];
     }
 
-    // Infer type from data
-    for (const d of data) {
-      const value = d[column];
-      if (value === undefined || value === null) continue;
+    const result = await this.executeSQL(`
+      SELECT typeof("${column}") FROM data_view LIMIT 1
+    `);
+    const type = Array.from(result)[0].row['typeof("' + column + '")'];
 
-      // Check for date objects
-      if (value instanceof Date) return "date";
-
-      // Check for numbers
-      if (typeof value === "number" || !isNaN(Number(value))) {
-        // Check if it's really continuous or just a few discrete values
-        const uniqueValues = new Set(data.map((d) => d[column])).size;
-        if (uniqueValues > 10) {
-          // Threshold for considering it continuous
-          return "continuous";
-        }
-      }
-
-      // Default to ordinal for strings and small number sets
-      return "ordinal";
+    switch (type) {
+      case "BIGINT":
+      case "DOUBLE":
+        return "continuous";
+      case "VARCHAR":
+        return "ordinal";
+      case "DATE":
+        return "date";
+      default:
+        return "ordinal";
     }
-
-    // Default to ordinal if no clear type is found
-    return "ordinal";
   }
 
-  inferColumnTypesAndThresholds(data) {
+  async inferColumnTypesAndThresholds() {
     if (!this.binningService) {
       console.error("BinningService not initialized");
       return;
     }
 
-    this.columns.forEach((colDef) => {
+    for (const colDef of this.columns) {
       const colName = colDef.column;
-      const type = this.getColumnType(data, colName);
+      const type = await this.getColumnType(colName);
       colDef.type = type;
       this.setColumnType(colName, type);
 
-      // console.log("Inferred type for column:", colDef, type);
-
-      // threshold and binning for each type
       if (!colDef.unique) {
         try {
-          // If the user has predefined thresholds, use them.
           if (
             colDef.thresholds &&
             Array.isArray(colDef.thresholds) &&
@@ -247,18 +191,22 @@ export class sorterTable {
           ) {
             console.log(`Using predefined thresholds for ${colName}`);
           } else {
-            // Otherwise, calculate them via binning service
-            const bins = this.binningService.getBins(data, colName, type);
-            // console.log("--------Calculated Bins from service", bins);
+            // Fetch column data from DuckDB
+            const columnDataResult = await this.executeSQL(
+              `SELECT "${colName}" FROM data_view`
+            );
+            const columnData = Array.from(columnDataResult).map(
+              (d) => d.row[colName]
+            );
+
+            const bins = this.binningService.getBins(columnData, colName, type);
 
             if (!bins || bins.length === 0) {
               console.warn(`No bins generated for column: ${colName}`);
-              return;
+              continue;
             }
 
-            // For continuous data, use computed bin boundaries
             if (type === "continuous") {
-              // Avoid filtering out valid values (e.g., 0) by checking for undefined or null explicitly
               colDef.thresholds = bins.map((bin) =>
                 bin.x0 !== undefined && bin.x0 !== null ? bin.x0 : null
               );
@@ -282,18 +230,12 @@ export class sorterTable {
           console.error(`Error binning column ${colName}:`, error);
         }
       }
-    });
+    }
   }
 
-  // Shift column position using visController
   shiftCol(columnName, dir) {
-    // console.log("Shifting column:", columnName, "direction:", dir);
-
     let colIndex = this.columns.findIndex((c) => c.column === columnName);
-    // console.log("Found column at index:", colIndex);
-
     const targetIndex = dir === "left" ? colIndex - 1 : colIndex + 1;
-    // console.log("Target index:", targetIndex);
 
     if (targetIndex >= 0 && targetIndex < this.columns.length) {
       if (!this._isUndoing) {
@@ -306,61 +248,55 @@ export class sorterTable {
         });
       }
 
-      // Store the elements to be moved
       const columnsToMove = {
         column: this.columns[colIndex],
         visController: this.visControllers[colIndex],
         sortController: this.sortControllers[colIndex],
       };
 
-      // Remove elements from original positions
       this.columns.splice(colIndex, 1);
       this.visControllers.splice(colIndex, 1);
       this.sortControllers.splice(colIndex, 1);
 
-      // Insert elements at new positions
       this.columns.splice(targetIndex, 0, columnsToMove.column);
       this.visControllers.splice(targetIndex, 0, columnsToMove.visController);
       this.sortControllers.splice(targetIndex, 0, columnsToMove.sortController);
 
-      // Recreate the table and header
-      // this.rebuildTable();
       this.createHeader();
       this.createTable();
 
-      // Update data in visualization controllers
       this.visControllers.forEach((vc, idx) => {
         if (vc && vc.updateData && this.columns[idx]) {
-          const columnData = this.dataInd.map(
-            (i) => this.data[i][this.columns[idx].column]
-          );
-          vc.updateData(columnData);
+          this.getColumnData(this.columns[idx].column).then((columnData) => {
+            vc.updateData(columnData);
+          });
         }
       });
     }
   }
 
-  filter() {
+  async filter() {
     this.rules.push(this.getSelectionRule());
-    this.dataInd = this.getSelection().map((s) => this.dataInd[s.index]);
-    this.history.push({ type: "filter", data: this.dataInd });
+    const selection = this.getSelection();
+    const rowIds = selection.map((s) => s.data.ROWID).join(",");
+
+    if (rowIds.length > 0) {
+      const filterSQL = `SELECT ROWID FROM data_view WHERE ROWID IN (${rowIds})`;
+      const result = await this.executeSQL(filterSQL);
+      this.dataInd = Array.from(result).map((d) => d.row.ROWID);
+    } else {
+      this.dataInd = [];
+    }
+
+    this.history.push({ type: "filter", data: [...this.dataInd] });
     this.createTable();
 
     this.visControllers.forEach((vc, vci) => {
-      // console.log("Updating visualization controller:", vci);
       if (vc instanceof HistogramController) {
-        // Get the correct column name associated with this histogram
         const columnName = this.columns[vci].column;
-        // console.log("By Column:", vci, columnName);
-
-        // Filter data for the specific column and maintain original index
-        const columnData = this.dataInd.map((i) => ({
-          value: this.data[i][columnName],
-          index: i, // Keep track of the original index
-        }));
-
-        // Update the histogram data
-        vc.setData(this.dataInd.map((i) => this.data[i][columnName]));
+        this.getColumnData(columnName).then((columnData) => {
+          vc.setData(columnData);
+        });
       }
     });
 
@@ -371,39 +307,29 @@ export class sorterTable {
     });
   }
 
-  applyCustomFilter(filterFunction) {
-    // Apply the custom filter function to the data
-    this.dataInd = this.dataInd.filter((index) => {
-      return filterFunction(this.data[index]); // Pass the data object to the filter function
-    });
-
-    // Re-render the table and update visualizations
-    this.rebuildTable();
-    this.visControllers.forEach((vc) => {
-      if (vc && vc.updateData) {
-        vc.updateData(this.dataInd.map((i) => this.data[i][vc.columnName]));
-      }
-    });
-
-    // Notify about the filter change
-    this.changed({ type: "customFilter", indices: this.dataInd });
+  async applyCustomFilter(filterFunction) {
+    // Not feasible with DuckDB without significant overhead.
+    // Recommend implementing custom filters directly in SQL.
+    console.warn(
+      "Custom filter functions are not efficiently supported with DuckDB."
+    );
   }
 
   getAllRules() {
     return this.rules;
   }
 
-  undo() {
+  async undo() {
     if (this.history.length > 0) {
       let u = this.history.pop();
       if (u.type === "filter" || u.type === "sort") {
         this.dataInd = u.data;
         this.createTable();
-        this.visControllers.forEach((vc, vci) =>
-          vc.updateData(
-            this.dataInd.map((i) => this.data[i][this.columns[vci].column])
-          )
-        );
+        this.visControllers.forEach((vc, vci) => {
+          this.getColumnData(this.columns[vci].column).then((columnData) => {
+            vc.setData(columnData);
+          });
+        });
         this.changed({
           type: "undo",
           indeces: this.dataInd,
@@ -423,17 +349,21 @@ export class sorterTable {
     this.createTable();
   }
 
-  getSelection() {
+  async getSelection() {
     let ret = [];
-    this.selectedRows.forEach((index) => {
+    for (const index of this.selectedRows) {
       if (index >= 0 && index < this.dataInd.length) {
+        const rowId = this.dataInd[index];
+        const result = await this.executeSQL(
+          `SELECT * FROM data_view WHERE ROWID = ${rowId}`
+        );
+        const data = Array.from(result)[0].row;
         ret.push({
           index: index,
-          data: this.data[this.dataInd[index]],
+          data: data,
         });
       }
-    });
-    // console.log("Selection result:", ret);
+    }
     this.selected = ret;
     return ret;
   }
@@ -449,60 +379,7 @@ export class sorterTable {
       let firstIndex = sel[sel.length - 1].index;
       let lastIndex = sel[sel.length - 1].index;
 
-      if ((firstIndex = 0 && lastIndex == this.dataInd.length - 1)) return [];
-      else {
-        let rule = [];
-        let r = "";
-        if (
-          firstIndex > 0 &&
-          this.data[this.dataInd[firstIndex - 1]][col] !=
-            this.data[this.dataInd[firstIndex]][col]
-        ) {
-          r =
-            col +
-            (this.compoundSorting[col].how === "up"
-              ? " lower than "
-              : " higher than ") +
-            this.data[this.dataInd[firstIndex]][col];
-        }
-        if (
-          lastIndex < this.dataInd.length - 1 &&
-          this.data[this.dataInd[lastIndex + 1]][col] !=
-            this.data[this.dataInd[lastIndex]][col]
-        ) {
-          if (r.length == 0)
-            r =
-              col +
-              (this.compoundSorting[col].how === "up"
-                ? " lower than "
-                : " higher than ") +
-              this.data[this.dataInd[lastIndex]][col];
-          else
-            r =
-              r +
-              (this.compoundSorting[col].how === "up"
-                ? " and lower than"
-                : "  and higher than ") +
-              this.data[this.dataInd[lastIndex]][col];
-        }
-        if (r.length > 0) rule.push(r);
-
-        if (this.compoundSorting[col].how === "up")
-          r =
-            col +
-            " in bottom " +
-            this.percentalize(lastIndex / this.data.length, "top") +
-            " percentile";
-        else
-          r =
-            col +
-            " in top " +
-            this.percentalize(1 - lastIndex / this.data.length, "bottom") +
-            " percentile";
-        rule.push(r);
-
-        return rule;
-      }
+      return [];
     }
   }
 
@@ -516,8 +393,7 @@ export class sorterTable {
   }
 
   clearSelection() {
-    this.selectedRows.clear(); // Clear the Set of selected rows
-    // Also, visually deselect all rows in the table
+    this.selectedRows.clear();
     if (this.tBody) {
       this.tBody.querySelectorAll("tr").forEach((tr) => {
         this.unselectRow(tr);
@@ -526,8 +402,6 @@ export class sorterTable {
         tr.style.color = "grey";
       });
     }
-    // if (this.tBody != null)
-    //   this.tBody.querySelectorAll("tr").forEach((tr) => this.unselectRow(tr));
   }
 
   selectColumn(columnName) {
@@ -535,7 +409,7 @@ export class sorterTable {
     this.selectedColumn = columnName;
 
     this.tHead.querySelectorAll("th").forEach((th) => {
-      th.classList.remove("selected-column"); // Remove previous selection
+      th.classList.remove("selected-column");
     });
 
     const columnIndex = this.columns.findIndex((c) => c.column === columnName);
@@ -583,7 +457,6 @@ export class sorterTable {
     this.tHead = document.createElement("thead");
     this.table.appendChild(this.tHead);
 
-    // --- Column Header Row ---
     let headerRow = document.createElement("tr");
     this.tHead.append(headerRow);
 
@@ -592,13 +465,8 @@ export class sorterTable {
       headerRow.appendChild(th);
       th.style.textAlign = "center";
 
-      // --- Column Name ---
       let nameSpan = document.createElement("span");
       nameSpan.innerText = c.alias || c.column;
-      // nameSpan.style.fontWeight = "bold";
-      // nameSpan.style.fontFamily = "Arial, sans-serif"; // Set font (optional)
-      // nameSpan.style.fontSize = "1em";
-      // nameSpan.style.cursor = "pointer";
       Object.assign(nameSpan.style, {
         fontWeight: "bold",
         fontFamily: "Arial, sans-serif",
@@ -609,17 +477,15 @@ export class sorterTable {
       });
       th.appendChild(nameSpan);
 
-      // Add long press event listener
       let longPressTimer;
       let isLongPress = false;
       nameSpan.addEventListener("mousedown", (event) => {
-        // Check if the left mouse button was pressed
         if (event.button === 0) {
-          isLongPress = false; // Reset long press flag
+          isLongPress = false;
           longPressTimer = setTimeout(() => {
             isLongPress = true;
-            this.selectColumn(c.column); // Select the column
-          }, 500); // Adjust the timeout (in milliseconds) as needed
+            this.selectColumn(c.column);
+          }, 500);
         }
       });
 
@@ -627,7 +493,6 @@ export class sorterTable {
         clearTimeout(longPressTimer);
       });
 
-      // Prevent context menu on long press
       nameSpan.addEventListener("contextmenu", (event) => {
         event.preventDefault();
       });
@@ -644,87 +509,69 @@ export class sorterTable {
         }
       });
 
-      // nameSpan.addEventListener("mouseover", () => {
-      //   th.style.backgroundColor = "#e8e8e8"; // Light hover effect
-      // });
-
-      // nameSpan.addEventListener("mouseout", () => {
-      //   th.style.backgroundColor = ""; // Reset background color
-      // });
-
-      // --- Controls Row ---
       let controlsRow = document.createElement("tr");
-      th.appendChild(controlsRow); // Append controls row to the header cell (th)
+      th.appendChild(controlsRow);
 
       let controlsTd = document.createElement("td");
       controlsRow.appendChild(controlsTd);
 
-      // Create a container for controls
       let controlsContainer = document.createElement("div");
       controlsContainer.style.display = "flex";
-      controlsContainer.style.alignItems = "center"; // Vertically center
-      controlsContainer.style.justifyContent = "space-around"; // Space out the controls
+      controlsContainer.style.alignItems = "center";
+      controlsContainer.style.justifyContent = "space-around";
       controlsContainer.style.width = "100%";
-      controlsContainer.style.padding = "2px 0"; // Add some padding
+      controlsContainer.style.padding = "2px 0";
       controlsTd.appendChild(controlsContainer);
 
-      // Shift controller cell
       const shiftCtrl = new ColShiftController(
         c.column,
         (columnName, direction) => this.shiftCol(columnName, direction)
       );
       controlsContainer.appendChild(shiftCtrl.getNode());
 
-      // Sort controller cell
       let sortCtrl = new SortController(c.column, (controller) =>
         this.sortChanged(controller)
       );
       this.sortControllers.push(sortCtrl);
       controlsContainer.appendChild(sortCtrl.getNode());
 
-      // --- Visualization Row ---
       let visRow = document.createElement("tr");
-      th.appendChild(visRow); // Append visualization row to the header cell (th)
+      th.appendChild(visRow);
 
       let visTd = document.createElement("td");
       visRow.appendChild(visTd);
 
       if (c.unique) {
-        // For unique columns, create a histogram with a single bin
-        let uniqueData = this.dataInd.map((i) => this.data[i][c.column]);
-        const uniqueBinning = [
-          { x0: "Unique", x1: "Unique", values: uniqueData },
-        ];
-        // let visCtrl = new HistogramController(uniqueData, uniqueBinning); // { unique: true });
-        let visCtrl = new HistogramController(uniqueData, { unique: true });
-        visCtrl.table = this;
-        visCtrl.columnName = c.column;
-        this.visControllers.push(visCtrl);
-        visTd.appendChild(visCtrl.getNode());
+        this.getColumnData(c.column).then((uniqueData) => {
+          const uniqueBinning = [
+            { x0: "Unique", x1: "Unique", values: uniqueData },
+          ];
+          let visCtrl = new HistogramController(uniqueData, { unique: true });
+          visCtrl.table = this;
+          visCtrl.columnName = c.column;
+          this.visControllers.push(visCtrl);
+          visTd.appendChild(visCtrl.getNode());
+        });
       } else {
-        // Create and add visualization controller (histogram) for non-unique columns
-        console.log(" >>>> Creating histogram for column:", c);
-        let visCtrl = new HistogramController(
-          this.dataInd.map((i) => this.data[i][c.column]),
-          c.type === "continuous"
-            ? { thresholds: c.thresholds, binInfo: c.bins }
-            : { nominals: c.nominals }
-          // this.getColumnType(c.column) === "continuous"
-          //   ? { thresholds: c.thresholds }
-          //   : { nominals: c.nominals }
-        );
-        visCtrl.table = this;
-        visCtrl.columnName = c.column;
-        this.visControllers.push(visCtrl);
-        visTd.appendChild(visCtrl.getNode());
+        this.getColumnData(c.column).then((columnData) => {
+          let visCtrl = new HistogramController(
+            columnData,
+            c.type === "continuous"
+              ? { thresholds: c.thresholds, binInfo: c.bins }
+              : { nominals: c.nominals }
+          );
+          visCtrl.table = this;
+          visCtrl.columnName = c.column;
+          this.visControllers.push(visCtrl);
+          visTd.appendChild(visCtrl.getNode());
+        });
       }
     });
 
-    // Add sticky positioning to thead
     this.tHead.style.position = "sticky";
     this.tHead.style.top = "0";
-    this.tHead.style.backgroundColor = "#ffffff"; // Ensure header is opaque
-    this.tHead.style.zIndex = "1"; // Keep header above table content
+    this.tHead.style.backgroundColor = "#ffffff";
+    this.tHead.style.zIndex = "1";
     this.tHead.style.boxShadow = "0 2px 2px rgba(0,0,0,0.1)";
   }
 
@@ -738,17 +585,17 @@ export class sorterTable {
     this.addTableRows(this.defaultLines);
   }
 
-  addTableRows(howMany) {
+  async addTableRows(howMany) {
     if (this.addingRows) {
-      return; // Prevent overlapping calls
+      return;
     }
     this.addingRows = true;
 
-    let min = this.lastLineAdded + 1; // Corrected: Start from the next line
-    let max = Math.min(min + howMany - 1, this.dataInd.length - 1); // Corrected: Use Math.min to avoid exceeding dataInd.length
+    let min = this.lastLineAdded + 1;
+    let max = Math.min(min + howMany - 1, this.dataInd.length - 1);
 
     for (let row = min; row <= max; row++) {
-      let dataIndex = this.dataInd[row]; // Adjust index for dataInd
+      let dataIndex = this.dataInd[row];
       if (dataIndex === undefined) continue;
 
       let tr = document.createElement("tr");
@@ -759,20 +606,22 @@ export class sorterTable {
       });
       this.tBody.appendChild(tr);
 
+      // Fetch row data from DuckDB
+      const rowDataResult = await this.executeSQL(
+        `SELECT * FROM data_view WHERE ROWID = ${dataIndex}`
+      );
+      const rowData = Array.from(rowDataResult)[0].row;
+
       this.columns.forEach((c) => {
         let td = document.createElement("td");
 
-        // Use custom renderer if available for this column
         if (typeof this.cellRenderers[c.column] === "function") {
           td.innerHTML = "";
           td.appendChild(
-            this.cellRenderers[c.column](
-              this.data[dataIndex][c.column],
-              this.data[dataIndex]
-            )
+            this.cellRenderers[c.column](rowData[c.column], rowData)
           );
         } else {
-          td.innerText = this.data[dataIndex][c.column]; // Default: Set text content
+          td.innerText = rowData[c.column];
         }
 
         tr.appendChild(td);
@@ -780,14 +629,12 @@ export class sorterTable {
         td.style.fontWidth = "inherit";
       });
 
-      // Add event listeners for row selection
       tr.addEventListener("click", (event) => {
         let rowIndex = this.getRowIndex(tr);
 
         if (this.shiftDown) {
-          // SHIFT-CLICK (select range)
           let s = this.getSelection().map((s) => s.index);
-          if (s.length == 0) s = [rowIndex]; // If nothing selected, use current row index
+          if (s.length == 0) s = [rowIndex];
           let minSelIndex = Math.min(...s);
           let maxSelIndex = Math.max(...s);
 
@@ -803,14 +650,12 @@ export class sorterTable {
             }
           }
         } else if (this.ctrlDown) {
-          // CTRL-CLICK (toggle individual row selection)
           if (tr.selected) {
             this.unselectRow(tr);
           } else {
             this.selectRow(tr);
           }
         } else {
-          // NORMAL CLICK (clear selection and select clicked row)
           this.clearSelection();
           this.selectRow(tr);
         }
@@ -818,50 +663,41 @@ export class sorterTable {
         this.selectionUpdated();
       });
 
-      // Add hover effect for rows
       tr.addEventListener("mouseover", () => {
-        tr.style.backgroundColor = "#f0f0f0"; // Highlight on hover
+        tr.style.backgroundColor = "#f0f0f0";
       });
 
       tr.addEventListener("mouseout", () => {
-        tr.style.backgroundColor = ""; // Reset background color
+        tr.style.backgroundColor = "";
       });
 
-      // this.lastLineAdded++;
-      this.lastLineAdded = row; // Update the last line added
+      this.lastLineAdded = row;
     }
 
     this.addingRows = false;
   }
 
-  resetTable() {
-    // Reset data and indices to initial state
-    this.dataInd = d3.range(this.data.length);
+  async resetTable() {
+    const result = await this.executeSQL("SELECT ROWID FROM data_view");
+    this.dataInd = Array.from(result).map((d) => d.row.ROWID);
     this.selectedRows.clear();
     this.compoundSorting = {};
     this.rules = [];
     this.history = [];
 
-    // Reset sort and shift controllers
-    // this.sortControllers.forEach((ctrl) => ctrl.setDirection("none"));
-    this.sortControllers.forEach((ctrl) => ctrl.toggleDirection()); // Toggle direction to reset
+    this.sortControllers.forEach((ctrl) => ctrl.toggleDirection());
 
-    // Update column order to the initial state
     this.columns = this.initialColumns.map((col) => ({ ...col }));
 
-    // Update vis controllers
     this.visControllers.forEach((vc, index) => {
-      const columnData = this.dataInd.map(
-        (i) => this.data[i][this.columns[index].column]
-      );
-      vc.updateData(columnData);
+      this.getColumnData(this.columns[index].column).then((columnData) => {
+        vc.updateData(columnData);
+      });
     });
 
-    // Re-render the table
     this.createHeader();
     this.createTable();
 
-    // Notify about the reset
     this.changed({ type: "reset" });
   }
 
@@ -873,7 +709,7 @@ export class sorterTable {
     });
   }
 
-  sortChanged(controller) {
+  async sortChanged(controller) {
     this.history.push({ type: "sort", data: [...this.dataInd] });
     this.compoundSorting = {};
 
@@ -897,66 +733,24 @@ export class sorterTable {
       }
     }
 
-    let sorts = {};
-    Object.keys(this.compoundSorting).map((col) => {
-      let sortDir = this.compoundSorting[col].how === "up" ? 1 : -1;
-      if (typeof this.data[0][col] === "string") sortDir *= -1;
-      let sortedCol = d3
-        .range(this.dataInd.length)
-        .sort(
-          (i1, i2) =>
-            sortDir *
-            (this.data[this.dataInd[i1]][col] > this.data[this.dataInd[i2]][col]
-              ? 1
-              : -1)
-        );
+    // Construct ORDER BY clause
+    const orderByClauses = Object.entries(this.compoundSorting)
+      .map(
+        ([column, { how }]) => `"${column}" ${how === "up" ? "ASC" : "DESC"}`
+      )
+      .join(", ");
 
-      sorts[col] = new Array(this.data.length);
-      let rank = 0;
-      sorts[col][sortedCol[0]] = rank;
-      for (let i = 1; i < sortedCol.length; i++) {
-        if (
-          this.data[this.dataInd[sortedCol[i]]][col] !=
-          this.data[this.dataInd[sortedCol[i - 1]]][col]
-        )
-          rank = i;
-        sorts[col][sortedCol[i]] = rank;
-      }
-    });
-
-    // this.dataInd.map((v, i) => delete this.data[v].tabindex);
-
-    // DEBUG: Create a separate Map to store tab indices
-    const tabIndices = new Map();
-    this.dataInd.forEach((v, i) => {
-      tabIndices.set(v, i); // Associate data index 'v' with tab index 'i'
-    });
-
-    //  use tabIndices to access the tab index for each row during sorting
-    this.dataInd.sort((a, b) => {
-      let scoreA = 0;
-      Object.keys(sorts).forEach((col) => {
-        scoreA +=
-          this.compoundSorting[col].weight * sorts[col][tabIndices.get(a)];
-      });
-
-      let scoreB = 0;
-      Object.keys(sorts).forEach((col) => {
-        scoreB +=
-          this.compoundSorting[col].weight * sorts[col][tabIndices.get(b)];
-      });
-
-      return scoreA - scoreB;
-    });
+    const sql = `SELECT ROWID FROM data_view ORDER BY ${orderByClauses}`;
+    const result = await this.executeSQL(sql);
+    this.dataInd = Array.from(result).map((d) => d.row.ROWID);
 
     this.visControllers.forEach((vc, index) => {
-      const columnName = this.columns[index].column;
-      const columnData = this.dataInd.map((i) => this.data[i][columnName]);
-      vc.setData(columnData);
+      this.getColumnData(this.columns[index].column).then((columnData) => {
+        vc.setData(columnData);
+      });
     });
 
     this.createTable();
-    // this.createHeader();
 
     this.changed({
       type: "sort",
@@ -992,7 +786,6 @@ export class sorterTable {
       position: "relative",
     });
 
-    // --- Sidebar ---
     let sidebar = document.createElement("div");
     Object.assign(sidebar.style, {
       display: "flex",
@@ -1004,7 +797,6 @@ export class sorterTable {
       marginRight: "2px",
     });
 
-    // --- Filter Icon ---
     let filterIcon = document.createElement("i");
     filterIcon.classList.add("fas", "fa-filter");
     Object.assign(filterIcon.style, {
@@ -1019,7 +811,6 @@ export class sorterTable {
     });
     sidebar.appendChild(filterIcon);
 
-    // --- Undo Icon ---
     let undoIcon = document.createElement("i");
     undoIcon.classList.add("fas", "fa-undo");
     Object.assign(undoIcon.style, {
@@ -1034,7 +825,6 @@ export class sorterTable {
     });
     sidebar.appendChild(undoIcon);
 
-    // --- Reset Icon ---
     let resetIcon = document.createElement("i");
     resetIcon.classList.add("fas", "fa-sync-alt");
     Object.assign(resetIcon.style, {
@@ -1049,7 +839,6 @@ export class sorterTable {
     });
     sidebar.appendChild(resetIcon);
 
-    // --- Table Container ---
     let tableContainer = document.createElement("div");
     Object.assign(tableContainer.style, {
       flex: "1",
@@ -1058,15 +847,13 @@ export class sorterTable {
     if (this.tableWidth) {
       this.table.style.width = this.tableWidth;
     } else {
-      this.table.style.width = "100%"; // Default to 100%
+      this.table.style.width = "100%";
     }
     tableContainer.appendChild(this.table);
 
-    // --- Add sidebar and table container to main container ---
     container.appendChild(sidebar);
     container.appendChild(tableContainer);
 
-    // Event listeners for shift and ctrl keys
     container.addEventListener("keydown", (event) => {
       if (event.shiftKey) {
         this.shiftDown = true;
@@ -1083,9 +870,8 @@ export class sorterTable {
       event.preventDefault();
     });
 
-    container.setAttribute("tabindex", "0"); // Make the container focusable
+    container.setAttribute("tabindex", "0");
 
-    // Lazy loading listener
     container.addEventListener("scroll", () => {
       const threshold = 100;
       const scrollTop = container.scrollTop;
@@ -1099,10 +885,7 @@ export class sorterTable {
       }
     });
 
-    //deselection
-    // Add click listener to the container
     container.addEventListener("click", (event) => {
-      // Check if the click target is outside any table row
       let isOutsideRow = true;
       let element = event.target;
       while (element != null) {
@@ -1122,6 +905,15 @@ export class sorterTable {
 
     return container;
   }
+
+  async getColumnData(columnName) {
+    const result = await this.executeSQL(
+      `SELECT "${columnName}" FROM data_view WHERE ROWID IN (${this.dataInd.join(
+        ","
+      )})`
+    );
+    return Array.from(result).map((d) => d.row[columnName]);
+  }
 }
 
 function SortController(colName, update) {
@@ -1134,16 +926,14 @@ function SortController(colName, update) {
   div.style.margin = "0 auto";
   div.style.cursor = "pointer";
 
-  // Use Font Awesome icon
   const icon = document.createElement("i");
-  icon.classList.add("fas", "fa-sort"); // Initial sort icon
+  icon.classList.add("fas", "fa-sort");
   icon.style.color = "gray";
-  icon.style.fontSize = "12px"; // Adjust icon size if needed
+  icon.style.fontSize = "12px";
   div.appendChild(icon);
 
   let sorting = "none";
 
-  // Toggle function
   this.toggleDirection = () => {
     if (sorting === "none" || sorting === "down") {
       sorting = "up";
@@ -1162,14 +952,12 @@ function SortController(colName, update) {
 
   this.getNode = () => div;
 
-  // Prevent click propagation from the icon
   div.addEventListener("click", (event) => {
     event.stopPropagation();
     active = !active;
     controller.toggleDirection();
     update(controller);
 
-    // Visual feedback
     icon.style.color = active ? "#2196F3" : "gray";
   });
 
@@ -1219,7 +1007,6 @@ function HistogramController(data, binrules) {
 
   this.updateData = (d) => this.setData(d);
 
-  // Reset the selection state of the histogram
   this.resetSelection = () => {
     this.bins.forEach((bin) => {
       bin.selected = false;
@@ -1227,8 +1014,6 @@ function HistogramController(data, binrules) {
 
     this.svg.selectAll(".bar rect:nth-child(1)").attr("fill", "steelblue");
   };
-
-  // console.log("------------------binrules outside setData: ", binrules);
 
   this.setData = function (dd) {
     div.innerHTML = "";
@@ -1246,13 +1031,8 @@ function HistogramController(data, binrules) {
       .append("svg")
       .attr("width", svgWidth)
       .attr("height", svgHeight);
-    // .append("g")
-    // .attr("transform", `translate(${margin.left},${margin.top})`);
-
-    console.log("------------------binrules in setData: ", binrules);
 
     if (binrules.unique) {
-      // Handle unique columns: create a single bin
       this.bins = [
         {
           category: "Unique Values",
@@ -1261,14 +1041,6 @@ function HistogramController(data, binrules) {
         },
       ];
     } else if ("thresholds" in binrules) {
-      console.log("------------------Continuous data----------------------");
-      // Continuous data
-      // console.log("Domain: ", [
-      //   d3.min(data, (d) => d.value),
-      //   d3.max(data, (d) => d.value),
-      // ]);
-
-      // console.log("Thresholds: ", binrules.thresholds);
       let contBins = d3
         .bin()
         .domain([d3.min(data, (d) => d.value), d3.max(data, (d) => d.value)])
@@ -1281,14 +1053,11 @@ function HistogramController(data, binrules) {
         indeces: b.map((v) => v.index),
       }));
 
-      // console.log("Brush Bins: ", this.bins);
-
       this.xScale = d3
         .scaleLinear()
         .domain([d3.min(data, (d) => d.value), d3.max(data, (d) => d.value)])
         .range([0, width]);
 
-      // Initialize brush for continuous data
       this.brush = d3
         .brushX()
         .extent([
@@ -1297,15 +1066,13 @@ function HistogramController(data, binrules) {
         ])
         .on("end", this.handleBrush);
 
-      // Add brush to svg
       this.svg
         .append("g")
         .attr("class", "brush")
         .style("position", "absolute")
-        .style("z-index", 90999) // Attempt to force the brush on top
+        .style("z-index", 90999)
         .call(this.brush);
     } else if ("ordinals" in binrules || "nominals" in binrules) {
-      // Handle ordinal or nominal data
       const frequency = d3.rollup(
         data,
         (values) => ({
@@ -1317,7 +1084,6 @@ function HistogramController(data, binrules) {
 
       const binType = "ordinals" in binrules ? "ordinals" : "nominals";
 
-      // use predefined bin order if available
       if (binType in binrules && Array.isArray(binrules[binType])) {
         this.bins = binrules[binType].map((v) => ({
           category: v,
@@ -1350,7 +1116,6 @@ function HistogramController(data, binrules) {
         (d, i) => `translate(${(i * width) / this.bins.length}, 0)`
       );
 
-    // Visible bars
     barGroups
       .append("rect")
       .attr("x", 0)
@@ -1359,8 +1124,6 @@ function HistogramController(data, binrules) {
       .attr("height", (d) => height - y(d.count))
       .attr("fill", "steelblue");
 
-    // For continuous data, we don't need the invisible interaction bars
-    // Only add them for ordinal/nominal data
     if (!("thresholds" in binrules)) {
       barGroups
         .append("rect")
@@ -1434,14 +1197,10 @@ function HistogramController(data, binrules) {
         });
     }
 
-    // Add brushing for continuous data
-    // Handle brush end event
     this.handleBrush = (event) => {
-      // Remove any existing histogram label(s)
       this.svg.selectAll(".histogram-label").remove();
 
       if (!event.selection) {
-        // If no selection from brushing, reset everything
         this.resetSelection();
         if (controller.table) {
           controller.table.clearSelection();
@@ -1454,21 +1213,6 @@ function HistogramController(data, binrules) {
       const [bound1, bound2] = event.selection.map(this.xScale.invert);
       const binWidth = width / this.bins.length;
 
-      // console.log("Brushing event: ", event); // Debugging
-      // console.log("Brushed Data Range:", x0, x1);
-      // console.log("Bins:", this.bins);
-
-      // // Compute selected data range
-      // const selectedBins = this.bins.filter(
-      //   (bin) => this.xScale(bin.x1) >= x0 && this.xScale(bin.x0) <= x1
-      // );
-
-      // console.log("Selected brushed bins: ", selectedBins);
-
-      // // Extract categories or labels from bins
-      // const selectedLabels = selectedBins.map((bin) => bin.category || bin.x0);
-
-      // Compute which bins are selected and update their color
       this.bins.forEach((bin, i) => {
         const binStart = i * binWidth;
         const binEnd = (i + 1) * binWidth;
@@ -1478,9 +1222,7 @@ function HistogramController(data, binrules) {
           .attr("fill", bin.selected ? "orange" : "steelblue");
       });
 
-      // Add histogram label
       this.svg
-        // .data([d])
         .append("text")
         .attr("class", "histogram-label")
         .join("text")
@@ -1490,10 +1232,8 @@ function HistogramController(data, binrules) {
         .attr("font-size", "10px")
         .attr("fill", "#444444")
         .attr("text-anchor", "middle")
-        // .text(`Selected: ${selectedLabels.join(", ")}`);
         .text(`Range: ${Math.round(bound1)} - ${Math.round(bound2)}`);
 
-      // Update table selection if table exists
       if (controller.table) {
         controller.table.clearSelection();
         this.bins.forEach((bin) => {
@@ -1518,62 +1258,4 @@ function HistogramController(data, binrules) {
 
   this.getNode = () => div;
   return this;
-}
-
-function createDynamicFilter(attribute, operator, threshold) {
-  // Validate attribute
-  if (typeof attribute !== "string" || attribute.trim() === "") {
-    throw new Error("Invalid attribute: Attribute must be a non-empty string.");
-  }
-
-  // Validate operator
-  const validOperators = [">", ">=", "<", "<=", "==", "!="];
-  if (!validOperators.includes(operator)) {
-    throw new Error(
-      `Invalid operator: Supported operators are ${validOperators.join(", ")}.`
-    );
-  }
-
-  // Validate threshold
-  if (typeof threshold !== "number" && typeof threshold !== "string") {
-    throw new Error(
-      "Invalid threshold: Threshold must be a number or a string."
-    );
-  }
-
-  // Return the filter function
-  return (dataObj) => {
-    // Use the passed data object directly
-    const value = dataObj[attribute];
-
-    if (value === undefined) {
-      console.warn(`Attribute "${attribute}" not found in data object.`);
-      return false; // Exclude data objects missing the attribute
-    }
-
-    // Perform comparison
-    try {
-      switch (operator) {
-        case ">":
-          return value > threshold;
-        case ">=":
-          return value >= threshold;
-        case "<":
-          return value < threshold;
-        case "<=":
-          return value <= threshold;
-        case "==":
-          return value == threshold; // Consider using === for strict equality
-        case "!=":
-          return value != threshold; // Consider using !== for strict inequality
-        default:
-          throw new Error(`Unexpected operator: ${operator}`);
-      }
-    } catch (error) {
-      console.error(
-        `Error evaluating filter: ${attribute} ${operator} ${threshold} - ${error.message}`
-      );
-      return false;
-    }
-  };
 }

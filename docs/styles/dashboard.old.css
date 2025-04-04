@@ -2,7 +2,7 @@ body,
 html {
   height: 100%;
   margin: 0 !important;
-  /* overflow: hidden; */
+  overflow: hidden;
   padding: 0;
   font-family: var(--bulma-body-family);
 }
@@ -79,10 +79,40 @@ html {
   /* align-items: center; Vertically center content */
   /* text-align: center; Center text alignment for multiline */
   /* border: 1px darkgray solid; */
-  padding: 0px;
+  padding: 8px;
   margin: 0 !important;
   border-radius: 0.5em !important;
-  /* box-sizing: border-box; */
+  box-sizing: border-box;
+}
+
+.card {
+  --bulma-card-color: var(--bulma-text);
+  --bulma-card-background-color: var(--bulma-scheme-main);
+  --bulma-card-shadow: var(--bulma-shadow);
+  --bulma-card-radius: 0.75rem;
+  --bulma-card-header-background-color: transparent;
+  --bulma-card-header-color: var(--bulma-text-strong);
+  --bulma-card-header-padding: 0.75rem 1rem;
+  --bulma-card-header-shadow: 0 0.125em 0.25em
+    hsla(
+      var(--bulma-scheme-h),
+      var(--bulma-scheme-s),
+      var(--bulma-scheme-invert-l),
+      0.1
+    );
+  --bulma-card-header-weight: var(--bulma-weight-bold);
+  --bulma-card-content-background-color: transparent;
+  --bulma-card-content-padding: 1.5rem;
+  --bulma-card-footer-background-color: transparent;
+  --bulma-card-footer-border-top: 1px solid var(--bulma-border-weak);
+  --bulma-card-footer-padding: 0.75rem;
+  --bulma-card-media-margin: var(--bulma-block-spacing);
+  background-color: var(--bulma-card-background-color);
+  border-radius: var(--bulma-card-radius);
+  box-shadow: var(--bulma-card-shadow);
+  color: var(--bulma-card-color);
+  max-width: 100%;
+  position: relative;
 }
 
 .left-top .left-bottom .card {
@@ -286,47 +316,4 @@ html {
 
 .switch input {
   display: none;
-}
-
-.leaflet-control .map-control-button {
-  width: 30px;
-  height: 30px;
-  line-height: 30px;
-  text-align: center;
-  display: block;
-  font-size: 16px;
-  background-color: #fff;
-  border-radius: 4px;
-  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.15);
-  transition: all 0.2s ease;
-}
-
-.leaflet-control .map-control-button:hover {
-  background-color: #f4f4f4;
-}
-
-.selection-button .map-control-button.active {
-  background-color: #ffeb3b;
-}
-
-/* Add spacing between control groups */
-.leaflet-bottom .leaflet-control {
-  margin-bottom: 12px;
-}
-
-table {
-  margin: 0 !important;
-  width: 100%;
-}
-
-/* Column selection styling for sorter table */
-.sorter-table .selected-column {
-  background-color: #e3f2fd !important;
-  box-shadow: 0 0 5px rgba(33, 150, 243, 0.5) !important;
-  border-top: 2px solid #2196f3 !important;
-  border-bottom: 2px solid #2196f3 !important;
-}
-
-.sorter-table th.selected-column span {
-  background-color: #1976d2 !important;
 }

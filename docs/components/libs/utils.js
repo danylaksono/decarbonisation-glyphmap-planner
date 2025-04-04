@@ -1,11 +1,47 @@
 // import * as d3 from "npm:d3";
 import * as topojson from "npm:topojson-client";
 import { require } from "npm:d3-require";
+import { Mutable } from "observablehq:stdlib";
 import * as turf from "@turf/turf";
 
 import * as d3 from "npm:d3";
 // import * as d3Geo from "npm:d3-geo@3.1.1";
 // import * as d3GeoProjection from "npm:d3-geo-projection@4";
+
+export function selectionFactory(initialValue, idField) {
+  // Initialize a mutable selection (e.g., an empty array)
+  const selection = Mutable(initialValue);
+
+  // Define the update function with selection logic
+  const updateSelection = (newSelection, mode) => {
+    if (mode === "single") {
+      // Replace the current selection with the new one
+      selection.value = newSelection;
+    } else if (mode === "union") {
+      // Get IDs from the new selection using the specified idField
+      const newIds = new Set(newSelection.map((obj) => obj[idField]));
+      // Add objects from the current selection that aren’t in newSelection
+      const additional = selection.value.filter(
+        (obj) => !newIds.has(obj[idField])
+      );
+      // Combine the two sets
+      selection.value = [...newSelection, ...additional];
+    } else if (mode === "intersect") {
+      // Get IDs from the current selection using the specified idField
+      const currentIds = new Set(selection.value.map((obj) => obj[idField]));
+      // Keep only objects from newSelection that are in currentIds
+      selection.value = newSelection.filter((obj) =>
+        currentIds.has(obj[idField])
+      );
+    } else {
+      // Handle invalid mode
+      throw new Error("Invalid mode");
+    }
+  };
+
+  // Return the getter (selection) and setter (update function)
+  return [selection, updateSelection];
+}
 
 export function context2d(width, height, dpi = devicePixelRatio) {
   const canvas = document.createElement("canvas");
@@ -229,3 +265,75 @@ export const convertGridCsvToGeoJson = function (gridCsv, bb) {
   }
   return turf.featureCollection(squares);
 };
+
+// Safe debug logging utility with circular reference protection
+export function createSafeLogger(debugMode = false) {
+  // Track objects that have been processed to avoid circular references
+  const processedObjects = new WeakSet();
+
+  // Helper to safely stringify objects
+  function safeStringify(obj, depth = 0, maxDepth = 2) {
+    if (depth > maxDepth) return "[Object depth limit]";
+
+    if (obj === null || obj === undefined) return String(obj);
+    if (typeof obj !== "object") return String(obj);
+    if (processedObjects.has(obj)) return "[Circular reference]";
+
+    try {
+      processedObjects.add(obj);
+
+      // Handle arrays
+      if (Array.isArray(obj)) {
+        if (obj.length > 20) {
+          return `[Array(${obj.length}): ${obj
+            .slice(0, 3)
+            .map((item) => safeStringify(item, depth + 1, maxDepth))
+            .join(", ")}...]`;
+        }
+        return `[${obj
+          .slice(0, 10)
+          .map((item) => safeStringify(item, depth + 1, maxDepth))
+          .join(", ")}${obj.length > 10 ? "..." : ""}]`;
+      }
+
+      // Handle objects
+      const keys = Object.keys(obj);
+      if (keys.length > 20) {
+        return `{Object with ${keys.length} keys: ${keys
+          .slice(0, 3)
+          .map(
+            (key) => `${key}: ${safeStringify(obj[key], depth + 1, maxDepth)}`
+          )
+          .join(", ")}...}`;
+      }
+
+      return `{${keys
+        .slice(0, 10)
+        .map((key) => `${key}: ${safeStringify(obj[key], depth + 1, maxDepth)}`)
+        .join(", ")}${keys.length > 10 ? "..." : ""}}`;
+    } catch (e) {
+      return "[Unprocessable object]";
+    } finally {
+      processedObjects.delete(obj);
+    }
+  }
+
+  return {
+    log: (...args) => {
+      if (!debugMode) return;
+      const safeArgs = args.map((arg) => {
+        if (typeof arg === "object" && arg !== null) {
+          return safeStringify(arg);
+        }
+        return arg;
+      });
+      console.log(...safeArgs);
+    },
+    warn: (...args) => {
+      if (!debugMode) return;
+      console.warn(...args);
+    },
+    error: (...args) => console.error(...args), // Errors always show
+    setDebug: (mode) => (debugMode = !!mode),
+  };
+}
