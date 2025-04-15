@@ -53,6 +53,12 @@ export function context2d(width, height, dpi = devicePixelRatio) {
   return context;
 }
 
+function set(input, value) {
+  input.value = value;
+  input.dispatchEvent(new Event("input", { bubbles: true }));
+  // console.log("input value:", input.value);
+}
+
 export function animate(
   currentValue,
   animationFrame,

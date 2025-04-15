@@ -54,7 +54,7 @@ import {
 } from "./components/libs/plots.js";
 import { LeafletMap } from "./components/libs/leaflet/leaflet-map.js";
 
-import { animate } from "./components/libs/utils.js";
+// import { animate } from "./components/libs/utils.js";
 import {
   inferTypes,
   enrichGeoData,
@@ -67,7 +67,7 @@ import {
   transformGeometry,
   normalisebyGroup,
   aggregateValues,
-  set,
+  // set,
   // applyTransformationToShapes,
 } from "./components/libs/helpers.js";
 
@@ -79,12 +79,16 @@ import {
   startGroup,
   endGroup,
 } from "./components/libs/logger.js";
+
+// timer functions
+import { startTimer, endTimer, perfTimings } from "./components/libs/timer.js";
 ```
 
 ```js
 // Control debug output - set to true during development, false in production
 const DEBUG = true;
 setDebugMode(DEBUG);
+startTimer("initialisation"); // Start the timer
 ```
 
 <!-- ---------------- Loading Raw Data ---------------- -->
@@ -147,20 +151,25 @@ FROM oxford b;
 ```
 
 ```js
+startTimer("load_data_sql");
 // >> declare data
 log(">> Loading Data...");
 const buildingsData = [...oxford_data];
 // const buildingsData = oxford_data.slice(); // copy data
+endTimer("load_data_sql");
 ```
 
 ```js
+startTimer("load_data_json");
 // const flatData = buildingsData.map((p) => ({ ...p })); // very slow
 // const flatData = buildingsData.map((p) => Object.assign({}, p)); // even slower
 const allColumns = Object.keys(buildingsData[0]);
 log(">>  Loading Data Done");
+endTimer("load_data_json");
 ```
 
 ```js
+startTimer("load_data_geojson");
 log(">> Define and Load boundary data...");
 // oxford boundary data
 const lsoa_boundary = FileAttachment(
@@ -172,9 +181,11 @@ const regular_geodata = FileAttachment(
 const cartogram_geodata = FileAttachment(
   "./data/oxford_lsoas_cartogram.json"
 ).json();
+endTimer("load_data_geojson");
 ```
 
 ```js
+startTimer("glyph_variables_and_colours");
 log(">> Defining the glyph variables and colours...");
 timeline_switch;
 const glyphVariables = [
@@ -217,6 +228,7 @@ const timelineColours = [
   "#00FF00", // numInterventions: Green
   "#FF0000", // interventionTechs: Red
 ];
+endTimer("load_data_osgb");
 ```
 
 <!-- ------------ Getter-Setter ------------ -->
@@ -253,10 +265,11 @@ const [timelineModifications, setTimelineModifications] = useState([]); // list 
 <!------------ HANDLE BI-DIRECTIONAL SELECTION -------------->
 
 ```js
-const [getInitialData, setInitialData] = useState([]); // INITIAL DATA
+const [getInitialData, setInitialData] = useState(null); // INITIAL DATA
 ```
 
 ```js
+startTimer("update_selection");
 function updateSelection(
   targetSelection,
   newSelection,
@@ -278,9 +291,11 @@ function updateSelection(
     throw new Error("Invalid mode");
   }
 }
+endTimer("update_selection");
 ```
 
 ```js
+startTimer("handle_selection");
 // HANDLE MAP AND TABLE SELECTION
 function handleSelection(source, newSelection, mode = "intersect") {
   log(`Updating selection from ${source} with mode ${mode}:`, newSelection);
@@ -315,22 +330,142 @@ function handleSelection(source, newSelection, mode = "intersect") {
     // updateMapHighlight(selectedFeatures); // Update the map
   }
 }
+endTimer("handle_selection");
 ```
 
 ```js
-// filter the map by providing IDs
-const applyMapFilter = (suitableIds) => {
-  const idValues = suitableIds.map((item) => item.id);
+// Use a simpler approach with a one-way filtering toggle
+const filterManager = {
+  // Track which component initiated filtering
+  activeSource: null,
+  // ID values from last filter operation
+  currentIds: [],
+  // Flag to prevent filtering during initialisation
+  initialised: false,
+  // Track filter operations
+  filterCount: 0,
 
-  mapInstance.setFilteredData("buildings", {
-    ids: idValues,
-  });
+  // Apply filter from map to table only
+  applyMapToTableFilter(idValues) {
+    log(`Calling filter manager from ${this.activeSource} to table`);
+
+    if (this.activeSource === "table") return false;
+
+    // Ensure idValues is always an array of primitive values
+    const cleanedIds = Array.isArray(idValues)
+      ? idValues.filter((id) => id !== undefined && id !== null)
+      : [];
+
+    this.filterCount++;
+    this.activeSource = "map";
+    this.currentIds = cleanedIds;
+
+    log(
+      `[Filter ${this.filterCount}] Map → Table with ${cleanedIds.length} IDs`
+    );
+
+    // Only update application state - use simple objects with id property
+    setInitialData(cleanedIds.map((id) => ({ id })));
+
+    // Note: table update happens in a separate reactive cell
+    return true;
+  },
+
+  // Apply filter from table to map only
+  applyTableToMapFilter(idValues) {
+    if (this.activeSource === "map") return false;
+
+    this.filterCount++;
+    this.activeSource = "table";
+    this.currentIds = idValues;
+
+    log(`[Filter ${this.filterCount}] Table → Map with ${idValues.length} IDs`);
+
+    // Only update application state
+    setInitialData(idValues.map((id) => ({ id })));
+
+    // Note: map update happens in a separate reactive cell
+    return true;
+  },
+
+  // Reset state
+  reset() {
+    this.activeSource = null;
+  },
+};
+
+// Replace current applyMapFilter function
+const applyMapFilter = (filteredIds) => {
+  const idValues = filteredIds.map((item) => item.id);
+
+  // Use the new filter manager approach
+  filterManager.applyMapToTableFilter(idValues);
 
   return {
     filterName: `Buildings with IDs in provided list (${idValues.length} buildings)`,
     filterFunction: (building) => idValues.includes(building.id),
   };
 };
+```
+
+```js
+// Map filter to table sync
+{
+  // This cell executes when filterManager changes or getInitialData changes
+  log(
+    "This cell executes when filterManager changes or getInitialData changes: on map"
+  );
+  filterManager;
+  getInitialData;
+
+  // Only apply table filtering when map is the source
+  if (filterManager.activeSource === "map" && filterManager.initialised) {
+    log(
+      `Syncing table with map filter (${filterManager.currentIds.length} IDs)`
+    );
+
+    // Format the IDs as objects with an id property as expected by the table
+    const formattedIds = filterManager.currentIds.map((id) => ({ id }));
+
+    log("Formatted IDs for table:", filterManager.currentIds);
+
+    // Apply filter directly to table component with proper error handling
+    try {
+      log("Applying filter to table via setFilteredDataById:", formattedIds);
+      table.setFilteredDataById(filterManager.currentIds);
+      // table.setFilteredDataById([100120819411, 100120819410, 100120819409]);
+      // const idSet = new Set(filterManager.currentIds);
+      // table.applyCustomFilter((row) => idSet.has(row.id));
+    } catch (error) {
+      log(`Error applying filter to table: ${error.message}`);
+    }
+  }
+
+  // Mark manager as initialised after first execution
+  filterManager.initialised = true;
+}
+```
+
+```js
+// Table filter to map sync
+{
+  // This cell executes when filterManager changes or getInitialData changes
+  log(
+    "This cell executes when filterManager changes or getInitialData changes"
+  );
+  filterManager;
+  getInitialData;
+
+  // Only apply map filtering when table is the source
+  if (filterManager.activeSource === "table" && filterManager.initialised) {
+    log(
+      `Syncing map with table filter (${filterManager.currentIds.length} IDs)`
+    );
+
+    // Apply filter to map component
+    mapInstance.setFilteredData("buildings", { ids: filterManager.currentIds });
+  }
+}
 ```
 
 <!-- ---------------- HTML Layout ---------------- -->
@@ -357,7 +492,7 @@ const applyMapFilter = (suitableIds) => {
         </header>
             <div id="graph-container">
               <div id="timeline-panel">
-                ${getInitialFilter ? html`<p> No. of Filtered Data: ${getInitialFilter.length} </p>`: "" }
+                ${setInitialData ? html`<p> No. of Filtered Data: ${setInitialData.length} </p>`: "" }
                 ${createTimelineInterface(
                 interventions,
                 (change) => {
@@ -537,9 +672,10 @@ cancelButton.addEventListener("click", () => {
 ```
 
 ```js
+startTimer("grouped_intervention");
 // display(html`<p>"Grouped Intervention"</p>`);
 const groupedData = MiniDecarbModel.group(data, ["lsoa", "interventionYear"]);
-// display(groupedData);
+endTimer("grouped_intervention");
 ```
 
 ```js
@@ -552,6 +688,7 @@ const timelineDataArray = [
 ```
 
 ```js
+startTimer("transform_intervention_data");
 function transformInterventionData(data, lsoaCode, fields) {
   // Get the specific LSOA data
   const lsoaData = data[lsoaCode];
@@ -591,6 +728,7 @@ function transformInterventionData(data, lsoaCode, fields) {
     return yearData;
   });
 }
+endTimer("transform_intervention_data");
 ```
 
 <!-- ---------------- Intervention Managers ---------------- -->
@@ -956,6 +1094,7 @@ log(">> Morph animation logic...");
 let playing = false; // Track play/pause state
 let direction = 1; // Controls the animation direction (0 to 1 or 1 to 0)
 let animationFrame; // Stores the requestAnimationFrame ID
+// let currentValue = 0; // Current value of the morph factor
 
 // Animation loop
 animate(currentValue, animationFrame, playing, direction);
@@ -969,7 +1108,7 @@ playButton.addEventListener("click", () => {
 
   if (playing) {
     // Start the animation with the current slider value
-    const currentValue = parseFloat(morphFactorInput.value);
+    const currentValue = parseFloat(morph_factor);
     requestAnimationFrame(() => animate(currentValue));
   } else {
     cancelAnimationFrame(animationFrame); // Stop the animation
@@ -1264,12 +1403,13 @@ function tableChanged(event) {
     // log("Filter rule:", event.rule);
     // saveToSession("tableFiltered", event.indeces);
     log("Filtered IDs:", event.ids);
-    setInitialData(event.ids);
-    applyMapFilter(event.ids);
-    // handleSelection("map", event.ids, "intersect");
-    // log("++Filtering Table called");
-    // setTableFiltered(event.indeces);
-    // setInitialFilter(event.indeces);
+
+    // Use the new filterState to handle filtering
+    const idValues = event.ids.map((item) => item.id);
+    filterManager.applyTableToMapFilter(idValues);
+
+    // Store the filtered data in app state
+    // setInitialData(event.ids);
   }
 
   if (event.type === "sort") {
@@ -1278,7 +1418,6 @@ function tableChanged(event) {
   }
 
   if (event.type === "selection") {
-    // log("Selected rows:", event.selection);
     setSelectedTableRow(event.selection);
     log("Selection rule:", event.rule);
   }
@@ -1295,18 +1434,14 @@ log("Initial Data Fixed: ", getInitialData);
 ```
 
 ```js
-// log(">> Create sortable table... with data", data);
-const table = new sorterTable(data, tableColumns, tableChanged, {
-  height: "300px",
-});
-```
+startTimer("create_sorter_table");
+const table = new sorterTable(data, tableColumns, tableChanged);
 
-```js
-// factory function for sorter table
 function drawSorterTable(data, columns, callback, options) {
-  const table = new sorterTable(data, columns, callback, options);
+  table.setContainerSize(options);
   return table.getNode();
 }
+endTimer("create_sorter_table");
 ```
 
 <!-- ---------------- Glyph Maps ---------------- -->
@@ -1702,6 +1837,39 @@ function glyphMapSpec(width = 800, height = 600) {
 ```
 
 ```js
+function set(input, value) {
+  input.value = value;
+  input.dispatchEvent(new Event("input", { bubbles: true }));
+  // console.log("input value:", input.value);
+}
+
+function animate(currentValue, animationFrame, playing = false, direction = 1) {
+  // Increment or decrement the value
+  let newValue = currentValue + 0.01 * direction;
+
+  // Reverse direction if boundaries are reached
+  // if (newValue >= 1 || newValue <= 0) {
+  //   direction *= -1;
+  //   newValue = Math.max(0, Math.min(1, newValue)); // Clamp value between 0 and 1
+  // }
+  if (newValue >= 1 || newValue <= 0) {
+    newValue = Math.max(0, Math.min(1, newValue)); // Clamp value
+    playing = false; // Pause animation
+    playButton.innerHTML = '<i class="fas fa-play"></i>'; // Update button
+    cancelAnimationFrame(animationFrame);
+    return; // Stop animation loop
+  }
+
+  // Update the slider and dispatch the "input" event for reactivity
+  set(morphFactorInput, newValue);
+
+  if (playing) {
+    animationFrame = requestAnimationFrame(() => animate(newValue)); // Pass the updated value
+  }
+}
+```
+
+```js
 // Trigger Morphing function
 {
   log(">> Morphing...", morph_factor);
@@ -1789,12 +1957,12 @@ function interactiveDrawFn(mode) {
 
 ```js
 // interactive draw function - change glyphs based on mode
-{
-  // glyphMode;
-  // decarbonisationGlyph.setGlyph({
-  //   drawFn: interactiveDrawFn(glyphMode),
-  // });
-}
+// {
+// glyphMode;
+// decarbonisationGlyph.setGlyph({
+//   drawFn: interactiveDrawFn(glyphMode),
+// });
+// }
 ```
 
 ```js
@@ -1804,18 +1972,18 @@ document.body.appendChild(leafletContainer);
 const mapInstance = new LeafletMap(leafletContainer, {
   width: "300px",
   height: "300px",
-  onSelect: (selectedFeatures) => log("Map Selected:", selectedFeatures),
+  // onSelect: (selectedFeatures) => log("Map Selected:", selectedFeatures),
   onFilter: (filteredFeatures) => {
-    const filteredIds = filteredFeatures
-      .map((feature) => ({
-        id: feature.properties?.id,
-      }))
-      .filter((obj) => obj.id !== undefined);
-    log("Map Filtered:", filteredIds);
-    setInitialData(filteredIds);
+    // Transform features to just the IDs we need, making sure we have valid IDs
+    const idValues = filteredFeatures
+      .map((feature) => feature.properties?.id)
+      .filter((id) => id !== undefined && id !== null);
 
-    // setInitialFilter(filteredFeatures);
-    //   handleSelection("table", filteredIds, "union");
+    // Log filtering event
+    log(`Map filtered: ${idValues.length} buildings`);
+
+    // Apply filter using the filter manager
+    filterManager.applyMapToTableFilter(idValues);
   },
   tooltipFormatter: (props) => `<strong>${props.id}</strong>`,
 });

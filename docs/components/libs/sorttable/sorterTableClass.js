@@ -155,12 +155,44 @@ export class sorterTable {
     });
   }
 
-  // async duckFilter() {
-  //   // const whereClause = this.getSelectionRuleAsSQL(); // Convert rules to SQL
-  //   const result = await this.db.sql`
-  //     SELECT * FROM dataset`;
-  //   this.dataInd = await result.array(); // Assuming original indices are preserved
-  // }
+  /**
+   * Set the width and/or height of the table container after instantiation.
+   * @param {Object} options - Options object with optional width and height.
+   * @param {string|number} [options.width] - New width (e.g., "100%", "800px", or a number for px).
+   * @param {string|number} [options.height] - New height (e.g., "400px" or a number for px).
+   */
+  setContainerSize(options = {}) {
+    if (options.width !== undefined) {
+      this.options.containerWidth =
+        typeof options.width === "number"
+          ? `${options.width}px`
+          : options.width;
+    }
+    if (options.height !== undefined) {
+      this.options.containerHeight =
+        typeof options.height === "number"
+          ? `${options.height}px`
+          : options.height;
+    }
+    // Update the DOM node if already rendered
+    if (this.table && this.table.parentElement) {
+      const container = this.table.parentElement.parentElement;
+      if (container) {
+        if (options.width !== undefined) {
+          container.style.width =
+            typeof options.width === "number"
+              ? `${options.width}px`
+              : options.width;
+        }
+        if (options.height !== undefined) {
+          container.style.height =
+            typeof options.height === "number"
+              ? `${options.height}px`
+              : options.height;
+        }
+      }
+    }
+  }
 
   preprocessData(data, columnNames) {
     return data.map((row) => {
@@ -403,33 +435,34 @@ export class sorterTable {
       return;
     }
 
-    // Use a Set for efficient lookup
     const idSet = new Set(ids);
 
     // Clear the current selection
     this.clearSelection();
 
-    // Iterate through the *currently visible* data (dataInd)
+    // Map from data index to table row index for visible rows
+    const dataIndexToTableRowIndex = new Map();
     this.dataInd.forEach((dataIndex, tableRowIndex) => {
-      // Get the data object for this row
-      const dataObject = this.data[dataIndex];
+      dataIndexToTableRowIndex.set(dataIndex, tableRowIndex);
+    });
 
-      // Check if the data object has the specified ID property
+    // For each data object in the full dataset, check if its ID is in the set
+    this.data.forEach((dataObject, dataIndex) => {
       if (dataObject && dataObject.hasOwnProperty(idPropertyName)) {
-        // Check if the ID is in the set of IDs to select
         if (idSet.has(dataObject[idPropertyName])) {
-          // Find the corresponding table row element.  Crucially, we use
-          // tableRowIndex here, NOT dataIndex.  tableRowIndex is the index
-          // within the *currently displayed* rows.
-          const tr = this.tBody.querySelector(
-            `tr:nth-child(${tableRowIndex + 1})`
-          );
-          if (tr) {
-            this.selectRow(tr);
-          } else {
-            warnDebug(
-              `setSelectedDataByIds: Could not find row with dataIndex ${dataIndex} (tableRowIndex: ${tableRowIndex})`
+          // Only select if this row is currently visible
+          const tableRowIndex = dataIndexToTableRowIndex.get(dataIndex);
+          if (tableRowIndex !== undefined) {
+            const tr = this.tBody.querySelector(
+              `tr:nth-child(${tableRowIndex + 1})`
             );
+            if (tr) {
+              this.selectRow(tr);
+            } else {
+              warnDebug(
+                `setSelectedDataByIds: Could not find row for dataIndex ${dataIndex} (tableRowIndex: ${tableRowIndex})`
+              );
+            }
           }
         }
       } else {
@@ -448,44 +481,56 @@ export class sorterTable {
       return;
     }
 
-    // Use a Set for efficient lookup
     const idSet = new Set(ids);
+    // Search the full dataset, not just current dataInd, to find matching indices
+    const matchingDataIndices = this.data
+      .map((dataObject, dataIndex) => {
+        if (
+          dataObject &&
+          dataObject.hasOwnProperty(idPropertyName) &&
+          idSet.has(dataObject[idPropertyName])
+        ) {
+          return dataIndex; // original index in this.data (test)
+        }
+        return null;
+      })
+      .filter((index) => index !== null);
 
-    // Store the original dataInd for history
-    const originalDataInd = [...this.dataInd];
+    console.log(
+      `Found ${matchingDataIndices.length} matching rows out of ${ids.length} IDs`
+    );
 
-    // Push to history before modifying
-    this.history.push({ type: "filter", data: originalDataInd });
+    if (matchingDataIndices.length === 0) {
+      console.warn("No matching IDs found in the dataset");
+      return;
+    }
 
-    // Filter the dataInd to include only rows with matching IDs
-    this.dataInd = this.dataInd.filter((index) => {
-      const dataObject = this.data[index];
+    // Update dataInd directly with the matching original indices
+    this.dataInd = matchingDataIndices;
+    this.history.push({ type: "filterById", data: this.dataInd });
 
-      // Check if the data object has the specified ID property
-      if (dataObject && dataObject.hasOwnProperty(idPropertyName)) {
-        // Include only if the ID is in our set
-        return idSet.has(dataObject[idPropertyName]);
-      }
+    // Rebuild the table
+    this.rebuildTable();
 
-      return false; // Exclude if no matching ID property
-    });
-
-    // Re-render the table with the filtered data
-    this.createTable();
-
-    // Update visualisations
+    // Update visualizations
     this.visControllers.forEach((vc, vci) => {
-      if (vc && vc.updateData) {
+      if (vc instanceof HistogramController) {
         const columnName = this.columns[vci].column;
-        vc.updateData(this.dataInd.map((i) => this.data[i][columnName]));
+        vc.setData(this.dataInd.map((i) => this.data[i][columnName]));
       }
     });
 
-    // Notify about the filter change
+    // Call selection before filtering to visually highlight rows
+    this.setSelectedDataByIds(ids, idPropertyName);
+
+    // Notify listeners
+    const filteredIds = this.dataInd.map((i) => ({
+      id: this.data[i][idPropertyName] || i,
+    }));
     this.changed({
-      type: "filter",
+      type: "filterById",
       indeces: this.dataInd,
-      rule: `Filtered by ${idPropertyName} in provided list`,
+      ids: filteredIds,
     });
   }
 
@@ -518,7 +563,7 @@ export class sorterTable {
     // const filteredIds = this.dataInd.map((i) => {
     //   // Check if the row has an id property, otherwise return the index as fallback
     //   return this.data[i]?.[idColumn] !== undefined
-    //     ? this.data[i][idColumn]
+    //     ? this.data[i]?.[idColumn]
     //     : i;
     // });
 
@@ -540,6 +585,8 @@ export class sorterTable {
   }
 
   applyCustomFilter(filterFunction) {
+    console.log(">> Applying custom filter function:", filterFunction);
+
     // Apply the custom filter function to the data
     this.dataInd = this.dataInd.filter((index) => {
       return filterFunction(this.data[index]); // Pass the data object to the filter function
@@ -597,6 +644,7 @@ export class sorterTable {
   }
 
   rebuildTable() {
+    console.log(">>> Rebuilding table...");
     this.createHeader();
     this.createTable();
   }
