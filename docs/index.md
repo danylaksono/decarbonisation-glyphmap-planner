@@ -334,77 +334,128 @@ endTimer("handle_selection");
 ```
 
 ```js
-// Use a simpler approach with a one-way filtering toggle
+// // Use a simpler approach with a one-way filtering toggle
+// const filterManager = {
+//   // Track which component initiated filtering
+//   activeSource: null,
+//   // ID values from last filter operation
+//   currentIds: [],
+//   // Flag to prevent filtering during initialisation
+//   initialised: false,
+//   // Track filter operations
+//   filterCount: 0,
+
+//   // Apply filter from map to table only
+//   applyMapToTableFilter(idValues) {
+//     log(`Calling filter manager from ${this.activeSource} to table`);
+
+//     if (this.activeSource === "table") return false;
+
+//     // Ensure idValues is always an array of primitive values
+//     const cleanedIds = Array.isArray(idValues)
+//       ? idValues.filter((id) => id !== undefined && id !== null)
+//       : [];
+
+//     this.filterCount++;
+//     this.activeSource = "map";
+//     this.currentIds = cleanedIds;
+
+//     log(
+//       `[Filter ${this.filterCount}] Map → Table with ${cleanedIds.length} IDs`
+//     );
+
+//     // Only update application state - use simple objects with id property
+//     setInitialData(cleanedIds.map((id) => ({ id })));
+
+//     // Note: table update happens in a separate reactive cell
+//     return true;
+//   },
+
+//   // Apply filter from table to map only
+//   applyTableToMapFilter(idValues) {
+//     if (this.activeSource === "map") return false;
+
+//     this.filterCount++;
+//     this.activeSource = "table";
+//     this.currentIds = idValues;
+
+//     log(`[Filter ${this.filterCount}] Table → Map with ${idValues.length} IDs`);
+
+//     // Only update application state
+//     setInitialData(idValues.map((id) => ({ id })));
+
+//     // Note: map update happens in a separate reactive cell
+//     return true;
+//   },
+
+//   // Reset state
+//   reset() {
+//     this.activeSource = null;
+//   },
+// };
+
+// // Replace current applyMapFilter function
+// const applyMapFilter = (filteredIds) => {
+//   const idValues = filteredIds.map((item) => item.id);
+
+//   // Use the new filter manager approach
+//   filterManager.applyMapToTableFilter(idValues);
+
+//   return {
+//     filterName: `Buildings with IDs in provided list (${idValues.length} buildings)`,
+//     filterFunction: (building) => idValues.includes(building.id),
+//   };
+// };
+```
+
+```js
+// Modified filterManager for cascading filtering, but without direct UI sync calls.
+// Only updates state; UI sync is handled in reactive cells as before.
+
 const filterManager = {
-  // Track which component initiated filtering
-  activeSource: null,
-  // ID values from last filter operation
+  lastSource: null,
   currentIds: [],
-  // Flag to prevent filtering during initialisation
-  initialised: false,
-  // Track filter operations
-  filterCount: 0,
-
-  // Apply filter from map to table only
+  filters: {
+    map: null,
+    table: null,
+  },
   applyMapToTableFilter(idValues) {
-    log(`Calling filter manager from ${this.activeSource} to table`);
-
-    if (this.activeSource === "table") return false;
-
-    // Ensure idValues is always an array of primitive values
-    const cleanedIds = Array.isArray(idValues)
+    this.filters.map = Array.isArray(idValues)
       ? idValues.filter((id) => id !== undefined && id !== null)
       : [];
-
-    this.filterCount++;
-    this.activeSource = "map";
-    this.currentIds = cleanedIds;
-
-    log(
-      `[Filter ${this.filterCount}] Map → Table with ${cleanedIds.length} IDs`
-    );
-
-    // Only update application state - use simple objects with id property
-    setInitialData(cleanedIds.map((id) => ({ id })));
-
-    // Note: table update happens in a separate reactive cell
+    this.lastSource = "map";
+    if (this.filters.table && this.filters.table.length > 0) {
+      this.currentIds = this.filters.map.filter((id) =>
+        this.filters.table.includes(id)
+      );
+    } else {
+      this.currentIds = [...this.filters.map];
+    }
+    setInitialData(this.currentIds.map((id) => ({ id })));
     return true;
   },
-
-  // Apply filter from table to map only
   applyTableToMapFilter(idValues) {
-    if (this.activeSource === "map") return false;
-
-    this.filterCount++;
-    this.activeSource = "table";
-    this.currentIds = idValues;
-
-    log(`[Filter ${this.filterCount}] Table → Map with ${idValues.length} IDs`);
-
-    // Only update application state
-    setInitialData(idValues.map((id) => ({ id })));
-
-    // Note: map update happens in a separate reactive cell
+    this.filters.table = Array.isArray(idValues)
+      ? idValues.filter((id) => id !== undefined && id !== null)
+      : [];
+    this.lastSource = "table";
+    if (this.filters.map && this.filters.map.length > 0) {
+      this.currentIds = this.filters.table.filter((id) =>
+        this.filters.map.includes(id)
+      );
+    } else {
+      this.currentIds = [...this.filters.table];
+    }
+    setInitialData(this.currentIds.map((id) => ({ id })));
     return true;
   },
-
-  // Reset state
   reset() {
-    this.activeSource = null;
+    this.lastSource = null;
+    this.currentIds = [];
+    this.filters.map = null;
+    this.filters.table = null;
+    setInitialData(null);
   },
-};
-
-// Replace current applyMapFilter function
-const applyMapFilter = (filteredIds) => {
-  const idValues = filteredIds.map((item) => item.id);
-
-  // Use the new filter manager approach
-  filterManager.applyMapToTableFilter(idValues);
-
-  return {
-    filterName: `Buildings with IDs in provided list (${idValues.length} buildings)`,
-    filterFunction: (building) => idValues.includes(building.id),
-  };
 };
 ```
 
@@ -419,7 +470,7 @@ const applyMapFilter = (filteredIds) => {
   getInitialData;
 
   // Only apply table filtering when map is the source
-  if (filterManager.activeSource === "map" && filterManager.initialised) {
+  if (filterManager.lastSource === "map" && filterManager.initialised) {
     log(
       `Syncing table with map filter (${filterManager.currentIds.length} IDs)`
     );
@@ -457,7 +508,7 @@ const applyMapFilter = (filteredIds) => {
   getInitialData;
 
   // Only apply map filtering when table is the source
-  if (filterManager.activeSource === "table" && filterManager.initialised) {
+  if (filterManager.lastSource === "table" && filterManager.initialised) {
     log(
       `Syncing map with table filter (${filterManager.currentIds.length} IDs)`
     );
