@@ -449,42 +449,19 @@ const filterManager = {
                 <button id="openQuickviewButton" data-show="quickview" class="btn tooltip" data-tooltip="Add New Intervention" aria-label="Add">
                   <i class="fas fa-plus"></i>
                 </button>
-                ${html`<button class="btn edit tooltip" data-tooltip="Apply Modification" aria-label="Edit"
-                  onclick=${(e) => {
-                    e.stopPropagation();
-                    log("Modify intervention ", selectedInterventionIndex);
-                    modifyIntervention(selectedInterventionIndex, timelineModifications[selectedInterventionIndex]);
-                 }
-                }>
-                <i class="fas fa-edit" style="color:green;"></i>
-              </button>`}
-                ${html`<button class="btn erase tooltip" data-tooltip="Remove Intervention" aria-label="Delete"
-                  onclick=${(e) => {
-                    e.stopPropagation();
-                    log("Delete intervention ", selectedInterventionIndex);
-                    manager.setAutoRun(true).removeIntervention(selectedInterventionIndex);
-                    runModel();
-                 }
-                }>
-                <i class="fas fa-trash" style="color:red;"></i>
-              </button>`}
-              ${html`<button class="btn move-up tooltip" data-tooltip="Move Up" aria-label="Move Up"
-                  onclick=${(e) => {
-                    e.stopPropagation();
-                    reorderIntervention(manager.currentOrder, selectedInterventionIndex, "up");
-                    runModel();
-                }}>
-                <i class="fas fa-arrow-up"></i>
-              </button>`}
-                ${html`<button class="btn move-down tooltip" data-tooltip="Move Down" aria-label="Move Down"
-                  onclick=${(e) => {
-                    e.stopPropagation();
-                    log(manager.currentOrder);
-                    reorderIntervention(manager.currentOrder, selectedInterventionIndex, "down");
-                    runModel();
-                }}>
-                <i class="fas fa-arrow-down"></i>
-              </button>`}
+                <button id="editButton" class="btn edit tooltip" data-tooltip="Apply Modification" aria-label="Edit">
+                  <i class="fas fa-edit" style="color:green;"></i>
+                </button>
+                <button id="deleteButton" class="btn erase tooltip" data-tooltip="Remove Intervention" aria-label="Delete">
+                  <i class="fas fa-trash" style="color:red;"></i>
+                </button>
+                <button id="moveUpButton" class="btn move-up tooltip" data-tooltip="Move Up" 
+                aria-label="Move Up">
+                  <i class="fas fa-arrow-up"></i>
+                </button>
+                <button id="moveDownButton" class="btn move-down tooltip" data-tooltip="Move Down" aria-label="Move Down">
+                  <i class="fas fa-arrow-down"></i>
+                </button>                
               </nav>
             </div> <!-- graph container -->
       </div> <!-- card -->
@@ -595,6 +572,11 @@ const closeQuickviewButton = document.getElementById("closeQuickviewButton");
 const quickviewDefault = document.getElementById("quickviewDefault");
 const cancelButton = document.getElementById("cancelButton");
 
+const editButton = document.getElementById("editButton");
+const deleteButton = document.getElementById("deleteButton");
+const moveUpButton = document.getElementById("moveUpButton");
+const moveDownButton = document.getElementById("moveDownButton");
+
 openQuickviewButton.addEventListener("click", () => {
   quickviewDefault.classList.add("is-active");
   log("Open quickview");
@@ -606,6 +588,57 @@ closeQuickviewButton.addEventListener("click", () => {
 
 cancelButton.addEventListener("click", () => {
   quickviewDefault.classList.remove("is-active");
+});
+
+editButton.addEventListener("click", (e) => {
+  if (selectedInterventionIndex !== null) {
+    // const selectedIntervention = getInterventions[selectedInterventionIndex];
+    e.stopPropagation();
+    log("[TIMELINE] Modify intervention ", selectedInterventionIndex);
+    modifyIntervention(
+      selectedInterventionIndex,
+      timelineModifications[selectedInterventionIndex]
+    );
+  } else {
+    log("No intervention selected for editing");
+  }
+});
+
+deleteButton.addEventListener("click", (e) => {
+  if (selectedInterventionIndex !== null) {
+    e.stopPropagation();
+    log("[TIMELINE] Delete intervention ", selectedInterventionIndex);
+    manager.setAutoRun(true).removeIntervention(selectedInterventionIndex);
+    runModel();
+  } else {
+    log("No intervention selected for deletion");
+  }
+});
+
+moveUpButton.addEventListener("click", (e) => {
+  if (selectedInterventionIndex !== null) {
+    e.stopPropagation();
+    log("[TIMELINE] Move intervention up ", selectedInterventionIndex);
+    reorderIntervention(manager.currentOrder, selectedInterventionIndex, "up");
+    runModel();
+  } else {
+    log("No intervention selected for moving up");
+  }
+});
+
+moveDownButton.addEventListener("click", (e) => {
+  if (selectedInterventionIndex !== null) {
+    e.stopPropagation();
+    log("[TIMELINE] Move intervention down ", selectedInterventionIndex);
+    reorderIntervention(
+      manager.currentOrder,
+      selectedInterventionIndex,
+      "down"
+    );
+    runModel();
+  } else {
+    log("No intervention selected for moving down");
+  }
 });
 ```
 
