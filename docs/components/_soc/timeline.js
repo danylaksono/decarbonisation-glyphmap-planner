@@ -64,13 +64,17 @@ export function createTimelineInterface(
     .attr("class", "background")
     .attr("width", innerWidth)
     .attr("height", innerHeight)
-    .attr("fill", "transparent")
-    .on("click", function () {
-      g.selectAll(".block").classed("highlight", false);
-      if (onClick) {
-        onClick(null); // Pass null to indicate deselection
-      }
-    });
+    .attr("fill", "transparent");
+
+  // Track multi-selection
+  const selectedIndices = new Set();
+
+  // Background click → clear all
+  g.selectAll(".background").on("click", function () {
+    selectedIndices.clear();
+    g.selectAll(".block").classed("highlight", false);
+    if (onClick) onClick([]); // Pass empty array
+  });
 
   // Intervention blocks
   const blocks = g
@@ -91,18 +95,20 @@ export function createTimelineInterface(
       (d) => xScale(d.initial_year + d.duration) - xScale(d.initial_year)
     )
     .attr("height", yScale.bandwidth())
-    // .attr("height", 30)
     .attr("fill", "steelblue")
     .on("click", function (event, d) {
-      g.selectAll(".block").classed("highlight", false);
-      // Highlight the clicked block
-      d3.select(this).classed("highlight", true);
-      // Trigger the click callback
-      if (onClick) {
-        // onClick(d);
-        const index = interventions.indexOf(d);
-        onClick(index);
+      const idx = interventions.indexOf(d);
+      if (!event.shiftKey) selectedIndices.clear();
+      if (selectedIndices.has(idx)) {
+        selectedIndices.delete(idx);
+      } else {
+        selectedIndices.add(idx);
       }
+      g.selectAll(".block").classed("highlight", (_, i) =>
+        selectedIndices.has(i)
+      );
+      if (onClick) onClick(Array.from(selectedIndices).sort());
+      event.stopPropagation();
     });
 
   // Add text labels to the intervention blocks
@@ -137,8 +143,6 @@ export function createTimelineInterface(
     })
     .on("drag", function (event, d) {
       // Calculate new position with constraints
-      // const mouseX = event.x;
-      // const newYear = Math.round(xScale.invert(mouseX));
       const adjustedX = event.x - d.dragOffset;
       const newYear = Math.round(xScale.invert(adjustedX));
       const [minAllowedYear, maxAllowedYear] = xScale.domain();
@@ -291,16 +295,6 @@ export function createTimelineInterface(
         .attr("dx", "-.8em")
         .attr("dy", ".15em")
         .attr("transform", "rotate(-45)");
-
-      // Add x-axis label
-      // graphG
-      //   .append("text")
-      //   .attr("x", graphWidth / 2)
-      //   .attr("y", graphHeight + 20)
-      //   .attr("text-anchor", "middle")
-      //   .attr("fill", "black")
-      //   .style("font-size", "10px")
-      //   .text("Year");
 
       graphG
         .append("g")

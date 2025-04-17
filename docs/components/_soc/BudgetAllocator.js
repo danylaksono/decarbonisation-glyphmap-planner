@@ -5,7 +5,7 @@
 
 // src/components/BudgetAllocator.js
 
-import { BudgetAllocator as BaseBudgetAllocator } from "../components/libs/decarb-model/budget-allocator.js"; // Assuming this exists
+import { BudgetAllocator as BaseBudgetAllocator } from "../libs/decarb-model/budget-allocator.js"; // Assuming this exists
 import { html } from "npm:htl";
 
 // BudgetAllocator class extending the base implementation

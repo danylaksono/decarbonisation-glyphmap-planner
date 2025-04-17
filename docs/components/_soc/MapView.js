@@ -9,11 +9,11 @@
 
 // src/components/MapView.js
 
-import { glyphMap } from "../components/libs/gridded-glyphmaps/index.min.js";
-import { RadialGlyph } from "../components/libs/gridded-glyphmaps/glyph-designs/radialglyph.js";
-import { LeafletMap } from "../components/libs/leaflet/leaflet-map.js";
-import { enrichGeoData, transformGeometry } from "../utils/geoUtils.js";
-import { OSGB } from "../components/libs/osgb/index.js";
+import { glyphMap } from "../libs/gridded-glyphmaps/index.min.js";
+import { RadialGlyph } from "../libs/gridded-glyphmaps/glyph-designs/radialglyph.js";
+import { LeafletMap } from "../libs/leaflet/leaflet-map.js";
+import { enrichGeoData, transformGeometry } from "../../utils/geoUtils.js";
+import { OSGB } from "../libs/osgb/index.js";
 import _ from "npm:lodash";
 import { html } from "npm:htl";
 import * as d3 from "npm:d3";

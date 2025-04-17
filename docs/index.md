@@ -13,6 +13,7 @@ sql:
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet-draw/dist/leaflet.draw.css" />
 <link rel="stylesheet" href="./styles/dashboard.css">
+<link rel="icon" type="image/png" href="./assets/favicon.png" sizes="32x32">
 
 <!-- ------------ Imports ------------ -->
 
@@ -215,7 +216,6 @@ const glyphColours = [
   "#228B22", // pv_generation: ForestGreen
   "#006400", // pv_total: DarkGreen
 ];
-
 const timelineVariables = [
   "interventionCost",
   "carbonSaved",
@@ -228,7 +228,7 @@ const timelineColours = [
   "#00FF00", // numInterventions: Green
   "#FF0000", // interventionTechs: Red
 ];
-endTimer("load_data_osgb");
+endTimer("glyph_variables_and_colours");
 ```
 
 <!-- ------------ Getter-Setter ------------ -->
@@ -295,123 +295,8 @@ endTimer("update_selection");
 ```
 
 ```js
-startTimer("handle_selection");
-// HANDLE MAP AND TABLE SELECTION
-function handleSelection(source, newSelection, mode = "intersect") {
-  log(`Updating selection from ${source} with mode ${mode}:`, newSelection);
-
-  let selectedFeatures = updateSelection(
-    getInitialData,
-    newSelection,
-    mode,
-    "id"
-  );
-  setInitialData(selectedFeatures);
-
-  // if (getInitialData.length === 0) {
-  //   // if no features are selected, set the initial data to the new selection
-  //   setInitialData(newSelection);
-  // } else {
-  //   let selectedFeatures = updateSelection(
-  //     getInitialData,
-  //     newSelection,
-  //     mode,
-  //     "id"
-  //   );
-  //   setInitialData(selectedFeatures);
-  // }
-  // // update the initial data
-
-  if (source === "map") {
-    // renderTable(selectedFeatures); // Update the table
-    log("updating the table");
-  } else if (source === "table") {
-    log("updating the map");
-    // updateMapHighlight(selectedFeatures); // Update the map
-  }
-}
-endTimer("handle_selection");
-```
-
-```js
-// // Use a simpler approach with a one-way filtering toggle
-// const filterManager = {
-//   // Track which component initiated filtering
-//   activeSource: null,
-//   // ID values from last filter operation
-//   currentIds: [],
-//   // Flag to prevent filtering during initialisation
-//   initialised: false,
-//   // Track filter operations
-//   filterCount: 0,
-
-//   // Apply filter from map to table only
-//   applyMapToTableFilter(idValues) {
-//     log(`Calling filter manager from ${this.activeSource} to table`);
-
-//     if (this.activeSource === "table") return false;
-
-//     // Ensure idValues is always an array of primitive values
-//     const cleanedIds = Array.isArray(idValues)
-//       ? idValues.filter((id) => id !== undefined && id !== null)
-//       : [];
-
-//     this.filterCount++;
-//     this.activeSource = "map";
-//     this.currentIds = cleanedIds;
-
-//     log(
-//       `[Filter ${this.filterCount}] Map → Table with ${cleanedIds.length} IDs`
-//     );
-
-//     // Only update application state - use simple objects with id property
-//     setInitialData(cleanedIds.map((id) => ({ id })));
-
-//     // Note: table update happens in a separate reactive cell
-//     return true;
-//   },
-
-//   // Apply filter from table to map only
-//   applyTableToMapFilter(idValues) {
-//     if (this.activeSource === "map") return false;
-
-//     this.filterCount++;
-//     this.activeSource = "table";
-//     this.currentIds = idValues;
-
-//     log(`[Filter ${this.filterCount}] Table → Map with ${idValues.length} IDs`);
-
-//     // Only update application state
-//     setInitialData(idValues.map((id) => ({ id })));
-
-//     // Note: map update happens in a separate reactive cell
-//     return true;
-//   },
-
-//   // Reset state
-//   reset() {
-//     this.activeSource = null;
-//   },
-// };
-
-// // Replace current applyMapFilter function
-// const applyMapFilter = (filteredIds) => {
-//   const idValues = filteredIds.map((item) => item.id);
-
-//   // Use the new filter manager approach
-//   filterManager.applyMapToTableFilter(idValues);
-
-//   return {
-//     filterName: `Buildings with IDs in provided list (${idValues.length} buildings)`,
-//     filterFunction: (building) => idValues.includes(building.id),
-//   };
-// };
-```
-
-```js
 // Modified filterManager for cascading filtering, but without direct UI sync calls.
-// Only updates state; UI sync is handled in reactive cells as before.
-
+// Only updates state; UI sync is handled in reactive cells
 const filterManager = {
   lastSource: null,
   currentIds: [],
@@ -463,9 +348,9 @@ const filterManager = {
 // Map filter to table sync
 {
   // This cell executes when filterManager changes or getInitialData changes
-  log(
-    "This cell executes when filterManager changes or getInitialData changes: on map"
-  );
+  // log(
+  //   "This cell executes when filterManager changes or getInitialData changes: on map"
+  // );
   filterManager;
   getInitialData;
 
@@ -501,9 +386,9 @@ const filterManager = {
 // Table filter to map sync
 {
   // This cell executes when filterManager changes or getInitialData changes
-  log(
-    "This cell executes when filterManager changes or getInitialData changes"
-  );
+  // log(
+  //   "This cell executes when filterManager changes or getInitialData changes"
+  // );
   filterManager;
   getInitialData;
 
@@ -543,16 +428,18 @@ const filterManager = {
         </header>
             <div id="graph-container">
               <div id="timeline-panel">
-                ${setInitialData ? html`<p> No. of Filtered Data: ${setInitialData.length} </p>`: "" }
+                ${getInitialData ? html`<p> No. of Filtered Data: ${getInitialData.length} </p>`: "" }
                 ${createTimelineInterface(
-                interventions,
+                getInterventions,
                 (change) => {
                   log("Timeline changed", change);
                   setTimelineModifications(change);
                 },
                 (click) => {
-                  setSelectedInterventionIndex(click);
-                  log("Clicked Interventions", click, interventions[click]);
+                  if (click != null) {
+                    setSelectedInterventionIndex(click);
+                    log("Clicked Interventions", click, getInterventions[click]);
+                  } // else do nothing
                 },
                 400,
                 250
@@ -626,7 +513,7 @@ const filterManager = {
     <span class="delete" data-dismiss="quickview" id="closeQuickviewButton"></span>
   </header>
   <div class="quickview-body">
-    ${getInitialFilter ? html`<i> Using ${getInitialFilter.length} Filtered Data </i>`: "" }
+    ${getInitialData ? html`<i> Using ${getInitialData.length} Filtered Data </i>`: "" }
     <div class="quickview-block">
       <form id="quickviewForm">
         <!-- Technology Selection -->
@@ -826,8 +713,14 @@ const listOfTech = {
 };
 
 // --- Create an InterventionManager instance ---
-const initialData = getInitialFilter ? getInitialFilter : buildingsData;
-const manager = new InterventionManager(buildingsData, listOfTech);
+// initial building data from get initial data's id if it exist
+// else use the buildingsData
+const initialIds = new Set(getInitialData.map((d) => d.id));
+const matchedBuildings = buildingsData.filter((b) => initialIds.has(b.id));
+const initialData = matchedBuildings ? matchedBuildings : buildingsData;
+
+log("[MODEL] Running InterventionManager with initial data: ", initialData);
+const manager = new InterventionManager(initialData, listOfTech);
 ```
 
 <!-- ---------------- Input form declarations ---------------- -->
@@ -1080,7 +973,6 @@ addInterventionBtn.addEventListener("click", () => {
 
 ```js
 const getNumericBudget = (value) => {
-  // log("getNumericBudget", value);
   // Remove commas and parse the value as a number
   let budget = parseFloat(value.replace(/,/g, "").replace(/£/g, ""));
   // log("budget in billions", budget * 1e6);
@@ -1147,6 +1039,8 @@ let direction = 1; // Controls the animation direction (0 to 1 or 1 to 0)
 let animationFrame; // Stores the requestAnimationFrame ID
 // let currentValue = 0; // Current value of the morph factor
 
+let currentValue = parseFloat(morphFactorInput.value); // Initialize currentValue with the slider value
+
 // Animation loop
 animate(currentValue, animationFrame, playing, direction);
 
@@ -1159,7 +1053,7 @@ playButton.addEventListener("click", () => {
 
   if (playing) {
     // Start the animation with the current slider value
-    const currentValue = parseFloat(morph_factor);
+    // const currentValue = parseFloat(morph_factor);
     requestAnimationFrame(() => animate(currentValue));
   } else {
     cancelAnimationFrame(animationFrame); // Stop the animation
@@ -1192,7 +1086,10 @@ function addNewIntervention(data) {
   manager.addIntervention(newConfig);
 
   // run the model
+  startTimer("run_model");
+  log(">> Running the decarbonisation model...");
   runModel();
+  endTimer("run_model");
 }
 ```
 
@@ -1347,13 +1244,13 @@ function updateTimeline() {
   timelinePanel.innerHTML = "";
   timelinePanel.appendChild(
     createTimelineInterface(
-      interventions,
+      getInterventions,
       (change) => {
-        log("timeline change", change);
+        log("[TIMELINE] timeline change", change);
       },
       (click) => {
         setSelectedInterventionIndex(click);
-        log("timeline clicked block", interventions[click]);
+        log("[TIMELINE] timeline clicked block", getInterventions[click]);
       },
       450,
       200
@@ -1366,25 +1263,35 @@ function updateTimeline() {
 
 ```js
 const selectedIntervenedBuildings =
-  interventions[selectedInterventionIndex]?.intervenedBuildings;
+  selectedInterventionIndex === null
+    ? null
+    : Array.isArray(selectedInterventionIndex)
+    ? selectedInterventionIndex.flatMap(
+        (i) => getInterventions[i]?.intervenedBuildings ?? []
+      )
+    : getInterventions[selectedInterventionIndex]?.intervenedBuildings;
+
+// log(`[DATA] Selected Intervened buildings`, getInterventions[0]);
+
+console.log("[DATA] Get Interventions", getInterventions[0]);
 
 const flatData = selectedIntervenedBuildings?.map((p) => ({
   ...p,
   ...p.properties,
 }));
 
-log(">> Intervened buildings", flatData);
+log("[DATA] Intervened buildings", flatData);
 
 const data =
   selectedInterventionIndex === null
     ? stackedRecap?.buildings ?? buildingsData
     : flatData;
-// log(">> DATA DATA DATA", data);
+log("[DATA] DATA DATA DATA", data);
 ```
 
 ```js
 // This updates the stored interventions
-const interventions = getInterventions;
+// const interventions = getInterventions;
 log(">> Interventions", interventions);
 ```
 
@@ -1417,9 +1324,9 @@ const excludedColumns = [
   "pv_material",
   "gshp_labour",
   "gshp_material",
-  "ashp_suitability",
-  "pv_suitability",
-  "gshp_suitability",
+  // "ashp_suitability",
+  // "pv_suitability",
+  // "gshp_suitability",
   "substation_headroom_pct",
   "substation_peakload",
   "deprivation_decile",
@@ -1441,7 +1348,7 @@ const tableColumns = [
     }),
 ];
 
-log(">> Define table columns...", tableColumns);
+log("[TABLE] Define table columns...", tableColumns);
 ```
 
 ```js
@@ -1486,6 +1393,7 @@ log("Initial Data Fixed: ", getInitialData);
 
 ```js
 startTimer("create_sorter_table");
+log("[TABLE] Create table using columns", tableColumns);
 const table = new sorterTable(data, tableColumns, tableChanged);
 
 function drawSorterTable(data, columns, callback, options) {
@@ -1888,6 +1796,8 @@ function glyphMapSpec(width = 800, height = 600) {
 ```
 
 ```js
+// set and animate needs to be in here
+
 function set(input, value) {
   input.value = value;
   input.dispatchEvent(new Event("input", { bubbles: true }));

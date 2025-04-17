@@ -66,20 +66,6 @@ export function createTimelineInterface(
     .domain([minYear - 1, maxYear + 1]) // Add buffer year on each side
     .range([0, innerWidth]);
 
-  // const fixedPadding = 1; // pixels between blocks
-  // const totalPaddingSpace = fixedPadding * (interventions.length - 1);
-  // const availableBlockSpace = innerHeight - totalPaddingSpace;
-  // const blockHeight = Math.min(
-  //   maxBlockHeight,
-  //   availableBlockSpace / interventions.length
-  // );
-
-  // const yScale = d3
-  //   .scaleBand()
-  //   .domain(interventions.map((_, i) => i))
-  //   .range([0, innerHeight])
-  //   .paddingInner(fixedPadding / (blockHeight + fixedPadding)) // converts pixels to ratio
-  //   .paddingOuter(0);
   const yScale = d3
     .scaleBand()
     .domain(interventions.map((_, i) => i))
@@ -104,6 +90,9 @@ export function createTimelineInterface(
 
   // Track tooltip state
   let areTooltipsEnabled = tooltipsEnabled;
+  // add variables to track multi-selection
+  let selectedIndices = [];
+  let lastClickedIndex = null;
 
   // Create main group element with margins
   const g = svg
@@ -132,6 +121,8 @@ export function createTimelineInterface(
     .attr("height", innerHeight)
     .attr("fill", "transparent")
     .on("click", function () {
+      selectedIndices = [];
+      lastClickedIndex = null;
       g.selectAll(".block").classed("highlight", false);
       if (onClick) {
         onClick(null); // Pass null to indicate deselection
@@ -143,103 +134,6 @@ export function createTimelineInterface(
     svg.append("style").text("");
   }
 
-  // Add drag-to-select functionality
-  let selectionRect = null;
-  let selectionStart = null;
-
-  g.on("mousedown", function (event) {
-    // Only initiate on background, not on blocks
-    if (event.target.classList.contains("block")) return;
-
-    // Remove existing selection rectangle if any
-    if (selectionRect) selectionRect.remove();
-
-    // Store starting position
-    selectionStart = d3.pointer(event);
-
-    // Create new selection rectangle
-    selectionRect = g
-      .append("rect")
-      .attr("class", "selection-area")
-      .attr("x", selectionStart[0])
-      .attr("y", selectionStart[1])
-      .attr("width", 0)
-      .attr("height", 0)
-      .attr("fill", "rgba(158, 202, 225, 0.3)")
-      .attr("stroke", "rgb(107, 174, 214)")
-      .attr("stroke-width", 1);
-  })
-    .on("mousemove", function (event) {
-      // Only proceed if we have a selection rectangle
-      if (!selectionRect || !selectionStart) return;
-
-      const currentPos = d3.pointer(event);
-
-      // Calculate rectangle dimensions
-      const x = Math.min(selectionStart[0], currentPos[0]);
-      const y = Math.min(selectionStart[1], currentPos[1]);
-      const width = Math.abs(currentPos[0] - selectionStart[0]);
-      const height = Math.abs(currentPos[1] - selectionStart[1]);
-
-      // Update rectangle position and size
-      selectionRect
-        .attr("x", x)
-        .attr("y", y)
-        .attr("width", width)
-        .attr("height", height);
-    })
-    .on("mouseup", function () {
-      // Only proceed if we have a selection rectangle
-      if (!selectionRect || !selectionStart) return;
-
-      // Get the selection rectangle's bounds
-      const selectX = parseFloat(selectionRect.attr("x"));
-      const selectY = parseFloat(selectionRect.attr("y"));
-      const selectWidth = parseFloat(selectionRect.attr("width"));
-      const selectHeight = parseFloat(selectionRect.attr("height"));
-
-      // Clear any previous selection
-      g.selectAll(".block").classed("highlight", false);
-
-      // Find all blocks that intersect with the selection rectangle
-      const selectedIndexes = [];
-      g.selectAll(".block").each(function (d, i) {
-        const block = d3.select(this);
-        const blockX = parseFloat(block.attr("x"));
-        const blockY = parseFloat(block.attr("y"));
-        const blockWidth = parseFloat(block.attr("width"));
-        const blockHeight = parseFloat(block.attr("height"));
-
-        // Check for rectangle intersection
-        if (
-          blockX < selectX + selectWidth &&
-          blockX + blockWidth > selectX &&
-          blockY < selectY + selectHeight &&
-          blockY + blockHeight > selectY
-        ) {
-          // Highlight selected block
-          block.classed("highlight", true);
-          selectedIndexes.push(interventions.indexOf(d));
-        }
-      });
-
-      // Call the onClick callback with the array of selected indexes
-      if (onClick && selectedIndexes.length > 0) {
-        onClick(
-          selectedIndexes.length === 1 ? selectedIndexes[0] : selectedIndexes
-        );
-      } else if (onClick && selectedIndexes.length === 0) {
-        // If nothing was selected, pass null
-        onClick(null);
-      }
-
-      // Remove the selection rectangle
-      selectionRect.remove();
-      selectionRect = null;
-      selectionStart = null;
-    });
-
-  // Update CSS styles for selection interaction
   svg.select("style").text(
     svg.select("style").text() +
       `
@@ -276,19 +170,32 @@ export function createTimelineInterface(
     .attr("height", (d, i) => Math.min(yScale.bandwidth(), maxBlockHeight))
     .attr("fill", "steelblue")
     .on("click", function (event, d) {
-      // Clear any existing selection
-      g.selectAll(".block").classed("highlight", false);
-
-      // Highlight the clicked block
-      d3.select(this).classed("highlight", true);
-
-      // Trigger the click callback
-      if (onClick) {
-        const index = interventions.indexOf(d);
-        onClick(index);
+      const index = interventions.indexOf(d);
+      if (event.shiftKey && lastClickedIndex !== null) {
+        const [start, end] = [lastClickedIndex, index].sort((a, b) => a - b);
+        selectedIndices = [];
+        for (let i = start; i <= end; i++) selectedIndices.push(i);
+      } else if (event.shiftKey) {
+        if (selectedIndices.includes(index)) {
+          selectedIndices = selectedIndices.filter((i) => i !== index);
+        } else {
+          selectedIndices.push(index);
+        }
+        lastClickedIndex = index;
+      } else {
+        selectedIndices = [index];
+        lastClickedIndex = index;
       }
-
-      // Stop event propagation to prevent background click
+      g.selectAll(".block").classed("highlight", (_, i) =>
+        selectedIndices.includes(i)
+      );
+      if (onClick) {
+        onClick(
+          selectedIndices.length === 1
+            ? selectedIndices[0]
+            : [...selectedIndices]
+        );
+      }
       event.stopPropagation();
     });
 
@@ -328,30 +235,12 @@ export function createTimelineInterface(
         textLength = this.getComputedTextLength();
       }
     });
-  // blocks
-  //   .append("text")
-  //   .attr("class", "block-label")
-  //   .attr("x", (d) => xScale(d.initialYear) + 5)
-  //   // .attr("y", (d, i) => yScale(i) + yScale.bandwidth() / 2)
-  //   .attr("y", (d, i) => {
-  //     if (interventions.length === 1) {
-  //       return innerHeight / 2; // Center vertically
-  //     } else {
-  //       return yScale(i) + yScale.bandwidth() / 2;
-  //     }
-  //   })
-  //   .attr("dy", "0.35em")
-  //   .attr("fill", "white")
-  //   .attr("pointer-events", "none")
-  //   .text((d) => d.tech)
-  //   .style("font-size", "12px");
 
   // Resize handles
   blocks
     .append("rect")
     .attr("class", "resize-handle")
     .attr("x", (d) => xScale(d.initialYear + d.duration) - 4)
-    // .attr("y", (d, i) => yScale(i))
     .attr("y", (d, i) => {
       if (interventions.length === 1) {
         return innerHeight / 2 - maxBlockHeight / 2; // Same as the block's y position
@@ -360,7 +249,6 @@ export function createTimelineInterface(
       }
     })
     .attr("width", 8)
-    // .attr("height", yScale.bandwidth())
     .attr("height", (d, i) => Math.min(yScale.bandwidth(), maxBlockHeight))
     .attr("fill", "transparent")
     .attr("cursor", "ew-resize");
@@ -374,8 +262,6 @@ export function createTimelineInterface(
     })
     .on("drag", function (event, d) {
       // Calculate new position with constraints
-      // const mouseX = event.x;
-      // const newYear = Math.round(xScale.invert(mouseX));
       const adjustedX = event.x - d.dragOffset;
       const newYear = Math.round(xScale.invert(adjustedX));
       const [minAllowedYear, maxAllowedYear] = xScale.domain();
@@ -542,16 +428,6 @@ export function createTimelineInterface(
         .attr("dx", "-.8em")
         .attr("dy", ".15em")
         .attr("transform", "rotate(-45)");
-
-      // Add x-axis label
-      // graphG
-      //   .append("text")
-      //   .attr("x", graphWidth / 2)
-      //   .attr("y", graphHeight + 20)
-      //   .attr("text-anchor", "middle")
-      //   .attr("fill", "black")
-      //   .style("font-size", "10px")
-      //   .text("Year");
 
       graphG
         .append("g")

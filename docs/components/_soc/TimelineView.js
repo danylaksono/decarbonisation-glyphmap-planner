@@ -9,7 +9,7 @@
 // src/components/TimelineView.js
 
 // Import required dependencies
-import { createTimelineInterface } from "./libs/decarb-model/timeline.js"; // Timeline renderer
+import { createTimelineInterface } from "../libs/decarb-model/timeline.js"; // Timeline renderer
 import { html } from "npm:htl";
 
 // TimelineView component
