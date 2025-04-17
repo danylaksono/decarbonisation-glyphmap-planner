@@ -415,7 +415,7 @@ const filterManager = {
           </header>              
           ${resize((width, height) => drawSorterTable(data, tableColumns, tableChanged, {
             width: width,
-            height: height-100,
+            height: height-80,
           })
           )
           }
@@ -567,6 +567,7 @@ const filterManager = {
 </div>
 
 ```js
+// ------------------ Timeline buttons and events ------------------
 const openQuickviewButton = document.getElementById("openQuickviewButton");
 const closeQuickviewButton = document.getElementById("closeQuickviewButton");
 const quickviewDefault = document.getElementById("quickviewDefault");
@@ -2031,4 +2032,43 @@ let keysToNormalise = [
   "buildingsIntervened",
   "totalCarbonSaved",
 ];
+```
+
+<!--------------- Reset everything and move on --------------->
+
+```js
+function resetAll() {
+  // Reset filter manager and all relevant states
+  filterManager.reset();
+  setInitialData(null);
+  setSelectedTableRow([]);
+  setInterventions([]);
+  setResults([]);
+  setSelectedAllocation([]);
+  setTimelineModifications([]);
+  setCurrentConfig({});
+  setTableFiltered([]);
+  setSelectedInterventionIndex(null);
+
+  // Recreate the sorterTable with original buildingsData
+  const resetTableColumns = [
+    { column: "id", unique: true },
+    ...Object.keys(buildingsData[0])
+      .filter((key) => !excludedColumns.includes(key) && key !== "id")
+      .sort((a, b) => {
+        const indexA = customOrder.indexOf(a);
+        const indexB = customOrder.indexOf(b);
+        if (indexA === -1 && indexB === -1) return a.localeCompare(b);
+        if (indexA === -1) return 1;
+        if (indexB === -1) return -1;
+        return indexA - indexB;
+      }),
+  ];
+  table.setData(buildingsData, resetTableColumns);
+
+  // Reset the map instance to show all buildings
+  mapInstance.setFilteredData("buildings", {
+    ids: buildingsData.map((b) => b.id),
+  });
+}
 ```
