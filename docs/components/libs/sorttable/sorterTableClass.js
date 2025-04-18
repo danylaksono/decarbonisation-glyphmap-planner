@@ -1,4 +1,5 @@
 import * as d3 from "npm:d3";
+import Clusterize from "clusterize.js";
 // import { DuckDBClient } from "npm:@observablehq/duckdb";
 
 import { BinningService } from "./BinningService.js";
@@ -15,11 +16,6 @@ export class sorterTable {
   constructor(data, columnNames, changed, options = {}) {
     // Initialize core properties first
     this.data = this.preprocessData(data, columnNames); // Add preprocessing
-
-    // this.db = DuckDBClient.of({ dataset: data }); // Initialize DuckDBClient
-    // logDebug("DuckDBClient initialized:", this.db);
-
-    // logDebug("Duckdb query", this.duckFilter());
 
     this.columnTypes = {};
     this.columns = columnNames.map((col) => {
@@ -98,10 +94,6 @@ export class sorterTable {
     this.ctrlDown = false;
     this.shiftDown = false;
     this.lastRowSelected = 0;
-    this.defaultLines = 1000;
-    this.lastLineAdded = 0;
-    this.additionalLines = 500;
-    this.addingRows = false;
     this.rules = [];
     this.selectedRows = new Set();
     this.isAggregated = false; // Track if the table is currently showing aggregated data
@@ -153,6 +145,11 @@ export class sorterTable {
         this.shiftDown = false;
       }
     });
+
+    this._clusterizeContent = document.createElement("div");
+    this._clusterizeContent.className = "clusterize-content";
+
+    this._clusterize = null; // Clusterize instance
   }
 
   /**
@@ -1002,68 +999,40 @@ export class sorterTable {
   }
 
   createTable() {
-    if (this.tBody != null) this.table.removeChild(this.tBody);
-
-    this.tBody = document.createElement("tbody");
-    this.table.appendChild(this.tBody);
-
-    this.lastLineAdded = -1;
-    this.addTableRows(this.defaultLines);
+    const rows = this.dataInd.map((dataIndex, rowIdx) => {
+      let cells = this.columns
+        .map((c) => {
+          if (typeof this.cellRenderers[c.column] === "function") {
+            const temp = document.createElement("div");
+            temp.appendChild(
+              this.cellRenderers[c.column](
+                this.data[dataIndex][c.column],
+                this.data[dataIndex]
+              )
+            );
+            return `<td>${temp.innerHTML}</td>`;
+          } else {
+            return `<td>${this.data[dataIndex][c.column]}</td>`;
+          }
+        })
+        .join("");
+      return `<tr data-row-index="${rowIdx}">${cells}</tr>`;
+    });
+    if (this._clusterize) {
+      this._clusterize.update(rows);
+    }
   }
 
-  addTableRows(howMany) {
-    if (this.addingRows) {
-      return; // Prevent overlapping calls
-    }
-    this.addingRows = true;
-
-    let min = this.lastLineAdded + 1; // Corrected: Start from the next line
-    let max = Math.min(min + howMany - 1, this.dataInd.length - 1); // Corrected: Use Math.min to avoid exceeding dataInd.length
-
-    for (let row = min; row <= max; row++) {
-      let dataIndex = this.dataInd[row]; // Adjust index for dataInd
-      if (dataIndex === undefined) continue;
-
-      let tr = document.createElement("tr");
-      tr.selected = false;
-      Object.assign(tr.style, {
-        color: "grey",
-        borderBottom: "1px solid #ddd",
-      });
-      this.tBody.appendChild(tr);
-
-      this.columns.forEach((c) => {
-        let td = document.createElement("td");
-
-        // Use custom renderer if available for this column
-        if (typeof this.cellRenderers[c.column] === "function") {
-          td.innerHTML = "";
-          td.appendChild(
-            this.cellRenderers[c.column](
-              this.data[dataIndex][c.column],
-              this.data[dataIndex]
-            )
-          );
-        } else {
-          td.innerText = this.data[dataIndex][c.column]; // Default: Set text content
-        }
-
-        tr.appendChild(td);
-        td.style.color = "inherit";
-        td.style.fontWidth = "inherit";
-      });
-
-      // Add event listeners for row selection
+  _attachRowEvents() {
+    Array.from(this.tBody.querySelectorAll("tr")).forEach((tr) => {
       tr.addEventListener("click", (event) => {
-        let rowIndex = this.getRowIndex(tr);
-
+        const rowIndex = parseInt(tr.getAttribute("data-row-index"), 10);
+        if (isNaN(rowIndex)) return;
         if (this.shiftDown) {
-          // SHIFT-CLICK (select range)
           let s = this.getSelection().map((s) => s.index);
-          if (s.length == 0) s = [rowIndex]; // If nothing selected, use current row index
+          if (s.length == 0) s = [rowIndex];
           let minSelIndex = Math.min(...s);
           let maxSelIndex = Math.max(...s);
-
           if (rowIndex <= minSelIndex) {
             for (let i = rowIndex; i < minSelIndex; i++) {
               const trToSelect = this.tBody.querySelectorAll("tr")[i];
@@ -1076,35 +1045,24 @@ export class sorterTable {
             }
           }
         } else if (this.ctrlDown) {
-          // CTRL-CLICK (toggle individual row selection)
           if (tr.selected) {
             this.unselectRow(tr);
           } else {
             this.selectRow(tr);
           }
         } else {
-          // NORMAL CLICK (clear selection and select clicked row)
           this.clearSelection();
           this.selectRow(tr);
         }
-
         this.selectionUpdated();
       });
-
-      // Add hover effect for rows
       tr.addEventListener("mouseover", () => {
-        tr.style.backgroundColor = "#f0f0f0"; // Highlight on hover
+        tr.style.backgroundColor = "#f0f0f0";
       });
-
       tr.addEventListener("mouseout", () => {
-        tr.style.backgroundColor = ""; // Reset background color
+        tr.style.backgroundColor = "";
       });
-
-      // this.lastLineAdded++;
-      this.lastLineAdded = row; // Update the last line added
-    }
-
-    this.addingRows = false;
+    });
   }
 
   resetTable() {
@@ -1286,7 +1244,6 @@ export class sorterTable {
       position: "relative",
     });
 
-    // --- Sidebar ---
     let sidebar = document.createElement("div");
     Object.assign(sidebar.style, {
       display: "flex",
@@ -1297,141 +1254,68 @@ export class sorterTable {
       borderRight: "1px solid #ccc",
       marginRight: "2px",
     });
+    // ...sidebar icons code...
 
-    // --- Filter Icon ---
-    let filterIcon = document.createElement("i");
-    filterIcon.classList.add("fas", "fa-filter");
-    Object.assign(filterIcon.style, {
-      cursor: "pointer",
-      marginBottom: "15px",
-      color: "gray",
-    });
-    filterIcon.setAttribute("title", "Apply Filter");
-    filterIcon.addEventListener("click", (event) => {
-      event.stopPropagation();
-      this.filter();
-    });
-    sidebar.appendChild(filterIcon);
-
-    // --- Aggregate Icon ---
-    let aggregateIcon = document.createElement("i");
-    aggregateIcon.classList.add("fas", "fa-chart-bar");
-    Object.assign(aggregateIcon.style, {
-      cursor: "pointer",
-      marginBottom: "15px",
-      color: "gray",
-    });
-    aggregateIcon.setAttribute("title", "Aggregate by Selected Column");
-    aggregateIcon.addEventListener("click", (event) => {
-      event.stopPropagation();
-      this.aggregate();
-    });
-    sidebar.appendChild(aggregateIcon);
-
-    // --- Undo Icon ---
-    let undoIcon = document.createElement("i");
-    undoIcon.classList.add("fas", "fa-undo");
-    Object.assign(undoIcon.style, {
-      cursor: "pointer",
-      marginBottom: "15px",
-      color: "gray",
-    });
-    undoIcon.setAttribute("title", "Undo");
-    undoIcon.addEventListener("click", (event) => {
-      event.stopPropagation();
-      this.undo();
-    });
-    sidebar.appendChild(undoIcon);
-
-    // --- Reset Icon ---
-    let resetIcon = document.createElement("i");
-    resetIcon.classList.add("fas", "fa-sync-alt");
-    Object.assign(resetIcon.style, {
-      cursor: "pointer",
-      marginBottom: "15px",
-      color: "gray",
-    });
-    resetIcon.setAttribute("title", "Reset Table");
-    resetIcon.addEventListener("click", (event) => {
-      event.stopPropagation();
-      this.resetTable();
-    });
-    sidebar.appendChild(resetIcon);
-
-    // --- Table Container ---
-    let tableContainer = document.createElement("div");
-    Object.assign(tableContainer.style, {
+    // --- Table Container (scrollable) ---
+    let tableScrollDiv = document.createElement("div");
+    Object.assign(tableScrollDiv.style, {
       flex: "1",
+      overflowY: "auto",
       overflowX: "auto",
+      height: this.options.containerHeight,
+      width: this.options.containerWidth,
+      position: "relative",
     });
-    if (this.tableWidth) {
-      this.table.style.width = this.tableWidth;
-    } else {
-      this.table.style.width = "100%"; // Default to 100%
+    this._scrollContainer = tableScrollDiv;
+
+    // Remove any previous content
+    while (this.table.firstChild) this.table.removeChild(this.table.firstChild);
+    if (this.tHead) this.table.appendChild(this.tHead);
+
+    // Create a dedicated tbody for Clusterize
+    if (!this.tBody) {
+      this.tBody = document.createElement("tbody");
+      this.tBody.className = "clusterize-content";
     }
-    tableContainer.appendChild(this.table);
+    this.table.appendChild(this.tBody);
 
-    // --- Add sidebar and table container to main container ---
+    tableScrollDiv.appendChild(this.table);
     container.appendChild(sidebar);
-    container.appendChild(tableContainer);
+    container.appendChild(tableScrollDiv);
 
-    // Event listeners for shift and ctrl keys
-    container.addEventListener("keydown", (event) => {
-      if (event.shiftKey) {
-        this.shiftDown = true;
-      }
-      if (event.ctrlKey) {
-        this.ctrlDown = true;
-      }
-      event.preventDefault();
-    });
+    // Initialize Clusterize only after scroll container exists in DOM
+    if (!this._clusterize) {
+      const rows = this.dataInd.map((dataIndex, rowIdx) => {
+        let cells = this.columns
+          .map((c) => {
+            if (typeof this.cellRenderers[c.column] === "function") {
+              const temp = document.createElement("div");
+              temp.appendChild(
+                this.cellRenderers[c.column](
+                  this.data[dataIndex][c.column],
+                  this.data[dataIndex]
+                )
+              );
+              return `<td>${temp.innerHTML}</td>`;
+            } else {
+              return `<td>${this.data[dataIndex][c.column]}</td>`;
+            }
+          })
+          .join("");
+        return `<tr data-row-index="${rowIdx}">${cells}</tr>`;
+      });
+      this._clusterize = new Clusterize({
+        rows,
+        scrollElem: this._scrollContainer,
+        contentElem: this.tBody,
+        callbacks: {
+          clusterChanged: () => this._attachRowEvents(),
+        },
+        tag: "tr",
+      });
+    }
 
-    container.addEventListener("keyup", (event) => {
-      this.shiftDown = false;
-      this.ctrlDown = false;
-      event.preventDefault();
-    });
-
-    container.setAttribute("tabindex", "0"); // Make the container focusable
-
-    // Lazy loading listener
-    container.addEventListener("scroll", () => {
-      const threshold = 100;
-      const scrollTop = container.scrollTop;
-      const scrollHeight = container.scrollHeight;
-      const clientHeight = container.clientHeight;
-
-      if (scrollTop + clientHeight >= scrollHeight - threshold) {
-        if (!this.addingRows) {
-          this.addTableRows(this.additionalLines);
-        }
-      }
-    });
-
-    //deselection
-    // Add click listener to the container
-    container.addEventListener("click", (event) => {
-      // Check if the click target is outside any table row
-      let isOutsideRow = true;
-      let element = event.target;
-      while (element != null) {
-        if (element == this.tBody || element == this.tHead) {
-          isOutsideRow = false;
-          break;
-        }
-        element = element.parentNode;
-      }
-
-      if (isOutsideRow) {
-        this.clearSelection();
-        this.resetHistogramSelections();
-        this.selectionUpdated();
-      }
-    });
-
-    // Store reference for event dispatching
     this._containerNode = container;
-
     return container;
   }
 
@@ -1702,7 +1586,6 @@ function HistogramController(data, binrules) {
 
   this.updateData = (d) => this.setData(d);
 
-  // Reset the selection state of the histogram
   this.resetSelection = () => {
     this.bins.forEach((bin) => {
       bin.selected = false;
@@ -1710,8 +1593,6 @@ function HistogramController(data, binrules) {
 
     this.svg.selectAll(".bar rect:nth-child(1)").attr("fill", "steelblue");
   };
-
-  // logDebug("------------------binrules outside setData: ", binrules);
 
   this.setData = function (dd) {
     div.innerHTML = "";
@@ -1729,13 +1610,10 @@ function HistogramController(data, binrules) {
       .append("svg")
       .attr("width", svgWidth)
       .attr("height", svgHeight);
-    // .append("g")
-    // .attr("transform", `translate(${margin.left},${margin.top})`);
 
     logDebug("------------------binrules in setData: ", binrules);
 
     if (binrules.unique) {
-      // Handle unique columns: create a single bin
       this.bins = [
         {
           category: "Unique Values",
@@ -1745,13 +1623,7 @@ function HistogramController(data, binrules) {
       ];
     } else if ("thresholds" in binrules) {
       logDebug("------------------Continuous data----------------------");
-      // Continuous data
-      // logDebug("Domain: ", [
-      //   d3.min(data, (d) => d.value),
-      //   d3.max(data, (d) => d.value),
-      // ]);
 
-      // logDebug("Thresholds: ", binrules.thresholds);
       let contBins = d3
         .bin()
         .domain([d3.min(data, (d) => d.value), d3.max(data, (d) => d.value)])
@@ -1766,14 +1638,11 @@ function HistogramController(data, binrules) {
         x1: b.x1,
       }));
 
-      // logDebug("Brush Bins: ", this.bins);
-
       this.xScale = d3
         .scaleLinear()
         .domain([d3.min(data, (d) => d.value), d3.max(data, (d) => d.value)])
         .range([0, width]);
 
-      // Initialize brush for continuous data
       this.brush = d3
         .brushX()
         .extent([
@@ -1782,15 +1651,13 @@ function HistogramController(data, binrules) {
         ])
         .on("end", (event) => this.handleBrush(event));
 
-      // Add brush to svg
       this.svg
         .append("g")
         .attr("class", "brush")
         .style("position", "absolute")
-        .style("z-index", 90999) // Attempt to force the brush on top
+        .style("z-index", 90999)
         .call(this.brush);
     } else if ("ordinals" in binrules || "nominals" in binrules) {
-      // Handle ordinal or nominal data
       const frequency = d3.rollup(
         data,
         (values) => ({
@@ -1802,7 +1669,6 @@ function HistogramController(data, binrules) {
 
       const binType = "ordinals" in binrules ? "ordinals" : "nominals";
 
-      // use predefined bin order if available
       if (binType in binrules && Array.isArray(binrules[binType])) {
         this.bins = binrules[binType].map((v) => ({
           category: v,
@@ -1835,7 +1701,6 @@ function HistogramController(data, binrules) {
         (d, i) => `translate(${(i * width) / this.bins.length}, 0)`
       );
 
-    // Visible bars
     barGroups
       .append("rect")
       .attr("x", 0)
@@ -1844,8 +1709,6 @@ function HistogramController(data, binrules) {
       .attr("height", (d) => height - y(d.count))
       .attr("fill", "steelblue");
 
-    // For continuous data, we don't need the invisible interaction bars
-    // Only add them for ordinal/nominal data
     if (!("thresholds" in binrules)) {
       barGroups
         .append("rect")
@@ -1919,13 +1782,10 @@ function HistogramController(data, binrules) {
         });
     }
 
-    // Handle brush end event
     this.handleBrush = (event) => {
-      // Remove any existing histogram label(s)
       this.svg.selectAll(".histogram-label").remove();
 
       if (!event.selection) {
-        // If no selection from brushing, reset everything
         this.resetSelection();
         if (controller.table) {
           controller.table.clearSelection();
@@ -1938,30 +1798,23 @@ function HistogramController(data, binrules) {
       const [bound1, bound2] = event.selection.map(this.xScale.invert);
       const binWidth = width / this.bins.length;
 
-      // Find which bins fall within the selected range
       const selectedIndices = new Set();
 
-      // Mark bins as selected if they overlap with the brush
       this.bins.forEach((bin, i) => {
-        // For continuous data, use actual data values to check selection
         if (bin.x0 !== undefined && bin.x1 !== undefined) {
-          // Check if bin overlaps with selection
           const binStart = this.xScale(bin.x0);
           const binEnd = this.xScale(bin.x1);
 
           bin.selected = binEnd >= x0 && binStart <= x1;
 
-          // Update visual representation
           this.svg
             .select(`.bar:nth-child(${i + 1}) rect:nth-child(1)`)
             .attr("fill", bin.selected ? "orange" : "steelblue");
 
-          // Collect all row indices from selected bins
           if (bin.selected && bin.indeces) {
             bin.indeces.forEach((idx) => selectedIndices.add(idx));
           }
         } else {
-          // Fallback to position-based selection for other data types
           const binStart = i * binWidth;
           const binEnd = (i + 1) * binWidth;
           bin.selected = binStart <= x1 && binEnd >= x0;
@@ -1976,7 +1829,6 @@ function HistogramController(data, binrules) {
         }
       });
 
-      // Add histogram label showing the selection range
       this.svg
         .append("text")
         .attr("class", "histogram-label")
@@ -1987,11 +1839,9 @@ function HistogramController(data, binrules) {
         .attr("text-anchor", "middle")
         .text(`Range: ${Math.round(bound1)} - ${Math.round(bound2)}`);
 
-      // Update table selection
       if (controller.table) {
         controller.table.clearSelection();
 
-        // Convert the Set to an Array for easier processing
         const rowIndices = Array.from(selectedIndices);
 
         rowIndices.forEach((rowIndex) => {
@@ -2016,12 +1866,10 @@ function HistogramController(data, binrules) {
 }
 
 function createDynamicFilter(attribute, operator, threshold) {
-  // Validate attribute
   if (typeof attribute !== "string" || attribute.trim() === "") {
     throw new Error("Invalid attribute: Attribute must be a non-empty string.");
   }
 
-  // Validate operator
   const validOperators = [">", ">=", "<", "<=", "==", "!="];
   if (!validOperators.includes(operator)) {
     throw new Error(
@@ -2029,24 +1877,20 @@ function createDynamicFilter(attribute, operator, threshold) {
     );
   }
 
-  // Validate threshold
   if (typeof threshold !== "number" && typeof threshold !== "string") {
     throw new Error(
       "Invalid threshold: Threshold must be a number or a string."
     );
   }
 
-  // Return the filter function
   return (dataObj) => {
-    // Use the passed data object directly
     const value = dataObj[attribute];
 
     if (value === undefined) {
       warnDebug(`Attribute "${attribute}" not found in data object.`);
-      return false; // Exclude data objects missing the attribute
+      return false;
     }
 
-    // Perform comparison
     try {
       switch (operator) {
         case ">":
@@ -2058,9 +1902,9 @@ function createDynamicFilter(attribute, operator, threshold) {
         case "<=":
           return value <= threshold;
         case "==":
-          return value == threshold; // Consider using === for strict equality
+          return value == threshold;
         case "!=":
-          return value != threshold; // Consider using !== for strict inequality
+          return value != threshold;
         default:
           throw new Error(`Unexpected operator: ${operator}`);
       }
