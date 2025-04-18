@@ -439,7 +439,9 @@ const filterManager = {
                   if (click != null) {
                     setSelectedInterventionIndex(click);
                     log("Clicked Interventions", click, getInterventions[click]);
-                  } // else do nothing
+                  } else {
+                    log("No intervention selected");
+                  }
                 },
                 400,
                 250
@@ -461,6 +463,9 @@ const filterManager = {
                 </button>
                 <button id="moveDownButton" class="btn move-down tooltip" data-tooltip="Move Down" aria-label="Move Down">
                   <i class="fas fa-arrow-down"></i>
+                </button>
+                <button id="resetAllButton" class="btn reset-all tooltip" data-tooltip="Reset All" aria-label="Move Down">
+                  <i class="fas fa-sync-alt"></i>
                 </button>                
               </nav>
             </div> <!-- graph container -->
@@ -577,6 +582,7 @@ const editButton = document.getElementById("editButton");
 const deleteButton = document.getElementById("deleteButton");
 const moveUpButton = document.getElementById("moveUpButton");
 const moveDownButton = document.getElementById("moveDownButton");
+const resetAllButton = document.getElementById("resetAllButton");
 
 openQuickviewButton.addEventListener("click", () => {
   quickviewDefault.classList.add("is-active");
@@ -640,6 +646,12 @@ moveDownButton.addEventListener("click", (e) => {
   } else {
     log("No intervention selected for moving down");
   }
+});
+
+resetAllButton.addEventListener("click", (e) => {
+  e.stopPropagation();
+  log("[TIMELINE] Reset all interventions");
+  resetAll();
 });
 ```
 
@@ -1326,7 +1338,7 @@ log("[DATA] DATA DATA DATA", data);
 ```js
 // This updates the stored interventions
 // const interventions = getInterventions;
-log(">> Interventions", interventions);
+// log(">> Interventions", interventions);
 ```
 
 ```js
@@ -1407,6 +1419,12 @@ function tableChanged(event) {
   if (event.type === "sort") {
     log("Sorted indices:", event.indeces);
     log("Sort criteria:", event.sort);
+  }
+
+  if (event.type === "reset") {
+    log("[TABLE] Table Reset", event);
+    // reset everything
+    // resetAll();
   }
 
   if (event.type === "selection") {
@@ -2042,11 +2060,11 @@ function resetAll() {
   filterManager.reset();
   setInitialData(null);
   setSelectedTableRow([]);
-  setInterventions([]);
-  setResults([]);
-  setSelectedAllocation([]);
-  setTimelineModifications([]);
-  setCurrentConfig({});
+  // setInterventions([]);
+  // setResults([]);
+  // setSelectedAllocation([]);
+  // setTimelineModifications([]);
+  // setCurrentConfig({});
   setTableFiltered([]);
   setSelectedInterventionIndex(null);
 

@@ -1149,6 +1149,14 @@ export class sorterTable {
 
     // Notify about the reset
     this.changed({ type: "reset" });
+
+    // Dispatch a custom DOM event for external listeners
+    if (this._containerNode) {
+      const event = new CustomEvent("reset", {
+        detail: { source: this },
+      });
+      this._containerNode.dispatchEvent(event);
+    }
   }
 
   resetHistogramSelections() {
@@ -1420,6 +1428,9 @@ export class sorterTable {
         this.selectionUpdated();
       }
     });
+
+    // Store reference for event dispatching
+    this._containerNode = container;
 
     return container;
   }
