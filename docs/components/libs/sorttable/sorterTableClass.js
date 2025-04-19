@@ -138,13 +138,13 @@ export class sorterTable {
     this.createHeader();
     this.createTable();
 
-    this.table.addEventListener("mousedown", (event) => {
-      if (event.shiftKey) {
-        this.shiftDown = true;
-      } else {
-        this.shiftDown = false;
-      }
-    });
+    // this.table.addEventListener("mousedown", (event) => {
+    //   if (event.shiftKey) {
+    //     this.shiftDown = true;
+    //   } else {
+    //     this.shiftDown = false;
+    //   }
+    // });
 
     this._clusterizeContent = document.createElement("div");
     this._clusterizeContent.className = "clusterize-content";
@@ -948,7 +948,33 @@ export class sorterTable {
     this.tHead.style.boxShadow = "0 2px 2px rgba(0,0,0,0.1)";
   }
 
+  showLoadingIndicator() {
+    if (!this.loadingIndicator) {
+      this.loadingIndicator = document.createElement("div");
+      this.loadingIndicator.classList.add("loading-indicator");
+      this.loadingIndicator.innerHTML = `<div class="spinner"></div>`;
+      // Check that the scroll container exists before using it
+      if (this._scrollContainer && this._scrollContainer.style) {
+        this._scrollContainer.style.position = "relative";
+        this._scrollContainer.appendChild(this.loadingIndicator);
+      } else {
+        console.error(
+          "Scroll container not defined. Loading indicator not attached."
+        );
+      }
+    }
+  }
+
+  hideLoadingIndicator() {
+    if (this.loadingIndicator && this.loadingIndicator.parentNode) {
+      this.loadingIndicator.parentNode.removeChild(this.loadingIndicator);
+      this.loadingIndicator = null;
+    }
+  }
   createTable() {
+    // Show loading indicator before heavy processing begins
+    this.showLoadingIndicator();
+
     // Prepare all row data based on dataInd before sending to clusterize
     const rows = this.dataInd.map((dataIndex, rowIdx) => {
       let cells = this.columns
@@ -967,19 +993,16 @@ export class sorterTable {
           }
         })
         .join("");
-      // Store the actual data index as a data attribute for accurate selection
       return `<tr data-row-index="${rowIdx}" data-data-index="${dataIndex}">${cells}</tr>`;
     });
+
     if (this._clusterize) {
-      // Update existing clusterize instance with new rows
       this._clusterize.update(rows);
-
-      // Force a refresh to ensure proper rendering
-
       setTimeout(() => {
         if (this._scrollContainer) {
           this._scrollContainer.scrollTop = 0;
         }
+        this.hideLoadingIndicator();
       }, 50);
     } else if (this.tBody) {
       // First time initialization - create a new clusterize instance with appropriate options
@@ -988,15 +1011,17 @@ export class sorterTable {
         scrollElem: this._scrollContainer,
         contentElem: this.tBody,
         callbacks: {
-          clusterChanged: () => this._attachRowEvents(),
+          clusterChanged: () => {
+            this._attachRowEvents();
+            this.hideLoadingIndicator(); // Hide once rendering is complete
+          },
           clusterWillChange: () => {
-            // Capture current scroll position before cluster change
             if (this._scrollContainer) {
               this._lastScrollTop = this._scrollContainer.scrollTop;
             }
+            this.showLoadingIndicator(); // Show before a cluster update
           },
           scrollingProgress: (progress) => {
-            // When scrolling near bottom, consider loading more data
             if (progress > 0.8 && this.options.onNearEnd) {
               this.options.onNearEnd();
             }
@@ -1019,11 +1044,11 @@ export class sorterTable {
       tr.addEventListener("click", (event) => {
         const rowIndex = parseInt(tr.getAttribute("data-row-index"), 10);
         if (isNaN(rowIndex)) return;
-        if (this.shiftDown) {
-          let s = this.getSelection().map((s) => s.index);
-          if (s.length == 0) s = [rowIndex];
-          let minSelIndex = Math.min(...s);
-          let maxSelIndex = Math.max(...s);
+        if (event.shiftKey) {
+          let selectedIndices = this.getSelection().map((s) => s.index);
+          if (selectedIndices.length === 0) selectedIndices = [rowIndex];
+          const minSelIndex = Math.min(...selectedIndices);
+          const maxSelIndex = Math.max(...selectedIndices);
           if (rowIndex <= minSelIndex) {
             for (let i = rowIndex; i < minSelIndex; i++) {
               const trToSelect = this.tBody.querySelectorAll("tr")[i];
@@ -1035,7 +1060,7 @@ export class sorterTable {
               if (trToSelect) this.selectRow(trToSelect);
             }
           }
-        } else if (this.ctrlDown) {
+        } else if (event.ctrlKey) {
           if (tr.selected) {
             this.unselectRow(tr);
           } else {
@@ -1047,6 +1072,37 @@ export class sorterTable {
         }
         this.selectionUpdated();
       });
+      // tr.addEventListener("click", (event) => {
+      //   const rowIndex = parseInt(tr.getAttribute("data-row-index"), 10);
+      //   if (isNaN(rowIndex)) return;
+      //   if (this.shiftDown) {
+      //     let s = this.getSelection().map((s) => s.index);
+      //     if (s.length == 0) s = [rowIndex];
+      //     let minSelIndex = Math.min(...s);
+      //     let maxSelIndex = Math.max(...s);
+      //     if (rowIndex <= minSelIndex) {
+      //       for (let i = rowIndex; i < minSelIndex; i++) {
+      //         const trToSelect = this.tBody.querySelectorAll("tr")[i];
+      //         if (trToSelect) this.selectRow(trToSelect);
+      //       }
+      //     } else if (rowIndex >= maxSelIndex) {
+      //       for (let i = maxSelIndex + 1; i <= rowIndex; i++) {
+      //         const trToSelect = this.tBody.querySelectorAll("tr")[i];
+      //         if (trToSelect) this.selectRow(trToSelect);
+      //       }
+      //     }
+      //   } else if (this.ctrlDown) {
+      //     if (tr.selected) {
+      //       this.unselectRow(tr);
+      //     } else {
+      //       this.selectRow(tr);
+      //     }
+      //   } else {
+      //     this.clearSelection();
+      //     this.selectRow(tr);
+      //   }
+      //   this.selectionUpdated();
+      // });
       tr.addEventListener("mouseover", () => {
         tr.style.backgroundColor = "#f0f0f0";
       });
@@ -1236,7 +1292,7 @@ export class sorterTable {
       cursor: "pointer",
       marginBottom: "15px",
       color: "gray",
-      fontSize: "18px",
+      // fontSize: "18px",
     });
     filterIcon.setAttribute("title", "Apply Filter");
     filterIcon.addEventListener("click", (event) => {
@@ -1245,21 +1301,21 @@ export class sorterTable {
     });
     sidebar.appendChild(filterIcon);
 
-    // --- Reset Icon ---
-    let resetIcon = document.createElement("i");
-    resetIcon.classList.add("fas", "fa-sync-alt");
-    Object.assign(resetIcon.style, {
+    // --- Aggregate Icon ---
+    let aggregateIcon = document.createElement("i");
+    aggregateIcon.classList.add("fas", "fa-chart-bar");
+    Object.assign(aggregateIcon.style, {
       cursor: "pointer",
       marginBottom: "15px",
       color: "gray",
-      fontSize: "18px",
+      // fontSize: "18px",
     });
-    resetIcon.setAttribute("title", "Reset Table");
-    resetIcon.addEventListener("click", (event) => {
+    aggregateIcon.setAttribute("title", "Aggregate by selected column");
+    aggregateIcon.addEventListener("click", (event) => {
       event.stopPropagation();
-      this.resetTable();
+      this.aggregate();
     });
-    sidebar.appendChild(resetIcon);
+    sidebar.appendChild(aggregateIcon);
 
     // --- Undo Icon ---
     let undoIcon = document.createElement("i");
@@ -1268,30 +1324,30 @@ export class sorterTable {
       cursor: "pointer",
       marginBottom: "15px",
       color: "gray",
-      fontSize: "18px",
+      // fontSize: "18px",
     });
-    undoIcon.setAttribute("title", "Undo");
+    undoIcon.setAttribute("title", "Undo Last Action");
     undoIcon.addEventListener("click", (event) => {
       event.stopPropagation();
       this.undo();
     });
     sidebar.appendChild(undoIcon);
 
-    // --- Aggregate Icon ---
-    let aggregateIcon = document.createElement("i");
-    aggregateIcon.classList.add("fas", "fa-layer-group");
-    Object.assign(aggregateIcon.style, {
+    // --- Reset Icon ---
+    let resetIcon = document.createElement("i");
+    resetIcon.classList.add("fas", "fa-sync-alt");
+    Object.assign(resetIcon.style, {
       cursor: "pointer",
       marginBottom: "15px",
       color: "gray",
-      fontSize: "18px",
+      // fontSize: "18px",
     });
-    aggregateIcon.setAttribute("title", "Aggregate by selected column");
-    aggregateIcon.addEventListener("click", (event) => {
+    resetIcon.setAttribute("title", "Reset Table");
+    resetIcon.addEventListener("click", (event) => {
       event.stopPropagation();
-      this.aggregate();
+      this.resetTable();
     });
-    sidebar.appendChild(aggregateIcon);
+    sidebar.appendChild(resetIcon);
 
     // --- Table Container (scrollable) ---
     let tableScrollDiv = document.createElement("div");
