@@ -769,7 +769,22 @@ export class sorterTable {
     this.selectedRows.delete(this.getRowIndex(tr));
   }
 
+  // getRowIndex(tr) {
+  //   let index = -1;
+  //   this.tBody.querySelectorAll("tr").forEach((t, i) => {
+  //     if (t == tr) index = i;
+  //   });
+  //   return index;
+  // }
+
   getRowIndex(tr) {
+    // Get the data index from the data attribute instead of DOM position
+    const dataRowIndex = tr.getAttribute("data-row-index");
+    if (dataRowIndex !== null) {
+      return parseInt(dataRowIndex, 10);
+    }
+
+    // Fallback to the old method
     let index = -1;
     this.tBody.querySelectorAll("tr").forEach((t, i) => {
       if (t == tr) index = i;
@@ -934,6 +949,7 @@ export class sorterTable {
   }
 
   createTable() {
+    // Prepare all row data based on dataInd before sending to clusterize
     const rows = this.dataInd.map((dataIndex, rowIdx) => {
       let cells = this.columns
         .map((c) => {
@@ -951,10 +967,50 @@ export class sorterTable {
           }
         })
         .join("");
-      return `<tr data-row-index="${rowIdx}">${cells}</tr>`;
+      // Store the actual data index as a data attribute for accurate selection
+      return `<tr data-row-index="${rowIdx}" data-data-index="${dataIndex}">${cells}</tr>`;
     });
     if (this._clusterize) {
+      // Update existing clusterize instance with new rows
       this._clusterize.update(rows);
+
+      // Force a refresh to ensure proper rendering
+
+      setTimeout(() => {
+        if (this._scrollContainer) {
+          this._scrollContainer.scrollTop = 0;
+        }
+      }, 50);
+    } else if (this.tBody) {
+      // First time initialization - create a new clusterize instance with appropriate options
+      this._clusterize = new Clusterize({
+        rows: rows,
+        scrollElem: this._scrollContainer,
+        contentElem: this.tBody,
+        callbacks: {
+          clusterChanged: () => this._attachRowEvents(),
+          clusterWillChange: () => {
+            // Capture current scroll position before cluster change
+            if (this._scrollContainer) {
+              this._lastScrollTop = this._scrollContainer.scrollTop;
+            }
+          },
+          scrollingProgress: (progress) => {
+            // When scrolling near bottom, consider loading more data
+            if (progress > 0.8 && this.options.onNearEnd) {
+              this.options.onNearEnd();
+            }
+          },
+        },
+        // Optimize for large datasets
+        rows_in_block: Math.min(
+          100,
+          Math.max(50, Math.floor(this.data.length / 20))
+        ),
+        blocks_in_cluster: 4,
+        show_no_data_row: false,
+        tag: "tr",
+      });
     }
   }
 
@@ -1173,6 +1229,22 @@ export class sorterTable {
     });
     sidebar.className = "sidebar";
 
+    // --- Filter Icon ---
+    let filterIcon = document.createElement("i");
+    filterIcon.classList.add("fas", "fa-filter");
+    Object.assign(filterIcon.style, {
+      cursor: "pointer",
+      marginBottom: "15px",
+      color: "gray",
+      fontSize: "18px",
+    });
+    filterIcon.setAttribute("title", "Apply Filter");
+    filterIcon.addEventListener("click", (event) => {
+      event.stopPropagation();
+      this.filter();
+    });
+    sidebar.appendChild(filterIcon);
+
     // --- Reset Icon ---
     let resetIcon = document.createElement("i");
     resetIcon.classList.add("fas", "fa-sync-alt");
@@ -1221,42 +1293,6 @@ export class sorterTable {
     });
     sidebar.appendChild(aggregateIcon);
 
-    // --- History Icon ---
-    let historyIcon = document.createElement("i");
-    historyIcon.classList.add("fas", "fa-history");
-    Object.assign(historyIcon.style, {
-      cursor: "pointer",
-      marginBottom: "15px",
-      color: "gray",
-      fontSize: "18px",
-    });
-    historyIcon.setAttribute("title", "Show Filter/Sort History");
-    historyIcon.addEventListener("click", (event) => {
-      event.stopPropagation();
-      if (typeof this.showHistory === "function") {
-        this.showHistory();
-      } else {
-        alert("History: " + JSON.stringify(this.history));
-      }
-    });
-    sidebar.appendChild(historyIcon);
-
-    // --- Filter Icon ---
-    let filterIcon = document.createElement("i");
-    filterIcon.classList.add("fas", "fa-filter");
-    Object.assign(filterIcon.style, {
-      cursor: "pointer",
-      marginBottom: "15px",
-      color: "gray",
-      fontSize: "18px",
-    });
-    filterIcon.setAttribute("title", "Apply Filter");
-    filterIcon.addEventListener("click", (event) => {
-      event.stopPropagation();
-      this.filter();
-    });
-    sidebar.appendChild(filterIcon);
-
     // --- Table Container (scrollable) ---
     let tableScrollDiv = document.createElement("div");
     Object.assign(tableScrollDiv.style, {
@@ -1298,17 +1334,41 @@ export class sorterTable {
             }
           })
           .join("");
-        return `<tr data-row-index="${rowIdx}">${cells}</tr>`;
+        return `<tr data-row-index="${rowIdx}" data-data-index="${dataIndex}">${cells}</tr>`;
       });
+
+      // Calculate optimal row settings based on data size
+      const rowsInBlock = Math.min(
+        200,
+        Math.max(50, Math.floor(this.data.length / 20))
+      );
+
       this._clusterize = new Clusterize({
-        rows,
+        rows: rows,
         scrollElem: this._scrollContainer,
         contentElem: this.tBody,
         callbacks: {
           clusterChanged: () => this._attachRowEvents(),
+          clusterWillChange: () => {
+            // Preserve scroll position during updates
+            if (this._scrollContainer) {
+              this._lastScrollTop = this._scrollContainer.scrollTop;
+            }
+          },
         },
-        tag: "tr",
+        // Optimize for large datasets
+        rows_in_block: rowsInBlock,
+        blocks_in_cluster: 4,
+        show_no_data_row: false,
       });
+
+      // Force initial render
+      setTimeout(() => {
+        if (this._scrollContainer) {
+          this._scrollContainer.scrollTop = 1;
+          this._scrollContainer.scrollTop = 0;
+        }
+      }, 100);
     }
 
     this._containerNode = container;
@@ -1761,9 +1821,16 @@ function HistogramController(data, binrules) {
               controller.table.clearSelection();
             }
 
+            // Map histogram indices to actual data indices
+            const dataIndices = this.bins[d.index].indeces.map(
+              (rowIndex) => controller.table.dataInd[rowIndex]
+            );
+
+            // Select rows based on data indices
             this.bins[d.index].indeces.forEach((rowIndex) => {
+              // Find by data attribute instead of position
               const tr = controller.table.tBody.querySelector(
-                `tr:nth-child(${rowIndex + 1})`
+                `tr[data-row-index="${rowIndex}"]`
               );
               if (tr) {
                 if (d.selected) {
