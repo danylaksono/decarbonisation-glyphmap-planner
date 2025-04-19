@@ -431,23 +431,16 @@ export class sorterTable {
       errorDebug("setSelectedDataByIds: ids must be an array.");
       return;
     }
-
     const idSet = new Set(ids);
-
-    // Clear the current selection
     this.clearSelection();
-
     // Map from data index to table row index for visible rows
     const dataIndexToTableRowIndex = new Map();
     this.dataInd.forEach((dataIndex, tableRowIndex) => {
       dataIndexToTableRowIndex.set(dataIndex, tableRowIndex);
     });
-
-    // For each data object in the full dataset, check if its ID is in the set
     this.data.forEach((dataObject, dataIndex) => {
       if (dataObject && dataObject.hasOwnProperty(idPropertyName)) {
         if (idSet.has(dataObject[idPropertyName])) {
-          // Only select if this row is currently visible
           const tableRowIndex = dataIndexToTableRowIndex.get(dataIndex);
           if (tableRowIndex !== undefined) {
             const tr = this.tBody.querySelector(
@@ -455,72 +448,41 @@ export class sorterTable {
             );
             if (tr) {
               this.selectRow(tr);
-            } else {
-              warnDebug(
-                `setSelectedDataByIds: Could not find row for dataIndex ${dataIndex} (tableRowIndex: ${tableRowIndex})`
-              );
             }
           }
         }
-      } else {
-        warnDebug(
-          `setSelectedDataByIds: Data object at index ${dataIndex} does not have property '${idPropertyName}'`
-        );
       }
     });
-
     this.selectionUpdated();
   }
 
-  setFilteredDataById(ids, idPropertyName = "id") {
+  setFilteredDataById(ids, idPropertyName = "id", options = {}) {
     if (!Array.isArray(ids)) {
       errorDebug("setFilteredDataById: ids must be an array.");
       return;
     }
-
+    const { consecutive = true } = options;
     const idSet = new Set(ids);
-    // Search the full dataset, not just current dataInd, to find matching indices
-    const matchingDataIndices = this.data
-      .map((dataObject, dataIndex) => {
-        if (
-          dataObject &&
-          dataObject.hasOwnProperty(idPropertyName) &&
-          idSet.has(dataObject[idPropertyName])
-        ) {
-          return dataIndex; // original index in this.data (test)
-        }
-        return null;
-      })
-      .filter((index) => index !== null);
-
-    console.log(
-      `Found ${matchingDataIndices.length} matching rows out of ${ids.length} IDs`
-    );
-
-    if (matchingDataIndices.length === 0) {
-      console.warn("No matching IDs found in the dataset");
-      return;
-    }
-
-    // Update dataInd directly with the matching original indices
+    const baseIndices = consecutive ? this.dataInd : d3.range(this.data.length);
+    const prevDataInd = [...this.dataInd];
+    const matchingDataIndices = baseIndices.filter((dataIndex) => {
+      const dataObject = this.data[dataIndex];
+      return (
+        dataObject &&
+        dataObject.hasOwnProperty(idPropertyName) &&
+        idSet.has(dataObject[idPropertyName])
+      );
+    });
     this.dataInd = matchingDataIndices;
-    this.history.push({ type: "filterById", data: this.dataInd });
-
-    // Rebuild the table
+    this.history.push({ type: "filterById", data: prevDataInd });
     this.rebuildTable();
-
-    // Update visualizations
     this.visControllers.forEach((vc, vci) => {
       if (vc instanceof HistogramController) {
         const columnName = this.columns[vci].column;
         vc.setData(this.dataInd.map((i) => this.data[i][columnName]));
       }
     });
-
-    // Call selection before filtering to visually highlight rows
     this.setSelectedDataByIds(ids, idPropertyName);
-
-    // Notify listeners
     const filteredIds = this.dataInd.map((i) => ({
       id: this.data[i][idPropertyName] || i,
     }));
@@ -532,72 +494,45 @@ export class sorterTable {
   }
 
   filter() {
+    const prevDataInd = [...this.dataInd];
     this.rules.push(this.getSelectionRule());
     this.dataInd = this.getSelection().map((s) => this.dataInd[s.index]);
-    this.history.push({ type: "filter", data: this.dataInd });
+    this.history.push({ type: "filter", data: prevDataInd });
     this.createTable();
-
     this.visControllers.forEach((vc, vci) => {
-      // logDebug("Updating visualization controller:", vci);
       if (vc instanceof HistogramController) {
-        // Get the correct column name associated with this histogram
         const columnName = this.columns[vci].column;
-        // logDebug("By Column:", vci, columnName);
-
-        // Filter data for the specific column and maintain original index
-        const columnData = this.dataInd.map((i) => ({
-          value: this.data[i][columnName],
-          index: i, // Keep track of the original index
-        }));
-
-        // Update the histogram data
         vc.setData(this.dataInd.map((i) => this.data[i][columnName]));
       }
     });
-
-    // Collect ids from the filtered data (use 'id' property by default, or specify a different one)
-    const idColumn = "id"; // Default id column name
-    // const filteredIds = this.dataInd.map((i) => {
-    //   // Check if the row has an id property, otherwise return the index as fallback
-    //   return this.data[i]?.[idColumn] !== undefined
-    //     ? this.data[i]?.[idColumn]
-    //     : i;
-    // });
-
+    const idColumn = "id";
     const filteredIds = this.dataInd.map((i) => {
-      // Check if the row has an id property, otherwise use the index as fallback
       const idValue =
         this.data[i]?.[idColumn] !== undefined ? this.data[i][idColumn] : i;
-
-      // Return as an object with id property
       return { id: idValue };
     });
-
     this.changed({
       type: "filter",
       indeces: this.dataInd,
-      ids: filteredIds, // Include the ids in the response
+      ids: filteredIds,
       rule: this.getSelectionRule(),
     });
   }
 
-  applyCustomFilter(filterFunction) {
-    console.log(">> Applying custom filter function:", filterFunction);
-
-    // Apply the custom filter function to the data
-    this.dataInd = this.dataInd.filter((index) => {
-      return filterFunction(this.data[index]); // Pass the data object to the filter function
-    });
-
-    // Re-render the table and update visualizations
+  applyCustomFilter(filterFunction, options = {}) {
+    const { consecutive = true } = options;
+    const baseIndices = consecutive ? this.dataInd : d3.range(this.data.length);
+    const prevDataInd = [...this.dataInd];
+    this.dataInd = baseIndices.filter((index) =>
+      filterFunction(this.data[index])
+    );
+    this.history.push({ type: "filter", data: prevDataInd });
     this.rebuildTable();
     this.visControllers.forEach((vc) => {
       if (vc && vc.updateData) {
         vc.updateData(this.dataInd.map((i) => this.data[i][vc.columnName]));
       }
     });
-
-    // Notify about the filter change
     this.changed({ type: "customFilter", indices: this.dataInd });
   }
 
@@ -608,8 +543,8 @@ export class sorterTable {
   undo() {
     if (this.history.length > 0) {
       let u = this.history.pop();
-      if (u.type === "filter" || u.type === "sort") {
-        this.dataInd = u.data;
+      if (u.type === "filter" || u.type === "filterById" || u.type === "sort") {
+        this.dataInd = [...u.data];
         this.createTable();
         this.visControllers.forEach((vc, vci) =>
           vc.updateData(
@@ -1066,36 +1001,24 @@ export class sorterTable {
   }
 
   resetTable() {
-    // If we're in an aggregated state, restore the original data
     if (this.isAggregated && this.initialData) {
       this.data = [...this.initialData];
       this.isAggregated = false;
     }
-
-    // Reset data indices to initial state
     this.dataInd = d3.range(this.data.length);
     this.selectedRows.clear();
     this.compoundSorting = {};
     this.rules = [];
     this.history = [];
-    this.selectedColumn = null; // Clear any column selection
-
-    // Reset sort controllers
+    this.selectedColumn = null;
     this.sortControllers.forEach((ctrl) => {
-      // Reset to default state - used to avoid potential toggle issues
       if (ctrl.getDirection() !== "none") {
         ctrl.toggleDirection();
       }
     });
-
-    // Update column order to the initial state
     this.columns = this.initialColumns.map((col) => ({ ...col }));
-
-    // Re-render the table
     this.createHeader();
     this.createTable();
-
-    // Update visualisation controllers with the restored data
     this.visControllers.forEach((vc, index) => {
       if (vc && vc.updateData) {
         const columnData = this.dataInd.map(
@@ -1104,15 +1027,9 @@ export class sorterTable {
         vc.updateData(columnData);
       }
     });
-
-    // Notify about the reset
     this.changed({ type: "reset" });
-
-    // Dispatch a custom DOM event for external listeners
     if (this._containerNode) {
-      const event = new CustomEvent("reset", {
-        detail: { source: this },
-      });
+      const event = new CustomEvent("reset", { detail: { source: this } });
       this._containerNode.dispatchEvent(event);
     }
   }
@@ -1254,7 +1171,91 @@ export class sorterTable {
       borderRight: "1px solid #ccc",
       marginRight: "2px",
     });
-    // ...sidebar icons code...
+    sidebar.className = "sidebar";
+
+    // --- Reset Icon ---
+    let resetIcon = document.createElement("i");
+    resetIcon.classList.add("fas", "fa-sync-alt");
+    Object.assign(resetIcon.style, {
+      cursor: "pointer",
+      marginBottom: "15px",
+      color: "gray",
+      fontSize: "18px",
+    });
+    resetIcon.setAttribute("title", "Reset Table");
+    resetIcon.addEventListener("click", (event) => {
+      event.stopPropagation();
+      this.resetTable();
+    });
+    sidebar.appendChild(resetIcon);
+
+    // --- Undo Icon ---
+    let undoIcon = document.createElement("i");
+    undoIcon.classList.add("fas", "fa-undo");
+    Object.assign(undoIcon.style, {
+      cursor: "pointer",
+      marginBottom: "15px",
+      color: "gray",
+      fontSize: "18px",
+    });
+    undoIcon.setAttribute("title", "Undo");
+    undoIcon.addEventListener("click", (event) => {
+      event.stopPropagation();
+      this.undo();
+    });
+    sidebar.appendChild(undoIcon);
+
+    // --- Aggregate Icon ---
+    let aggregateIcon = document.createElement("i");
+    aggregateIcon.classList.add("fas", "fa-layer-group");
+    Object.assign(aggregateIcon.style, {
+      cursor: "pointer",
+      marginBottom: "15px",
+      color: "gray",
+      fontSize: "18px",
+    });
+    aggregateIcon.setAttribute("title", "Aggregate by selected column");
+    aggregateIcon.addEventListener("click", (event) => {
+      event.stopPropagation();
+      this.aggregate();
+    });
+    sidebar.appendChild(aggregateIcon);
+
+    // --- History Icon ---
+    let historyIcon = document.createElement("i");
+    historyIcon.classList.add("fas", "fa-history");
+    Object.assign(historyIcon.style, {
+      cursor: "pointer",
+      marginBottom: "15px",
+      color: "gray",
+      fontSize: "18px",
+    });
+    historyIcon.setAttribute("title", "Show Filter/Sort History");
+    historyIcon.addEventListener("click", (event) => {
+      event.stopPropagation();
+      if (typeof this.showHistory === "function") {
+        this.showHistory();
+      } else {
+        alert("History: " + JSON.stringify(this.history));
+      }
+    });
+    sidebar.appendChild(historyIcon);
+
+    // --- Filter Icon ---
+    let filterIcon = document.createElement("i");
+    filterIcon.classList.add("fas", "fa-filter");
+    Object.assign(filterIcon.style, {
+      cursor: "pointer",
+      marginBottom: "15px",
+      color: "gray",
+      fontSize: "18px",
+    });
+    filterIcon.setAttribute("title", "Apply Filter");
+    filterIcon.addEventListener("click", (event) => {
+      event.stopPropagation();
+      this.filter();
+    });
+    sidebar.appendChild(filterIcon);
 
     // --- Table Container (scrollable) ---
     let tableScrollDiv = document.createElement("div");
@@ -1268,22 +1269,17 @@ export class sorterTable {
     });
     this._scrollContainer = tableScrollDiv;
 
-    // Remove any previous content
     while (this.table.firstChild) this.table.removeChild(this.table.firstChild);
     if (this.tHead) this.table.appendChild(this.tHead);
-
-    // Create a dedicated tbody for Clusterize
     if (!this.tBody) {
       this.tBody = document.createElement("tbody");
       this.tBody.className = "clusterize-content";
     }
     this.table.appendChild(this.tBody);
-
     tableScrollDiv.appendChild(this.table);
     container.appendChild(sidebar);
     container.appendChild(tableScrollDiv);
 
-    // Initialize Clusterize only after scroll container exists in DOM
     if (!this._clusterize) {
       const rows = this.dataInd.map((dataIndex, rowIdx) => {
         let cells = this.columns
