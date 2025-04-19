@@ -1351,6 +1351,21 @@ export class sorterTable {
     });
     sidebar.appendChild(resetIcon);
 
+    // --- Custom Filter Icon ---
+    let customFilterIcon = document.createElement("i");
+    customFilterIcon.classList.add("fas", "fa-filter-circle-xmark");
+    Object.assign(customFilterIcon.style, {
+      cursor: "pointer",
+      marginBottom: "15px",
+      color: "gray",
+    });
+    customFilterIcon.setAttribute("title", "Custom Filter");
+    customFilterIcon.addEventListener("click", (event) => {
+      event.stopPropagation();
+      this.showCustomFilterDialog();
+    });
+    sidebar.appendChild(customFilterIcon);
+
     // --- Table Container (scrollable) ---
     let tableScrollDiv = document.createElement("div");
     Object.assign(tableScrollDiv.style, {
@@ -1431,6 +1446,197 @@ export class sorterTable {
 
     this._containerNode = container;
     return container;
+  }
+
+  showCustomFilterDialog() {
+    // Remove existing dialog if present
+    let oldDialog = document.getElementById("custom-filter-dialog");
+    if (oldDialog) oldDialog.remove();
+
+    const dialog = document.createElement("div");
+    dialog.id = "custom-filter-dialog";
+    Object.assign(dialog.style, {
+      position: "fixed",
+      top: "50%",
+      left: "50%",
+      transform: "translate(-50%, -50%)",
+      background: "#fff",
+      border: "1px solid #ccc",
+      borderRadius: "8px",
+      padding: "20px",
+      zIndex: 99999,
+      minWidth: "350px",
+      boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
+    });
+
+    const title = document.createElement("h3");
+    title.innerText = "Custom Filter Builder";
+    title.style.marginTop = "0";
+    dialog.appendChild(title);
+
+    const queriesContainer = document.createElement("div");
+    dialog.appendChild(queriesContainer);
+
+    // Helper to get column names
+    const columnNames = this.columns.map((c) => c.column);
+
+    // Operators
+    const operators = [">", ">=", "<", "<=", "==", "!="];
+    const boolOperators = ["AND", "OR"];
+
+    // Store query rows
+    let queryRows = [];
+
+    function createQueryRow(isFirst = false) {
+      const row = document.createElement("div");
+      row.style.display = "flex";
+      row.style.alignItems = "center";
+      row.style.marginBottom = "8px";
+      row.style.gap = "6px";
+
+      // Boolean operator (not for first row)
+      let boolOpSelect = null;
+      if (!isFirst) {
+        boolOpSelect = document.createElement("select");
+        boolOperators.forEach((op) => {
+          const opt = document.createElement("option");
+          opt.value = op;
+          opt.innerText = op;
+          boolOpSelect.appendChild(opt);
+        });
+        row.appendChild(boolOpSelect);
+      }
+
+      // Column select
+      const colSelect = document.createElement("select");
+      columnNames.forEach((col) => {
+        const opt = document.createElement("option");
+        opt.value = col;
+        opt.innerText = col;
+        colSelect.appendChild(opt);
+      });
+      row.appendChild(colSelect);
+
+      // Operator select
+      const opSelect = document.createElement("select");
+      operators.forEach((op) => {
+        const opt = document.createElement("option");
+        opt.value = op;
+        opt.innerText = op;
+        opSelect.appendChild(opt);
+      });
+      row.appendChild(opSelect);
+
+      // Value input
+      const valInput = document.createElement("input");
+      valInput.type = "text";
+      valInput.style.width = "80px";
+      row.appendChild(valInput);
+
+      // Remove button
+      if (!isFirst) {
+        const removeBtn = document.createElement("button");
+        removeBtn.innerText = "✕";
+        removeBtn.style.marginLeft = "4px";
+        removeBtn.style.background = "none";
+        removeBtn.style.border = "none";
+        removeBtn.style.color = "#c00";
+        removeBtn.style.cursor = "pointer";
+        removeBtn.title = "Remove";
+        removeBtn.onclick = () => {
+          queriesContainer.removeChild(row);
+          queryRows = queryRows.filter((qr) => qr !== row);
+        };
+        row.appendChild(removeBtn);
+      }
+
+      queriesContainer.appendChild(row);
+      queryRows.push(row);
+    }
+
+    // Add first query row
+    createQueryRow(true);
+
+    // Add Query button
+    const addBtn = document.createElement("button");
+    addBtn.innerText = "+ Add Query";
+    addBtn.style.margin = "8px 0";
+    addBtn.onclick = () => createQueryRow(false);
+    dialog.appendChild(addBtn);
+
+    // Submit and Cancel buttons
+    const btnRow = document.createElement("div");
+    btnRow.style.display = "flex";
+    btnRow.style.justifyContent = "flex-end";
+    btnRow.style.gap = "10px";
+    btnRow.style.marginTop = "12px";
+
+    const submitBtn = document.createElement("button");
+    submitBtn.innerText = "Apply Filter";
+    submitBtn.style.background = "#2196F3";
+    submitBtn.style.color = "#fff";
+    submitBtn.style.border = "none";
+    submitBtn.style.padding = "6px 14px";
+    submitBtn.style.borderRadius = "4px";
+    submitBtn.style.cursor = "pointer";
+
+    const cancelBtn = document.createElement("button");
+    cancelBtn.innerText = "Cancel";
+    cancelBtn.style.background = "#eee";
+    cancelBtn.style.border = "none";
+    cancelBtn.style.padding = "6px 14px";
+    cancelBtn.style.borderRadius = "4px";
+    cancelBtn.style.cursor = "pointer";
+
+    cancelBtn.onclick = () => dialog.remove();
+
+    submitBtn.onclick = () => {
+      // Build filter functions
+      let filters = [];
+      let boolOps = [];
+      for (let i = 0; i < queryRows.length; ++i) {
+        const row = queryRows[i];
+        let idx = 0;
+        let boolOp = null;
+        if (i > 0) {
+          boolOp = row.children[idx++].value;
+          boolOps.push(boolOp);
+        }
+        const col = row.children[idx++].value;
+        const op = row.children[idx++].value;
+        const valRaw = row.children[idx++].value;
+        let val;
+        // Try to parse as number, fallback to string
+        if (!isNaN(Number(valRaw)) && valRaw.trim() !== "") {
+          val = Number(valRaw);
+        } else {
+          val = valRaw;
+        }
+        filters.push(createDynamicFilter(col, op, val));
+      }
+
+      // Compose filters with AND/OR
+      let combinedFilter = (row) => {
+        let result = filters[0](row);
+        for (let i = 1; i < filters.length; ++i) {
+          if (boolOps[i - 1] === "AND") {
+            result = result && filters[i](row);
+          } else {
+            result = result || filters[i](row);
+          }
+        }
+        return result;
+      };
+
+      this.applyCustomFilter(combinedFilter);
+      dialog.remove();
+    };
+
+    btnRow.appendChild(cancelBtn);
+    btnRow.appendChild(submitBtn);
+    dialog.appendChild(btnRow);
+
+    document.body.appendChild(dialog);
   }
 
   aggregate() {
