@@ -948,32 +948,33 @@ export class sorterTable {
     this.tHead.style.boxShadow = "0 2px 2px rgba(0,0,0,0.1)";
   }
 
-  showLoadingIndicator() {
-    if (!this.loadingIndicator) {
-      this.loadingIndicator = document.createElement("div");
-      this.loadingIndicator.classList.add("loading-indicator");
-      this.loadingIndicator.innerHTML = `<div class="spinner"></div>`;
-      // Check that the scroll container exists before using it
-      if (this._scrollContainer && this._scrollContainer.style) {
-        this._scrollContainer.style.position = "relative";
-        this._scrollContainer.appendChild(this.loadingIndicator);
-      } else {
-        console.error(
-          "Scroll container not defined. Loading indicator not attached."
-        );
-      }
-    }
-  }
+  // showLoadingIndicator() {
+  //   if (!this.loadingIndicator) {
+  //     this.loadingIndicator = document.createElement("div");
+  //     this.loadingIndicator.classList.add("loading-indicator");
+  //     this.loadingIndicator.innerHTML = `<div class="spinner"></div>`;
+  //     // Check that the scroll container exists before using it
+  //     if (this._scrollContainer && this._scrollContainer.style) {
+  //       this._scrollContainer.style.position = "relative";
+  //       this._scrollContainer.appendChild(this.loadingIndicator);
+  //     } else {
+  //       console.error(
+  //         "Scroll container not defined. Loading indicator not attached."
+  //       );
+  //     }
+  //   }
+  // }
 
-  hideLoadingIndicator() {
-    if (this.loadingIndicator && this.loadingIndicator.parentNode) {
-      this.loadingIndicator.parentNode.removeChild(this.loadingIndicator);
-      this.loadingIndicator = null;
-    }
-  }
+  // hideLoadingIndicator() {
+  //   if (this.loadingIndicator && this.loadingIndicator.parentNode) {
+  //     this.loadingIndicator.parentNode.removeChild(this.loadingIndicator);
+  //     this.loadingIndicator = null;
+  //   }
+  // }
+
   createTable() {
     // Show loading indicator before heavy processing begins
-    this.showLoadingIndicator();
+    // this.showLoadingIndicator();
 
     // Prepare all row data based on dataInd before sending to clusterize
     const rows = this.dataInd.map((dataIndex, rowIdx) => {
@@ -1002,7 +1003,7 @@ export class sorterTable {
         if (this._scrollContainer) {
           this._scrollContainer.scrollTop = 0;
         }
-        this.hideLoadingIndicator();
+        // this.hideLoadingIndicator();
       }, 50);
     } else if (this.tBody) {
       // First time initialization - create a new clusterize instance with appropriate options
@@ -1013,13 +1014,13 @@ export class sorterTable {
         callbacks: {
           clusterChanged: () => {
             this._attachRowEvents();
-            this.hideLoadingIndicator(); // Hide once rendering is complete
+            // this.hideLoadingIndicator(); // Hide once rendering is complete
           },
           clusterWillChange: () => {
             if (this._scrollContainer) {
               this._lastScrollTop = this._scrollContainer.scrollTop;
             }
-            this.showLoadingIndicator(); // Show before a cluster update
+            // this.showLoadingIndicator(); // Show before a cluster update
           },
           scrollingProgress: (progress) => {
             if (progress > 0.8 && this.options.onNearEnd) {
@@ -1045,19 +1046,20 @@ export class sorterTable {
         const rowIndex = parseInt(tr.getAttribute("data-row-index"), 10);
         if (isNaN(rowIndex)) return;
         if (event.shiftKey) {
-          let selectedIndices = this.getSelection().map((s) => s.index);
+          // Use the selection set instead of relying on current DOM only.
+          let selectedIndices = Array.from(this.selectedRows);
           if (selectedIndices.length === 0) selectedIndices = [rowIndex];
-          const minSelIndex = Math.min(...selectedIndices);
-          const maxSelIndex = Math.max(...selectedIndices);
-          if (rowIndex <= minSelIndex) {
-            for (let i = rowIndex; i < minSelIndex; i++) {
-              const trToSelect = this.tBody.querySelectorAll("tr")[i];
-              if (trToSelect) this.selectRow(trToSelect);
-            }
-          } else if (rowIndex >= maxSelIndex) {
-            for (let i = maxSelIndex + 1; i <= rowIndex; i++) {
-              const trToSelect = this.tBody.querySelectorAll("tr")[i];
-              if (trToSelect) this.selectRow(trToSelect);
+          const start = Math.min(...selectedIndices, rowIndex);
+          const end = Math.max(...selectedIndices, rowIndex);
+          for (let i = start; i <= end; i++) {
+            // Update the selection set for all indices in the range.
+            this.selectedRows.add(i);
+            // Update visible selection if the row is rendered.
+            const trToSelect = this.tBody.querySelector(
+              `tr[data-row-index="${i}"]`
+            );
+            if (trToSelect) {
+              this.selectRow(trToSelect);
             }
           }
         } else if (event.ctrlKey) {
