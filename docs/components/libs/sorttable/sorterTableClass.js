@@ -2011,6 +2011,7 @@ function HistogramController(data, binrules) {
         .style("z-index", 90999)
         .call(this.brush);
     } else if ("ordinals" in binrules || "nominals" in binrules) {
+      // Create a frequency map of values to their counts and indices
       const frequency = d3.rollup(
         data,
         (values) => ({
@@ -2022,18 +2023,35 @@ function HistogramController(data, binrules) {
 
       const binType = "ordinals" in binrules ? "ordinals" : "nominals";
 
+      // For sorted data, we need to preserve the order of appearance
+      // Create a map to track first appearance of each value in sorted data
+      const valueOrder = new Map();
+      data.forEach((d, i) => {
+        if (!valueOrder.has(d.value)) {
+          valueOrder.set(d.value, i);
+        }
+      });
+
       if (binType in binrules && Array.isArray(binrules[binType])) {
-        this.bins = binrules[binType].map((v) => ({
+        // If we have predefined bin categories, use them but sort by data order
+        const binsWithOrder = binrules[binType].map((v) => ({
           category: v,
+          orderIndex: valueOrder.has(v) ? valueOrder.get(v) : Infinity,
           count: frequency.get(v) != null ? frequency.get(v).count : 0,
           indeces: frequency.get(v) != null ? frequency.get(v).indeces : [],
         }));
+
+        // Sort bins according to their first appearance in the data
+        binsWithOrder.sort((a, b) => a.orderIndex - b.orderIndex);
+        this.bins = binsWithOrder;
       } else {
+        // Create bins directly from frequency map, but sort them by data order
         this.bins = Array.from(frequency, ([key, value]) => ({
           category: key,
+          orderIndex: valueOrder.get(key),
           count: value.count,
           indeces: value.indeces,
-        }));
+        })).sort((a, b) => a.orderIndex - b.orderIndex);
       }
     }
 
