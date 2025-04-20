@@ -3,6 +3,7 @@ import Clusterize from "clusterize.js";
 // import { DuckDBClient } from "npm:@observablehq/duckdb";
 
 import { BinningService } from "./BinningService.js";
+import { SmallMultiplesView } from "./small_multiples.js";
 
 // Control debug output - set to true during development, false in production
 const DEBUG = false;
@@ -16,6 +17,9 @@ export class sorterTable {
   constructor(data, columnNames, changed, options = {}) {
     // Initialize core properties first
     this.data = this.preprocessData(data, columnNames); // Add preprocessing
+
+    // View state - table view by default
+    this.currentView = "table"; // 'table' or 'smallMultiples'
 
     this.columnTypes = {};
     this.columns = columnNames.map((col) => {
@@ -1156,6 +1160,169 @@ export class sorterTable {
     });
   }
 
+  /**
+   * Toggle between table view and small multiples view
+   */
+  toggleView() {
+    // Toggle the view state
+    this.currentView =
+      this.currentView === "table" ? "smallMultiples" : "table";
+
+    // Update the switch view icon
+    if (this._containerNode) {
+      const switchViewIcon =
+        this._containerNode.querySelector("#switch-view-icon");
+      if (switchViewIcon) {
+        // Clear existing classes
+        switchViewIcon.classList.remove("fa-th", "fa-table");
+
+        // Add new icon class based on current view
+        if (this.currentView === "table") {
+          switchViewIcon.classList.add("fa-th");
+          switchViewIcon.setAttribute(
+            "title",
+            "Switch to Small Multiples View"
+          );
+        } else {
+          switchViewIcon.classList.add("fa-table");
+          switchViewIcon.setAttribute("title", "Switch to Table View");
+        }
+      }
+    }
+
+    // Re-render the view
+    if (this._containerNode) {
+      // Instead of trying to replace the node, update the content inside the existing container
+      const contentDiv = this._containerNode.querySelector("div:nth-child(2)"); // The content div is the second child
+
+      if (contentDiv) {
+        // Clear the current content
+        contentDiv.innerHTML = "";
+
+        // Create new content based on the current view
+        if (this.currentView === "table") {
+          // Table view
+          this._scrollContainer = contentDiv;
+
+          // Recreate the table
+          if (!this.tBody) {
+            this.tBody = document.createElement("tbody");
+            this.tBody.className = "clusterize-content";
+          }
+
+          // Reset the table
+          this.table.innerHTML = "";
+          if (this.tHead) this.table.appendChild(this.tHead);
+          this.table.appendChild(this.tBody);
+          contentDiv.appendChild(this.table);
+
+          // Reinitialize Clusterize
+          this._clusterize = null;
+
+          // Always ensure container has proper dimensions
+          if (this._scrollContainer) {
+            if (!this._scrollContainer.style.height) {
+              this._scrollContainer.style.height =
+                this.options.containerHeight || "400px";
+            }
+            if (!this._scrollContainer.style.width) {
+              this._scrollContainer.style.width =
+                this.options.containerWidth || "100%";
+            }
+          }
+
+          // Get cached rows or regenerate them
+          const rows = this.dataInd.map((dataIndex, rowIdx) => {
+            let cells = this.columns
+              .map((c) => {
+                if (typeof this.cellRenderers[c.column] === "function") {
+                  const temp = document.createElement("div");
+                  temp.appendChild(
+                    this.cellRenderers[c.column](
+                      this.data[dataIndex][c.column],
+                      this.data[dataIndex]
+                    )
+                  );
+                  return `<td>${temp.innerHTML}</td>`;
+                } else {
+                  return `<td>${this.data[dataIndex][c.column]}</td>`;
+                }
+              })
+              .join("");
+            return `<tr data-row-index="${rowIdx}" data-data-index="${dataIndex}">${cells}</tr>`;
+          });
+
+          // Show initial content
+          if (rows.length > 0) {
+            const initialVisibleCount = Math.min(50, rows.length);
+            this.tBody.innerHTML = rows.slice(0, initialVisibleCount).join("");
+            this._attachRowEvents();
+          }
+
+          // Initialize Clusterize after a short delay
+          setTimeout(() => {
+            // Calculate optimal row settings based on data size
+            const rowsInBlock = Math.min(
+              200,
+              Math.max(50, Math.floor(this.data.length / 20))
+            );
+
+            // Create the Clusterize instance
+            this._clusterize = new Clusterize({
+              rows: rows,
+              scrollElem: this._scrollContainer,
+              contentElem: this.tBody,
+              callbacks: {
+                clusterChanged: () => this._attachRowEvents(),
+                clusterWillChange: () => {
+                  // Preserve scroll position during updates
+                  if (this._scrollContainer) {
+                    this._lastScrollTop = this._scrollContainer.scrollTop;
+                  }
+                },
+                scrollingProgress: (progress) => {
+                  if (progress > 0.8 && this.options.onNearEnd) {
+                    this.options.onNearEnd();
+                  }
+                },
+              },
+              // Optimize for large datasets
+              rows_in_block: rowsInBlock,
+              blocks_in_cluster: 4,
+              show_no_data_row: false,
+              tag: "tr",
+            });
+
+            // Force rendering
+            this._clusterize.update(rows);
+
+            setTimeout(() => {
+              this._clusterize.refresh(true); // Force full refresh
+            }, 50);
+          }, 10);
+        } else {
+          // Small Multiples view
+          if (!this._smallMultiplesView) {
+            this._smallMultiplesView = new SmallMultiplesView(this, {
+              histogramHeight: 120,
+              histogramWidth: 160,
+              maxColumns: 4,
+            });
+          }
+
+          // Render the small multiples view
+          contentDiv.appendChild(this._smallMultiplesView.render());
+        }
+      }
+    }
+
+    // Notify that view has changed
+    this.changed({
+      type: "viewChanged",
+      view: this.currentView,
+    });
+  }
+
   sortChanged(controller) {
     this.history.push({ type: "sort", data: [...this.dataInd] });
     this.compoundSorting = {};
@@ -1294,7 +1461,6 @@ export class sorterTable {
       cursor: "pointer",
       marginBottom: "15px",
       color: "gray",
-      // fontSize: "18px",
     });
     filterIcon.setAttribute("title", "Apply Filter");
     filterIcon.addEventListener("click", (event) => {
@@ -1325,7 +1491,6 @@ export class sorterTable {
       cursor: "pointer",
       marginBottom: "15px",
       color: "gray",
-      // fontSize: "18px",
     });
     aggregateIcon.setAttribute("title", "Aggregate by selected column");
     aggregateIcon.addEventListener("click", (event) => {
@@ -1341,7 +1506,6 @@ export class sorterTable {
       cursor: "pointer",
       marginBottom: "15px",
       color: "gray",
-      // fontSize: "18px",
     });
     undoIcon.setAttribute("title", "Undo Last Action");
     undoIcon.addEventListener("click", (event) => {
@@ -1357,7 +1521,6 @@ export class sorterTable {
       cursor: "pointer",
       marginBottom: "15px",
       color: "gray",
-      // fontSize: "18px",
     });
     resetIcon.setAttribute("title", "Reset Table");
     resetIcon.addEventListener("click", (event) => {
@@ -1366,116 +1529,170 @@ export class sorterTable {
     });
     sidebar.appendChild(resetIcon);
 
-    // --- Table Container (scrollable) ---
-    let tableScrollDiv = document.createElement("div");
-    Object.assign(tableScrollDiv.style, {
+    // Add a divider
+    let divider = document.createElement("div");
+    Object.assign(divider.style, {
+      width: "20px",
+      height: "1px",
+      backgroundColor: "#ccc",
+      margin: "5px 0 15px 0",
+    });
+    sidebar.appendChild(divider);
+
+    // --- Switch View Icon ---
+    let switchViewIcon = document.createElement("i");
+    switchViewIcon.id = "switch-view-icon";
+
+    // Set the icon based on current view
+    if (this.currentView === "table") {
+      switchViewIcon.classList.add("fas", "fa-th");
+      switchViewIcon.setAttribute("title", "Switch to Small Multiples View");
+    } else {
+      switchViewIcon.classList.add("fas", "fa-table");
+      switchViewIcon.setAttribute("title", "Switch to Table View");
+    }
+
+    Object.assign(switchViewIcon.style, {
+      cursor: "pointer",
+      marginBottom: "15px",
+      color: "#1976D2", // Highlighting this button with a distinct color
+      fontSize: "16px", // Slightly larger
+    });
+
+    switchViewIcon.addEventListener("click", (event) => {
+      event.stopPropagation();
+      this.toggleView();
+    });
+    sidebar.appendChild(switchViewIcon);
+
+    // Create content area - will hold either table or small multiples
+    let contentDiv = document.createElement("div");
+    Object.assign(contentDiv.style, {
       flex: "1",
-      overflowY: "auto",
-      overflowX: "auto",
       height: this.options.containerHeight,
       width: this.options.containerWidth,
       position: "relative",
+      overflow: "auto",
     });
-    this._scrollContainer = tableScrollDiv;
 
-    while (this.table.firstChild) this.table.removeChild(this.table.firstChild);
-    if (this.tHead) this.table.appendChild(this.tHead);
-    if (!this.tBody) {
-      this.tBody = document.createElement("tbody");
-      this.tBody.className = "clusterize-content";
-    }
-    this.table.appendChild(this.tBody);
-    tableScrollDiv.appendChild(this.table);
-    container.appendChild(sidebar);
-    container.appendChild(tableScrollDiv);
+    // Handle different views
+    if (this.currentView === "table") {
+      // Table view
+      this._scrollContainer = contentDiv;
 
-    // Always ensure container has proper dimensions
-    if (this._scrollContainer) {
-      if (!this._scrollContainer.style.height) {
-        this._scrollContainer.style.height =
-          this.options.containerHeight || "400px";
+      while (this.table.firstChild)
+        this.table.removeChild(this.table.firstChild);
+      if (this.tHead) this.table.appendChild(this.tHead);
+      if (!this.tBody) {
+        this.tBody = document.createElement("tbody");
+        this.tBody.className = "clusterize-content";
       }
-      if (!this._scrollContainer.style.width) {
-        this._scrollContainer.style.width =
-          this.options.containerWidth || "100%";
-      }
-    }
+      this.table.appendChild(this.tBody);
+      contentDiv.appendChild(this.table);
 
-    // Only initialize Clusterize once and when container is ready
-    if (!this._clusterize) {
-      // Get cached rows or regenerate them
-      const rows =
-        this._generatedRows ||
-        this.dataInd.map((dataIndex, rowIdx) => {
-          let cells = this.columns
-            .map((c) => {
-              if (typeof this.cellRenderers[c.column] === "function") {
-                const temp = document.createElement("div");
-                temp.appendChild(
-                  this.cellRenderers[c.column](
-                    this.data[dataIndex][c.column],
-                    this.data[dataIndex]
-                  )
-                );
-                return `<td>${temp.innerHTML}</td>`;
-              } else {
-                return `<td>${this.data[dataIndex][c.column]}</td>`;
-              }
-            })
-            .join("");
-          return `<tr data-row-index="${rowIdx}" data-data-index="${dataIndex}">${cells}</tr>`;
-        });
-
-      // Show initial content immediately (this ensures rows are visible without waiting for Clusterize)
-      if (rows.length > 0) {
-        const initialVisibleCount = Math.min(50, rows.length);
-        this.tBody.innerHTML = rows.slice(0, initialVisibleCount).join("");
-        this._attachRowEvents();
+      // Always ensure container has proper dimensions
+      if (this._scrollContainer) {
+        if (!this._scrollContainer.style.height) {
+          this._scrollContainer.style.height =
+            this.options.containerHeight || "400px";
+        }
+        if (!this._scrollContainer.style.width) {
+          this._scrollContainer.style.width =
+            this.options.containerWidth || "100%";
+        }
       }
 
-      // After DOM has settled, initialize Clusterize
-      setTimeout(() => {
-        // Calculate optimal row settings based on data size
-        const rowsInBlock = Math.min(
-          200,
-          Math.max(50, Math.floor(this.data.length / 20))
-        );
+      // Only initialize Clusterize once and when container is ready
+      if (!this._clusterize) {
+        // Get cached rows or regenerate them
+        const rows =
+          this._generatedRows ||
+          this.dataInd.map((dataIndex, rowIdx) => {
+            let cells = this.columns
+              .map((c) => {
+                if (typeof this.cellRenderers[c.column] === "function") {
+                  const temp = document.createElement("div");
+                  temp.appendChild(
+                    this.cellRenderers[c.column](
+                      this.data[dataIndex][c.column],
+                      this.data[dataIndex]
+                    )
+                  );
+                  return `<td>${temp.innerHTML}</td>`;
+                } else {
+                  return `<td>${this.data[dataIndex][c.column]}</td>`;
+                }
+              })
+              .join("");
+            return `<tr data-row-index="${rowIdx}" data-data-index="${dataIndex}">${cells}</tr>`;
+          });
 
-        // Create the Clusterize instance
-        this._clusterize = new Clusterize({
-          rows: rows,
-          scrollElem: this._scrollContainer,
-          contentElem: this.tBody,
-          callbacks: {
-            clusterChanged: () => this._attachRowEvents(),
-            clusterWillChange: () => {
-              // Preserve scroll position during updates
-              if (this._scrollContainer) {
-                this._lastScrollTop = this._scrollContainer.scrollTop;
-              }
-            },
-            scrollingProgress: (progress) => {
-              if (progress > 0.8 && this.options.onNearEnd) {
-                this.options.onNearEnd();
-              }
-            },
-          },
-          // Optimize for large datasets
-          rows_in_block: rowsInBlock,
-          blocks_in_cluster: 4,
-          show_no_data_row: false,
-          tag: "tr",
-        });
+        // Show initial content immediately (this ensures rows are visible without waiting for Clusterize)
+        if (rows.length > 0) {
+          const initialVisibleCount = Math.min(50, rows.length);
+          this.tBody.innerHTML = rows.slice(0, initialVisibleCount).join("");
+          this._attachRowEvents();
+        }
 
-        // Multiple techniques to force rendering
-        this._clusterize.update(rows);
-
-        // Force a refresh again after short delay
+        // After DOM has settled, initialize Clusterize
         setTimeout(() => {
-          this._clusterize.refresh(true); // true forces a full refresh
-        }, 50);
-      }, 10); // Small delay to let DOM stabilize
+          // Calculate optimal row settings based on data size
+          const rowsInBlock = Math.min(
+            200,
+            Math.max(50, Math.floor(this.data.length / 20))
+          );
+
+          // Create the Clusterize instance
+          this._clusterize = new Clusterize({
+            rows: rows,
+            scrollElem: this._scrollContainer,
+            contentElem: this.tBody,
+            callbacks: {
+              clusterChanged: () => this._attachRowEvents(),
+              clusterWillChange: () => {
+                // Preserve scroll position during updates
+                if (this._scrollContainer) {
+                  this._lastScrollTop = this._scrollContainer.scrollTop;
+                }
+              },
+              scrollingProgress: (progress) => {
+                if (progress > 0.8 && this.options.onNearEnd) {
+                  this.options.onNearEnd();
+                }
+              },
+            },
+            // Optimize for large datasets
+            rows_in_block: rowsInBlock,
+            blocks_in_cluster: 4,
+            show_no_data_row: false,
+            tag: "tr",
+          });
+
+          // Multiple techniques to force rendering
+          this._clusterize.update(rows);
+
+          // Force a refresh again after short delay
+          setTimeout(() => {
+            this._clusterize.refresh(true); // true forces a full refresh
+          }, 50);
+        }, 10); // Small delay to let DOM stabilize
+      }
+    } else {
+      // Small Multiples view
+      if (!this._smallMultiplesView) {
+        this._smallMultiplesView = new SmallMultiplesView(this, {
+          histogramHeight: 120,
+          histogramWidth: 160,
+          maxColumns: 4,
+        });
+      }
+
+      // Render the small multiples view
+      contentDiv.appendChild(this._smallMultiplesView.render());
     }
+
+    container.appendChild(sidebar);
+    container.appendChild(contentDiv);
 
     this._containerNode = container;
     return container;
