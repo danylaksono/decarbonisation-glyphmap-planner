@@ -973,10 +973,7 @@ export class sorterTable {
   // }
 
   createTable() {
-    // Show loading indicator before heavy processing begins
-    // this.showLoadingIndicator();
-
-    // Prepare all row data based on dataInd before sending to clusterize
+    // Generate row HTML for all rows
     const rows = this.dataInd.map((dataIndex, rowIdx) => {
       let cells = this.columns
         .map((c) => {
@@ -997,51 +994,54 @@ export class sorterTable {
       return `<tr data-row-index="${rowIdx}" data-data-index="${dataIndex}">${cells}</tr>`;
     });
 
+    // If no rows and we need to show a message
+    if (rows.length === 0) {
+      rows.push(
+        `<tr><td colspan="${this.columns.length}" style="text-align: center; padding: 20px;">No data available</td></tr>`
+      );
+    }
+
+    // Store the generated rows for potential reuse
+    this._generatedRows = rows;
+
+    // We'll update Clusterize if it exists, but we won't initialize it here
+    // Instead, we'll do the initialization in getNode() to ensure container is ready
     if (this._clusterize) {
+      // For existing clusterize instance, update the rows
       this._clusterize.update(rows);
+
+      // Ensure scroll position is reset and render is forced
       setTimeout(() => {
         if (this._scrollContainer) {
-          this._scrollContainer.scrollTop = 0;
+          // Force a small scroll to trigger rendering
+          this._scrollContainer.scrollTop = 1;
+          // Then reset to top
+          setTimeout(() => {
+            this._scrollContainer.scrollTop = 0;
+          }, 0);
         }
-        // this.hideLoadingIndicator();
-      }, 50);
+      }, 0);
     } else if (this.tBody) {
-      // First time initialization - create a new clusterize instance with appropriate options
-      this._clusterize = new Clusterize({
-        rows: rows,
-        scrollElem: this._scrollContainer,
-        contentElem: this.tBody,
-        callbacks: {
-          clusterChanged: () => {
-            this._attachRowEvents();
-            // this.hideLoadingIndicator(); // Hide once rendering is complete
-          },
-          clusterWillChange: () => {
-            if (this._scrollContainer) {
-              this._lastScrollTop = this._scrollContainer.scrollTop;
-            }
-            // this.showLoadingIndicator(); // Show before a cluster update
-          },
-          scrollingProgress: (progress) => {
-            if (progress > 0.8 && this.options.onNearEnd) {
-              this.options.onNearEnd();
-            }
-          },
-        },
-        // Optimize for large datasets
-        rows_in_block: Math.min(
-          100,
-          Math.max(50, Math.floor(this.data.length / 20))
-        ),
-        blocks_in_cluster: 4,
-        show_no_data_row: false,
-        tag: "tr",
-      });
+      // If Clusterize isn't initialized yet, render rows directly
+      // This ensures content is visible even before Clusterize initialization
+      const initialVisibleCount = Math.min(50, rows.length);
+      this.tBody.innerHTML = rows.slice(0, initialVisibleCount).join("");
+
+      // Attach event listeners to these directly rendered rows
+      setTimeout(() => {
+        this._attachRowEvents();
+      }, 0);
     }
   }
 
   _attachRowEvents() {
-    Array.from(this.tBody.querySelectorAll("tr")).forEach((tr) => {
+    // Check if there are any rows to attach events to
+    const rows = this.tBody.querySelectorAll("tr");
+    if (!rows.length) {
+      return; // No rows to process, exit early
+    }
+
+    Array.from(rows).forEach((tr) => {
       tr.addEventListener("click", (event) => {
         const rowIndex = parseInt(tr.getAttribute("data-row-index"), 10);
         if (isNaN(rowIndex)) return;
@@ -1303,6 +1303,21 @@ export class sorterTable {
     });
     sidebar.appendChild(filterIcon);
 
+    // --- Custom Filter Icon ---
+    let customFilterIcon = document.createElement("i");
+    customFilterIcon.classList.add("fas", "fa-filter-circle-xmark");
+    Object.assign(customFilterIcon.style, {
+      cursor: "pointer",
+      marginBottom: "15px",
+      color: "gray",
+    });
+    customFilterIcon.setAttribute("title", "Custom Filter");
+    customFilterIcon.addEventListener("click", (event) => {
+      event.stopPropagation();
+      this.showCustomFilterDialog();
+    });
+    sidebar.appendChild(customFilterIcon);
+
     // --- Aggregate Icon ---
     let aggregateIcon = document.createElement("i");
     aggregateIcon.classList.add("fas", "fa-chart-bar");
@@ -1351,21 +1366,6 @@ export class sorterTable {
     });
     sidebar.appendChild(resetIcon);
 
-    // --- Custom Filter Icon ---
-    let customFilterIcon = document.createElement("i");
-    customFilterIcon.classList.add("fas", "fa-filter-circle-xmark");
-    Object.assign(customFilterIcon.style, {
-      cursor: "pointer",
-      marginBottom: "15px",
-      color: "gray",
-    });
-    customFilterIcon.setAttribute("title", "Custom Filter");
-    customFilterIcon.addEventListener("click", (event) => {
-      event.stopPropagation();
-      this.showCustomFilterDialog();
-    });
-    sidebar.appendChild(customFilterIcon);
-
     // --- Table Container (scrollable) ---
     let tableScrollDiv = document.createElement("div");
     Object.assign(tableScrollDiv.style, {
@@ -1389,59 +1389,92 @@ export class sorterTable {
     container.appendChild(sidebar);
     container.appendChild(tableScrollDiv);
 
+    // Always ensure container has proper dimensions
+    if (this._scrollContainer) {
+      if (!this._scrollContainer.style.height) {
+        this._scrollContainer.style.height =
+          this.options.containerHeight || "400px";
+      }
+      if (!this._scrollContainer.style.width) {
+        this._scrollContainer.style.width =
+          this.options.containerWidth || "100%";
+      }
+    }
+
+    // Only initialize Clusterize once and when container is ready
     if (!this._clusterize) {
-      const rows = this.dataInd.map((dataIndex, rowIdx) => {
-        let cells = this.columns
-          .map((c) => {
-            if (typeof this.cellRenderers[c.column] === "function") {
-              const temp = document.createElement("div");
-              temp.appendChild(
-                this.cellRenderers[c.column](
-                  this.data[dataIndex][c.column],
-                  this.data[dataIndex]
-                )
-              );
-              return `<td>${temp.innerHTML}</td>`;
-            } else {
-              return `<td>${this.data[dataIndex][c.column]}</td>`;
-            }
-          })
-          .join("");
-        return `<tr data-row-index="${rowIdx}" data-data-index="${dataIndex}">${cells}</tr>`;
-      });
+      // Get cached rows or regenerate them
+      const rows =
+        this._generatedRows ||
+        this.dataInd.map((dataIndex, rowIdx) => {
+          let cells = this.columns
+            .map((c) => {
+              if (typeof this.cellRenderers[c.column] === "function") {
+                const temp = document.createElement("div");
+                temp.appendChild(
+                  this.cellRenderers[c.column](
+                    this.data[dataIndex][c.column],
+                    this.data[dataIndex]
+                  )
+                );
+                return `<td>${temp.innerHTML}</td>`;
+              } else {
+                return `<td>${this.data[dataIndex][c.column]}</td>`;
+              }
+            })
+            .join("");
+          return `<tr data-row-index="${rowIdx}" data-data-index="${dataIndex}">${cells}</tr>`;
+        });
 
-      // Calculate optimal row settings based on data size
-      const rowsInBlock = Math.min(
-        200,
-        Math.max(50, Math.floor(this.data.length / 20))
-      );
+      // Show initial content immediately (this ensures rows are visible without waiting for Clusterize)
+      if (rows.length > 0) {
+        const initialVisibleCount = Math.min(50, rows.length);
+        this.tBody.innerHTML = rows.slice(0, initialVisibleCount).join("");
+        this._attachRowEvents();
+      }
 
-      this._clusterize = new Clusterize({
-        rows: rows,
-        scrollElem: this._scrollContainer,
-        contentElem: this.tBody,
-        callbacks: {
-          clusterChanged: () => this._attachRowEvents(),
-          clusterWillChange: () => {
-            // Preserve scroll position during updates
-            if (this._scrollContainer) {
-              this._lastScrollTop = this._scrollContainer.scrollTop;
-            }
-          },
-        },
-        // Optimize for large datasets
-        rows_in_block: rowsInBlock,
-        blocks_in_cluster: 4,
-        show_no_data_row: false,
-      });
-
-      // Force initial render
+      // After DOM has settled, initialize Clusterize
       setTimeout(() => {
-        if (this._scrollContainer) {
-          this._scrollContainer.scrollTop = 1;
-          this._scrollContainer.scrollTop = 0;
-        }
-      }, 100);
+        // Calculate optimal row settings based on data size
+        const rowsInBlock = Math.min(
+          200,
+          Math.max(50, Math.floor(this.data.length / 20))
+        );
+
+        // Create the Clusterize instance
+        this._clusterize = new Clusterize({
+          rows: rows,
+          scrollElem: this._scrollContainer,
+          contentElem: this.tBody,
+          callbacks: {
+            clusterChanged: () => this._attachRowEvents(),
+            clusterWillChange: () => {
+              // Preserve scroll position during updates
+              if (this._scrollContainer) {
+                this._lastScrollTop = this._scrollContainer.scrollTop;
+              }
+            },
+            scrollingProgress: (progress) => {
+              if (progress > 0.8 && this.options.onNearEnd) {
+                this.options.onNearEnd();
+              }
+            },
+          },
+          // Optimize for large datasets
+          rows_in_block: rowsInBlock,
+          blocks_in_cluster: 4,
+          show_no_data_row: false,
+          tag: "tr",
+        });
+
+        // Multiple techniques to force rendering
+        this._clusterize.update(rows);
+
+        // Force a refresh again after short delay
+        setTimeout(() => {
+          this._clusterize.refresh(true); // true forces a full refresh
+        }, 50);
+      }, 10); // Small delay to let DOM stabilize
     }
 
     this._containerNode = container;

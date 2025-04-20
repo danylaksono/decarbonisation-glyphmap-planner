@@ -234,6 +234,7 @@ endTimer("glyph_variables_and_colours");
 <!-- ------------ Getter-Setter ------------ -->
 
 ```js
+// wrapper to Observable's Mutable
 function useState(value) {
   const state = Mutable(value);
   const setState = (value) => (state.value = value);
@@ -244,10 +245,10 @@ function useState(value) {
 ```js
 log(">> Getters and Setters...");
 const [getSelectedAllocation, setSelectedAllocation] = useState([]); // selected allocation
-const [detailOnDemand, setDetailOnDemand] = useState(null); // detail on demand on map
-const [currentConfig, setCurrentConfig] = useState({}); // current configuration
-const [tableFiltered, setTableFiltered] = useState([]); // filtered table
-const [allocations, setAllocations] = useState([]);
+// const [detailOnDemand, setDetailOnDemand] = useState(null); // detail on demand on map
+// const [currentConfig, setCurrentConfig] = useState({}); // current configuration
+// const [tableFiltered, setTableFiltered] = useState([]); // filtered table
+// const [allocations, setAllocations] = useState([]);
 ```
 
 ```js
@@ -262,36 +263,34 @@ const [selectedInterventionIndex, setSelectedInterventionIndex] =
 const [timelineModifications, setTimelineModifications] = useState([]); // list of budget allocations
 ```
 
-<!------------ HANDLE BI-DIRECTIONAL SELECTION -------------->
+<!------------ HANDLE BI-DIRECTIONAL TABLE-MAP SELECTION -------------->
 
 ```js
 const [getInitialData, setInitialData] = useState(null); // INITIAL DATA
 ```
 
 ```js
-startTimer("update_selection");
-function updateSelection(
-  targetSelection,
-  newSelection,
-  mode = "intersect",
-  idField
-) {
-  if (mode === "single") {
-    return newSelection;
-  } else if (mode === "union") {
-    const newIds = new Set(newSelection.map((obj) => obj[idField]));
-    const additional = targetSelection.filter(
-      (obj) => !newIds.has(obj[idField])
-    );
-    return [...newSelection, ...additional];
-  } else if (mode === "intersect") {
-    const currentIds = new Set(targetSelection.map((obj) => obj[idField]));
-    return newSelection.filter((obj) => currentIds.has(obj[idField]));
-  } else {
-    throw new Error("Invalid mode");
-  }
-}
-endTimer("update_selection");
+// function updateSelection(
+//   targetSelection,
+//   newSelection,
+//   mode = "intersect",
+//   idField
+// ) {
+//   if (mode === "single") {
+//     return newSelection;
+//   } else if (mode === "union") {
+//     const newIds = new Set(newSelection.map((obj) => obj[idField]));
+//     const additional = targetSelection.filter(
+//       (obj) => !newIds.has(obj[idField])
+//     );
+//     return [...newSelection, ...additional];
+//   } else if (mode === "intersect") {
+//     const currentIds = new Set(targetSelection.map((obj) => obj[idField]));
+//     return newSelection.filter((obj) => currentIds.has(obj[idField]));
+//   } else {
+//     throw new Error("Invalid mode");
+//   }
+// }
 ```
 
 ```js
@@ -655,6 +654,42 @@ resetAllButton.addEventListener("click", (e) => {
 });
 ```
 
+<!------------------ INSTANTIATION  ------------------>
+
+```js
+// Factory for sorterTable
+function createSorterTable(data, columns, onChange, options = {}) {
+  log("Creating sorterTable instance...");
+  const table = new sorterTable(data, columns, onChange);
+  if (options.width && options.height) {
+    table.setContainerSize(options);
+  }
+  return table;
+}
+```
+
+```js
+// Factory for InterventionManager
+function createInterventionManager(data, techList) {\
+  log("Creating InterventionManager instance...");
+  return new InterventionManager(data, techList);
+}
+```
+
+```js
+// Factory for LeafletMap
+function createLeafletMapInstance(container, data, options = {}) {
+  log("Creating LeafletMap instance...");
+  const map = new LeafletMap(container, options);
+  map.addLayer("buildings", data, {
+    clusterRadius: 50,
+    fitBounds: true,
+  });
+  map.setSelectionLayer("buildings");
+  return map;
+}
+```
+
 ```js
 startTimer("grouped_intervention");
 // display(html`<p>"Grouped Intervention"</p>`);
@@ -766,7 +801,8 @@ const matchedBuildings = buildingsData.filter((b) => initialIds.has(b.id));
 const initialData = matchedBuildings ? matchedBuildings : buildingsData;
 
 log("[MODEL] Running InterventionManager with initial data: ", initialData);
-const manager = new InterventionManager(initialData, listOfTech);
+// const manager = new InterventionManager(initialData, listOfTech);
+const manager = createInterventionManager(data, listOfTech);
 ```
 
 <!-- ---------------- Input form declarations ---------------- -->
@@ -1405,7 +1441,6 @@ function tableChanged(event) {
   if (event.type === "filter") {
     // log("Filtered indices:", event.indeces);
     // log("Filter rule:", event.rule);
-    // saveToSession("tableFiltered", event.indeces);
     log("Filtered IDs:", event.ids);
 
     // Use the new filterState to handle filtering
@@ -1446,7 +1481,8 @@ log("Initial Data Fixed: ", getInitialData);
 ```js
 startTimer("create_sorter_table");
 log("[TABLE] Create table using columns", tableColumns);
-const table = new sorterTable(data, tableColumns, tableChanged);
+// const table = new sorterTable(data, tableColumns, tableChanged);
+const table = createSorterTable(data, tableColumns, tableChanged);
 
 function drawSorterTable(data, columns, callback, options) {
   table.setContainerSize(options);
@@ -1516,7 +1552,7 @@ const regular_geodata_withproperties = enrichGeoData(
   aggregations
 );
 
-log("regular_geodata_withproperties_enriched", regular_geodata_withproperties);
+// log("regular_geodata_withproperties_enriched", regular_geodata_withproperties);
 
 const cartogram_geodata_withproperties = enrichGeoData(
   // buildingsData,
@@ -1982,7 +2018,7 @@ function interactiveDrawFn(mode) {
 const leafletContainer = document.createElement("div");
 document.body.appendChild(leafletContainer);
 
-const mapInstance = new LeafletMap(leafletContainer, {
+const mapInstance = createLeafletMapInstance(leafletContainer, data, {
   width: "300px",
   height: "300px",
   // onSelect: (selectedFeatures) => log("Map Selected:", selectedFeatures),
@@ -2001,10 +2037,29 @@ const mapInstance = new LeafletMap(leafletContainer, {
   tooltipFormatter: (props) => `<strong>${props.id}</strong>`,
 });
 
-mapInstance.addLayer("buildings", data, {
-  clusterRadius: 50,
-  fitBounds: true,
-});
+// const mapInstance = new LeafletMap(leafletContainer, {
+//   width: "300px",
+//   height: "300px",
+//   // onSelect: (selectedFeatures) => log("Map Selected:", selectedFeatures),
+//   onFilter: (filteredFeatures) => {
+//     // Transform features to just the IDs we need, making sure we have valid IDs
+//     const idValues = filteredFeatures
+//       .map((feature) => feature.properties?.id)
+//       .filter((id) => id !== undefined && id !== null);
+
+//     // Log filtering event
+//     log(`Map filtered: ${idValues.length} buildings`);
+
+//     // Apply filter using the filter manager
+//     filterManager.applyMapToTableFilter(idValues);
+//   },
+//   tooltipFormatter: (props) => `<strong>${props.id}</strong>`,
+// });
+
+// mapInstance.addLayer("buildings", data, {
+//   clusterRadius: 50,
+//   fitBounds: true,
+// });
 
 mapInstance.setSelectionLayer("buildings");
 
@@ -2065,7 +2120,7 @@ function resetAll() {
   // setSelectedAllocation([]);
   // setTimelineModifications([]);
   // setCurrentConfig({});
-  setTableFiltered([]);
+  // setTableFiltered([]);
   setSelectedInterventionIndex(null);
 
   // Recreate the sorterTable with original buildingsData
