@@ -2161,7 +2161,7 @@ function HistogramController(data, binrules) {
       bin.selected = false;
     });
 
-    this.svg.selectAll(".bar rect:nth-child(1)").attr("fill", "steelblue");
+    this.svg.selectAll(".bar rect:nth-child(1)").attr("fill", "#3388FF");
   };
 
   this.setData = function (dd) {
@@ -2295,7 +2295,7 @@ function HistogramController(data, binrules) {
       .attr("width", (d) => width / this.bins.length)
       .attr("y", (d) => y(d.count))
       .attr("height", (d) => height - y(d.count))
-      .attr("fill", "steelblue");
+      .attr("fill", "#3388FF");
 
     if (!("thresholds" in binrules)) {
       barGroups
@@ -2327,7 +2327,7 @@ function HistogramController(data, binrules) {
           if (!d.selected) {
             d3.select(event.currentTarget.previousSibling).attr(
               "fill",
-              "steelblue"
+              "#3388FF"
             );
           }
 
@@ -2344,7 +2344,7 @@ function HistogramController(data, binrules) {
           } else {
             d3.select(event.currentTarget.previousSibling).attr(
               "fill",
-              "steelblue"
+              "#3388FF"
             );
           }
 
@@ -2404,7 +2404,7 @@ function HistogramController(data, binrules) {
 
           this.svg
             .select(`.bar:nth-child(${i + 1}) rect:nth-child(1)`)
-            .attr("fill", bin.selected ? "orange" : "steelblue");
+            .attr("fill", bin.selected ? "orange" : "#3388FF");
 
           if (bin.selected && bin.indeces) {
             bin.indeces.forEach((idx) => selectedIndices.add(idx));
@@ -2416,7 +2416,7 @@ function HistogramController(data, binrules) {
 
           this.svg
             .select(`.bar:nth-child(${i + 1}) rect:nth-child(1)`)
-            .attr("fill", bin.selected ? "orange" : "steelblue");
+            .attr("fill", bin.selected ? "orange" : "#3388FF");
 
           if (bin.selected && bin.indeces) {
             bin.indeces.forEach((idx) => selectedIndices.add(idx));

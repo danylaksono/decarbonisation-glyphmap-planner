@@ -353,7 +353,8 @@ class SmallMultipleHistogram {
     });
 
     if (this.svg) {
-      this.svg.selectAll(".bar rect:nth-child(1)").attr("fill", "steelblue");
+      //   this.svg.selectAll(".bar rect:nth-child(1)").attr("fill", "#3388FF");
+      this.svg.selectAll(".bar rect:nth-child(1)").attr("fill", "#3388FF");
       // Clear brush selection if present
       if (this.brush) {
         this.svg.select(".brush").call(this.brush.move, null);
@@ -499,7 +500,7 @@ class SmallMultipleHistogram {
       .attr("width", (d) => Math.max(1, width / this.bins.length - 1))
       .attr("y", (d) => y(d.count))
       .attr("height", (d) => height - y(d.count))
-      .attr("fill", "steelblue");
+      .attr("fill", "#3388FF");
 
     if (!("thresholds" in this.binrules)) {
       barGroups
@@ -518,19 +519,35 @@ class SmallMultipleHistogram {
           this.svg
             .selectAll(".histogram-label")
             .data([d])
-            .join("text")
-            .attr("class", "histogram-label")
-            .attr("x", width / 2)
-            .attr("y", height - 2) // Position above the x-axis instead of below
-            .attr("fill", "#444444")
-            .attr("text-anchor", "middle")
-            .text(d.category + ": " + d.count);
+            .join("g")
+            .attr("class", "histogram-label-group")
+            .each(function () {
+              const group = d3.select(this);
+
+              group
+                .append("rect")
+                .attr("x", width / 2 - 30) // Adjust width for the mask
+                .attr("y", height - 14) // Adjust position for the mask
+                .attr("width", 60) // Adjust width for the mask
+                .attr("height", 12) // Adjust height for the mask
+                .attr("fill", "white")
+                .attr("rx", 2) // Rounded corners for better aesthetics
+                .attr("ry", 2);
+
+              group
+                .append("text")
+                .attr("x", width / 2)
+                .attr("y", height - 2) // Position above the x-axis instead of below
+                .attr("fill", "#444444")
+                .attr("text-anchor", "middle")
+                .text(d.category + ": " + d.count);
+            });
         })
         .on("mouseout", (event, d) => {
           if (!d.selected) {
             d3.select(event.currentTarget.previousSibling).attr(
               "fill",
-              "steelblue"
+              "#3388FF"
             );
           }
 
@@ -547,7 +564,7 @@ class SmallMultipleHistogram {
           } else {
             d3.select(event.currentTarget.previousSibling).attr(
               "fill",
-              "steelblue"
+              "#3388FF"
             );
           }
 
@@ -607,7 +624,7 @@ class SmallMultipleHistogram {
 
           g.select(`.bar:nth-child(${i + 1}) rect:nth-child(1)`).attr(
             "fill",
-            bin.selected ? "orange" : "steelblue"
+            bin.selected ? "orange" : "#3388FF"
           );
 
           if (bin.selected && bin.indeces) {
@@ -620,7 +637,7 @@ class SmallMultipleHistogram {
 
           g.select(`.bar:nth-child(${i + 1}) rect:nth-child(1)`).attr(
             "fill",
-            bin.selected ? "orange" : "steelblue"
+            bin.selected ? "orange" : "#3388FF"
           );
 
           if (bin.selected && bin.indeces) {
