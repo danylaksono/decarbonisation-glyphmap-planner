@@ -500,7 +500,9 @@ class SmallMultipleHistogram {
       .attr("width", (d) => Math.max(1, width / this.bins.length - 1))
       .attr("y", (d) => y(d.count))
       .attr("height", (d) => height - y(d.count))
-      .attr("fill", "#3388FF");
+      .attr("fill", "#3388FF")
+      .attr("rx", 4) // Add horizontal corner radius
+      .attr("ry", 4); // Add vertical corner radius
 
     if (!("thresholds" in this.binrules)) {
       barGroups
@@ -516,32 +518,32 @@ class SmallMultipleHistogram {
             );
           }
 
-          this.svg
-            .selectAll(".histogram-label")
-            .data([d])
-            .join("g")
-            .attr("class", "histogram-label-group")
-            .each(function () {
-              const group = d3.select(this);
+          // Remove any previous label/mask group
+          this.svg.selectAll(".histogram-label-group").remove();
 
-              group
-                .append("rect")
-                .attr("x", width / 2 - 30) // Adjust width for the mask
-                .attr("y", height - 14) // Adjust position for the mask
-                .attr("width", 60) // Adjust width for the mask
-                .attr("height", 12) // Adjust height for the mask
-                .attr("fill", "white")
-                .attr("rx", 2) // Rounded corners for better aesthetics
-                .attr("ry", 2);
+          // Add a group for label and mask
+          const group = this.svg
+            .append("g")
+            .attr("class", "histogram-label-group");
 
-              group
-                .append("text")
-                .attr("x", width / 2)
-                .attr("y", height - 2) // Position above the x-axis instead of below
-                .attr("fill", "#444444")
-                .attr("text-anchor", "middle")
-                .text(d.category + ": " + d.count);
-            });
+          group
+            .append("rect")
+            .attr("x", width / 2 - 30)
+            .attr("y", height - 14)
+            .attr("width", 60)
+            .attr("height", 12)
+            .attr("fill", "white")
+            .attr("rx", 2)
+            .attr("ry", 2);
+
+          group
+            .append("text")
+            .attr("x", width / 2)
+            .attr("y", height - 2)
+            .attr("fill", "#444444")
+            .attr("text-anchor", "middle")
+            .attr("class", "histogram-label")
+            .text(d.category + ": " + d.count);
         })
         .on("mouseout", (event, d) => {
           if (!d.selected) {
@@ -550,8 +552,8 @@ class SmallMultipleHistogram {
               "#3388FF"
             );
           }
-
-          this.svg.selectAll(".histogram-label").remove();
+          // Remove the label/mask group
+          this.svg.selectAll(".histogram-label-group").remove();
         })
         .on("click", (event, d) => {
           d.selected = !d.selected;

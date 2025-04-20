@@ -670,7 +670,7 @@ function createSorterTable(data, columns, onChange, options = {}) {
 
 ```js
 // Factory for InterventionManager
-function createInterventionManager(data, techList) {\
+function createInterventionManager(data, techList) {
   log("Creating InterventionManager instance...");
   return new InterventionManager(data, techList);
 }
@@ -796,9 +796,13 @@ const listOfTech = {
 // --- Create an InterventionManager instance ---
 // initial building data from get initial data's id if it exist
 // else use the buildingsData
-const initialIds = new Set(getInitialData.map((d) => d.id));
-const matchedBuildings = buildingsData.filter((b) => initialIds.has(b.id));
-const initialData = matchedBuildings ? matchedBuildings : buildingsData;
+let initialData;
+if (getInitialData && getInitialData.length > 0) {
+  const initialIds = new Set(getInitialData.map((d) => d.id));
+  initialData = buildingsData.filter((b) => initialIds.has(b.id));
+} else {
+  initialData = buildingsData;
+}
 
 log("[MODEL] Running InterventionManager with initial data: ", initialData);
 // const manager = new InterventionManager(initialData, listOfTech);

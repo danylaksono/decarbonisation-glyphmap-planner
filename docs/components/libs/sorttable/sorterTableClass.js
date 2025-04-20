@@ -2295,7 +2295,9 @@ function HistogramController(data, binrules) {
       .attr("width", (d) => width / this.bins.length)
       .attr("y", (d) => y(d.count))
       .attr("height", (d) => height - y(d.count))
-      .attr("fill", "#3388FF");
+      .attr("fill", "#3388FF")
+      .attr("rx", 1) // Add horizontal corner radius
+      .attr("ry", 1); // Add vertical corner radius
 
     if (!("thresholds" in binrules)) {
       barGroups

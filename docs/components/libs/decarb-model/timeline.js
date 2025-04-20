@@ -168,7 +168,7 @@ export function createTimelineInterface(
       (d) => xScale(d.initialYear + d.duration) - xScale(d.initialYear)
     )
     .attr("height", (d, i) => Math.min(yScale.bandwidth(), maxBlockHeight))
-    .attr("fill", "steelblue")
+    .attr("fill", "#3388FF")
     .on("click", function (event, d) {
       const index = interventions.indexOf(d);
       if (event.shiftKey && lastClickedIndex !== null) {
@@ -403,7 +403,7 @@ export function createTimelineInterface(
         .append("path")
         .datum(d.yearlyBudgets)
         .attr("fill", "none")
-        .attr("stroke", "steelblue")
+        .attr("stroke", "#3388FF")
         .attr("stroke-width", 1.5)
         .attr("d", line);
 
