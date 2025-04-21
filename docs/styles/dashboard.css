@@ -148,9 +148,9 @@ html {
 /* Panel styling */
 #timeline-panel {
   flex: 1;
-  background-color: #f9f9f9;
+  /* background-color: #f9f9f9; */
   padding: 10px;
-  border-right: 1px solid #ddd;
+  /* border-right: 1px solid #ddd; */
   height: 100%;
 }
 

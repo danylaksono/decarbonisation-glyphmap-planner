@@ -500,7 +500,8 @@ export class sorterTable {
   filter() {
     const prevDataInd = [...this.dataInd];
     this.rules.push(this.getSelectionRule());
-    this.dataInd = this.getSelection().map((s) => this.dataInd[s.index]);
+    const selected = this.getSelection();
+    this.dataInd = selected.map((s) => s.index);
     this.history.push({ type: "filter", data: prevDataInd });
     this.createTable();
     this.visControllers.forEach((vc, vci) => {
@@ -587,15 +588,12 @@ export class sorterTable {
 
   getSelection() {
     let ret = [];
-    this.selectedRows.forEach((index) => {
-      if (index >= 0 && index < this.dataInd.length) {
-        ret.push({
-          index: index,
-          data: this.data[this.dataInd[index]],
-        });
+    this.selectedRows.forEach((dataIndex) => {
+      const pos = this.dataInd.indexOf(dataIndex);
+      if (pos !== -1) {
+        ret.push({ index: dataIndex, data: this.data[dataIndex] });
       }
     });
-    // logDebug("Selection result:", ret);
     this.selected = ret;
     return ret;
   }
@@ -775,22 +773,12 @@ export class sorterTable {
     this.selectedRows.delete(this.getRowIndex(tr));
   }
 
-  // getRowIndex(tr) {
-  //   let index = -1;
-  //   this.tBody.querySelectorAll("tr").forEach((t, i) => {
-  //     if (t == tr) index = i;
-  //   });
-  //   return index;
-  // }
-
   getRowIndex(tr) {
-    // Get the data index from the data attribute instead of DOM position
-    const dataRowIndex = tr.getAttribute("data-row-index");
-    if (dataRowIndex !== null) {
-      return parseInt(dataRowIndex, 10);
+    const dataIndexAttr = tr.getAttribute("data-data-index");
+    if (dataIndexAttr !== null) {
+      return parseInt(dataIndexAttr, 10);
     }
-
-    // Fallback to the old method
+    // Fallback to old method
     let index = -1;
     this.tBody.querySelectorAll("tr").forEach((t, i) => {
       if (t == tr) index = i;
@@ -2340,42 +2328,31 @@ function HistogramController(data, binrules) {
         .on("click", (event, d) => {
           d.selected = !d.selected;
 
-          if (d.selected) {
-            d3.select(event.currentTarget.previousSibling).attr(
-              "fill",
-              "orange"
-            );
-          } else {
-            d3.select(event.currentTarget.previousSibling).attr(
-              "fill",
-              "#3388FF"
-            );
-          }
+          // Update visual state of the clicked bar
+          d3.select(event.currentTarget.previousSibling).attr(
+            "fill",
+            d.selected ? "orange" : "#3388FF"
+          );
 
           if (controller.table) {
-            if (!d.selected) {
-              controller.table.clearSelection();
-            }
-
-            // Map histogram indices to actual data indices
-            const dataIndices = this.bins[d.index].indeces.map(
+            // Get the original data indices for the items in this bin
+            // d.indeces contains indices relative to the current dataInd
+            const originalDataIndices = d.indeces.map(
               (rowIndex) => controller.table.dataInd[rowIndex]
             );
 
-            // Select rows based on data indices
-            this.bins[d.index].indeces.forEach((rowIndex) => {
-              // Find by data attribute instead of position
-              const tr = controller.table.tBody.querySelector(
-                `tr[data-row-index="${rowIndex}"]`
+            // Update the main table's selection set
+            if (d.selected) {
+              originalDataIndices.forEach((dataIndex) =>
+                controller.table.selectedRows.add(dataIndex)
               );
-              if (tr) {
-                if (d.selected) {
-                  controller.table.selectRow(tr);
-                } else {
-                  controller.table.unselectRow(tr);
-                }
-              }
-            });
+            } else {
+              originalDataIndices.forEach((dataIndex) =>
+                controller.table.selectedRows.delete(dataIndex)
+              );
+            }
+
+            // Notify the table that the selection has changed
             controller.table.selectionUpdated();
           }
         });
@@ -2384,50 +2361,53 @@ function HistogramController(data, binrules) {
     this.handleBrush = (event) => {
       this.svg.selectAll(".histogram-label").remove();
 
-      if (!event.selection) {
+      const selectedOriginalDataIndices = new Set();
+      let brushRangeText = "";
+
+      if (event.selection) {
+        const [x0, x1] = event.selection;
+        const [bound1, bound2] = event.selection.map(this.xScale.invert);
+        const binWidth = width / this.bins.length;
+        brushRangeText = `Range: ${Math.round(bound1)} - ${Math.round(bound2)}`;
+
+        this.bins.forEach((bin, i) => {
+          let isSelected = false;
+          if (bin.x0 !== undefined && bin.x1 !== undefined) {
+            // Continuous bins
+            const binStart = this.xScale(bin.x0);
+            const binEnd = this.xScale(bin.x1);
+            isSelected = binEnd >= x0 && binStart <= x1;
+          } else {
+            // Ordinal/Unique bins (shouldn't normally be brushed, but handle defensively)
+            const binStart = i * binWidth;
+            const binEnd = (i + 1) * binWidth;
+            isSelected = binStart <= x1 && binEnd >= x0;
+          }
+
+          bin.selected = isSelected;
+
+          // Update bar color
+          this.svg
+            .select(`.bar:nth-child(${i + 1}) rect:nth-child(1)`)
+            .attr("fill", bin.selected ? "orange" : "#3388FF");
+
+          // Collect original data indices if selected
+          if (bin.selected && bin.indeces) {
+            bin.indeces.forEach((rowIndex) => {
+              const originalIndex = controller.table.dataInd[rowIndex];
+              if (originalIndex !== undefined) {
+                // Ensure index exists
+                selectedOriginalDataIndices.add(originalIndex);
+              }
+            });
+          }
+        });
+      } else {
+        // No selection, reset all bins
         this.resetSelection();
-        if (controller.table) {
-          controller.table.clearSelection();
-          controller.table.selectionUpdated();
-        }
-        return;
       }
 
-      const [x0, x1] = event.selection;
-      const [bound1, bound2] = event.selection.map(this.xScale.invert);
-      const binWidth = width / this.bins.length;
-
-      const selectedIndices = new Set();
-
-      this.bins.forEach((bin, i) => {
-        if (bin.x0 !== undefined && bin.x1 !== undefined) {
-          const binStart = this.xScale(bin.x0);
-          const binEnd = this.xScale(bin.x1);
-
-          bin.selected = binEnd >= x0 && binStart <= x1;
-
-          this.svg
-            .select(`.bar:nth-child(${i + 1}) rect:nth-child(1)`)
-            .attr("fill", bin.selected ? "orange" : "#3388FF");
-
-          if (bin.selected && bin.indeces) {
-            bin.indeces.forEach((idx) => selectedIndices.add(idx));
-          }
-        } else {
-          const binStart = i * binWidth;
-          const binEnd = (i + 1) * binWidth;
-          bin.selected = binStart <= x1 && binEnd >= x0;
-
-          this.svg
-            .select(`.bar:nth-child(${i + 1}) rect:nth-child(1)`)
-            .attr("fill", bin.selected ? "orange" : "#3388FF");
-
-          if (bin.selected && bin.indeces) {
-            bin.indeces.forEach((idx) => selectedIndices.add(idx));
-          }
-        }
-      });
-
+      // Update label
       this.svg
         .append("text")
         .attr("class", "histogram-label")
@@ -2436,22 +2416,14 @@ function HistogramController(data, binrules) {
         .attr("font-size", "10px")
         .attr("fill", "#444444")
         .attr("text-anchor", "middle")
-        .text(`Range: ${Math.round(bound1)} - ${Math.round(bound2)}`);
+        .text(brushRangeText);
 
+      // Update the main table's selection
       if (controller.table) {
-        controller.table.clearSelection();
-
-        const rowIndices = Array.from(selectedIndices);
-
-        rowIndices.forEach((rowIndex) => {
-          const tr = controller.table.tBody.querySelector(
-            `tr:nth-child(${rowIndex + 1})`
-          );
-          if (tr) {
-            controller.table.selectRow(tr);
-          }
+        controller.table.selectedRows.clear();
+        selectedOriginalDataIndices.forEach((dataIndex) => {
+          controller.table.selectedRows.add(dataIndex);
         });
-
         controller.table.selectionUpdated();
       }
     };
