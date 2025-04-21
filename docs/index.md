@@ -270,6 +270,11 @@ const [getInitialData, setInitialData] = useState(null); // INITIAL DATA
 ```
 
 ```js
+// Add a reset state flag to track when a reset has been requested
+const [getResetRequested, setResetRequested] = useState(false);
+```
+
+```js
 // function updateSelection(
 //   targetSelection,
 //   newSelection,
@@ -463,7 +468,7 @@ const filterManager = {
                 <button id="moveDownButton" class="btn move-down tooltip" data-tooltip="Move Down" aria-label="Move Down">
                   <i class="fas fa-arrow-down"></i>
                 </button>
-                <button id="resetAllButton" class="btn reset-all tooltip" data-tooltip="Reset All" aria-label="Move Down">
+                <button id="resetAllButton" class="btn reset-all tooltip" data-tooltip="Start Over" aria-label="Move Down">
                   <i class="fas fa-sync-alt"></i>
                 </button>                
               </nav>
@@ -476,6 +481,9 @@ const filterManager = {
     <div class="card" style="overflow-x:hidden; overflow-y:hidden; height:96vh;">
       <header class="quickview-header">
         <p class="title">Map View</p>
+        <button id="mapResetButton" class="btn reset tooltip" data-tooltip="Reset Filters" style="margin-right: 10px;">
+          <i class="fas fa-sync-alt"></i>
+        </button>
       </header>
           ${mapAggregationInput}
           ${(map_aggregate === "Building Level") ? "": timelineSwitchInput}
@@ -583,11 +591,23 @@ const moveUpButton = document.getElementById("moveUpButton");
 const moveDownButton = document.getElementById("moveDownButton");
 const resetAllButton = document.getElementById("resetAllButton");
 
+// Map reset button
+const mapResetButton = document.getElementById("mapResetButton");
+
+// Other button event listeners...
 openQuickviewButton.addEventListener("click", () => {
   quickviewDefault.classList.add("is-active");
   log("Open quickview");
 });
 
+// Add map reset button event listener
+mapResetButton.addEventListener("click", (e) => {
+  e.stopPropagation();
+  log("[MAP] Reset triggered from map");
+  // resetState();
+});
+
+// Existing event listeners...
 closeQuickviewButton.addEventListener("click", () => {
   quickviewDefault.classList.remove("is-active");
 });
@@ -650,8 +670,62 @@ moveDownButton.addEventListener("click", (e) => {
 resetAllButton.addEventListener("click", (e) => {
   e.stopPropagation();
   log("[TIMELINE] Reset all interventions");
-  resetAll();
+  resetState();
 });
+```
+
+```js
+// Handle component resets in a reactive cell to avoid circular references
+{
+  // This cell responds to reset requests
+  getResetRequested;
+
+  if (getResetRequested) {
+    log("[RESET] Processing application state reset...");
+
+    try {
+      // Reset the table - clear filters and restore original data
+      if (table) {
+        log("[RESET] Resetting table filters");
+        table.resetAllFilters();
+        table.setData(buildingsData);
+      }
+
+      // Reset the map - clear filters and show all buildings
+      if (mapInstance) {
+        log("[RESET] Resetting map filters");
+        mapInstance.clearSelection();
+        mapInstance.updateLayer("buildings", buildingsData);
+      }
+
+      log("[RESET] Application state has been reset successfully");
+
+      // Display success notification
+      bulmaToast.toast({
+        message: "All filters have been reset",
+        type: "is-success",
+        position: "top-center",
+        duration: 3000,
+        dismissible: true,
+        animate: { in: "fadeIn", out: "fadeOut" },
+      });
+    } catch (err) {
+      error("[RESET] Error during reset:", err);
+
+      // Display error notification
+      bulmaToast.toast({
+        message: "Error resetting filters: " + err.message,
+        type: "is-danger",
+        position: "top-center",
+        duration: 3000,
+        dismissible: true,
+      });
+    }
+
+    // Reset the flag after processing
+    setResetRequested(false);
+  }
+}
 ```
 
 <!------------------ INSTANTIATION  ------------------>
@@ -806,7 +880,7 @@ if (getInitialData && getInitialData.length > 0) {
 
 log("[MODEL] Running InterventionManager with initial data: ", initialData);
 // const manager = new InterventionManager(initialData, listOfTech);
-const manager = createInterventionManager(data, listOfTech);
+const manager = createInterventionManager(initialData, listOfTech);
 ```
 
 <!-- ---------------- Input form declarations ---------------- -->
@@ -1373,6 +1447,46 @@ const data =
     ? stackedRecap?.buildings ?? buildingsData
     : flatData;
 log("[DATA] DATA DATA DATA", data);
+
+// // Get intervened buildings based on selection state
+// let selectedIntervenedBuildings = null;
+
+// if (selectedInterventionIndex !== null) {
+//   if (Array.isArray(selectedInterventionIndex)) {
+//     // Multiple selections: collect buildings from all selected interventions
+//     selectedIntervenedBuildings = selectedInterventionIndex.flatMap(
+//       (i) => getInterventions[i]?.intervenedBuildings ?? []
+//     );
+//   } else {
+//     // Single selection: get buildings from the selected intervention
+//     selectedIntervenedBuildings =
+//       getInterventions[selectedInterventionIndex]?.intervenedBuildings;
+//   }
+// }
+
+// console.log("[DATA] Get Interventions", getInterventions[0]);
+
+// // Transform buildings data when available
+// let flatData = null;
+// if (selectedIntervenedBuildings) {
+//   flatData = selectedIntervenedBuildings.map((p) => ({
+//     ...p,
+//     ...p.properties,
+//   }));
+// }
+
+// log("[DATA] Intervened buildings", flatData);
+
+// // Determine which data set to use
+// let data;
+// if (selectedInterventionIndex === null) {
+//   // No selection: use recap buildings or fall back to all buildings
+//   data = stackedRecap?.buildings ?? buildingsData;
+// } else {
+//   // Selection exists: use the transformed buildings data
+//   data = flatData;
+// }
+// log("[DATA] DATA DATA DATA", data);
 ```
 
 ```js
@@ -1462,8 +1576,8 @@ function tableChanged(event) {
 
   if (event.type === "reset") {
     log("[TABLE] Table Reset", event);
-    // reset everything
-    // resetAll();
+    // Reset everything when table reset is triggered
+    // resetState();
   }
 
   if (event.type === "selection") {
@@ -2114,38 +2228,29 @@ let keysToNormalise = [
 <!--------------- Reset everything and move on --------------->
 
 ```js
-function resetAll() {
-  // Reset filter manager and all relevant states
-  filterManager.reset();
+function resetState() {
+  log("[RESET] Requesting application state reset...");
+
+  // Instead of directly manipulating components, just set the reset flag
+  // and let the reactive cells handle the actual component updates
+  setResetRequested(true);
+
+  // Reset basic state variables that won't cause circular references
   setInitialData(null);
   setSelectedTableRow([]);
-  // setInterventions([]);
-  // setResults([]);
-  // setSelectedAllocation([]);
-  // setTimelineModifications([]);
-  // setCurrentConfig({});
-  // setTableFiltered([]);
   setSelectedInterventionIndex(null);
 
-  // Recreate the sorterTable with original buildingsData
-  const resetTableColumns = [
-    { column: "id", unique: true },
-    ...Object.keys(buildingsData[0])
-      .filter((key) => !excludedColumns.includes(key) && key !== "id")
-      .sort((a, b) => {
-        const indexA = customOrder.indexOf(a);
-        const indexB = customOrder.indexOf(b);
-        if (indexA === -1 && indexB === -1) return a.localeCompare(b);
-        if (indexA === -1) return 1;
-        if (indexB === -1) return -1;
-        return indexA - indexB;
-      }),
-  ];
-  table.setData(buildingsData, resetTableColumns);
+  // Reset filter manager state
+  filterManager.reset();
 
-  // Reset the map instance to show all buildings
-  mapInstance.setFilteredData("buildings", {
-    ids: buildingsData.map((b) => b.id),
+  // Display notification
+  bulmaToast.toast({
+    message: "Resetting all filters...",
+    type: "is-info",
+    position: "bottom-right",
+    duration: 2000,
+    dismissible: true,
+    animate: { in: "fadeIn", out: "fadeOut" },
   });
 }
 ```

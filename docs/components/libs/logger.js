@@ -4,23 +4,10 @@
 
 // import { createSafeLogger } from "./utils.js";
 
-// Helper to format individual arguments
-const formatArg = (arg) => {
-  if (typeof arg === "object") {
-    try {
-      return JSON.stringify(arg, null, 2);
-    } catch (e) {
-      return String(arg);
-    }
-  }
-  return String(arg);
-};
-
-// Prepend messages with a timestamp and log level, formatting objects and arrays properly
-const formatMessage = (level, ...args) => {
+// Format timestamp and level prefix
+const formatPrefix = (level) => {
   const timestamp = new Date().toISOString();
-  const formattedArgs = args.map(formatArg);
-  return `[${timestamp}] ${level}: ${formattedArgs.join(" ")}`;
+  return `[${timestamp}] ${level}:`;
 };
 
 // Create a shared logger instance
@@ -28,9 +15,9 @@ const formatMessage = (level, ...args) => {
 const logger = createSafeLogger(true);
 
 // Export convenience methods
-export const log = (...args) => logger.log(formatMessage("INFO", ...args));
-export const warn = (...args) => logger.warn(formatMessage("WARN", ...args));
-export const error = (...args) => logger.error(formatMessage("ERROR", ...args));
+export const log = (...args) => logger.log(formatPrefix("INFO"), ...args);
+export const warn = (...args) => logger.warn(formatPrefix("WARN"), ...args);
+export const error = (...args) => logger.error(formatPrefix("ERROR"), ...args);
 
 // Export the logger configuration function
 export const setDebugMode = (enabled) => logger.setDebug(enabled);
@@ -48,7 +35,7 @@ export const measurePerformance = (label, fn, ...args) => {
 // Debug groups for organized console output
 export const startGroup = (label) => {
   if (console.group) {
-    console.group(formatMessage("GROUP", label));
+    console.group(formatPrefix("GROUP"), label);
   } else {
     log(`--- START ${label} ---`);
   }
@@ -67,72 +54,38 @@ export default logger;
 
 // Safe debug logging utility with circular reference protection
 export function createSafeLogger(debugMode = false) {
-  // Track objects that have been processed to avoid circular references
-  const processedObjects = new WeakSet();
+  // Track objects being logged to avoid circular reference issues
+  const inProgress = new WeakSet();
 
-  // Helper to safely stringify objects
-  function safeStringify(obj, depth = 0, maxDepth = 2) {
-    if (depth > maxDepth) return "[Object depth limit]";
-
-    if (obj === null || obj === undefined) return String(obj);
-    if (typeof obj !== "object") return String(obj);
-    if (processedObjects.has(obj)) return "[Circular reference]";
-
-    try {
-      processedObjects.add(obj);
-
-      // Handle arrays
-      if (Array.isArray(obj)) {
-        if (obj.length > 20) {
-          return `[Array(${obj.length}): ${obj
-            .slice(0, 3)
-            .map((item) => safeStringify(item, depth + 1, maxDepth))
-            .join(", ")}...]`;
-        }
-        return `[${obj
-          .slice(0, 10)
-          .map((item) => safeStringify(item, depth + 1, maxDepth))
-          .join(", ")}${obj.length > 10 ? "..." : ""}]`;
+  // Safety check to prevent circular reference issues
+  function checkCircular(args) {
+    // Create safe copies of args if needed, only for detection
+    return args.map((arg) => {
+      // Only perform checks on objects
+      if (arg === null || typeof arg !== "object") {
+        return arg;
       }
 
-      // Handle objects
-      const keys = Object.keys(obj);
-      if (keys.length > 20) {
-        return `{Object with ${keys.length} keys: ${keys
-          .slice(0, 3)
-          .map(
-            (key) => `${key}: ${safeStringify(obj[key], depth + 1, maxDepth)}`
-          )
-          .join(", ")}...}`;
+      if (inProgress.has(arg)) {
+        // Just log a warning but still allow the object to be logged
+        console.warn("[LOGGER] Circular reference detected in logged object");
       }
 
-      return `{${keys
-        .slice(0, 10)
-        .map((key) => `${key}: ${safeStringify(obj[key], depth + 1, maxDepth)}`)
-        .join(", ")}${keys.length > 10 ? "..." : ""}}`;
-    } catch (e) {
-      return "[Unprocessable object]";
-    } finally {
-      processedObjects.delete(obj);
-    }
+      return arg;
+    });
   }
 
   return {
     log: (...args) => {
       if (!debugMode) return;
-      const safeArgs = args.map((arg) => {
-        if (typeof arg === "object" && arg !== null) {
-          return safeStringify(arg);
-        }
-        return arg;
-      });
-      console.log(...safeArgs);
+      // Pass objects directly to console.log for interactive inspection
+      console.log(...checkCircular(args));
     },
     warn: (...args) => {
       if (!debugMode) return;
-      console.warn(...args);
+      console.warn(...checkCircular(args));
     },
-    error: (...args) => console.error(...args), // Errors always show
+    error: (...args) => console.error(...checkCircular(args)), // Errors always show
     setDebug: (mode) => (debugMode = !!mode),
   };
 }

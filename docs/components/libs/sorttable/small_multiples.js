@@ -219,14 +219,6 @@ export class SmallMultiplesView {
     // Store the controller for later reference
     this.histograms.push(histCtrl);
 
-    // Add click handler to select column
-    cell.addEventListener("click", (e) => {
-      // Only trigger if not from brush interaction
-      if (!e.target.closest(".brush")) {
-        this.sorterTable.selectColumn(columnName);
-      }
-    });
-
     return cell;
   }
 
@@ -526,15 +518,16 @@ class SmallMultipleHistogram {
             .append("g")
             .attr("class", "histogram-label-group");
 
-          group
-            .append("rect")
-            .attr("x", width / 2 - 30)
-            .attr("y", height - 14)
-            .attr("width", 60)
-            .attr("height", 12)
-            .attr("fill", "white")
-            .attr("rx", 2)
-            .attr("ry", 2);
+          //   Add a mask rectangle
+          //   group
+          //     .append("rect")
+          //     .attr("x", width / 2 - 30)
+          //     .attr("y", height - 14)
+          //     .attr("width", 60)
+          //     .attr("height", 12)
+          //     .attr("fill", "white")
+          //     .attr("rx", 2)
+          //     .attr("ry", 2);
 
           group
             .append("text")
@@ -580,11 +573,10 @@ class SmallMultipleHistogram {
               (rowIndex) => this.table.dataInd[rowIndex]
             );
 
-            // Select rows based on data indices
-            this.bins[d.index].indeces.forEach((rowIndex) => {
-              // Find by data attribute instead of position
+            // Loop through the dataIndices (actual data indices) for selection
+            dataIndices.forEach((dataIndex) => {
               const tr = this.table.tBody.querySelector(
-                `tr[data-row-index="${rowIndex}"]`
+                `tr[data-index="${dataIndex}"]`
               );
               if (tr) {
                 if (d.selected) {
