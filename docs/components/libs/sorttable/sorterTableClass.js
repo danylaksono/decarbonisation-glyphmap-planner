@@ -604,14 +604,16 @@ export class sorterTable {
     let sel = this.getSelection();
     let sortKeys = Object.keys(this.compoundSorting);
 
-    if (sortKeys.length === 0) {
+    // Check if there is no selection or no sorting applied
+    if (sortKeys.length === 0 || sel.length === 0) {
       return null;
     } else {
       let col = sortKeys[0];
-      let firstIndex = sel[sel.length - 1].index;
-      let lastIndex = sel[sel.length - 1].index;
+      // Safely get first and last index
+      let firstIndex = sel.length > 0 ? sel[0].index : 0;
+      let lastIndex = sel.length > 0 ? sel[sel.length - 1].index : 0;
 
-      if ((firstIndex = 0 && lastIndex == this.dataInd.length - 1)) return [];
+      if (firstIndex === 0 && lastIndex === this.dataInd.length - 1) return [];
       else {
         let rule = [];
         let r = "";

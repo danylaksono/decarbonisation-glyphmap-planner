@@ -433,7 +433,7 @@ const filterManager = {
             <div id="graph-container">
               <div id="timeline-panel">
                 ${getInitialData ? html`<p> No. of Filtered Data: ${getInitialData.length} </p>`: "" }
-                ${createTimelineInterface(
+                ${resize((width, height) => createTimelineInterface(
                 getInterventions,
                 (change) => {
                   log("Timeline changed", change);
@@ -447,9 +447,9 @@ const filterManager = {
                     log("No intervention selected");
                   }
                 },
-                400,
-                250
-              )}
+                width || 800,
+                height || 300
+                ))}
               </div> <!-- timeline panel -->
               <nav id="timeline-buttons">
                 <button id="openQuickviewButton" data-show="quickview" class="btn tooltip" data-tooltip="Add New Intervention" aria-label="Add">
@@ -684,19 +684,19 @@ resetAllButton.addEventListener("click", (e) => {
     log("[RESET] Processing application state reset...");
 
     try {
-      // Reset the table - clear filters and restore original data
-      if (table) {
-        log("[RESET] Resetting table filters");
-        table.resetAllFilters();
-        table.setData(buildingsData);
-      }
+      // // Reset the table - clear filters and restore original data
+      // if (table) {
+      //   log("[RESET] Resetting table filters");
+      //   table.resetAllFilters();
+      //   table.setData(buildingsData);
+      // }
 
-      // Reset the map - clear filters and show all buildings
-      if (mapInstance) {
-        log("[RESET] Resetting map filters");
-        mapInstance.clearSelection();
-        mapInstance.updateLayer("buildings", buildingsData);
-      }
+      // // Reset the map - clear filters and show all buildings
+      // if (mapInstance) {
+      //   log("[RESET] Resetting map filters");
+      //   mapInstance.clearSelection();
+      //   mapInstance.updateLayer("buildings", buildingsData);
+      // }
 
       log("[RESET] Application state has been reset successfully");
 
@@ -704,7 +704,7 @@ resetAllButton.addEventListener("click", (e) => {
       bulmaToast.toast({
         message: "All filters have been reset",
         type: "is-success",
-        position: "top-center",
+        position: "bottom-right",
         duration: 3000,
         dismissible: true,
         animate: { in: "fadeIn", out: "fadeOut" },
@@ -716,7 +716,7 @@ resetAllButton.addEventListener("click", (e) => {
       bulmaToast.toast({
         message: "Error resetting filters: " + err.message,
         type: "is-danger",
-        position: "top-center",
+        position: "bottom-right",
         duration: 3000,
         dismissible: true,
       });
@@ -733,7 +733,7 @@ resetAllButton.addEventListener("click", (e) => {
 ```js
 // Factory for sorterTable
 function createSorterTable(data, columns, onChange, options = {}) {
-  log("Creating sorterTable instance...");
+  log("[TABLE] Creating sorterTable instance...");
   const table = new sorterTable(data, columns, onChange);
   if (options.width && options.height) {
     table.setContainerSize(options);
@@ -745,7 +745,7 @@ function createSorterTable(data, columns, onChange, options = {}) {
 ```js
 // Factory for InterventionManager
 function createInterventionManager(data, techList) {
-  log("Creating InterventionManager instance...");
+  log("[INTERVENTION] Creating InterventionManager instance...");
   return new InterventionManager(data, techList);
 }
 ```
@@ -753,7 +753,7 @@ function createInterventionManager(data, techList) {
 ```js
 // Factory for LeafletMap
 function createLeafletMapInstance(container, data, options = {}) {
-  log("Creating LeafletMap instance...");
+  log("[MAP] Creating LeafletMap instance...");
   const map = new LeafletMap(container, options);
   map.addLayer("buildings", data, {
     clusterRadius: 50,
@@ -866,7 +866,9 @@ const listOfTech = {
   //   },
   // },
 };
+```
 
+```js
 // --- Create an InterventionManager instance ---
 // initial building data from get initial data's id if it exist
 // else use the buildingsData
@@ -878,7 +880,10 @@ if (getInitialData && getInitialData.length > 0) {
   initialData = buildingsData;
 }
 
-log("[MODEL] Running InterventionManager with initial data: ", initialData);
+log(
+  "[MODEL] Running InterventionManager with initial data: ",
+  initialData.length
+);
 // const manager = new InterventionManager(initialData, listOfTech);
 const manager = createInterventionManager(initialData, listOfTech);
 ```
@@ -1247,7 +1252,7 @@ function addNewIntervention(data) {
 
   // run the model
   startTimer("run_model");
-  log(">> Running the decarbonisation model...");
+  // log(">> Running the decarbonisation model...");
   runModel();
   endTimer("run_model");
 }
@@ -1256,7 +1261,7 @@ function addNewIntervention(data) {
 ```js
 // function to run the model
 function runModel() {
-  log(">>>> Running the decarbonisation model...");
+  log("[MODEL] Running the decarbonisation model...");
   const recaps = manager.runInterventions();
   const formatRecaps = recaps.map((r) => {
     return {
@@ -1272,6 +1277,36 @@ function runModel() {
   setInterventions(formatRecaps);
   const stackedRecap = manager.getStackedResults();
   setResults(stackedRecap);
+
+  // Reset table and map after intervention is applied
+  resetTableAndMapSelections();
+}
+```
+
+```js
+// New function to reset table and map selections without affecting interventions
+function resetTableAndMapSelections() {
+  log("[INTERVENTION] Resetting table and map selections for new intervention");
+
+  // Reset the filter manager
+  filterManager.reset();
+
+  // Reset to full dataset
+  setInitialData(null);
+
+  // // Reset the table - clear filters and restore original data
+  // if (table) {
+  //   log("[RESET] Resetting table filters");
+  //   table.resetAllFilters();
+  //   table.setData(buildingsData);
+  // }
+
+  // // Reset the map - clear filters and show all buildings
+  // if (mapInstance) {
+  //   log("[RESET] Resetting map filters");
+  //   mapInstance.clearSelection();
+  //   mapInstance.updateLayer("buildings", buildingsData);
+  // }
 }
 ```
 
@@ -1422,77 +1457,81 @@ function updateTimeline() {
 <!-- ----------------  D A T A  ---------------- -->
 
 ```js
-const selectedIntervenedBuildings =
-  selectedInterventionIndex === null
-    ? null
-    : Array.isArray(selectedInterventionIndex)
-    ? selectedInterventionIndex.flatMap(
-        (i) => getInterventions[i]?.intervenedBuildings ?? []
-      )
-    : getInterventions[selectedInterventionIndex]?.intervenedBuildings;
+// const selectedIntervenedBuildings =
+//   selectedInterventionIndex === null
+//     ? null
+//     : Array.isArray(selectedInterventionIndex)
+//     ? selectedInterventionIndex.flatMap(
+//         (i) => getInterventions[i]?.intervenedBuildings ?? []
+//       )
+//     : getInterventions[selectedInterventionIndex]?.intervenedBuildings;
 
-// log(`[DATA] Selected Intervened buildings`, getInterventions[0]);
-
-console.log("[DATA] Get Interventions", getInterventions[0]);
-
-const flatData = selectedIntervenedBuildings?.map((p) => ({
-  ...p,
-  ...p.properties,
-}));
-
-log("[DATA] Intervened buildings", flatData);
-
-const data =
-  selectedInterventionIndex === null
-    ? stackedRecap?.buildings ?? buildingsData
-    : flatData;
-log("[DATA] DATA DATA DATA", data);
-
-// // Get intervened buildings based on selection state
-// let selectedIntervenedBuildings = null;
-
-// if (selectedInterventionIndex !== null) {
-//   if (Array.isArray(selectedInterventionIndex)) {
-//     // Multiple selections: collect buildings from all selected interventions
-//     selectedIntervenedBuildings = selectedInterventionIndex.flatMap(
-//       (i) => getInterventions[i]?.intervenedBuildings ?? []
-//     );
-//   } else {
-//     // Single selection: get buildings from the selected intervention
-//     selectedIntervenedBuildings =
-//       getInterventions[selectedInterventionIndex]?.intervenedBuildings;
-//   }
-// }
+// // log(`[DATA] Selected Intervened buildings`, getInterventions[0]);
 
 // console.log("[DATA] Get Interventions", getInterventions[0]);
 
-// // Transform buildings data when available
-// let flatData = null;
-// if (selectedIntervenedBuildings) {
-//   flatData = selectedIntervenedBuildings.map((p) => ({
-//     ...p,
-//     ...p.properties,
-//   }));
-// }
+// const flatData = selectedIntervenedBuildings?.map((p) => ({
+//   ...p,
+//   ...p.properties,
+// }));
 
 // log("[DATA] Intervened buildings", flatData);
 
-// // Determine which data set to use
-// let data;
-// if (selectedInterventionIndex === null) {
-//   // No selection: use recap buildings or fall back to all buildings
-//   data = stackedRecap?.buildings ?? buildingsData;
-// } else {
-//   // Selection exists: use the transformed buildings data
-//   data = flatData;
-// }
+// const data =
+//   selectedInterventionIndex === null
+//     ? stackedRecap?.buildings ?? buildingsData
+//     : flatData;
 // log("[DATA] DATA DATA DATA", data);
+
+// (getInitialData && getInitialData.length > 0)
+
+// Get intervened buildings based on selection state
+let selectedIntervenedBuildings = null;
+
+if (selectedInterventionIndex !== null) {
+  if (Array.isArray(selectedInterventionIndex)) {
+    // Multiple selections: collect buildings from all selected interventions
+    selectedIntervenedBuildings = selectedInterventionIndex.flatMap(
+      (i) => getInterventions[i]?.intervenedBuildings ?? []
+    );
+  } else {
+    // Single selection: get buildings from the selected intervention
+    selectedIntervenedBuildings =
+      getInterventions[selectedInterventionIndex]?.intervenedBuildings;
+  }
+}
+
+console.log("[DATA] Get Interventions", getInterventions[0]);
+
+// Transform buildings data when available
+let flatData = null;
+if (selectedIntervenedBuildings) {
+  flatData = selectedIntervenedBuildings.map((p) => ({
+    ...p,
+    ...p.properties,
+  }));
+}
+
+log("[DATA] Intervened buildings", selectedIntervenedBuildings?.length);
+
+// Determine which data set to use
+let data;
+if (selectedInterventionIndex === null) {
+  // No selection: use recap buildings or fall back to all buildings
+  data = stackedRecap?.buildings ?? buildingsData;
+  // } else if (getInitialData && getInitialData.length > 0) {
+  //   data = buildingsData;
+} else {
+  // Selection exists: use the transformed buildings data
+  data = flatData;
+}
+log("[DATA] DATA DATA DATA", data?.length);
 ```
 
 ```js
 // This updates the stored interventions
-// const interventions = getInterventions;
-// log(">> Interventions", interventions);
+const interventions = getInterventions;
+log(">> Interventions", interventions);
 ```
 
 ```js
@@ -1501,7 +1540,7 @@ const stackedRecap = getResults;
 
 ```js
 timeline_switch;
-log(">> Switching variables...", glyphVariables);
+// log(">> Switching variables...", glyphVariables);
 
 // aggregate and normalise data for whole LA
 const overall_data = aggregateValues(data, glyphVariables, "sum", true);
@@ -1598,7 +1637,7 @@ log("Initial Data Fixed: ", getInitialData);
 
 ```js
 startTimer("create_sorter_table");
-log("[TABLE] Create table using columns", tableColumns);
+log("[TABLE] Create table using data", data.length);
 // const table = new sorterTable(data, tableColumns, tableChanged);
 const table = createSorterTable(data, tableColumns, tableChanged);
 
@@ -1712,6 +1751,7 @@ const cartogramGeodataLsoaWgs84 = clone;
 ```js
 // Create a lookup table for the key data - geography
 // this is already aggregated by LSOA in EnrichGeoData
+startTimer("create_lookup_tables");
 log(">> Create lookup tables...");
 const keydata = _.keyBy(
   regular_geodata_withproperties.features.map((feat) => {
@@ -1723,7 +1763,7 @@ const keydata = _.keyBy(
   }),
   "code"
 );
-log(">>> Keydata", keydata);
+// log(">>> Keydata", keydata);
 
 const regularGeodataLookup = _.keyBy(
   regular_geodata_withproperties.features.map((feat) => {
@@ -1766,9 +1806,11 @@ const cartogramLsoaWgs84Lookup = _.keyBy(
   }),
   (feat) => feat.properties.code
 );
+endTimer("create_lookup_tables"); /// DEBUG: this took 5 minutes!!
 ```
 
 ```js
+startTimer("create_flubber_interpolations");
 // Flubber interpolations
 const flubbers = {};
 for (const key of Object.keys(cartogramLsoaWgs84Lookup)) {
@@ -1786,6 +1828,7 @@ const tweenWGS84Lookup = _.mapValues(flubbers, (v, k) => {
   feat.centroid = turf.getCoord(turf.centroid(feat.geometry));
   return feat;
 });
+endTimer("create_flubber_interpolations");
 ```
 
 ```js
@@ -1869,7 +1912,9 @@ function glyphMapSpec(width = 800, height = 600) {
 
         // Normalisation
         const dataArray = cells.map((cell) => cell.data);
-        const normalisedData = normaliseData(dataArray, glyphVariables);
+        const normalisedData = dataArray
+          ? normaliseData(dataArray, glyphVariables)
+          : [];
         // Map normalized data back to cells
         const normalisedCells = cells.map((cell, index) => ({
           ...cell,
@@ -2248,7 +2293,7 @@ function resetState() {
     message: "Resetting all filters...",
     type: "is-info",
     position: "bottom-right",
-    duration: 2000,
+    duration: 2,
     dismissible: true,
     animate: { in: "fadeIn", out: "fadeOut" },
   });
