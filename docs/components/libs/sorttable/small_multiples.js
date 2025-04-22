@@ -336,7 +336,15 @@ class SmallMultipleHistogram {
   }
 
   updateData(data) {
-    this.setData(data);
+    // Reset any existing selections when data updates
+    this.resetSelection();
+    // Update the data and regenerate the visualization
+    this.setData(
+      data.map((d, i) => ({
+        value: d.value,
+        index: i, // Keep the original index mapping
+      }))
+    );
   }
 
   resetSelection() {
@@ -357,7 +365,12 @@ class SmallMultipleHistogram {
   setData(dd) {
     this.container.innerHTML = "";
 
-    let data = dd.map((d, i) => ({ value: d.value, index: i }));
+    // Create a clean copy of data with proper indices
+    let data = dd.map((d, i) => ({
+      value: d.value,
+      // Store the original data index for proper selection mapping
+      index: i,
+    }));
 
     const svgWidth = this.options.width;
     const svgHeight = this.options.height;
@@ -568,24 +581,32 @@ class SmallMultipleHistogram {
               this.table.clearSelection();
             }
 
-            // Map histogram indices to actual data indices
-            const dataIndices = this.bins[d.index].indeces.map(
-              (rowIndex) => this.table.dataInd[rowIndex]
-            );
+            // Get the rows that correspond to the bin's indices
+            if (
+              d.selected &&
+              this.bins[d.index].indeces &&
+              this.bins[d.index].indeces.length > 0
+            ) {
+              // Map the indices from the bin to table row elements
+              const dataIndices = this.bins[d.index].indeces;
 
-            // Loop through the dataIndices (actual data indices) for selection
-            dataIndices.forEach((dataIndex) => {
-              const tr = this.table.tBody.querySelector(
-                `tr[data-index="${dataIndex}"]`
+              // First get all rows from the table body for faster processing
+              const allRows = Array.from(
+                this.table.tBody.querySelectorAll("tr")
               );
-              if (tr) {
-                if (d.selected) {
-                  this.table.selectRow(tr);
-                } else {
-                  this.table.unselectRow(tr);
+
+              // Find rows at positions determined by the bin indices
+              dataIndices.forEach((dataIndex) => {
+                const rowPosition = this.table.dataInd.indexOf(dataIndex);
+                if (rowPosition >= 0 && rowPosition < allRows.length) {
+                  const tr = allRows[rowPosition];
+                  if (tr) {
+                    this.table.selectRow(tr);
+                  }
                 }
-              }
-            });
+              });
+            }
+
             this.table.selectionUpdated();
           }
         });
@@ -653,16 +674,25 @@ class SmallMultipleHistogram {
       if (this.table) {
         this.table.clearSelection();
 
-        const rowIndices = Array.from(selectedIndices);
+        // Convert the Set to an Array for easier processing
+        const selectedIndicesArray = Array.from(selectedIndices);
 
-        rowIndices.forEach((rowIndex) => {
-          const tr = this.table.tBody.querySelector(
-            `tr[data-row-index="${rowIndex}"]`
-          );
-          if (tr) {
-            this.table.selectRow(tr);
-          }
-        });
+        if (selectedIndicesArray.length > 0) {
+          // Get all table rows at once for better performance
+          const allRows = Array.from(this.table.tBody.querySelectorAll("tr"));
+
+          // Find and select rows at positions determined by the indices
+          selectedIndicesArray.forEach((dataIndex) => {
+            // Find the position of this index in the current table view
+            const rowPosition = this.table.dataInd.indexOf(dataIndex);
+            if (rowPosition >= 0 && rowPosition < allRows.length) {
+              const tr = allRows[rowPosition];
+              if (tr) {
+                this.table.selectRow(tr);
+              }
+            }
+          });
+        }
 
         this.table.selectionUpdated();
       }

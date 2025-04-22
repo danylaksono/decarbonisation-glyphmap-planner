@@ -423,6 +423,7 @@ const filterManager = {
           })
           )
           }
+          ${getInitialData ? html`<p> No. of Filtered Data: ${getInitialData.length} </p>`: "" }
         </div>
     </div> <!-- left top -->
     <div class="left-bottom">
@@ -432,7 +433,6 @@ const filterManager = {
         </header>
             <div id="graph-container">
               <div id="timeline-panel">
-                ${getInitialData ? html`<p> No. of Filtered Data: ${getInitialData.length} </p>`: "" }
                 ${resize((width, height) => createTimelineInterface(
                 getInterventions,
                 (change) => {
@@ -445,6 +445,7 @@ const filterManager = {
                     log("Clicked Interventions", click, getInterventions[click]);
                   } else {
                     log("No intervention selected");
+                    setSelectedInterventionIndex(null);
                   }
                 },
                 width || 800,
@@ -498,7 +499,7 @@ const filterManager = {
 <!-------- MODAL/QVIEW -------->
 <div id="quickviewDefault" class="quickview is-left">
   <header class="quickview-header">
-    <p class="title">New Budget Allocation</p>
+    <p class="title">Create New Intervention</p>
     <span class="delete" data-dismiss="quickview" id="closeQuickviewButton"></span>
   </header>
   <div class="quickview-body">
@@ -1519,6 +1520,7 @@ let data;
 if (selectedInterventionIndex === null) {
   // No selection: use recap buildings or fall back to all buildings
   data = stackedRecap?.buildings ?? buildingsData;
+  // data = buildingsData;
   // } else if (getInitialData && getInitialData.length > 0) {
   //   data = buildingsData;
 } else {

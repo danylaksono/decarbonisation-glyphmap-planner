@@ -60,20 +60,53 @@ export function createTimelineInterface(
   // Set up maximum block height
   const maxBlockHeight = 40;
 
+  // Fixed row height for interventions
+  const rowHeight = maxBlockHeight + 5; // 5px padding
+
+  // Calculate total content height based on number of interventions
+  const contentHeight = interventions.length * rowHeight;
+
+  // Flag to determine if scrolling is needed
+  const needsScrolling = contentHeight > innerHeight;
+
+  // Visible range for scrolling
+  let scrollPosition = 0;
+  const visibleRows = Math.floor(innerHeight / rowHeight);
+
   // Create scales for x-axis (years) and y-axis (intervention rows)
   const xScale = d3
     .scaleLinear()
     .domain([minYear - 1, maxYear + 1]) // Add buffer year on each side
     .range([0, innerWidth]);
 
+  // Modified yScale to handle potentially larger range of interventions
   const yScale = d3
-    .scaleBand()
+    .scalePoint()
     .domain(interventions.map((_, i) => i))
-    .range([0, innerHeight])
-    .padding(0.01);
+    .range([0, needsScrolling ? contentHeight : innerHeight])
+    .padding(0.1);
 
-  // Create SVG container
-  const svg = d3.create("svg").attr("width", width).attr("height", height);
+  // Create container elements - main SVG and the scrollable area
+  const container = d3
+    .create("div")
+    .style("position", "relative")
+    .style("width", width + "px")
+    .style("height", height + "px")
+    .style("overflow", "hidden");
+
+  const svg = container
+    .append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+  // Create a clip path to ensure content doesn't render outside the visible area
+  svg
+    .append("defs")
+    .append("clipPath")
+    .attr("id", "timeline-clip")
+    .append("rect")
+    .attr("width", innerWidth)
+    .attr("height", innerHeight);
 
   const tooltip = d3
     .select("body")
@@ -82,11 +115,6 @@ export function createTimelineInterface(
     .style("opacity", 0)
     .style("position", "absolute")
     .style("pointer-events", "none");
-
-  const tooltipSvg = tooltip
-    .append("svg")
-    .attr("width", 200)
-    .attr("height", 150);
 
   // Track tooltip state
   let areTooltipsEnabled = tooltipsEnabled;
@@ -99,8 +127,11 @@ export function createTimelineInterface(
     .append("g")
     .attr("transform", `translate(${margin.left},${margin.top})`);
 
-  // Remove any existing x-axis
-  g.selectAll(".x-axis").remove();
+  // Create a clipped content group for the scrollable content
+  const contentGroup = g
+    .append("g")
+    .attr("clip-path", "url(#timeline-clip)")
+    .attr("class", "scrollable-content");
 
   // Add x-axis with year labels
   g.append("g")
@@ -123,29 +154,92 @@ export function createTimelineInterface(
     .on("click", function () {
       selectedIndices = [];
       lastClickedIndex = null;
-      g.selectAll(".block").classed("highlight", false);
+      contentGroup.selectAll(".block").classed("highlight", false);
       if (onClick) {
         onClick(null); // Pass null to indicate deselection
       }
     });
 
-  // Ensure style element exists before trying to modify it
-  if (svg.select("style").empty()) {
-    svg.append("style").text("");
+  // Create a scroll function to update visible elements
+  function updateScroll() {
+    // Update the transform of the content group based on scroll position
+    contentGroup.attr("transform", `translate(0, ${-scrollPosition})`);
+
+    // Update which blocks are visible
+    contentGroup.selectAll(".intervention-group").style("display", (d, i) => {
+      const yPos = yScale(i);
+      return yPos >= scrollPosition - rowHeight &&
+        yPos <= scrollPosition + innerHeight
+        ? "block"
+        : "none";
+    });
   }
 
-  svg.select("style").text(
-    svg.select("style").text() +
-      `
-    .selection-area {
-      pointer-events: none;
-    }
-  `
-  );
+  // Add scrollbar if needed
+  if (needsScrolling) {
+    const scrollbar = container
+      .append("div")
+      .style("position", "absolute")
+      .style("right", "0")
+      .style("top", margin.top + "px")
+      .style("width", "10px")
+      .style("height", innerHeight + "px")
+      .style("background", "#f0f0f0")
+      .style("border-radius", "5px");
 
-  // Intervention blocks
-  const blocks = g
-    .selectAll(".block")
+    const scrollThumb = scrollbar
+      .append("div")
+      .style("position", "absolute")
+      .style("width", "8px")
+      .style("left", "1px")
+      .style("background", "#aaa")
+      .style("border-radius", "4px")
+      .style("cursor", "pointer");
+
+    // Calculate scrollbar thumb height and position
+    const thumbHeight = Math.max(
+      30,
+      (innerHeight / contentHeight) * innerHeight
+    );
+    scrollThumb.style("height", thumbHeight + "px").style("top", "0px");
+
+    // Add scrolling with mouse wheel
+    container.on("wheel", function (event) {
+      event.preventDefault();
+      const delta = event.deltaY;
+      scrollPosition = Math.max(
+        0,
+        Math.min(contentHeight - innerHeight, scrollPosition + delta)
+      );
+      const thumbPos =
+        (scrollPosition / (contentHeight - innerHeight)) *
+        (innerHeight - thumbHeight);
+      scrollThumb.style("top", thumbPos + "px");
+      updateScroll();
+    });
+
+    // Add drag behavior for the scrollbar thumb
+    const thumbDrag = d3.drag().on("drag", function (event) {
+      const thumbPos = Math.max(
+        0,
+        Math.min(
+          innerHeight - thumbHeight,
+          parseFloat(scrollThumb.style("top")) + event.dy
+        )
+      );
+      scrollThumb.style("top", thumbPos + "px");
+      scrollPosition =
+        (thumbPos / (innerHeight - thumbHeight)) *
+        (contentHeight - innerHeight);
+      updateScroll();
+    });
+
+    scrollThumb.call(thumbDrag);
+  }
+
+  // Intervention blocks - now added to the contentGroup
+  const blocks = contentGroup
+    .selectAll(".intervention-group")
     .data(interventions)
     .enter()
     .append("g")
@@ -160,14 +254,14 @@ export function createTimelineInterface(
       if (interventions.length === 1) {
         return innerHeight / 2 - maxBlockHeight / 2; // Center vertically
       } else {
-        return yScale(i);
+        return yScale(i) - maxBlockHeight / 2; // Center around the scale point
       }
     })
     .attr(
       "width",
       (d) => xScale(d.initialYear + d.duration) - xScale(d.initialYear)
     )
-    .attr("height", (d, i) => Math.min(yScale.bandwidth(), maxBlockHeight))
+    .attr("height", maxBlockHeight)
     .attr("fill", "#3388FF")
     .on("click", function (event, d) {
       const index = interventions.indexOf(d);
@@ -186,9 +280,9 @@ export function createTimelineInterface(
         selectedIndices = [index];
         lastClickedIndex = index;
       }
-      g.selectAll(".block").classed("highlight", (_, i) =>
-        selectedIndices.includes(i)
-      );
+      contentGroup
+        .selectAll(".block")
+        .classed("highlight", (_, i) => selectedIndices.includes(i));
       if (onClick) {
         onClick(
           selectedIndices.length === 1
@@ -199,7 +293,7 @@ export function createTimelineInterface(
       event.stopPropagation();
     });
 
-  // Add text labels to the intervention blocks
+  // Update text labels positioning for the intervention blocks
   blocks
     .append("text")
     .attr("class", "block-label")
@@ -208,16 +302,16 @@ export function createTimelineInterface(
       (d) =>
         xScale(d.initialYear) +
         (xScale(d.initialYear + d.duration) - xScale(d.initialYear)) / 2
-    ) // Center horizontally
+    )
     .attr("y", (d, i) => {
       if (interventions.length === 1) {
-        return innerHeight / 2; // Center vertically for single intervention
+        return innerHeight / 2;
       } else {
-        return yScale(i) + Math.min(yScale.bandwidth(), maxBlockHeight) / 2; // Center in block
+        return yScale(i); // Center on the point
       }
     })
-    .attr("text-anchor", "middle") // Center text horizontally
-    .attr("dominant-baseline", "middle") // Center text vertically
+    .attr("text-anchor", "middle")
+    .attr("dominant-baseline", "middle")
     .attr("fill", "white")
     .attr("pointer-events", "none")
     .text((d) => d.tech)
@@ -236,20 +330,20 @@ export function createTimelineInterface(
       }
     });
 
-  // Resize handles
+  // Update resize handles positioning
   blocks
     .append("rect")
     .attr("class", "resize-handle")
     .attr("x", (d) => xScale(d.initialYear + d.duration) - 4)
     .attr("y", (d, i) => {
       if (interventions.length === 1) {
-        return innerHeight / 2 - maxBlockHeight / 2; // Same as the block's y position
+        return innerHeight / 2 - maxBlockHeight / 2;
       } else {
-        return yScale(i);
+        return yScale(i) - maxBlockHeight / 2;
       }
     })
     .attr("width", 8)
-    .attr("height", (d, i) => Math.min(yScale.bandwidth(), maxBlockHeight))
+    .attr("height", maxBlockHeight)
     .attr("fill", "transparent")
     .attr("cursor", "ew-resize");
 
@@ -342,28 +436,14 @@ export function createTimelineInterface(
 
   // ---------------------- TOOLTIP ---------------------- //
   function updateTooltip(d) {
-    tooltipSvg.selectAll("*").remove();
+    tooltip.selectAll("*").remove();
 
     // Add title
-    tooltipSvg
-      .append("text")
-      .attr("x", 10)
-      .attr("y", 20)
-      .text(d.tech)
-      .style("font-weight", "bold");
+    tooltip.append("div").style("font-weight", "bold").text(d.tech);
 
     // Add details
-    tooltipSvg
-      .append("text")
-      .attr("x", 10)
-      .attr("y", 40)
-      .text(`Start: ${d.initialYear}`);
-
-    tooltipSvg
-      .append("text")
-      .attr("x", 10)
-      .attr("y", 60)
-      .text(`Duration: ${d.duration} years`);
+    tooltip.append("div").text(`Start: ${d.initialYear}`);
+    tooltip.append("div").text(`Duration: ${d.duration} years`);
 
     // Add mini budget graph if budget data exists
     if (d.yearlyBudgets) {
@@ -375,11 +455,16 @@ export function createTimelineInterface(
         return value.toString();
       };
 
-      const graphMargin = { top: 70, right: 10, bottom: 20, left: 40 };
+      const graphMargin = { top: 10, right: 10, bottom: 20, left: 40 };
       const graphWidth = 180 - graphMargin.left - graphMargin.right;
       const graphHeight = 40;
 
-      const graphG = tooltipSvg
+      const graphSvg = tooltip
+        .append("svg")
+        .attr("width", graphWidth + graphMargin.left + graphMargin.right)
+        .attr("height", graphHeight + graphMargin.top + graphMargin.bottom);
+
+      const graphG = graphSvg
         .append("g")
         .attr("transform", `translate(${graphMargin.left},${graphMargin.top})`);
 
@@ -515,8 +600,28 @@ export function createTimelineInterface(
     }
   `);
 
-  // Return the SVG node with added methods
-  const svgNode = svg.node();
-  svgNode.toggleTooltips = toggleTooltips;
-  return svgNode;
+  // Return the container node with added methods
+  const containerNode = container.node();
+  containerNode.toggleTooltips = toggleTooltips;
+
+  // Add a method to programmatically scroll
+  containerNode.scrollTo = function (position) {
+    if (!needsScrolling) return this;
+    scrollPosition = Math.max(
+      0,
+      Math.min(contentHeight - innerHeight, position)
+    );
+    const thumbHeight = Math.max(
+      30,
+      (innerHeight / contentHeight) * innerHeight
+    );
+    const thumbPos =
+      (scrollPosition / (contentHeight - innerHeight)) *
+      (innerHeight - thumbHeight);
+    container.select("div > div").style("top", thumbPos + "px");
+    updateScroll();
+    return this;
+  };
+
+  return containerNode;
 }
