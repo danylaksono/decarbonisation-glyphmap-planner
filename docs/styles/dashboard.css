@@ -148,9 +148,9 @@ html {
 /* Panel styling */
 #timeline-panel {
   flex: 1;
-  background-color: #f9f9f9;
+  /* background-color: #f9f9f9; */
   padding: 10px;
-  border-right: 1px solid #ddd;
+  /* border-right: 1px solid #ddd; */
   height: 100%;
 }
 
@@ -329,4 +329,33 @@ table {
 
 .sorter-table th.selected-column span {
   background-color: #1976d2 !important;
+}
+
+.loading-indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.spinner {
+  border: 6px solid #f3f3f3;
+  border-top: 6px solid #2196f3;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }

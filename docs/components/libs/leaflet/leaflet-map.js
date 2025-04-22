@@ -106,6 +106,21 @@ export class LeafletMap {
       edit: false,
     });
 
+    // Add reset button
+    const resetButton = L.control({ position: "bottomleft" });
+    resetButton.onAdd = () => {
+      const div = L.DomUtil.create("div", "reset-button leaflet-bar");
+      div.innerHTML =
+        '<a href="#" title="Reset Map" class="map-control-button"><i class="fa fa-refresh"></i></a>';
+      div.firstChild.onclick = (e) => {
+        e.preventDefault();
+        console.log("Resetting map...");
+        this.resetMap();
+      };
+      return div;
+    };
+    resetButton.addTo(this.map);
+
     // Add toggle selection mode button
     const selectionButton = L.control({ position: "bottomleft" });
     selectionButton.onAdd = () => {
@@ -146,21 +161,6 @@ export class LeafletMap {
       };
       return div;
     };
-
-    // Add reset button
-    const resetButton = L.control({ position: "bottomleft" });
-    resetButton.onAdd = () => {
-      const div = L.DomUtil.create("div", "reset-button leaflet-bar");
-      div.innerHTML =
-        '<a href="#" title="Reset Map" class="map-control-button"><i class="fa fa-refresh"></i></a>';
-      div.firstChild.onclick = (e) => {
-        e.preventDefault();
-        console.log("Resetting map...");
-        this.resetMap();
-      };
-      return div;
-    };
-    resetButton.addTo(this.map);
 
     // Handle drawing events for selection
     this.map.on("draw:created", (e) => {
@@ -892,34 +892,3 @@ export class LeafletMap {
     if (height) this.options.height = height;
   }
 }
-
-// Usage example:
-/*
-  const container = document.createElement('div');
-  document.body.appendChild(container);
-  
-  const mapInstance = new LeafletMap(container, {
-    width: '800px',
-    height: '600px'
-  });
-  
-  // Add a data layer
-  const buildingsData = [
-    { x: -123, y: 54231, name: "Building A" },
-    { x: -122, y: 54235, name: "Building B" }
-  ];
-  
-  mapInstance.addLayer('buildings', buildingsData, {
-    clusterRadius: 50,
-    fitBounds: true
-  });
-  
-  // Later, update the layer
-  mapInstance.updateLayer('buildings', newData);
-  
-  // Toggle layer visibility
-  mapInstance.setLayerVisibility('buildings', false);
-  
-  // Clean up
-  mapInstance.destroy();
-  */

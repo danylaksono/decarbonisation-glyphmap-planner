@@ -196,8 +196,13 @@ export class sorterTable {
   }
 
   preprocessData(data, columnNames) {
-    return data.map((row) => {
+    // Ensure every row has a unique id property
+    return data.map((row, index) => {
       const processed = { ...row };
+      // Assign a unique id if not present
+      if (!processed.hasOwnProperty("id")) {
+        processed.id = `row_${index}`;
+      }
       columnNames.forEach((col) => {
         const colName = typeof col === "string" ? col : col.column;
         const colType = typeof col === "string" ? null : col.type;
@@ -403,33 +408,6 @@ export class sorterTable {
     }
   }
 
-  setSelectedData(selectedIndices) {
-    if (!Array.isArray(selectedIndices)) {
-      errorDebug("setSelectedData: selectedIndices must be an array.");
-      return;
-    }
-
-    // Clear existing selection
-    this.clearSelection();
-
-    // Validate indices and select rows
-    selectedIndices.forEach((index) => {
-      if (index >= 0 && index < this.dataInd.length) {
-        // Find the corresponding table row element
-        const tr = this.tBody.querySelector(`tr:nth-child(${index + 1})`); // +1 because nth-child is 1-based
-        if (tr) {
-          this.selectRow(tr);
-        } else {
-          warnDebug(`setSelectedData: Could not find row with index ${index}`);
-        }
-      } else {
-        warnDebug(`setSelectedData: Invalid index ${index}.  Out of bounds.`);
-      }
-    });
-
-    this.selectionUpdated();
-  }
-
   setSelectedDataByIds(ids, idPropertyName = "id") {
     if (!Array.isArray(ids)) {
       errorDebug("setSelectedDataByIds: ids must be an array.");
@@ -437,24 +415,11 @@ export class sorterTable {
     }
     const idSet = new Set(ids);
     this.clearSelection();
-    // Map from data index to table row index for visible rows
-    const dataIndexToTableRowIndex = new Map();
-    this.dataInd.forEach((dataIndex, tableRowIndex) => {
-      dataIndexToTableRowIndex.set(dataIndex, tableRowIndex);
-    });
-    this.data.forEach((dataObject, dataIndex) => {
-      if (dataObject && dataObject.hasOwnProperty(idPropertyName)) {
-        if (idSet.has(dataObject[idPropertyName])) {
-          const tableRowIndex = dataIndexToTableRowIndex.get(dataIndex);
-          if (tableRowIndex !== undefined) {
-            const tr = this.tBody.querySelector(
-              `tr:nth-child(${tableRowIndex + 1})`
-            );
-            if (tr) {
-              this.selectRow(tr);
-            }
-          }
-        }
+    // Select rows by id using the new id-based row attribute
+    this.tBody.querySelectorAll("tr").forEach((tr) => {
+      const rowId = this.getRowId(tr);
+      if (idSet.has(rowId)) {
+        this.selectRow(tr);
       }
     });
     this.selectionUpdated();
@@ -467,15 +432,12 @@ export class sorterTable {
     }
     const { consecutive = true } = options;
     const idSet = new Set(ids);
+    // Filter dataInd to only include rows whose id is in the idSet
     const baseIndices = consecutive ? this.dataInd : d3.range(this.data.length);
     const prevDataInd = [...this.dataInd];
     const matchingDataIndices = baseIndices.filter((dataIndex) => {
       const dataObject = this.data[dataIndex];
-      return (
-        dataObject &&
-        dataObject.hasOwnProperty(idPropertyName) &&
-        idSet.has(dataObject[idPropertyName])
-      );
+      return dataObject && idSet.has(dataObject[idPropertyName]);
     });
     this.dataInd = matchingDataIndices;
     this.history.push({ type: "filterById", data: prevDataInd });
@@ -495,6 +457,24 @@ export class sorterTable {
       indeces: this.dataInd,
       ids: filteredIds,
     });
+  }
+
+  // Update setSelectedData to use ids for backward compatibility
+  setSelectedData(selectedIndices) {
+    if (!Array.isArray(selectedIndices)) {
+      errorDebug("setSelectedData: selectedIndices must be an array.");
+      return;
+    }
+    // Convert indices to ids for selection
+    const ids = selectedIndices
+      .map((index) => {
+        if (index >= 0 && index < this.dataInd.length) {
+          return this.data[this.dataInd[index]].id;
+        }
+        return null;
+      })
+      .filter((id) => id !== null);
+    this.setSelectedDataByIds(ids);
   }
 
   filter() {
@@ -587,11 +567,13 @@ export class sorterTable {
   }
 
   getSelection() {
+    // Return selected rows using ids
     let ret = [];
-    this.selectedRows.forEach((dataIndex) => {
-      const pos = this.dataInd.indexOf(dataIndex);
-      if (pos !== -1) {
-        ret.push({ index: dataIndex, data: this.data[dataIndex] });
+    this.selectedRows.forEach((rowId) => {
+      // Find the data object by id
+      const dataObj = this.data.find((d) => d.id == rowId);
+      if (dataObj) {
+        ret.push({ id: rowId, data: dataObj });
       }
     });
     this.selected = ret;
@@ -678,7 +660,7 @@ export class sorterTable {
   }
 
   clearSelection() {
-    this.selectedRows.clear(); // Clear the Set of selected rows
+    this.selectedRows.clear(); // Clear the Set of selected row ids
     // Also, visually deselect all rows in the table
     if (this.tBody) {
       this.tBody.querySelectorAll("tr").forEach((tr) => {
@@ -688,8 +670,6 @@ export class sorterTable {
         tr.style.color = "grey";
       });
     }
-    // if (this.tBody != null)
-    //   this.tBody.querySelectorAll("tr").forEach((tr) => this.unselectRow(tr));
   }
 
   selectColumn(columnName) {
@@ -763,27 +743,72 @@ export class sorterTable {
     tr.selected = true;
     tr.style.fontWeight = "bold";
     tr.style.color = "black";
-    this.selectedRows.add(this.getRowIndex(tr));
+    // Use id for selection tracking
+    this.selectedRows.add(this.getRowId(tr));
   }
 
   unselectRow(tr) {
     tr.selected = false;
     tr.style.fontWeight = "normal";
     tr.style.color = "grey";
-    this.selectedRows.delete(this.getRowIndex(tr));
+    // Use id for selection tracking
+    this.selectedRows.delete(this.getRowId(tr));
   }
 
-  getRowIndex(tr) {
-    const dataIndexAttr = tr.getAttribute("data-data-index");
-    if (dataIndexAttr !== null) {
-      return parseInt(dataIndexAttr, 10);
+  getRowId(tr) {
+    return tr.getAttribute("data-data-id");
+  }
+
+  _attachRowEvents() {
+    // Attach events using id-based selection
+    const rows = this.tBody.querySelectorAll("tr");
+    if (!rows.length) {
+      return;
     }
-    // Fallback to old method
-    let index = -1;
-    this.tBody.querySelectorAll("tr").forEach((t, i) => {
-      if (t == tr) index = i;
+    Array.from(rows).forEach((tr) => {
+      tr.addEventListener("click", (event) => {
+        const rowId = this.getRowId(tr);
+        if (!rowId) return;
+        if (event.shiftKey) {
+          // Range selection using ids
+          let selectedIds = Array.from(this.selectedRows);
+          if (selectedIds.length === 0) selectedIds = [rowId];
+          const allIds = Array.from(this.tBody.querySelectorAll("tr")).map(
+            (t) => this.getRowId(t)
+          );
+          const startIdx = allIds.indexOf(selectedIds[0]);
+          const endIdx = allIds.indexOf(rowId);
+          if (startIdx !== -1 && endIdx !== -1) {
+            const [start, end] = [
+              Math.min(startIdx, endIdx),
+              Math.max(startIdx, endIdx),
+            ];
+            for (let i = start; i <= end; i++) {
+              const trToSelect = this.tBody.querySelectorAll("tr")[i];
+              if (trToSelect) {
+                this.selectRow(trToSelect);
+              }
+            }
+          }
+        } else if (event.ctrlKey) {
+          if (tr.selected) {
+            this.unselectRow(tr);
+          } else {
+            this.selectRow(tr);
+          }
+        } else {
+          this.clearSelection();
+          this.selectRow(tr);
+        }
+        this.selectionUpdated();
+      });
+      tr.addEventListener("mouseover", () => {
+        tr.style.backgroundColor = "#f0f0f0";
+      });
+      tr.addEventListener("mouseout", () => {
+        tr.style.backgroundColor = "";
+      });
     });
-    return index;
   }
 
   createHeader() {
@@ -985,7 +1010,9 @@ export class sorterTable {
           }
         })
         .join("");
-      return `<tr data-row-index="${rowIdx}" data-data-index="${dataIndex}">${cells}</tr>`;
+      // Use data-data-id instead of data-data-index for row identification
+      const dataId = this.data[dataIndex].id;
+      return `<tr data-row-index="${rowIdx}" data-data-id="${dataId}">${cells}</tr>`;
     });
 
     // If no rows and we need to show a message
@@ -1026,86 +1053,6 @@ export class sorterTable {
         this._attachRowEvents();
       }, 0);
     }
-  }
-
-  _attachRowEvents() {
-    // Check if there are any rows to attach events to
-    const rows = this.tBody.querySelectorAll("tr");
-    if (!rows.length) {
-      return; // No rows to process, exit early
-    }
-
-    Array.from(rows).forEach((tr) => {
-      tr.addEventListener("click", (event) => {
-        const rowIndex = parseInt(tr.getAttribute("data-row-index"), 10);
-        if (isNaN(rowIndex)) return;
-        if (event.shiftKey) {
-          // Use the selection set instead of relying on current DOM only.
-          let selectedIndices = Array.from(this.selectedRows);
-          if (selectedIndices.length === 0) selectedIndices = [rowIndex];
-          const start = Math.min(...selectedIndices, rowIndex);
-          const end = Math.max(...selectedIndices, rowIndex);
-          for (let i = start; i <= end; i++) {
-            // Update the selection set for all indices in the range.
-            this.selectedRows.add(i);
-            // Update visible selection if the row is rendered.
-            const trToSelect = this.tBody.querySelector(
-              `tr[data-row-index="${i}"]`
-            );
-            if (trToSelect) {
-              this.selectRow(trToSelect);
-            }
-          }
-        } else if (event.ctrlKey) {
-          if (tr.selected) {
-            this.unselectRow(tr);
-          } else {
-            this.selectRow(tr);
-          }
-        } else {
-          this.clearSelection();
-          this.selectRow(tr);
-        }
-        this.selectionUpdated();
-      });
-      // tr.addEventListener("click", (event) => {
-      //   const rowIndex = parseInt(tr.getAttribute("data-row-index"), 10);
-      //   if (isNaN(rowIndex)) return;
-      //   if (this.shiftDown) {
-      //     let s = this.getSelection().map((s) => s.index);
-      //     if (s.length == 0) s = [rowIndex];
-      //     let minSelIndex = Math.min(...s);
-      //     let maxSelIndex = Math.max(...s);
-      //     if (rowIndex <= minSelIndex) {
-      //       for (let i = rowIndex; i < minSelIndex; i++) {
-      //         const trToSelect = this.tBody.querySelectorAll("tr")[i];
-      //         if (trToSelect) this.selectRow(trToSelect);
-      //       }
-      //     } else if (rowIndex >= maxSelIndex) {
-      //       for (let i = maxSelIndex + 1; i <= rowIndex; i++) {
-      //         const trToSelect = this.tBody.querySelectorAll("tr")[i];
-      //         if (trToSelect) this.selectRow(trToSelect);
-      //       }
-      //     }
-      //   } else if (this.ctrlDown) {
-      //     if (tr.selected) {
-      //       this.unselectRow(tr);
-      //     } else {
-      //       this.selectRow(tr);
-      //     }
-      //   } else {
-      //     this.clearSelection();
-      //     this.selectRow(tr);
-      //   }
-      //   this.selectionUpdated();
-      // });
-      tr.addEventListener("mouseover", () => {
-        tr.style.backgroundColor = "#f0f0f0";
-      });
-      tr.addEventListener("mouseout", () => {
-        tr.style.backgroundColor = "";
-      });
-    });
   }
 
   resetTable() {
@@ -1239,7 +1186,7 @@ export class sorterTable {
                 }
               })
               .join("");
-            return `<tr data-row-index="${rowIdx}" data-data-index="${dataIndex}">${cells}</tr>`;
+            return `<tr data-row-index="${rowIdx}" data-data-id="${this.data[dataIndex].id}">${cells}</tr>`;
           });
 
           // Show initial content
@@ -1341,53 +1288,25 @@ export class sorterTable {
     Object.keys(this.compoundSorting).map((col) => {
       let sortDir = this.compoundSorting[col].how === "up" ? 1 : -1;
       if (typeof this.data[0][col] === "string") sortDir *= -1;
-      let sortedCol = d3
-        .range(this.dataInd.length)
-        .sort(
-          (i1, i2) =>
-            sortDir *
-            (this.data[this.dataInd[i1]][col] > this.data[this.dataInd[i2]][col]
-              ? 1
-              : -1)
-        );
-
-      sorts[col] = new Array(this.data.length);
-      let rank = 0;
-      sorts[col][sortedCol[0]] = rank;
-      for (let i = 1; i < sortedCol.length; i++) {
-        if (
-          this.data[this.dataInd[sortedCol[i]]][col] !=
-          this.data[this.dataInd[sortedCol[i - 1]]][col]
-        )
-          rank = i;
-        sorts[col][sortedCol[i]] = rank;
-      }
+      // Sort by id instead of index
+      let sortedIds = this.dataInd
+        .map((i) => this.data[i].id)
+        .sort((id1, id2) => {
+          const v1 = this.data.find((d) => d.id == id1)[col];
+          const v2 = this.data.find((d) => d.id == id2)[col];
+          return sortDir * (v1 > v2 ? 1 : -1);
+        });
+      sorts[col] = sortedIds;
     });
 
-    // this.dataInd.map((v, i) => delete this.data[v].tabindex);
-
-    // DEBUG: Create a separate Map to store tab indices
-    const tabIndices = new Map();
-    this.dataInd.forEach((v, i) => {
-      tabIndices.set(v, i); // Associate data index 'v' with tab index 'i'
-    });
-
-    //  use tabIndices to access the tab index for each row during sorting
-    this.dataInd.sort((a, b) => {
-      let scoreA = 0;
-      Object.keys(sorts).forEach((col) => {
-        scoreA +=
-          this.compoundSorting[col].weight * sorts[col][tabIndices.get(a)];
-      });
-
-      let scoreB = 0;
-      Object.keys(sorts).forEach((col) => {
-        scoreB +=
-          this.compoundSorting[col].weight * sorts[col][tabIndices.get(b)];
-      });
-
-      return scoreA - scoreB;
-    });
+    // Compose the new dataInd as an array of ids
+    // For now, use the first sort key only for simplicity
+    const sortKey = Object.keys(sorts)[0];
+    if (sortKey) {
+      this.dataInd = sorts[sortKey].map((id) =>
+        this.data.findIndex((d) => d.id == id)
+      );
+    }
 
     this.visControllers.forEach((vc, index) => {
       const columnName = this.columns[index].column;
@@ -1396,7 +1315,6 @@ export class sorterTable {
     });
 
     this.createTable();
-    // this.createHeader();
 
     this.changed({
       type: "sort",
@@ -1614,7 +1532,7 @@ export class sorterTable {
                 }
               })
               .join("");
-            return `<tr data-row-index="${rowIdx}" data-data-index="${dataIndex}">${cells}</tr>`;
+            return `<tr data-row-index="${rowIdx}" data-data-id="${this.data[dataIndex].id}">${cells}</tr>`;
           });
 
         // Show initial content immediately (this ensures rows are visible without waiting for Clusterize)
@@ -2150,14 +2068,14 @@ function HistogramController(data, binrules) {
     this.bins.forEach((bin) => {
       bin.selected = false;
     });
-
     this.svg.selectAll(".bar rect:nth-child(1)").attr("fill", "#3388FF");
   };
 
   this.setData = function (dd) {
     div.innerHTML = "";
 
-    let data = dd.map((d, i) => ({ value: d, index: i }));
+    // Annotate data with id for each row
+    let data = dd.map((d, i) => ({ value: d, id: d && d.id ? d.id : i }));
 
     const svgWidth = 100;
     const svgHeight = 50;
@@ -2178,7 +2096,7 @@ function HistogramController(data, binrules) {
         {
           category: "Unique Values",
           count: data.length,
-          indeces: data.map((d) => d.index),
+          ids: data.map((d) => d.id), // Store ids instead of indices
         },
       ];
     } else if ("thresholds" in binrules) {
@@ -2193,7 +2111,7 @@ function HistogramController(data, binrules) {
       this.bins = contBins.map((b) => ({
         category: b.x0 + "-" + b.x1,
         count: b.length,
-        indeces: b.map((v) => v.index),
+        ids: b.map((v) => v.id), // Store ids instead of indices
         x0: b.x0,
         x1: b.x1,
       }));
@@ -2218,12 +2136,12 @@ function HistogramController(data, binrules) {
         .style("z-index", 90999)
         .call(this.brush);
     } else if ("ordinals" in binrules || "nominals" in binrules) {
-      // Create a frequency map of values to their counts and indices
+      // Create a frequency map of values to their counts and ids
       const frequency = d3.rollup(
         data,
         (values) => ({
           count: values.length,
-          indeces: values.map((v) => v.index),
+          ids: values.map((v) => v.id),
         }),
         (d) => d.value
       );
@@ -2231,7 +2149,6 @@ function HistogramController(data, binrules) {
       const binType = "ordinals" in binrules ? "ordinals" : "nominals";
 
       // For sorted data, we need to preserve the order of appearance
-      // Create a map to track first appearance of each value in sorted data
       const valueOrder = new Map();
       data.forEach((d, i) => {
         if (!valueOrder.has(d.value)) {
@@ -2240,24 +2157,20 @@ function HistogramController(data, binrules) {
       });
 
       if (binType in binrules && Array.isArray(binrules[binType])) {
-        // If we have predefined bin categories, use them but sort by data order
         const binsWithOrder = binrules[binType].map((v) => ({
           category: v,
           orderIndex: valueOrder.has(v) ? valueOrder.get(v) : Infinity,
           count: frequency.get(v) != null ? frequency.get(v).count : 0,
-          indeces: frequency.get(v) != null ? frequency.get(v).indeces : [],
+          ids: frequency.get(v) != null ? frequency.get(v).ids : [],
         }));
-
-        // Sort bins according to their first appearance in the data
         binsWithOrder.sort((a, b) => a.orderIndex - b.orderIndex);
         this.bins = binsWithOrder;
       } else {
-        // Create bins directly from frequency map, but sort them by data order
         this.bins = Array.from(frequency, ([key, value]) => ({
           category: key,
           orderIndex: valueOrder.get(key),
           count: value.count,
-          indeces: value.indeces,
+          ids: value.ids,
         })).sort((a, b) => a.orderIndex - b.orderIndex);
       }
     }
@@ -2286,8 +2199,8 @@ function HistogramController(data, binrules) {
       .attr("y", (d) => y(d.count))
       .attr("height", (d) => height - y(d.count))
       .attr("fill", "#3388FF")
-      .attr("rx", 1) // Add horizontal corner radius
-      .attr("ry", 1); // Add vertical corner radius
+      .attr("rx", 1)
+      .attr("ry", 1);
 
     if (!("thresholds" in binrules)) {
       barGroups
@@ -2328,31 +2241,18 @@ function HistogramController(data, binrules) {
         .on("click", (event, d) => {
           d.selected = !d.selected;
 
-          // Update visual state of the clicked bar
           d3.select(event.currentTarget.previousSibling).attr(
             "fill",
             d.selected ? "orange" : "#3388FF"
           );
 
           if (controller.table) {
-            // Get the original data indices for the items in this bin
-            // d.indeces contains indices relative to the current dataInd
-            const originalDataIndices = d.indeces.map(
-              (rowIndex) => controller.table.dataInd[rowIndex]
-            );
-
-            // Update the main table's selection set
+            // Use ids for selection instead of indices
             if (d.selected) {
-              originalDataIndices.forEach((dataIndex) =>
-                controller.table.selectedRows.add(dataIndex)
-              );
+              d.ids.forEach((id) => controller.table.selectedRows.add(id));
             } else {
-              originalDataIndices.forEach((dataIndex) =>
-                controller.table.selectedRows.delete(dataIndex)
-              );
+              d.ids.forEach((id) => controller.table.selectedRows.delete(id));
             }
-
-            // Notify the table that the selection has changed
             controller.table.selectionUpdated();
           }
         });
@@ -2361,7 +2261,7 @@ function HistogramController(data, binrules) {
     this.handleBrush = (event) => {
       this.svg.selectAll(".histogram-label").remove();
 
-      const selectedOriginalDataIndices = new Set();
+      const selectedIds = new Set();
       let brushRangeText = "";
 
       if (event.selection) {
@@ -2373,12 +2273,10 @@ function HistogramController(data, binrules) {
         this.bins.forEach((bin, i) => {
           let isSelected = false;
           if (bin.x0 !== undefined && bin.x1 !== undefined) {
-            // Continuous bins
             const binStart = this.xScale(bin.x0);
             const binEnd = this.xScale(bin.x1);
             isSelected = binEnd >= x0 && binStart <= x1;
           } else {
-            // Ordinal/Unique bins (shouldn't normally be brushed, but handle defensively)
             const binStart = i * binWidth;
             const binEnd = (i + 1) * binWidth;
             isSelected = binStart <= x1 && binEnd >= x0;
@@ -2386,28 +2284,18 @@ function HistogramController(data, binrules) {
 
           bin.selected = isSelected;
 
-          // Update bar color
           this.svg
             .select(`.bar:nth-child(${i + 1}) rect:nth-child(1)`)
             .attr("fill", bin.selected ? "orange" : "#3388FF");
 
-          // Collect original data indices if selected
-          if (bin.selected && bin.indeces) {
-            bin.indeces.forEach((rowIndex) => {
-              const originalIndex = controller.table.dataInd[rowIndex];
-              if (originalIndex !== undefined) {
-                // Ensure index exists
-                selectedOriginalDataIndices.add(originalIndex);
-              }
-            });
+          if (bin.selected && bin.ids) {
+            bin.ids.forEach((id) => selectedIds.add(id));
           }
         });
       } else {
-        // No selection, reset all bins
         this.resetSelection();
       }
 
-      // Update label
       this.svg
         .append("text")
         .attr("class", "histogram-label")
@@ -2418,11 +2306,10 @@ function HistogramController(data, binrules) {
         .attr("text-anchor", "middle")
         .text(brushRangeText);
 
-      // Update the main table's selection
       if (controller.table) {
         controller.table.selectedRows.clear();
-        selectedOriginalDataIndices.forEach((dataIndex) => {
-          controller.table.selectedRows.add(dataIndex);
+        selectedIds.forEach((id) => {
+          controller.table.selectedRows.add(id);
         });
         controller.table.selectionUpdated();
       }

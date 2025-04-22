@@ -8,7 +8,7 @@
 // src/components/TableView.js
 
 // Import required dependencies
-import { sorterTable } from "./libs/sorttable/sorterTableClass.js";
+import { sorterTable } from "../libs/sorttable/sorterTableClass.js";
 import { html } from "npm:htl";
 
 // Define excluded columns and custom order for table display

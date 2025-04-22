@@ -1,6 +1,6 @@
 // DataExplorerTable.js
 import * as d3 from "npm:d3";
-import { BinningService } from "./BinningService.js";
+import { BinningService } from "../BinningService.js";
 import { HistogramRenderer } from "./HistogramRenderer.js";
 
 export class DataExplorerTable {

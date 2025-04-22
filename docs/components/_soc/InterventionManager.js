@@ -8,7 +8,7 @@
 import {
   InterventionManager as BaseInterventionManager,
   MiniDecarbModel,
-} from "../components/libs/decarb-model/mini-decarbonisation.js"; // Assuming this exists
+} from "../libs/decarb-model/mini-decarbonisation.js"; // Assuming this exists
 
 // InterventionManager class extending the base implementation
 export class InterventionManager extends BaseInterventionManager {

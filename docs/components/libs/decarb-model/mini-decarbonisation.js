@@ -172,6 +172,12 @@ export class InterventionManager {
     );
   }
 
+  setBuildings(newBuildings) {
+    this.buildings = newBuildings;
+    this._cachedResults = null;
+    return this;
+  }
+
   runInterventionsWithRollover() {
     // Clear the cache when running interventions
     this._cachedResults = null;
