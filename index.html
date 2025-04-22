@@ -19,29 +19,30 @@
 <link rel="modulepreload" href="./_npm/bulma-toast@2.4.4/_esm.js">
 <link rel="modulepreload" href="./_npm/bulma-quickview@2.0.0/dist/js/bulma-quickview.js">
 <link rel="modulepreload" href="./_import/components/libs/osgb/index.1d2476df.js">
-<link rel="modulepreload" href="./_import/components/libs/sorttable/sorterTableClass.f12d769c.js">
+<link rel="modulepreload" href="./_import/components/libs/sorttable/sorterTableClass.06fa4447.js">
 <link rel="modulepreload" href="./_import/components/libs/gridded-glyphmaps/glyph-designs/timeGlyph.a1969fec.js">
 <link rel="modulepreload" href="./_import/components/libs/gridded-glyphmaps/glyph-designs/mirrorTimeGlyph.5185ad88.js">
 <link rel="modulepreload" href="./_import/components/libs/gridded-glyphmaps/glyph-designs/radialglyph.cbd7ddeb.js">
 <link rel="modulepreload" href="./_import/components/libs/gridded-glyphmaps/index.min.f034b425.js">
 <link rel="modulepreload" href="./_import/components/libs/decarb-model/budget-allocator.5c9a0a07.js">
-<link rel="modulepreload" href="./_import/components/libs/decarb-model/mini-decarbonisation.bb43a897.js">
-<link rel="modulepreload" href="./_import/components/libs/decarb-model/timeline.73229bae.js">
+<link rel="modulepreload" href="./_import/components/libs/decarb-model/mini-decarbonisation.cecff6de.js">
+<link rel="modulepreload" href="./_import/components/libs/decarb-model/timeline.959806ee.js">
 <link rel="modulepreload" href="./_import/components/libs/plots.ccdcd888.js">
-<link rel="modulepreload" href="./_import/components/libs/leaflet/leaflet-map.6f908199.js">
-<link rel="modulepreload" href="./_import/components/libs/utils.951f1dff.js">
+<link rel="modulepreload" href="./_import/components/libs/leaflet/leaflet-map.f86bdd62.js">
 <link rel="modulepreload" href="./_import/components/libs/helpers.fa685316.js">
-<link rel="modulepreload" href="./_import/components/libs/logger.b99bf23b.js">
+<link rel="modulepreload" href="./_import/components/libs/logger.864b8094.js">
+<link rel="modulepreload" href="./_import/components/libs/timer.7f81ffcc.js">
 <link rel="modulepreload" href="./_import/components/libs/osgb/ellipsoid.1ac4eba6.js">
 <link rel="modulepreload" href="./_import/components/libs/sorttable/BinningService.4b441d41.js">
+<link rel="modulepreload" href="./_import/components/libs/sorttable/small_multiples.e706b098.js">
 <link rel="modulepreload" href="./_npm/d3@7.9.0/_esm.js">
+<link rel="modulepreload" href="./_node/clusterize.js@1.0.0/index.js">
 <link rel="modulepreload" href="./_import/components/libs/decarb-model/priority-queue.aea4e806.js">
 <link rel="modulepreload" href="./_import/components/libs/gridded-glyphmaps/glyph-designs/radialGlyphOverall.e15902a2.js">
 <link rel="modulepreload" href="./_import/components/libs/leaflet/basemaps.e55f05f5.js">
 <link rel="modulepreload" href="./_npm/leaflet@1.9.4/_esm.js">
 <link rel="modulepreload" href="./_npm/supercluster@8.0.1/_esm.js">
 <link rel="modulepreload" href="./_node/leaflet-draw@1.0.4/index.js">
-<link rel="modulepreload" href="./_npm/topojson-client@3.1.0/_esm.js">
 <link rel="modulepreload" href="./_npm/lodash@4.17.21/_esm.js">
 <link rel="modulepreload" href="./_observablehq/stdlib/duckdb.js">
 <link rel="modulepreload" href="./_npm/htl@0.3.1/_esm.js">
@@ -220,20 +221,21 @@
 <link rel="modulepreload" href="./_node/bignumber.js@9.1.2/index.js">
 <link rel="modulepreload" href="./_node/splaytree-ts@1.0.2/index.js">
 <link rel="modulepreload" href="./_npm/robust-predicates@3.0.2/_esm.js">
+<link rel="icon" type="image/png" href="./_file/observable.1af93621.png" sizes="32x32">
 <script type="module">
 
 import {define} from "./_observablehq/client.js";
 import {registerFile, FileAttachment} from "./_observablehq/stdlib.js";
 import {registerTable} from "./_observablehq/stdlib/duckdb.js";
 
-registerFile("./data/oxford_decarbonisation_data.parquet", {"name":"./data/oxford_decarbonisation_data.parquet","path":"./_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1743758203857});
-registerFile("./data/oxford_lsoa_boundary.geojson", {"name":"./data/oxford_lsoa_boundary.geojson","mimeType":"application/geo+json","path":"./_file/data/oxford_lsoa_boundary.50c731e8.geojson","lastModified":1743758203866});
-registerFile("./data/oxford_lsoas_cartogram.json", {"name":"./data/oxford_lsoas_cartogram.json","mimeType":"application/json","path":"./_file/data/oxford_lsoas_cartogram.a72fa2b8.json","lastModified":1743758203867});
-registerFile("./data/oxford_lsoas_regular.json", {"name":"./data/oxford_lsoas_regular.json","mimeType":"application/json","path":"./_file/data/oxford_lsoas_regular.e1c36e7e.json","lastModified":1743758203867});
+registerFile("./data/oxford_decarbonisation_data.parquet", {"name":"./data/oxford_decarbonisation_data.parquet","path":"./_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1745317372172});
+registerFile("./data/oxford_lsoa_boundary.geojson", {"name":"./data/oxford_lsoa_boundary.geojson","mimeType":"application/geo+json","path":"./_file/data/oxford_lsoa_boundary.50c731e8.geojson","lastModified":1745317372181});
+registerFile("./data/oxford_lsoas_cartogram.json", {"name":"./data/oxford_lsoas_cartogram.json","mimeType":"application/json","path":"./_file/data/oxford_lsoas_cartogram.a72fa2b8.json","lastModified":1745317372182});
+registerFile("./data/oxford_lsoas_regular.json", {"name":"./data/oxford_lsoas_regular.json","mimeType":"application/json","path":"./_file/data/oxford_lsoas_regular.e1c36e7e.json","lastModified":1745317372182});
 registerTable("oxford", FileAttachment("./data/oxford_decarbonisation_data.parquet"));
 
-define({id: "fce7cf81", outputs: ["d3","flubber","require","Mutable","turf","bulmaToast","bulmaQuickview","OSGB","sorterTable","TimeGlyph","GlyphCollection","StreamGraphGlyph","RadialGlyph","glyphMap","createDiscretiserValue","_drawCellBackground","BudgetAllocator","InterventionManager","MiniDecarbModel","createTimelineInterface","plotOverallTimeline","plotOverallPotential","LeafletMap","animate","inferTypes","enrichGeoData","normaliseData","insideCell","debounceInput","saveToSession","getFromSession","transformCoordinates","transformGeometry","normalisebyGroup","aggregateValues","set","log","warn","error","setDebugMode","startGroup","endGroup"], body: async () => {
-const [{require}, {Mutable}, turf, bulmaToast, bulmaQuickview, {OSGB}, {sorterTable}, {TimeGlyph, GlyphCollection}, {StreamGraphGlyph}, {RadialGlyph}, {glyphMap, createDiscretiserValue, _drawCellBackground}, {BudgetAllocator}, {InterventionManager, MiniDecarbModel}, {createTimelineInterface}, {plotOverallTimeline, plotOverallPotential}, {LeafletMap}, {animate}, {inferTypes, enrichGeoData, normaliseData, insideCell, debounceInput, saveToSession, getFromSession, transformCoordinates, transformGeometry, normalisebyGroup, aggregateValues, set}, {log, warn, error, setDebugMode, startGroup, endGroup}] = await Promise.all([import("./_npm/d3-require@1.3.0/_esm.js"), import("./_observablehq/stdlib.js"), import("./_node/@turf/turf@7.2.0/index.js"), import("./_npm/bulma-toast@2.4.4/_esm.js"), import("./_npm/bulma-quickview@2.0.0/dist/js/bulma-quickview.js"), import("./_import/components/libs/osgb/index.1d2476df.js"), import("./_import/components/libs/sorttable/sorterTableClass.f12d769c.js"), import("./_import/components/libs/gridded-glyphmaps/glyph-designs/timeGlyph.a1969fec.js"), import("./_import/components/libs/gridded-glyphmaps/glyph-designs/mirrorTimeGlyph.5185ad88.js"), import("./_import/components/libs/gridded-glyphmaps/glyph-designs/radialglyph.cbd7ddeb.js"), import("./_import/components/libs/gridded-glyphmaps/index.min.f034b425.js"), import("./_import/components/libs/decarb-model/budget-allocator.5c9a0a07.js"), import("./_import/components/libs/decarb-model/mini-decarbonisation.bb43a897.js"), import("./_import/components/libs/decarb-model/timeline.73229bae.js"), import("./_import/components/libs/plots.ccdcd888.js"), import("./_import/components/libs/leaflet/leaflet-map.6f908199.js"), import("./_import/components/libs/utils.951f1dff.js"), import("./_import/components/libs/helpers.fa685316.js"), import("./_import/components/libs/logger.b99bf23b.js")]);
+define({id: "270c77a4", outputs: ["d3","flubber","require","Mutable","turf","bulmaToast","bulmaQuickview","OSGB","sorterTable","TimeGlyph","GlyphCollection","StreamGraphGlyph","RadialGlyph","glyphMap","createDiscretiserValue","_drawCellBackground","BudgetAllocator","InterventionManager","MiniDecarbModel","createTimelineInterface","plotOverallTimeline","plotOverallPotential","LeafletMap","inferTypes","enrichGeoData","normaliseData","insideCell","debounceInput","saveToSession","getFromSession","transformCoordinates","transformGeometry","normalisebyGroup","aggregateValues","log","warn","error","setDebugMode","startGroup","endGroup","startTimer","endTimer","perfTimings"], body: async () => {
+const [{require}, {Mutable}, turf, bulmaToast, bulmaQuickview, {OSGB}, {sorterTable}, {TimeGlyph, GlyphCollection}, {StreamGraphGlyph}, {RadialGlyph}, {glyphMap, createDiscretiserValue, _drawCellBackground}, {BudgetAllocator}, {InterventionManager, MiniDecarbModel}, {createTimelineInterface}, {plotOverallTimeline, plotOverallPotential}, {LeafletMap}, {inferTypes, enrichGeoData, normaliseData, insideCell, debounceInput, saveToSession, getFromSession, transformCoordinates, transformGeometry, normalisebyGroup, aggregateValues}, {log, warn, error, setDebugMode, startGroup, endGroup}, {startTimer, endTimer, perfTimings}] = await Promise.all([import("./_npm/d3-require@1.3.0/_esm.js"), import("./_observablehq/stdlib.js"), import("./_node/@turf/turf@7.2.0/index.js"), import("./_npm/bulma-toast@2.4.4/_esm.js"), import("./_npm/bulma-quickview@2.0.0/dist/js/bulma-quickview.js"), import("./_import/components/libs/osgb/index.1d2476df.js"), import("./_import/components/libs/sorttable/sorterTableClass.06fa4447.js"), import("./_import/components/libs/gridded-glyphmaps/glyph-designs/timeGlyph.a1969fec.js"), import("./_import/components/libs/gridded-glyphmaps/glyph-designs/mirrorTimeGlyph.5185ad88.js"), import("./_import/components/libs/gridded-glyphmaps/glyph-designs/radialglyph.cbd7ddeb.js"), import("./_import/components/libs/gridded-glyphmaps/index.min.f034b425.js"), import("./_import/components/libs/decarb-model/budget-allocator.5c9a0a07.js"), import("./_import/components/libs/decarb-model/mini-decarbonisation.cecff6de.js"), import("./_import/components/libs/decarb-model/timeline.959806ee.js"), import("./_import/components/libs/plots.ccdcd888.js"), import("./_import/components/libs/leaflet/leaflet-map.f86bdd62.js"), import("./_import/components/libs/helpers.fa685316.js"), import("./_import/components/libs/logger.864b8094.js"), import("./_import/components/libs/timer.7f81ffcc.js")]);
 log(">> Importing libraries...");
 const d3 = require("d3", "d3-geo-projection");
 const flubber = require("flubber@0.4");
@@ -242,15 +244,19 @@ const flubber = require("flubber@0.4");
 
 
 
+// import { animate } from "./components/libs/utils.js";
 
 
-return {d3,flubber,require,Mutable,turf,bulmaToast,bulmaQuickview,OSGB,sorterTable,TimeGlyph,GlyphCollection,StreamGraphGlyph,RadialGlyph,glyphMap,createDiscretiserValue,_drawCellBackground,BudgetAllocator,InterventionManager,MiniDecarbModel,createTimelineInterface,plotOverallTimeline,plotOverallPotential,LeafletMap,animate,inferTypes,enrichGeoData,normaliseData,insideCell,debounceInput,saveToSession,getFromSession,transformCoordinates,transformGeometry,normalisebyGroup,aggregateValues,set,log,warn,error,setDebugMode,startGroup,endGroup};
+// timer functions
+
+return {d3,flubber,require,Mutable,turf,bulmaToast,bulmaQuickview,OSGB,sorterTable,TimeGlyph,GlyphCollection,StreamGraphGlyph,RadialGlyph,glyphMap,createDiscretiserValue,_drawCellBackground,BudgetAllocator,InterventionManager,MiniDecarbModel,createTimelineInterface,plotOverallTimeline,plotOverallPotential,LeafletMap,inferTypes,enrichGeoData,normaliseData,insideCell,debounceInput,saveToSession,getFromSession,transformCoordinates,transformGeometry,normalisebyGroup,aggregateValues,log,warn,error,setDebugMode,startGroup,endGroup,startTimer,endTimer,perfTimings};
 }});
 
-define({id: "3a2b2545", inputs: ["setDebugMode"], outputs: ["DEBUG"], body: (setDebugMode) => {
+define({id: "f8536915", inputs: ["setDebugMode","startTimer"], outputs: ["DEBUG"], body: (setDebugMode,startTimer) => {
 // Control debug output - set to true during development, false in production
 const DEBUG = true;
 setDebugMode(DEBUG);
+startTimer("initialisation"); // Start the timer
 return {DEBUG};
 }});
 
@@ -312,23 +318,28 @@ FROM oxford b;`;
 return {oxford_data};
 }});
 
-define({id: "3e9b659f", inputs: ["log","oxford_data"], outputs: ["buildingsData"], body: (log,oxford_data) => {
+define({id: "9d6e6ead", inputs: ["startTimer","log","oxford_data","endTimer"], outputs: ["buildingsData"], body: (startTimer,log,oxford_data,endTimer) => {
+startTimer("load_data_sql");
 // >> declare data
 log(">> Loading Data...");
 const buildingsData = [...oxford_data];
 // const buildingsData = oxford_data.slice(); // copy data
+endTimer("load_data_sql");
 return {buildingsData};
 }});
 
-define({id: "cc8426ed", inputs: ["buildingsData","log"], outputs: ["allColumns"], body: (buildingsData,log) => {
+define({id: "976d53b5", inputs: ["startTimer","buildingsData","log","endTimer"], outputs: ["allColumns"], body: (startTimer,buildingsData,log,endTimer) => {
+startTimer("load_data_json");
 // const flatData = buildingsData.map((p) => ({ ...p })); // very slow
 // const flatData = buildingsData.map((p) => Object.assign({}, p)); // even slower
 const allColumns = Object.keys(buildingsData[0]);
 log(">>  Loading Data Done");
+endTimer("load_data_json");
 return {allColumns};
 }});
 
-define({id: "70826d25", inputs: ["log","FileAttachment"], outputs: ["lsoa_boundary","regular_geodata","cartogram_geodata"], body: (log,FileAttachment) => {
+define({id: "7232ce26", inputs: ["startTimer","log","FileAttachment","endTimer"], outputs: ["lsoa_boundary","regular_geodata","cartogram_geodata"], body: (startTimer,log,FileAttachment,endTimer) => {
+startTimer("load_data_geojson");
 log(">> Define and Load boundary data...");
 // oxford boundary data
 const lsoa_boundary = FileAttachment(
@@ -340,10 +351,12 @@ const regular_geodata = FileAttachment(
 const cartogram_geodata = FileAttachment(
   "./data/oxford_lsoas_cartogram.json"
 ).json();
+endTimer("load_data_geojson");
 return {lsoa_boundary,regular_geodata,cartogram_geodata};
 }});
 
-define({id: "e131efc4", inputs: ["log","timeline_switch"], outputs: ["glyphVariables","glyphColours","timelineVariables","timelineColours"], body: (log,timeline_switch) => {
+define({id: "fcf5390f", inputs: ["startTimer","log","timeline_switch","endTimer"], outputs: ["glyphVariables","glyphColours","timelineVariables","timelineColours"], body: (startTimer,log,timeline_switch,endTimer) => {
+startTimer("glyph_variables_and_colours");
 log(">> Defining the glyph variables and colours...");
 timeline_switch;
 const glyphVariables = [
@@ -373,7 +386,6 @@ const glyphColours = [
   "#228B22", // pv_generation: ForestGreen
   "#006400", // pv_total: DarkGreen
 ];
-
 const timelineVariables = [
   "interventionCost",
   "carbonSaved",
@@ -386,10 +398,12 @@ const timelineColours = [
   "#00FF00", // numInterventions: Green
   "#FF0000", // interventionTechs: Red
 ];
+endTimer("glyph_variables_and_colours");
 return {glyphVariables,glyphColours,timelineVariables,timelineColours};
 }});
 
-define({id: "04385e81", inputs: ["Mutable"], outputs: ["useState"], body: (Mutable) => {
+define({id: "d04223b5", inputs: ["Mutable"], outputs: ["useState"], body: (Mutable) => {
+// wrapper to Observable's Mutable
 function useState(value) {
   const state = Mutable(value);
   const setState = (value) => (state.value = value);
@@ -398,14 +412,14 @@ function useState(value) {
 return {useState};
 }});
 
-define({id: "e0929dac", inputs: ["log","useState"], outputs: ["getSelectedAllocation","setSelectedAllocation","detailOnDemand","setDetailOnDemand","currentConfig","setCurrentConfig","tableFiltered","setTableFiltered","allocations","setAllocations"], body: (log,useState) => {
+define({id: "5e2d2534", inputs: ["log","useState"], outputs: ["getSelectedAllocation","setSelectedAllocation"], body: (log,useState) => {
 log(">> Getters and Setters...");
 const [getSelectedAllocation, setSelectedAllocation] = useState([]); // selected allocation
-const [detailOnDemand, setDetailOnDemand] = useState(null); // detail on demand on map
-const [currentConfig, setCurrentConfig] = useState({}); // current configuration
-const [tableFiltered, setTableFiltered] = useState([]); // filtered table
-const [allocations, setAllocations] = useState([]);
-return {getSelectedAllocation,setSelectedAllocation,detailOnDemand,setDetailOnDemand,currentConfig,setCurrentConfig,tableFiltered,setTableFiltered,allocations,setAllocations};
+// const [detailOnDemand, setDetailOnDemand] = useState(null); // detail on demand on map
+// const [currentConfig, setCurrentConfig] = useState({}); // current configuration
+// const [tableFiltered, setTableFiltered] = useState([]); // filtered table
+// const [allocations, setAllocations] = useState([]);
+return {getSelectedAllocation,setSelectedAllocation};
 }});
 
 define({id: "a51d8a77", inputs: ["useState"], outputs: ["getInitialFilter","setInitialFilter","getSelectedTableRow","setSelectedTableRow","getInterventions","setInterventions","getResults","setResults","selectedIntervention","setSelectedIntervention","selectedInterventionIndex","setSelectedInterventionIndex","timelineModifications","setTimelineModifications"], body: (useState) => {
@@ -421,179 +435,189 @@ const [timelineModifications, setTimelineModifications] = useState([]); // list 
 return {getInitialFilter,setInitialFilter,getSelectedTableRow,setSelectedTableRow,getInterventions,setInterventions,getResults,setResults,selectedIntervention,setSelectedIntervention,selectedInterventionIndex,setSelectedInterventionIndex,timelineModifications,setTimelineModifications};
 }});
 
-define({id: "5126c7b7", inputs: ["useState"], outputs: ["getInitialData","setInitialData"], body: (useState) => {
-const [getInitialData, setInitialData] = useState([]); // INITIAL DATA
+define({id: "b6e5abb8", inputs: ["useState"], outputs: ["getInitialData","setInitialData"], body: (useState) => {
+const [getInitialData, setInitialData] = useState(null); // INITIAL DATA
 return {getInitialData,setInitialData};
 }});
 
-define({id: "2475a749", outputs: ["updateSelection"], body: () => {
-function updateSelection(
-  targetSelection,
-  newSelection,
-  mode = "intersect",
-  idField
-) {
-  if (mode === "single") {
-    return newSelection;
-  } else if (mode === "union") {
-    const newIds = new Set(newSelection.map((obj) => obj[idField]));
-    const additional = targetSelection.filter(
-      (obj) => !newIds.has(obj[idField])
-    );
-    return [...newSelection, ...additional];
-  } else if (mode === "intersect") {
-    const currentIds = new Set(targetSelection.map((obj) => obj[idField]));
-    return newSelection.filter((obj) => currentIds.has(obj[idField]));
-  } else {
-    throw new Error("Invalid mode");
-  }
-}
-return {updateSelection};
+define({id: "8855308b", inputs: ["useState"], outputs: ["getResetRequested","setResetRequested"], body: (useState) => {
+// Add a reset state flag to track when a reset has been requested
+const [getResetRequested, setResetRequested] = useState(false);
+return {getResetRequested,setResetRequested};
 }});
 
-define({id: "645e4258", inputs: ["log","updateSelection","getInitialData","setInitialData"], outputs: ["handleSelection"], body: (log,updateSelection,getInitialData,setInitialData) => {
-// HANDLE MAP AND TABLE SELECTION
-function handleSelection(source, newSelection, mode = "intersect") {
-  log(`Updating selection from ${source} with mode ${mode}:`, newSelection);
-
-  let selectedFeatures = updateSelection(
-    getInitialData,
-    newSelection,
-    mode,
-    "id"
-  );
-  setInitialData(selectedFeatures);
-
-  // if (getInitialData.length === 0) {
-  //   // if no features are selected, set the initial data to the new selection
-  //   setInitialData(newSelection);
-  // } else {
-  //   let selectedFeatures = updateSelection(
-  //     getInitialData,
-  //     newSelection,
-  //     mode,
-  //     "id"
-  //   );
-  //   setInitialData(selectedFeatures);
-  // }
-  // // update the initial data
-
-  if (source === "map") {
-    // renderTable(selectedFeatures); // Update the table
-    log("updating the table");
-  } else if (source === "table") {
-    log("updating the map");
-    // updateMapHighlight(selectedFeatures); // Update the map
-  }
-}
-return {handleSelection};
+define({id: "8f85dfa3", body: () => {
+// function updateSelection(
+//   targetSelection,
+//   newSelection,
+//   mode = "intersect",
+//   idField
+// ) {
+//   if (mode === "single") {
+//     return newSelection;
+//   } else if (mode === "union") {
+//     const newIds = new Set(newSelection.map((obj) => obj[idField]));
+//     const additional = targetSelection.filter(
+//       (obj) => !newIds.has(obj[idField])
+//     );
+//     return [...newSelection, ...additional];
+//   } else if (mode === "intersect") {
+//     const currentIds = new Set(targetSelection.map((obj) => obj[idField]));
+//     return newSelection.filter((obj) => currentIds.has(obj[idField]));
+//   } else {
+//     throw new Error("Invalid mode");
+//   }
+// }
 }});
 
-define({id: "61da8425", inputs: ["mapInstance"], outputs: ["applyMapFilter"], body: (mapInstance) => {
-// filter the map by providing IDs
-const applyMapFilter = (suitableIds) => {
-  const idValues = suitableIds.map((item) => item.id);
-
-  mapInstance.setFilteredData("buildings", {
-    ids: idValues,
-  });
-
-  return {
-    filterName: `Buildings with IDs in provided list (${idValues.length} buildings)`,
-    filterFunction: (building) => idValues.includes(building.id),
-  };
+define({id: "bbb18359", inputs: ["setInitialData"], outputs: ["filterManager"], body: (setInitialData) => {
+// Modified filterManager for cascading filtering, but without direct UI sync calls.
+// Only updates state; UI sync is handled in reactive cells
+const filterManager = {
+  lastSource: null,
+  currentIds: [],
+  filters: {
+    map: null,
+    table: null,
+  },
+  applyMapToTableFilter(idValues) {
+    this.filters.map = Array.isArray(idValues)
+      ? idValues.filter((id) => id !== undefined && id !== null)
+      : [];
+    this.lastSource = "map";
+    if (this.filters.table && this.filters.table.length > 0) {
+      this.currentIds = this.filters.map.filter((id) =>
+        this.filters.table.includes(id)
+      );
+    } else {
+      this.currentIds = [...this.filters.map];
+    }
+    setInitialData(this.currentIds.map((id) => ({ id })));
+    return true;
+  },
+  applyTableToMapFilter(idValues) {
+    this.filters.table = Array.isArray(idValues)
+      ? idValues.filter((id) => id !== undefined && id !== null)
+      : [];
+    this.lastSource = "table";
+    if (this.filters.map && this.filters.map.length > 0) {
+      this.currentIds = this.filters.table.filter((id) =>
+        this.filters.map.includes(id)
+      );
+    } else {
+      this.currentIds = [...this.filters.table];
+    }
+    setInitialData(this.currentIds.map((id) => ({ id })));
+    return true;
+  },
+  reset() {
+    this.lastSource = null;
+    this.currentIds = [];
+    this.filters.map = null;
+    this.filters.table = null;
+    setInitialData(null);
+  },
 };
-return {applyMapFilter};
+return {filterManager};
 }});
 
-define({id: "e1103ff6", mode: "inline", inputs: ["resize","drawSorterTable","data","tableColumns","tableChanged","display"], body: async (resize,drawSorterTable,data,tableColumns,tableChanged,display) => {
+define({id: "2c2847e2", inputs: ["filterManager","getInitialData","log","table"], body: (filterManager,getInitialData,log,table) => {
+// Map filter to table sync
+{
+  // This cell executes when filterManager changes or getInitialData changes
+  // log(
+  //   "This cell executes when filterManager changes or getInitialData changes: on map"
+  // );
+  filterManager;
+  getInitialData;
+
+  // Only apply table filtering when map is the source
+  if (filterManager.lastSource === "map" && filterManager.initialised) {
+    log(
+      `Syncing table with map filter (${filterManager.currentIds.length} IDs)`
+    );
+
+    // Format the IDs as objects with an id property as expected by the table
+    const formattedIds = filterManager.currentIds.map((id) => ({ id }));
+
+    log("Formatted IDs for table:", filterManager.currentIds);
+
+    // Apply filter directly to table component with proper error handling
+    try {
+      log("Applying filter to table via setFilteredDataById:", formattedIds);
+      table.setFilteredDataById(filterManager.currentIds);
+      // table.setFilteredDataById([100120819411, 100120819410, 100120819409]);
+      // const idSet = new Set(filterManager.currentIds);
+      // table.applyCustomFilter((row) => idSet.has(row.id));
+    } catch (error) {
+      log(`Error applying filter to table: ${error.message}`);
+    }
+  }
+
+  // Mark manager as initialised after first execution
+  filterManager.initialised = true;
+}
+}});
+
+define({id: "83245b03", inputs: ["filterManager","getInitialData","log","mapInstance"], body: (filterManager,getInitialData,log,mapInstance) => {
+// Table filter to map sync
+{
+  // This cell executes when filterManager changes or getInitialData changes
+  // log(
+  //   "This cell executes when filterManager changes or getInitialData changes"
+  // );
+  filterManager;
+  getInitialData;
+
+  // Only apply map filtering when table is the source
+  if (filterManager.lastSource === "table" && filterManager.initialised) {
+    log(
+      `Syncing map with table filter (${filterManager.currentIds.length} IDs)`
+    );
+
+    // Apply filter to map component
+    mapInstance.setFilteredData("buildings", { ids: filterManager.currentIds });
+  }
+}
+}});
+
+define({id: "06cf87eb", mode: "inline", inputs: ["resize","drawSorterTable","data","tableColumns","tableChanged","display"], body: async (resize,drawSorterTable,data,tableColumns,tableChanged,display) => {
 display(await(
 resize((width, height) => drawSorterTable(data, tableColumns, tableChanged, {
             width: width,
-            height: height-100,
+            height: height-80,
           })
           )
           
 ))
 }});
 
-define({id: "02ecd653", mode: "inline", inputs: ["getInitialFilter","html","display"], body: async (getInitialFilter,html,display) => {
+define({id: "ff7edcaf", mode: "inline", inputs: ["getInitialData","html","display"], body: async (getInitialData,html,display) => {
 display(await(
-getInitialFilter ? html`<p> No. of Filtered Data: ${getInitialFilter.length} </p>`: "" 
+getInitialData ? html`<p> No. of Filtered Data: ${getInitialData.length} </p>`: "" 
 ))
 }});
 
-define({id: "839bcad2", mode: "inline", inputs: ["createTimelineInterface","interventions","log","setTimelineModifications","setSelectedInterventionIndex","display"], body: async (createTimelineInterface,interventions,log,setTimelineModifications,setSelectedInterventionIndex,display) => {
+define({id: "dc99d376", mode: "inline", inputs: ["resize","createTimelineInterface","getInterventions","log","setTimelineModifications","setSelectedInterventionIndex","display"], body: async (resize,createTimelineInterface,getInterventions,log,setTimelineModifications,setSelectedInterventionIndex,display) => {
 display(await(
-createTimelineInterface(
-                interventions,
+resize((width, height) => createTimelineInterface(
+                getInterventions,
                 (change) => {
                   log("Timeline changed", change);
                   setTimelineModifications(change);
                 },
                 (click) => {
-                  setSelectedInterventionIndex(click);
-                  log("Clicked Interventions", click, interventions[click]);
+                  if (click != null) {
+                    setSelectedInterventionIndex(click);
+                    log("Clicked Interventions", click, getInterventions[click]);
+                  } else {
+                    log("No intervention selected");
+                    setSelectedInterventionIndex(null);
+                  }
                 },
-                400,
-                250
-              )
-))
-}});
-
-define({id: "c09a663e", mode: "inline", inputs: ["html","log","selectedInterventionIndex","modifyIntervention","timelineModifications","display"], body: async (html,log,selectedInterventionIndex,modifyIntervention,timelineModifications,display) => {
-display(await(
-html`<button class="btn edit tooltip" data-tooltip="Apply Modification" aria-label="Edit"
-                  onclick=${(e) => {
-                    e.stopPropagation();
-                    log("Modify intervention ", selectedInterventionIndex);
-                    modifyIntervention(selectedInterventionIndex, timelineModifications[selectedInterventionIndex]);
-                 }
-                }>
-                <i class="fas fa-edit" style="color:green;"></i>
-              </button>`
-))
-}});
-
-define({id: "5b41bfc6", mode: "inline", inputs: ["html","log","selectedInterventionIndex","manager","runModel","display"], body: async (html,log,selectedInterventionIndex,manager,runModel,display) => {
-display(await(
-html`<button class="btn erase tooltip" data-tooltip="Remove Intervention" aria-label="Delete"
-                  onclick=${(e) => {
-                    e.stopPropagation();
-                    log("Delete intervention ", selectedInterventionIndex);
-                    manager.setAutoRun(true).removeIntervention(selectedInterventionIndex);
-                    runModel();
-                 }
-                }>
-                <i class="fas fa-trash" style="color:red;"></i>
-              </button>`
-))
-}});
-
-define({id: "afef44e3", mode: "inline", inputs: ["html","reorderIntervention","manager","selectedInterventionIndex","runModel","display"], body: async (html,reorderIntervention,manager,selectedInterventionIndex,runModel,display) => {
-display(await(
-html`<button class="btn move-up tooltip" data-tooltip="Move Up" aria-label="Move Up"
-                  onclick=${(e) => {
-                    e.stopPropagation();
-                    reorderIntervention(manager.currentOrder, selectedInterventionIndex, "up");
-                    runModel();
-                }}>
-                <i class="fas fa-arrow-up"></i>
-              </button>`
-))
-}});
-
-define({id: "40ebc153", mode: "inline", inputs: ["html","log","manager","reorderIntervention","selectedInterventionIndex","runModel","display"], body: async (html,log,manager,reorderIntervention,selectedInterventionIndex,runModel,display) => {
-display(await(
-html`<button class="btn move-down tooltip" data-tooltip="Move Down" aria-label="Move Down"
-                  onclick=${(e) => {
-                    e.stopPropagation();
-                    log(manager.currentOrder);
-                    reorderIntervention(manager.currentOrder, selectedInterventionIndex, "down");
-                    runModel();
-                }}>
-                <i class="fas fa-arrow-down"></i>
-              </button>`
+                width || 800,
+                height || 300
+                ))
 ))
 }});
 
@@ -627,9 +651,9 @@ resize((width, height) => createGlyphMap(map_aggregate, width, height-80))
 ))
 }});
 
-define({id: "0ced3867", mode: "inline", inputs: ["getInitialFilter","html","display"], body: async (getInitialFilter,html,display) => {
+define({id: "5bbd6b43", mode: "inline", inputs: ["getInitialData","html","display"], body: async (getInitialData,html,display) => {
 display(await(
-getInitialFilter ? html`<i> Using ${getInitialFilter.length} Filtered Data </i>`: "" 
+getInitialData ? html`<i> Using ${getInitialData.length} Filtered Data </i>`: "" 
 ))
 }});
 
@@ -681,17 +705,36 @@ budgetVisualiser
 ))
 }});
 
-define({id: "a0b09d30", inputs: ["log"], outputs: ["openQuickviewButton","closeQuickviewButton","quickviewDefault","cancelButton"], body: (log) => {
+define({id: "5c81d5ee", inputs: ["log","selectedInterventionIndex","modifyIntervention","timelineModifications","manager","runModel","reorderIntervention","resetState"], outputs: ["openQuickviewButton","closeQuickviewButton","quickviewDefault","cancelButton","editButton","deleteButton","moveUpButton","moveDownButton","resetAllButton","mapResetButton"], body: (log,selectedInterventionIndex,modifyIntervention,timelineModifications,manager,runModel,reorderIntervention,resetState) => {
+// ------------------ Timeline buttons and events ------------------
 const openQuickviewButton = document.getElementById("openQuickviewButton");
 const closeQuickviewButton = document.getElementById("closeQuickviewButton");
 const quickviewDefault = document.getElementById("quickviewDefault");
 const cancelButton = document.getElementById("cancelButton");
 
+const editButton = document.getElementById("editButton");
+const deleteButton = document.getElementById("deleteButton");
+const moveUpButton = document.getElementById("moveUpButton");
+const moveDownButton = document.getElementById("moveDownButton");
+const resetAllButton = document.getElementById("resetAllButton");
+
+// Map reset button
+const mapResetButton = document.getElementById("mapResetButton");
+
+// Other button event listeners...
 openQuickviewButton.addEventListener("click", () => {
   quickviewDefault.classList.add("is-active");
   log("Open quickview");
 });
 
+// Add map reset button event listener
+mapResetButton.addEventListener("click", (e) => {
+  e.stopPropagation();
+  log("[MAP] Reset triggered from map");
+  // resetState();
+});
+
+// Existing event listeners...
 closeQuickviewButton.addEventListener("click", () => {
   quickviewDefault.classList.remove("is-active");
 });
@@ -699,13 +742,162 @@ closeQuickviewButton.addEventListener("click", () => {
 cancelButton.addEventListener("click", () => {
   quickviewDefault.classList.remove("is-active");
 });
-return {openQuickviewButton,closeQuickviewButton,quickviewDefault,cancelButton};
+
+editButton.addEventListener("click", (e) => {
+  if (selectedInterventionIndex !== null) {
+    // const selectedIntervention = getInterventions[selectedInterventionIndex];
+    e.stopPropagation();
+    log("[TIMELINE] Modify intervention ", selectedInterventionIndex);
+    modifyIntervention(
+      selectedInterventionIndex,
+      timelineModifications[selectedInterventionIndex]
+    );
+  } else {
+    log("No intervention selected for editing");
+  }
+});
+
+deleteButton.addEventListener("click", (e) => {
+  if (selectedInterventionIndex !== null) {
+    e.stopPropagation();
+    log("[TIMELINE] Delete intervention ", selectedInterventionIndex);
+    manager.setAutoRun(true).removeIntervention(selectedInterventionIndex);
+    runModel();
+  } else {
+    log("No intervention selected for deletion");
+  }
+});
+
+moveUpButton.addEventListener("click", (e) => {
+  if (selectedInterventionIndex !== null) {
+    e.stopPropagation();
+    log("[TIMELINE] Move intervention up ", selectedInterventionIndex);
+    reorderIntervention(manager.currentOrder, selectedInterventionIndex, "up");
+    runModel();
+  } else {
+    log("No intervention selected for moving up");
+  }
+});
+
+moveDownButton.addEventListener("click", (e) => {
+  if (selectedInterventionIndex !== null) {
+    e.stopPropagation();
+    log("[TIMELINE] Move intervention down ", selectedInterventionIndex);
+    reorderIntervention(
+      manager.currentOrder,
+      selectedInterventionIndex,
+      "down"
+    );
+    runModel();
+  } else {
+    log("No intervention selected for moving down");
+  }
+});
+
+resetAllButton.addEventListener("click", (e) => {
+  e.stopPropagation();
+  log("[TIMELINE] Reset all interventions");
+  resetState();
+});
+return {openQuickviewButton,closeQuickviewButton,quickviewDefault,cancelButton,editButton,deleteButton,moveUpButton,moveDownButton,resetAllButton,mapResetButton};
 }});
 
-define({id: "a5a36b90", inputs: ["MiniDecarbModel","data"], outputs: ["groupedData"], body: (MiniDecarbModel,data) => {
+define({id: "2df4fbd4", inputs: ["getResetRequested","log","bulmaToast","error","setResetRequested"], body: (getResetRequested,log,bulmaToast,error,setResetRequested) => {
+// Handle component resets in a reactive cell to avoid circular references
+{
+  // This cell responds to reset requests
+  getResetRequested;
+
+  if (getResetRequested) {
+    log("[RESET] Processing application state reset...");
+
+    try {
+      // // Reset the table - clear filters and restore original data
+      // if (table) {
+      //   log("[RESET] Resetting table filters");
+      //   table.resetAllFilters();
+      //   table.setData(buildingsData);
+      // }
+
+      // // Reset the map - clear filters and show all buildings
+      // if (mapInstance) {
+      //   log("[RESET] Resetting map filters");
+      //   mapInstance.clearSelection();
+      //   mapInstance.updateLayer("buildings", buildingsData);
+      // }
+
+      log("[RESET] Application state has been reset successfully");
+
+      // Display success notification
+      bulmaToast.toast({
+        message: "All filters have been reset",
+        type: "is-success",
+        position: "bottom-right",
+        duration: 3000,
+        dismissible: true,
+        animate: { in: "fadeIn", out: "fadeOut" },
+      });
+    } catch (err) {
+      error("[RESET] Error during reset:", err);
+
+      // Display error notification
+      bulmaToast.toast({
+        message: "Error resetting filters: " + err.message,
+        type: "is-danger",
+        position: "bottom-right",
+        duration: 3000,
+        dismissible: true,
+      });
+    }
+
+    // Reset the flag after processing
+    setResetRequested(false);
+  }
+}
+}});
+
+define({id: "31fe23d6", inputs: ["log","sorterTable"], outputs: ["createSorterTable"], body: (log,sorterTable) => {
+// Factory for sorterTable
+function createSorterTable(data, columns, onChange, options = {}) {
+  log("[TABLE] Creating sorterTable instance...");
+  const table = new sorterTable(data, columns, onChange);
+  if (options.width && options.height) {
+    table.setContainerSize(options);
+  }
+  return table;
+}
+return {createSorterTable};
+}});
+
+define({id: "3780423a", inputs: ["log","InterventionManager"], outputs: ["createInterventionManager"], body: (log,InterventionManager) => {
+// Factory for InterventionManager
+function createInterventionManager(data, techList) {
+  log("[INTERVENTION] Creating InterventionManager instance...");
+  return new InterventionManager(data, techList);
+}
+return {createInterventionManager};
+}});
+
+define({id: "cd52f8f5", inputs: ["log","LeafletMap"], outputs: ["createLeafletMapInstance"], body: (log,LeafletMap) => {
+// Factory for LeafletMap
+function createLeafletMapInstance(container, data, options = {}) {
+  log("[MAP] Creating LeafletMap instance...");
+  const map = new LeafletMap(container, options);
+  map.addLayer("buildings", data, {
+    clusterRadius: 50,
+    fitBounds: true,
+  });
+  map.setSelectionLayer("buildings");
+  return map;
+}
+return {createLeafletMapInstance};
+}});
+
+define({id: "a695a84a", inputs: ["startTimer","MiniDecarbModel","data","endTimer"], outputs: ["groupedData"], body: (startTimer,MiniDecarbModel,data,endTimer) => {
+startTimer("grouped_intervention");
 // display(html`<p>"Grouped Intervention"</p>`);
 const groupedData = MiniDecarbModel.group(data, ["lsoa", "interventionYear"]);
-// display(groupedData);
+endTimer("grouped_intervention");
 return {groupedData};
 }});
 
@@ -719,7 +911,8 @@ const timelineDataArray = [
 return {timelineDataArray};
 }});
 
-define({id: "f2df2422", outputs: ["transformInterventionData"], body: () => {
+define({id: "78e6b3c0", inputs: ["startTimer","endTimer"], outputs: ["transformInterventionData"], body: (startTimer,endTimer) => {
+startTimer("transform_intervention_data");
 function transformInterventionData(data, lsoaCode, fields) {
   // Get the specific LSOA data
   const lsoaData = data[lsoaCode];
@@ -759,10 +952,11 @@ function transformInterventionData(data, lsoaCode, fields) {
     return yearData;
   });
 }
+endTimer("transform_intervention_data");
 return {transformInterventionData};
 }});
 
-define({id: "e13b3221", inputs: ["getInitialFilter","buildingsData","InterventionManager"], outputs: ["listOfTech","initialData","manager"], body: (getInitialFilter,buildingsData,InterventionManager) => {
+define({id: "84d1826a", outputs: ["listOfTech"], body: () => {
 // --- Define the list of technologies ---
 const listOfTech = {
   ASHP: {
@@ -802,11 +996,28 @@ const listOfTech = {
   //   },
   // },
 };
+return {listOfTech};
+}});
 
+define({id: "5429d402", inputs: ["getInitialData","buildingsData","log","createInterventionManager","listOfTech"], outputs: ["initialData","manager"], body: (getInitialData,buildingsData,log,createInterventionManager,listOfTech) => {
 // --- Create an InterventionManager instance ---
-const initialData = getInitialFilter ? getInitialFilter : buildingsData;
-const manager = new InterventionManager(buildingsData, listOfTech);
-return {listOfTech,initialData,manager};
+// initial building data from get initial data's id if it exist
+// else use the buildingsData
+let initialData;
+if (getInitialData && getInitialData.length > 0) {
+  const initialIds = new Set(getInitialData.map((d) => d.id));
+  initialData = buildingsData.filter((b) => initialIds.has(b.id));
+} else {
+  initialData = buildingsData;
+}
+
+log(
+  "[MODEL] Running InterventionManager with initial data: ",
+  initialData.length
+);
+// const manager = new InterventionManager(initialData, listOfTech);
+const manager = createInterventionManager(initialData, listOfTech);
+return {initialData,manager};
 }});
 
 define({id: "5996edeb", inputs: ["Inputs","Event","Generators"], outputs: ["techsInput","technology"], body: (Inputs,Event,Generators) => {
@@ -1071,9 +1282,8 @@ addInterventionBtn.addEventListener("click", () => {
 return {addInterventionBtn};
 }});
 
-define({id: "7686d8a4", outputs: ["getNumericBudget"], body: () => {
+define({id: "05f22762", outputs: ["getNumericBudget"], body: () => {
 const getNumericBudget = (value) => {
-  // log("getNumericBudget", value);
   // Remove commas and parse the value as a number
   let budget = parseFloat(value.replace(/,/g, "").replace(/£/g, ""));
   // log("budget in billions", budget * 1e6);
@@ -1132,11 +1342,14 @@ define({id: "f940f2dc", inputs: ["allocator","saveToSession","getSelectedAllocat
 }
 }});
 
-define({id: "8d264773", inputs: ["log","animate","currentValue","playButton","morphFactorInput"], outputs: ["playing","direction","animationFrame"], body: (log,animate,currentValue,playButton,morphFactorInput) => {
+define({id: "d4da1c86", inputs: ["log","morphFactorInput","animate","playButton"], outputs: ["playing","direction","animationFrame","currentValue"], body: (log,morphFactorInput,animate,playButton) => {
 log(">> Morph animation logic...");
 let playing = false; // Track play/pause state
 let direction = 1; // Controls the animation direction (0 to 1 or 1 to 0)
 let animationFrame; // Stores the requestAnimationFrame ID
+// let currentValue = 0; // Current value of the morph factor
+
+let currentValue = parseFloat(morphFactorInput.value); // Initialize currentValue with the slider value
 
 // Animation loop
 animate(currentValue, animationFrame, playing, direction);
@@ -1150,16 +1363,16 @@ playButton.addEventListener("click", () => {
 
   if (playing) {
     // Start the animation with the current slider value
-    const currentValue = parseFloat(morphFactorInput.value);
+    // const currentValue = parseFloat(morph_factor);
     requestAnimationFrame(() => animate(currentValue));
   } else {
     cancelAnimationFrame(animationFrame); // Stop the animation
   }
 });
-return {playing,direction,animationFrame};
+return {playing,direction,animationFrame,currentValue};
 }});
 
-define({id: "484b16a7", inputs: ["getFromSession","log","manager","runModel"], outputs: ["addNewIntervention"], body: (getFromSession,log,manager,runModel) => {
+define({id: "ea5af3fa", inputs: ["getFromSession","log","manager","startTimer","runModel","endTimer"], outputs: ["addNewIntervention"], body: (getFromSession,log,manager,startTimer,runModel,endTimer) => {
 // Handle form submission: add new intervention
 function addNewIntervention(data) {
   // log(Date.now(), "Checking allocations now:", allocations);
@@ -1180,15 +1393,18 @@ function addNewIntervention(data) {
   manager.addIntervention(newConfig);
 
   // run the model
+  startTimer("run_model");
+  // log(">> Running the decarbonisation model...");
   runModel();
+  endTimer("run_model");
 }
 return {addNewIntervention};
 }});
 
-define({id: "d682d75a", inputs: ["log","manager","setInterventions","setResults"], outputs: ["runModel"], body: (log,manager,setInterventions,setResults) => {
+define({id: "d088e126", inputs: ["log","manager","setInterventions","setResults","resetTableAndMapSelections"], outputs: ["runModel"], body: (log,manager,setInterventions,setResults,resetTableAndMapSelections) => {
 // function to run the model
 function runModel() {
-  log(">>>> Running the decarbonisation model...");
+  log("[MODEL] Running the decarbonisation model...");
   const recaps = manager.runInterventions();
   const formatRecaps = recaps.map((r) => {
     return {
@@ -1204,8 +1420,39 @@ function runModel() {
   setInterventions(formatRecaps);
   const stackedRecap = manager.getStackedResults();
   setResults(stackedRecap);
+
+  // Reset table and map after intervention is applied
+  resetTableAndMapSelections();
 }
 return {runModel};
+}});
+
+define({id: "b67dc53d", inputs: ["log","filterManager","setInitialData"], outputs: ["resetTableAndMapSelections"], body: (log,filterManager,setInitialData) => {
+// New function to reset table and map selections without affecting interventions
+function resetTableAndMapSelections() {
+  log("[INTERVENTION] Resetting table and map selections for new intervention");
+
+  // Reset the filter manager
+  filterManager.reset();
+
+  // Reset to full dataset
+  setInitialData(null);
+
+  // // Reset the table - clear filters and restore original data
+  // if (table) {
+  //   log("[RESET] Resetting table filters");
+  //   table.resetAllFilters();
+  //   table.setData(buildingsData);
+  // }
+
+  // // Reset the map - clear filters and show all buildings
+  // if (mapInstance) {
+  //   log("[RESET] Resetting map filters");
+  //   mapInstance.clearSelection();
+  //   mapInstance.updateLayer("buildings", buildingsData);
+  // }
+}
+return {resetTableAndMapSelections};
 }});
 
 define({id: "237631f3", inputs: ["log","getInterventions","manager"], outputs: ["reorderIntervention"], body: (log,getInterventions,manager) => {
@@ -1333,20 +1580,20 @@ function updateBuildingFilter(column, value) {
 return {updateBuildingFilter};
 }});
 
-define({id: "ff8b75a9", inputs: ["createTimelineInterface","interventions","log","setSelectedInterventionIndex"], outputs: ["updateTimeline"], body: (createTimelineInterface,interventions,log,setSelectedInterventionIndex) => {
+define({id: "3079f371", inputs: ["createTimelineInterface","getInterventions","log","setSelectedInterventionIndex"], outputs: ["updateTimeline"], body: (createTimelineInterface,getInterventions,log,setSelectedInterventionIndex) => {
 // update timeline drawing
 function updateTimeline() {
   const timelinePanel = document.getElementById("timeline-panel");
   timelinePanel.innerHTML = "";
   timelinePanel.appendChild(
     createTimelineInterface(
-      interventions,
+      getInterventions,
       (change) => {
-        log("timeline change", change);
+        log("[TIMELINE] timeline change", change);
       },
       (click) => {
         setSelectedInterventionIndex(click);
-        log("timeline clicked block", interventions[click]);
+        log("[TIMELINE] timeline clicked block", getInterventions[click]);
       },
       450,
       200
@@ -1356,22 +1603,77 @@ function updateTimeline() {
 return {updateTimeline};
 }});
 
-define({id: "2ae137e9", inputs: ["interventions","selectedInterventionIndex","log","stackedRecap","buildingsData"], outputs: ["selectedIntervenedBuildings","flatData","data"], body: (interventions,selectedInterventionIndex,log,stackedRecap,buildingsData) => {
-const selectedIntervenedBuildings =
-  interventions[selectedInterventionIndex]?.intervenedBuildings;
+define({id: "5712da71", inputs: ["selectedInterventionIndex","getInterventions","log","stackedRecap","buildingsData"], outputs: ["selectedIntervenedBuildings","flatData","data"], body: (selectedInterventionIndex,getInterventions,log,stackedRecap,buildingsData) => {
+// const selectedIntervenedBuildings =
+//   selectedInterventionIndex === null
+//     ? null
+//     : Array.isArray(selectedInterventionIndex)
+//     ? selectedInterventionIndex.flatMap(
+//         (i) => getInterventions[i]?.intervenedBuildings ?? []
+//       )
+//     : getInterventions[selectedInterventionIndex]?.intervenedBuildings;
 
-const flatData = selectedIntervenedBuildings?.map((p) => ({
-  ...p,
-  ...p.properties,
-}));
+// // log(`[DATA] Selected Intervened buildings`, getInterventions[0]);
 
-log(">> Intervened buildings", flatData);
+// console.log("[DATA] Get Interventions", getInterventions[0]);
 
-const data =
-  selectedInterventionIndex === null
-    ? stackedRecap?.buildings ?? buildingsData
-    : flatData;
-// log(">> DATA DATA DATA", data);
+// const flatData = selectedIntervenedBuildings?.map((p) => ({
+//   ...p,
+//   ...p.properties,
+// }));
+
+// log("[DATA] Intervened buildings", flatData);
+
+// const data =
+//   selectedInterventionIndex === null
+//     ? stackedRecap?.buildings ?? buildingsData
+//     : flatData;
+// log("[DATA] DATA DATA DATA", data);
+
+// (getInitialData && getInitialData.length > 0)
+
+// Get intervened buildings based on selection state
+let selectedIntervenedBuildings = null;
+
+if (selectedInterventionIndex !== null) {
+  if (Array.isArray(selectedInterventionIndex)) {
+    // Multiple selections: collect buildings from all selected interventions
+    selectedIntervenedBuildings = selectedInterventionIndex.flatMap(
+      (i) => getInterventions[i]?.intervenedBuildings ?? []
+    );
+  } else {
+    // Single selection: get buildings from the selected intervention
+    selectedIntervenedBuildings =
+      getInterventions[selectedInterventionIndex]?.intervenedBuildings;
+  }
+}
+
+console.log("[DATA] Get Interventions", getInterventions[0]);
+
+// Transform buildings data when available
+let flatData = null;
+if (selectedIntervenedBuildings) {
+  flatData = selectedIntervenedBuildings.map((p) => ({
+    ...p,
+    ...p.properties,
+  }));
+}
+
+log("[DATA] Intervened buildings", selectedIntervenedBuildings?.length);
+
+// Determine which data set to use
+let data;
+if (selectedInterventionIndex === null) {
+  // No selection: use recap buildings or fall back to all buildings
+  data = stackedRecap?.buildings ?? buildingsData;
+  // data = buildingsData;
+  // } else if (getInitialData && getInitialData.length > 0) {
+  //   data = buildingsData;
+} else {
+  // Selection exists: use the transformed buildings data
+  data = flatData;
+}
+log("[DATA] DATA DATA DATA", data?.length);
 return {selectedIntervenedBuildings,flatData,data};
 }});
 
@@ -1387,9 +1689,9 @@ const stackedRecap = getResults;
 return {stackedRecap};
 }});
 
-define({id: "cb30e632", inputs: ["timeline_switch","log","glyphVariables","aggregateValues","data"], outputs: ["overall_data","glyphData"], body: (timeline_switch,log,glyphVariables,aggregateValues,data) => {
+define({id: "197bcfd0", inputs: ["timeline_switch","aggregateValues","data","glyphVariables"], outputs: ["overall_data","glyphData"], body: (timeline_switch,aggregateValues,data,glyphVariables) => {
 timeline_switch;
-log(">> Switching variables...", glyphVariables);
+// log(">> Switching variables...", glyphVariables);
 
 // aggregate and normalise data for whole LA
 const overall_data = aggregateValues(data, glyphVariables, "sum", true);
@@ -1397,7 +1699,7 @@ const glyphData = glyphVariables.map((key) => overall_data[key]);
 return {overall_data,glyphData};
 }});
 
-define({id: "3e5b4744", inputs: ["data","log"], outputs: ["excludedColumns","customOrder","tableColumns"], body: (data,log) => {
+define({id: "a6ccaba7", inputs: ["data","log"], outputs: ["excludedColumns","customOrder","tableColumns"], body: (data,log) => {
 // Table Data
 const excludedColumns = [
   // "id",
@@ -1411,9 +1713,9 @@ const excludedColumns = [
   "pv_material",
   "gshp_labour",
   "gshp_material",
-  "ashp_suitability",
-  "pv_suitability",
-  "gshp_suitability",
+  // "ashp_suitability",
+  // "pv_suitability",
+  // "gshp_suitability",
   "substation_headroom_pct",
   "substation_peakload",
   "deprivation_decile",
@@ -1435,11 +1737,11 @@ const tableColumns = [
     }),
 ];
 
-log(">> Define table columns...", tableColumns);
+log("[TABLE] Define table columns...", tableColumns);
 return {excludedColumns,customOrder,tableColumns};
 }});
 
-define({id: "4d8090b6", inputs: ["log","setInitialData","applyMapFilter","setSelectedTableRow"], outputs: ["tableChanged"], body: (log,setInitialData,applyMapFilter,setSelectedTableRow) => {
+define({id: "e01629e2", inputs: ["log","filterManager","setSelectedTableRow"], outputs: ["tableChanged"], body: (log,filterManager,setSelectedTableRow) => {
 // Table events
 function tableChanged(event) {
   log("Table changed:", event);
@@ -1447,14 +1749,14 @@ function tableChanged(event) {
   if (event.type === "filter") {
     // log("Filtered indices:", event.indeces);
     // log("Filter rule:", event.rule);
-    // saveToSession("tableFiltered", event.indeces);
     log("Filtered IDs:", event.ids);
-    setInitialData(event.ids);
-    applyMapFilter(event.ids);
-    // handleSelection("map", event.ids, "intersect");
-    // log("++Filtering Table called");
-    // setTableFiltered(event.indeces);
-    // setInitialFilter(event.indeces);
+
+    // Use the new filterState to handle filtering
+    const idValues = event.ids.map((item) => item.id);
+    filterManager.applyTableToMapFilter(idValues);
+
+    // Store the filtered data in app state
+    // setInitialData(event.ids);
   }
 
   if (event.type === "sort") {
@@ -1462,8 +1764,13 @@ function tableChanged(event) {
     log("Sort criteria:", event.sort);
   }
 
+  if (event.type === "reset") {
+    log("[TABLE] Table Reset", event);
+    // Reset everything when table reset is triggered
+    // resetState();
+  }
+
   if (event.type === "selection") {
-    // log("Selected rows:", event.selection);
     setSelectedTableRow(event.selection);
     log("Selection rule:", event.rule);
   }
@@ -1480,24 +1787,21 @@ define({id: "a3b5043f", inputs: ["log","getInitialData"], body: (log,getInitialD
 log("Initial Data Fixed: ", getInitialData);
 }});
 
-define({id: "60e996da", inputs: ["sorterTable","data","tableColumns","tableChanged"], outputs: ["table"], body: (sorterTable,data,tableColumns,tableChanged) => {
-// log(">> Create sortable table... with data", data);
-const table = new sorterTable(data, tableColumns, tableChanged, {
-  height: "300px",
-});
-return {table};
-}});
+define({id: "17cc7b4f", inputs: ["startTimer","log","data","createSorterTable","tableColumns","tableChanged","endTimer"], outputs: ["table","drawSorterTable"], body: (startTimer,log,data,createSorterTable,tableColumns,tableChanged,endTimer) => {
+startTimer("create_sorter_table");
+log("[TABLE] Create table using data", data.length);
+// const table = new sorterTable(data, tableColumns, tableChanged);
+const table = createSorterTable(data, tableColumns, tableChanged);
 
-define({id: "e8b76712", inputs: ["sorterTable"], outputs: ["drawSorterTable"], body: (sorterTable) => {
-// factory function for sorter table
 function drawSorterTable(data, columns, callback, options) {
-  const table = new sorterTable(data, columns, callback, options);
+  table.setContainerSize(options);
   return table.getNode();
 }
-return {drawSorterTable};
+endTimer("create_sorter_table");
+return {table,drawSorterTable};
 }});
 
-define({id: "85e83d36", inputs: ["log","enrichGeoData","data","regular_geodata","cartogram_geodata"], outputs: ["aggregations","regular_geodata_withproperties","cartogram_geodata_withproperties"], body: (log,enrichGeoData,data,regular_geodata,cartogram_geodata) => {
+define({id: "c7e27ec3", inputs: ["log","enrichGeoData","data","regular_geodata","cartogram_geodata"], outputs: ["aggregations","regular_geodata_withproperties","cartogram_geodata_withproperties"], body: (log,enrichGeoData,data,regular_geodata,cartogram_geodata) => {
 log(">> Geo-enrichment...");
 // geo-enrichment - combine geodata with building level properties
 
@@ -1556,7 +1860,7 @@ const regular_geodata_withproperties = enrichGeoData(
   aggregations
 );
 
-log("regular_geodata_withproperties_enriched", regular_geodata_withproperties);
+// log("regular_geodata_withproperties_enriched", regular_geodata_withproperties);
 
 const cartogram_geodata_withproperties = enrichGeoData(
   // buildingsData,
@@ -1598,9 +1902,10 @@ const cartogramGeodataLsoaWgs84 = clone;
 return {osgb,clone,cartogramGeodataLsoaWgs84};
 }});
 
-define({id: "8ebc19a3", inputs: ["log","_","regular_geodata_withproperties","turf","cartogram_geodata_withproperties"], outputs: ["keydata","regularGeodataLookup","cartogramGeodataLsoaLookup"], body: (log,_,regular_geodata_withproperties,turf,cartogram_geodata_withproperties) => {
+define({id: "35478877", inputs: ["startTimer","log","_","regular_geodata_withproperties","turf","cartogram_geodata_withproperties"], outputs: ["keydata","regularGeodataLookup","cartogramGeodataLsoaLookup"], body: (startTimer,log,_,regular_geodata_withproperties,turf,cartogram_geodata_withproperties) => {
 // Create a lookup table for the key data - geography
 // this is already aggregated by LSOA in EnrichGeoData
+startTimer("create_lookup_tables");
 log(">> Create lookup tables...");
 const keydata = _.keyBy(
   regular_geodata_withproperties.features.map((feat) => {
@@ -1612,7 +1917,7 @@ const keydata = _.keyBy(
   }),
   "code"
 );
-log(">>> Keydata", keydata);
+// log(">>> Keydata", keydata);
 
 const regularGeodataLookup = _.keyBy(
   regular_geodata_withproperties.features.map((feat) => {
@@ -1630,7 +1935,7 @@ const cartogramGeodataLsoaLookup = _.keyBy(
 return {keydata,regularGeodataLookup,cartogramGeodataLsoaLookup};
 }});
 
-define({id: "f4f0b74a", inputs: ["_","regular_geodata_withproperties","transformGeometry","turf","cartogram_geodata_withproperties"], outputs: ["geographyLsoaWgs84Lookup","cartogramLsoaWgs84Lookup"], body: (_,regular_geodata_withproperties,transformGeometry,turf,cartogram_geodata_withproperties) => {
+define({id: "ee28f5ee", inputs: ["_","regular_geodata_withproperties","transformGeometry","turf","cartogram_geodata_withproperties","endTimer"], outputs: ["geographyLsoaWgs84Lookup","cartogramLsoaWgs84Lookup"], body: (_,regular_geodata_withproperties,transformGeometry,turf,cartogram_geodata_withproperties,endTimer) => {
 const geographyLsoaWgs84Lookup = _.keyBy(
   regular_geodata_withproperties.features.map((feat) => {
     const transformedGeometry = transformGeometry(feat.geometry);
@@ -1656,10 +1961,12 @@ const cartogramLsoaWgs84Lookup = _.keyBy(
   }),
   (feat) => feat.properties.code
 );
+endTimer("create_lookup_tables"); /// DEBUG: this took 5 minutes!!
 return {geographyLsoaWgs84Lookup,cartogramLsoaWgs84Lookup};
 }});
 
-define({id: "631d166f", inputs: ["cartogramLsoaWgs84Lookup","geographyLsoaWgs84Lookup","flubber","turf","_","morph_factor"], outputs: ["flubbers","tweenWGS84Lookup"], body: (cartogramLsoaWgs84Lookup,geographyLsoaWgs84Lookup,flubber,turf,_,morph_factor) => {
+define({id: "833de033", inputs: ["startTimer","cartogramLsoaWgs84Lookup","geographyLsoaWgs84Lookup","flubber","turf","_","morph_factor","endTimer"], outputs: ["flubbers","tweenWGS84Lookup"], body: (startTimer,cartogramLsoaWgs84Lookup,geographyLsoaWgs84Lookup,flubber,turf,_,morph_factor,endTimer) => {
+startTimer("create_flubber_interpolations");
 // Flubber interpolations
 const flubbers = {};
 for (const key of Object.keys(cartogramLsoaWgs84Lookup)) {
@@ -1677,6 +1984,7 @@ const tweenWGS84Lookup = _.mapValues(flubbers, (v, k) => {
   feat.centroid = turf.getCoord(turf.centroid(feat.geometry));
   return feat;
 });
+endTimer("create_flubber_interpolations");
 return {flubbers,tweenWGS84Lookup};
 }});
 
@@ -1694,7 +2002,7 @@ function valueDiscretiser(geomLookup) {
 return {valueDiscretiser};
 }});
 
-define({id: "b9b2757a", inputs: ["log","map_aggregate","transformCoordinates","turf","regular_geodata","data","keydata","regularGeodataLookup","transformInterventionData","groupedData","timelineDataArray","aggregateValues","glyphVariables","normaliseData","d3","insideCell","RadialGlyph","glyphColours"], outputs: ["glyphMapSpec"], body: (log,map_aggregate,transformCoordinates,turf,regular_geodata,data,keydata,regularGeodataLookup,transformInterventionData,groupedData,timelineDataArray,aggregateValues,glyphVariables,normaliseData,d3,insideCell,RadialGlyph,glyphColours) => {
+define({id: "97c17d75", inputs: ["log","map_aggregate","transformCoordinates","turf","regular_geodata","data","keydata","regularGeodataLookup","transformInterventionData","groupedData","timelineDataArray","aggregateValues","glyphVariables","normaliseData","d3","insideCell","RadialGlyph","glyphColours"], outputs: ["glyphMapSpec"], body: (log,map_aggregate,transformCoordinates,turf,regular_geodata,data,keydata,regularGeodataLookup,transformInterventionData,groupedData,timelineDataArray,aggregateValues,glyphVariables,normaliseData,d3,insideCell,RadialGlyph,glyphColours) => {
 log(">> Initialize the GlyphMap Specification...");
 // log("Sample x y from Data in Glyph", [data[0].x, data[0].y]);
 function glyphMapSpec(width = 800, height = 600) {
@@ -1762,7 +2070,9 @@ function glyphMapSpec(width = 800, height = 600) {
 
         // Normalisation
         const dataArray = cells.map((cell) => cell.data);
-        const normalisedData = normaliseData(dataArray, glyphVariables);
+        const normalisedData = dataArray
+          ? normaliseData(dataArray, glyphVariables)
+          : [];
         // Map normalized data back to cells
         const normalisedCells = cells.map((cell, index) => ({
           ...cell,
@@ -1895,6 +2205,42 @@ function glyphMapSpec(width = 800, height = 600) {
 return {glyphMapSpec};
 }});
 
+define({id: "94df94b7", inputs: ["Event","playButton","morphFactorInput"], outputs: ["set","animate"], body: (Event,playButton,morphFactorInput) => {
+// set and animate needs to be in here
+
+function set(input, value) {
+  input.value = value;
+  input.dispatchEvent(new Event("input", { bubbles: true }));
+  // console.log("input value:", input.value);
+}
+
+function animate(currentValue, animationFrame, playing = false, direction = 1) {
+  // Increment or decrement the value
+  let newValue = currentValue + 0.01 * direction;
+
+  // Reverse direction if boundaries are reached
+  // if (newValue >= 1 || newValue <= 0) {
+  //   direction *= -1;
+  //   newValue = Math.max(0, Math.min(1, newValue)); // Clamp value between 0 and 1
+  // }
+  if (newValue >= 1 || newValue <= 0) {
+    newValue = Math.max(0, Math.min(1, newValue)); // Clamp value
+    playing = false; // Pause animation
+    playButton.innerHTML = '<i class="fas fa-play"></i>'; // Update button
+    cancelAnimationFrame(animationFrame);
+    return; // Stop animation loop
+  }
+
+  // Update the slider and dispatch the "input" event for reactivity
+  set(morphFactorInput, newValue);
+
+  if (playing) {
+    animationFrame = requestAnimationFrame(() => animate(newValue)); // Pass the updated value
+  }
+}
+return {set,animate};
+}});
+
 define({id: "4a6457ce", inputs: ["log","morph_factor","morphGlyphMap","valueDiscretiser","tweenWGS84Lookup","d3"], body: (log,morph_factor,morphGlyphMap,valueDiscretiser,tweenWGS84Lookup,d3) => {
 // Trigger Morphing function
 {
@@ -1985,45 +2331,62 @@ function interactiveDrawFn(mode) {
 return {interactiveDrawFn};
 }});
 
-define({id: "10050398", inputs: ["display"], body: async (display) => {
-display(await(
+define({id: "42a819d2", body: () => {
 // interactive draw function - change glyphs based on mode
-{
-  // glyphMode;
-  // decarbonisationGlyph.setGlyph({
-  //   drawFn: interactiveDrawFn(glyphMode),
-  // });
-}
-))
+// {
+// glyphMode;
+// decarbonisationGlyph.setGlyph({
+//   drawFn: interactiveDrawFn(glyphMode),
+// });
+// }
 }});
 
-define({id: "ef5ad568", inputs: ["LeafletMap","log","setInitialData","data","lsoa_boundary"], outputs: ["leafletContainer","mapInstance"], body: (LeafletMap,log,setInitialData,data,lsoa_boundary) => {
+define({id: "8eeab787", inputs: ["createLeafletMapInstance","data","log","filterManager","lsoa_boundary"], outputs: ["leafletContainer","mapInstance"], body: (createLeafletMapInstance,data,log,filterManager,lsoa_boundary) => {
 const leafletContainer = document.createElement("div");
 document.body.appendChild(leafletContainer);
 
-const mapInstance = new LeafletMap(leafletContainer, {
+const mapInstance = createLeafletMapInstance(leafletContainer, data, {
   width: "300px",
   height: "300px",
-  onSelect: (selectedFeatures) => log("Map Selected:", selectedFeatures),
+  // onSelect: (selectedFeatures) => log("Map Selected:", selectedFeatures),
   onFilter: (filteredFeatures) => {
-    const filteredIds = filteredFeatures
-      .map((feature) => ({
-        id: feature.properties?.id,
-      }))
-      .filter((obj) => obj.id !== undefined);
-    log("Map Filtered:", filteredIds);
-    setInitialData(filteredIds);
+    // Transform features to just the IDs we need, making sure we have valid IDs
+    const idValues = filteredFeatures
+      .map((feature) => feature.properties?.id)
+      .filter((id) => id !== undefined && id !== null);
 
-    // setInitialFilter(filteredFeatures);
-    //   handleSelection("table", filteredIds, "union");
+    // Log filtering event
+    log(`Map filtered: ${idValues.length} buildings`);
+
+    // Apply filter using the filter manager
+    filterManager.applyMapToTableFilter(idValues);
   },
   tooltipFormatter: (props) => `<strong>${props.id}</strong>`,
 });
 
-mapInstance.addLayer("buildings", data, {
-  clusterRadius: 50,
-  fitBounds: true,
-});
+// const mapInstance = new LeafletMap(leafletContainer, {
+//   width: "300px",
+//   height: "300px",
+//   // onSelect: (selectedFeatures) => log("Map Selected:", selectedFeatures),
+//   onFilter: (filteredFeatures) => {
+//     // Transform features to just the IDs we need, making sure we have valid IDs
+//     const idValues = filteredFeatures
+//       .map((feature) => feature.properties?.id)
+//       .filter((id) => id !== undefined && id !== null);
+
+//     // Log filtering event
+//     log(`Map filtered: ${idValues.length} buildings`);
+
+//     // Apply filter using the filter manager
+//     filterManager.applyMapToTableFilter(idValues);
+//   },
+//   tooltipFormatter: (props) => `<strong>${props.id}</strong>`,
+// });
+
+// mapInstance.addLayer("buildings", data, {
+//   clusterRadius: 50,
+//   fitBounds: true,
+// });
 
 mapInstance.setSelectionLayer("buildings");
 
@@ -2072,6 +2435,35 @@ let keysToNormalise = [
 return {yearlySummaryArray,keysToNormalise};
 }});
 
+define({id: "0812c398", inputs: ["log","setResetRequested","setInitialData","setSelectedTableRow","setSelectedInterventionIndex","filterManager","bulmaToast"], outputs: ["resetState"], body: (log,setResetRequested,setInitialData,setSelectedTableRow,setSelectedInterventionIndex,filterManager,bulmaToast) => {
+function resetState() {
+  log("[RESET] Requesting application state reset...");
+
+  // Instead of directly manipulating components, just set the reset flag
+  // and let the reactive cells handle the actual component updates
+  setResetRequested(true);
+
+  // Reset basic state variables that won't cause circular references
+  setInitialData(null);
+  setSelectedTableRow([]);
+  setSelectedInterventionIndex(null);
+
+  // Reset filter manager state
+  filterManager.reset();
+
+  // Display notification
+  bulmaToast.toast({
+    message: "Resetting all filters...",
+    type: "is-info",
+    position: "bottom-right",
+    duration: 2,
+    dismissible: true,
+    animate: { in: "fadeIn", out: "fadeOut" },
+  });
+}
+return {resetState};
+}});
+
 </script>
 <div id="observablehq-center">
 <main id="observablehq-main" class="observablehq">
@@ -2080,25 +2472,28 @@ return {yearlySummaryArray,keysToNormalise};
 <link rel="stylesheet" href="./_file/styles/bulma-quickview.min.c71603a5.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet-draw/dist/leaflet.draw.css">
-<link rel="stylesheet" href="./_file/styles/dashboard.5ef44589.css">
+<link rel="stylesheet" href="./_file/styles/dashboard.3ae13457.css">
+<link rel="icon" type="image/png" href="./_file/assets/favicon.f82dd6f9.png" sizes="32x32">
 <!-- ------------ Imports ------------ -->
-<div class="observablehq observablehq--block"><!--:fce7cf81:--></div>
-<div class="observablehq observablehq--block"><!--:3a2b2545:--></div>
+<div class="observablehq observablehq--block"><!--:270c77a4:--></div>
+<div class="observablehq observablehq--block"><!--:f8536915:--></div>
 <!-- ---------------- Loading Raw Data ---------------- -->
 <div class="observablehq observablehq--block"><!--:1e9c393a:--></div>
-<div class="observablehq observablehq--block"><!--:3e9b659f:--></div>
-<div class="observablehq observablehq--block"><!--:cc8426ed:--></div>
-<div class="observablehq observablehq--block"><!--:70826d25:--></div>
-<div class="observablehq observablehq--block"><!--:e131efc4:--></div>
+<div class="observablehq observablehq--block"><!--:9d6e6ead:--></div>
+<div class="observablehq observablehq--block"><!--:976d53b5:--></div>
+<div class="observablehq observablehq--block"><!--:7232ce26:--></div>
+<div class="observablehq observablehq--block"><!--:fcf5390f:--></div>
 <!-- ------------ Getter-Setter ------------ -->
-<div class="observablehq observablehq--block"><!--:04385e81:--></div>
-<div class="observablehq observablehq--block"><!--:e0929dac:--></div>
+<div class="observablehq observablehq--block"><!--:d04223b5:--></div>
+<div class="observablehq observablehq--block"><!--:5e2d2534:--></div>
 <div class="observablehq observablehq--block"><!--:a51d8a77:--></div>
-<!------------ HANDLE BI-DIRECTIONAL SELECTION -------------->
-<div class="observablehq observablehq--block"><!--:5126c7b7:--></div>
-<div class="observablehq observablehq--block"><!--:2475a749:--></div>
-<div class="observablehq observablehq--block"><!--:645e4258:--></div>
-<div class="observablehq observablehq--block"><!--:61da8425:--></div>
+<!------------ HANDLE BI-DIRECTIONAL TABLE-MAP SELECTION -------------->
+<div class="observablehq observablehq--block"><!--:b6e5abb8:--></div>
+<div class="observablehq observablehq--block"><!--:8855308b:--></div>
+<div class="observablehq observablehq--block"><!--:8f85dfa3:--></div>
+<div class="observablehq observablehq--block"><!--:bbb18359:--></div>
+<div class="observablehq observablehq--block"><!--:2c2847e2:--></div>
+<div class="observablehq observablehq--block"><!--:83245b03:--></div>
 <!-- ---------------- HTML Layout ---------------- -->
 <div class="grid-container" style="padding:2px; height:100vh;">
   <div id="left-panel" style="overflow-x:hidden; overflow-y:hidden; height:96vh;">
@@ -2107,7 +2502,8 @@ return {yearlySummaryArray,keysToNormalise};
           <header class="quickview-header">
             <p class="title">Table View </p>
           </header>              
-          <observablehq-loading></observablehq-loading><!--:e1103ff6:-->
+          <observablehq-loading></observablehq-loading><!--:06cf87eb:-->
+          <observablehq-loading></observablehq-loading><!--:ff7edcaf:-->
         </div>
     </div> <!-- left top -->
     <div class="left-bottom">
@@ -2117,17 +2513,27 @@ return {yearlySummaryArray,keysToNormalise};
         </header>
             <div id="graph-container">
               <div id="timeline-panel">
-                <observablehq-loading></observablehq-loading><!--:02ecd653:-->
-                <observablehq-loading></observablehq-loading><!--:839bcad2:-->
+                <observablehq-loading></observablehq-loading><!--:dc99d376:-->
               </div> <!-- timeline panel -->
               <nav id="timeline-buttons">
                 <button id="openQuickviewButton" data-show="quickview" class="btn tooltip" data-tooltip="Add New Intervention" aria-label="Add">
                   <i class="fas fa-plus"></i>
                 </button>
-                <observablehq-loading></observablehq-loading><!--:c09a663e:-->
-                <observablehq-loading></observablehq-loading><!--:5b41bfc6:-->
-              <observablehq-loading></observablehq-loading><!--:afef44e3:-->
-                <observablehq-loading></observablehq-loading><!--:40ebc153:-->
+                <button id="editButton" class="btn edit tooltip" data-tooltip="Apply Modification" aria-label="Edit">
+                  <i class="fas fa-edit" style="color:green;"></i>
+                </button>
+                <button id="deleteButton" class="btn erase tooltip" data-tooltip="Remove Intervention" aria-label="Delete">
+                  <i class="fas fa-trash" style="color:red;"></i>
+                </button>
+                <button id="moveUpButton" class="btn move-up tooltip" data-tooltip="Move Up" aria-label="Move Up">
+                  <i class="fas fa-arrow-up"></i>
+                </button>
+                <button id="moveDownButton" class="btn move-down tooltip" data-tooltip="Move Down" aria-label="Move Down">
+                  <i class="fas fa-arrow-down"></i>
+                </button>
+                <button id="resetAllButton" class="btn reset-all tooltip" data-tooltip="Start Over" aria-label="Move Down">
+                  <i class="fas fa-sync-alt"></i>
+                </button>                
               </nav>
             </div> <!-- graph container -->
       </div> <!-- card -->
@@ -2137,6 +2543,9 @@ return {yearlySummaryArray,keysToNormalise};
     <div class="card" style="overflow-x:hidden; overflow-y:hidden; height:96vh;">
       <header class="quickview-header">
         <p class="title">Map View</p>
+        <button id="mapResetButton" class="btn reset tooltip" data-tooltip="Reset Filters" style="margin-right: 10px;">
+          <i class="fas fa-sync-alt"></i>
+        </button>
       </header>
           <observablehq-loading></observablehq-loading><!--:3dea4862:-->
           <observablehq-loading></observablehq-loading><!--:96b332f9:-->
@@ -2150,11 +2559,11 @@ return {yearlySummaryArray,keysToNormalise};
 <!-------- MODAL/QVIEW -------->
 <div id="quickviewDefault" class="quickview is-left">
   <header class="quickview-header">
-    <p class="title">New Budget Allocation</p>
+    <p class="title">Create New Intervention</p>
     <span class="delete" data-dismiss="quickview" id="closeQuickviewButton"></span>
   </header>
   <div class="quickview-body">
-    <observablehq-loading></observablehq-loading><!--:0ced3867:-->
+    <observablehq-loading></observablehq-loading><!--:5bbd6b43:-->
     <div class="quickview-block">
       <form id="quickviewForm">
         <!-- Technology Selection -->
@@ -2229,12 +2638,18 @@ return {yearlySummaryArray,keysToNormalise};
     <button class="button is-success" id="addInterventionBtn">Add New Intervention</button>
   </footer>
 </div>
-<div class="observablehq observablehq--block"><!--:a0b09d30:--></div>
-<div class="observablehq observablehq--block"><!--:a5a36b90:--></div>
+<div class="observablehq observablehq--block"><!--:5c81d5ee:--></div>
+<div class="observablehq observablehq--block"><!--:2df4fbd4:--></div>
+<!------------------ INSTANTIATION  ------------------>
+<div class="observablehq observablehq--block"><!--:31fe23d6:--></div>
+<div class="observablehq observablehq--block"><!--:3780423a:--></div>
+<div class="observablehq observablehq--block"><!--:cd52f8f5:--></div>
+<div class="observablehq observablehq--block"><!--:a695a84a:--></div>
 <div class="observablehq observablehq--block"><!--:11645756:--></div>
-<div class="observablehq observablehq--block"><!--:f2df2422:--></div>
+<div class="observablehq observablehq--block"><!--:78e6b3c0:--></div>
 <!-- ---------------- Intervention Managers ---------------- -->
-<div class="observablehq observablehq--block"><!--:e13b3221:--></div>
+<div class="observablehq observablehq--block"><!--:84d1826a:--></div>
+<div class="observablehq observablehq--block"><!--:5429d402:--></div>
 <!-- ---------------- Input form declarations ---------------- -->
 <div class="observablehq observablehq--block"><!--:5996edeb:--></div>
 <div class="observablehq observablehq--block"><!--:192cbb5c:--></div>
@@ -2252,51 +2667,54 @@ return {yearlySummaryArray,keysToNormalise};
 <div class="observablehq observablehq--block"><!--:65366340:--></div>
 <div class="observablehq observablehq--block"><!--:905fa32c:--></div>
 <div class="observablehq observablehq--block"><!--:8f18da4d:--></div>
-<div class="observablehq observablehq--block"><!--:7686d8a4:--></div>
+<div class="observablehq observablehq--block"><!--:05f22762:--></div>
 <!--------------- Budget Allocator ---------------->
 <div class="observablehq observablehq--block"><!--:c88cd6e4:--></div>
 <div class="observablehq observablehq--block"><!--:e9642b6d:--></div>
 <div class="observablehq observablehq--block"><!--:38b893d7:--></div>
 <div class="observablehq observablehq--block"><!--:f940f2dc:--></div>
 <!-- morph animation logic -->
-<div class="observablehq observablehq--block"><!--:8d264773:--></div>
+<div class="observablehq observablehq--block"><!--:d4da1c86:--></div>
 <!-- ---------------- Functions ---------------- -->
 <!-- Intervention functions -->
-<div class="observablehq observablehq--block"><!--:484b16a7:--></div>
-<div class="observablehq observablehq--block"><!--:d682d75a:--></div>
+<div class="observablehq observablehq--block"><!--:ea5af3fa:--></div>
+<div class="observablehq observablehq--block"><!--:d088e126:--></div>
+<div class="observablehq observablehq--block"><!--:b67dc53d:--></div>
 <div class="observablehq observablehq--block"><!--:237631f3:--></div>
 <div class="observablehq observablehq--block"><!--:d4e9f569:--></div>
 <div class="observablehq observablehq--block"><!--:947015a3:--></div>
-<div class="observablehq observablehq--block"><!--:ff8b75a9:--></div>
+<div class="observablehq observablehq--block"><!--:3079f371:--></div>
 <!-- ----------------  D A T A  ---------------- -->
-<div class="observablehq observablehq--block"><!--:2ae137e9:--></div>
+<div class="observablehq observablehq--block"><!--:5712da71:--></div>
 <div class="observablehq observablehq--block"><!--:7f8735de:--></div>
 <div class="observablehq observablehq--block"><!--:569b625c:--></div>
-<div class="observablehq observablehq--block"><!--:cb30e632:--></div>
+<div class="observablehq observablehq--block"><!--:197bcfd0:--></div>
 <!-- ---------------- Sortable Table ---------------- -->
-<div class="observablehq observablehq--block"><!--:3e5b4744:--></div>
-<div class="observablehq observablehq--block"><!--:4d8090b6:--></div>
+<div class="observablehq observablehq--block"><!--:a6ccaba7:--></div>
+<div class="observablehq observablehq--block"><!--:e01629e2:--></div>
 <div class="observablehq observablehq--block"><!--:a3b5043f:--></div>
-<div class="observablehq observablehq--block"><!--:60e996da:--></div>
-<div class="observablehq observablehq--block"><!--:e8b76712:--></div>
+<div class="observablehq observablehq--block"><!--:17cc7b4f:--></div>
 <!-- ---------------- Glyph Maps ---------------- -->
-<div class="observablehq observablehq--block"><!--:85e83d36:--></div>
+<div class="observablehq observablehq--block"><!--:c7e27ec3:--></div>
 <div class="observablehq observablehq--block"><!--:5b197f5c:--></div>
 <div class="observablehq observablehq--block"><!--:2e58bd52:--></div>
-<div class="observablehq observablehq--block"><!--:8ebc19a3:--></div>
-<div class="observablehq observablehq--block"><!--:f4f0b74a:--></div>
-<div class="observablehq observablehq--block"><!--:631d166f:--></div>
+<div class="observablehq observablehq--block"><!--:35478877:--></div>
+<div class="observablehq observablehq--block"><!--:ee28f5ee:--></div>
+<div class="observablehq observablehq--block"><!--:833de033:--></div>
 <div class="observablehq observablehq--block"><!--:4965f46a:--></div>
-<div class="observablehq observablehq--block"><!--:b9b2757a:--></div>
+<div class="observablehq observablehq--block"><!--:97c17d75:--></div>
+<div class="observablehq observablehq--block"><!--:94df94b7:--></div>
 <div class="observablehq observablehq--block"><!--:4a6457ce:--></div>
 <div class="observablehq observablehq--block"><!--:f5493bd3:--></div>
 <div class="observablehq observablehq--block"><!--:a0e83f83:--></div>
 <div class="observablehq observablehq--block"><!--:3e88a5a7:--></div>
 <div class="observablehq observablehq--block"><!--:443fac77:--></div>
-<div class="observablehq observablehq--block"><observablehq-loading></observablehq-loading><!--:10050398:--></div>
-<div class="observablehq observablehq--block"><!--:ef5ad568:--></div>
+<div class="observablehq observablehq--block"><!--:42a819d2:--></div>
+<div class="observablehq observablehq--block"><!--:8eeab787:--></div>
 <div class="observablehq observablehq--block"><!--:3af58a4d:--></div>
 <!-- ----------------  Main Plot  ---------------- -->
 <div class="observablehq observablehq--block"><!--:8137276e:--></div>
+<!--------------- Reset everything and move on --------------->
+<div class="observablehq observablehq--block"><!--:0812c398:--></div>
 </main>
 </div>

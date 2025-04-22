@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Decarbonisation Planner | Decarbonisation Glyphmap Planner</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Source+Serif+Pro:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&amp;display=swap" crossorigin>
+<link rel="preload" as="style" href="../_observablehq/theme-air,near-midnight.css">
+<link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css2?family=Source+Serif+Pro:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&amp;display=swap" crossorigin>
+<link rel="stylesheet" type="text/css" href="../_observablehq/theme-air,near-midnight.css">
+<link rel="modulepreload" href="../_observablehq/client.js">
+<link rel="modulepreload" href="../_observablehq/runtime.js">
+<link rel="modulepreload" href="../_observablehq/stdlib.js">
+<link rel="modulepreload" href="./components/TableView.js">
+<link rel="modulepreload" href="./components/QuickviewForm.js">
+<link rel="modulepreload" href="./components/TimelineView.js">
+<link rel="modulepreload" href="./components/MapView.js">
+<link rel="modulepreload" href="./components/InterventionManager.js">
+<link rel="modulepreload" href="./utils/dataUtils.js">
+<link rel="modulepreload" href="./utils/stateUtils.js">
+<link rel="modulepreload" href="../_observablehq/stdlib/duckdb.js">
+<link rel="modulepreload" href="../_npm/@duckdb/duckdb-wasm@1.28.0/_esm.js">
+<link rel="modulepreload" href="../_npm/apache-arrow@19.0.1/_esm.js">
+<link rel="modulepreload" href="../_npm/tslib@2.8.1/_esm.js">
+<link rel="modulepreload" href="../_npm/flatbuffers@24.12.23/_esm.js">
+<link rel="icon" type="image/png" href="../_file/observable.1af93621.png" sizes="32x32">
+<script type="module">
+
+import {define} from "../_observablehq/client.js";
+import {registerFile, FileAttachment} from "../_observablehq/stdlib.js";
+import {registerTable} from "../_observablehq/stdlib/duckdb.js";
+
+registerFile("./data/oxford_decarbonisation_data.parquet", {"name":"./data/oxford_decarbonisation_data.parquet","path":"./data/oxford_decarbonisation_data.parquet"});
+registerTable("oxford", FileAttachment("./data/oxford_decarbonisation_data.parquet"));
+
+define({id: "1e9c393a", inputs: ["sql"], outputs: ["oxford_data"], body: async (sql) => {
+const oxford_data = await sql`  SELECT DISTINCT
+    "UPRN" AS id,
+    "LSOA code" AS lsoa,
+    "MSOA code" AS msoa,
+    "xcoord" AS x,
+    "ycoord" AS y,
+    "Air Source Heat Pump Potential_Building Size (m^2)" AS building_area,
+    -- "Air Source Heat Pump Potential_Garden Area (m^2)" AS garden_area,
+    "Air Source Heat Pump Potential_Overall Suitability Rating" AS ashp_suitability,
+    "Air Source Heat Pump Potential_Recommended Heat Pump Size [kW]" AS ashp_size,
+    "Low Carbon Technology Costs_Air Source Heat Pump - Labour" AS ashp_labour,
+    "Low Carbon Technology Costs_Air Source Heat Pump - Material" AS ashp_material,
+    "Low Carbon Technology Costs_Air Source Heat Pump - Total" AS ashp_total,
+    "Domestic Ground Source Heat Pump Potential_Overall Suitability Rating" AS gshp_suitability,
+    "Domestic Ground Source Heat Pump Potential_Recommended Heat Pump Size [kW]" AS gshp_size,
+    "Low Carbon Technology Costs_Ground Source Heat Pump - Labour" AS gshp_labour,
+    "Low Carbon Technology Costs_Ground Source Heat Pump - Materials" AS gshp_material,
+    "Low Carbon Technology Costs_Ground Source Heat Pump - Total" AS gshp_total,
+    "Domestic Heat Demand_Annual Heat Demand (kWh)" AS heat_demand,
+    "Domestic Insulation Potential_EPC Rating" AS EPC_rating,
+   -- "Domestic Insulation Potential_Insulation - Cavity Wall" AS insulation_cwall,
+   -- "Low Carbon Technology Costs_Insulation - Cavity Wall - Labour" AS insulation_cwall_labour,
+   -- "Low Carbon Technology Costs_Insulation - Cavity Wall  - Materials" AS insulation_cwall_materials,
+   -- "Low Carbon Technology Costs_Insulation - Cavity Wall - Total" AS insulation_cwall_total,
+   -- "Domestic Insulation Potential_Insulation - External Wall" AS insulation_ewall,
+   -- "Low Carbon Technology Costs_Insulation - External Wall - Labour" AS insulation_ewall_labour,
+   -- "Low Carbon Technology Costs_Insulation - External Wall - Material" AS insulation_ewall_materials,
+   -- "Low Carbon Technology Costs_Insulation - External Wall - Total" AS insulation_ewall_total,
+   -- "Domestic Insulation Potential_Insulation - Roof" AS insulation_roof,
+   -- "Low Carbon Technology Costs_Insulation - Loft - Labour" AS insulation_roof_labour,
+   -- "Low Carbon Technology Costs_Insulation - Loft - Material" AS insulation_roof_materials,
+   -- "Low Carbon Technology Costs_Insulation - Loft - Total" AS insulation_roof_total,
+   -- "Domestic Insulation Potential_Insulation - Under Floor" AS insulation_floor,
+   -- "Low Carbon Technology Costs_Insulation - Under Floor - Labour" AS insulation_floor_labour,
+   -- "Low Carbon Technology Costs_Insulation - Under Floor - Material" AS insulation_floor_materials,
+   -- "Low Carbon Technology Costs_Insulation - Under Floor- Total" AS insulation_floor_total,
+    "Domestic PV Potential_Overall Suitability" AS pv_suitability,
+    "Domestic PV Potential_Recommended Array Size [kW]" AS pv_size,
+    "Domestic PV Potential_Annual Generation [kWh]" AS pv_generation,
+    "Low Carbon Technology Costs_Rooftop PV - Labour" AS pv_labour,
+    "Low Carbon Technology Costs_Rooftop PV - Materials" AS pv_material,
+    "Low Carbon Technology Costs_Rooftop PV - Total" AS pv_total,
+    "Substation Name" AS substation_name,
+    "Substation - CapacityRating" AS substation_capacity_rating,
+    "Substation - Peakload" AS substation_peakload,
+    "Substation - Headroom" AS substation_headroom,
+    "Substation - % headroom" AS substation_headroom_pct,
+    "Substation - Demand_rag" AS substation_demand,
+    "index of multiple deprivation (imd) score" AS deprivation_score,
+    "index of multiple deprivation (imd) rank " AS deprivation_rank,
+    "index of multiple deprivation (imd) decile " AS deprivation_decile,
+    "Number of households in fuel poverty" AS fuel_poverty_households,
+    "Proportion of households fuel poor (%)" AS fuel_poverty_proportion
+FROM oxford b;`;
+return {oxford_data};
+}});
+
+define({id: "5c6f0cc1", inputs: ["oxford_data"], outputs: ["TableView","QuickviewForm","TimelineView","MapView","createInterventionManager","loadData","loadGeoData","initState","buildingsData","geoData","state","listOfTech","manager","runModel","interventions","timelineModifications","selectedInterventionIndex","tableFilteredData","modifyIntervention","reorderIntervention"], body: async (oxford_data) => {
+const [{TableView}, {QuickviewForm}, {TimelineView}, {MapView}, {createInterventionManager}, {loadData, loadGeoData}, {initState}] = await Promise.all([import("./components/TableView.js"), import("./components/QuickviewForm.js"), import("./components/TimelineView.js"), import("./components/MapView.js"), import("./components/InterventionManager.js"), import("./utils/dataUtils.js"), import("./utils/stateUtils.js")]);
+
+// Load data
+const { buildingsData } = await loadData(oxford_data);
+const geoData = await loadGeoData();
+
+// Initialize state
+const state = initState();
+
+// Define listOfTech
+const listOfTech = {
+  ASHP: {
+    name: "ASHP",
+    config: {
+      suitabilityKey: "ashp_suitability",
+      labourKey: "ashp_labour",
+      materialKey: "ashp_material",
+      savingsKey: "heat_demand",
+    },
+  },
+  PV: {
+    name: "PV",
+    config: {
+      suitabilityKey: "pv_suitability",
+      labourKey: "pv_labour",
+      materialKey: "pv_material",
+      savingsKey: "pv_generation",
+    },
+  },
+  GSHP: {
+    name: "GSHP",
+    config: {
+      suitabilityKey: "gshp_suitability",
+      labourKey: "gshp_labour",
+      materialKey: "gshp_material",
+      savingsKey: "gshp_size",
+    },
+  },
+};
+
+// Create intervention manager
+const manager = createInterventionManager(buildingsData, listOfTech);
+
+// Define runModel
+function runModel() {
+  const recaps = manager.runInterventions();
+  state.setInterventions(recaps);
+  state.setResults(manager.getStackedResults());
+}
+
+// Reactive state variables
+const interventions = state.getInterventions(); // Array of interventions
+const timelineModifications = state.getTimelineModifications(); // Modifications from timeline
+const selectedInterventionIndex = state.getSelectedInterventionIndex(); // Currently selected index
+
+// Compute tableFilteredData
+const tableFilteredData = state.getTableFiltered()
+  ? state
+      .getTableFiltered()
+      .map((index) => buildingsData[index])
+      .filter(Boolean)
+  : null;
+
+// Define modifyIntervention
+function modifyIntervention(index, newConfig) {
+  if (!newConfig) {
+    console.info("No change detected for intervention", index);
+    return;
+  }
+  manager.modifyIntervention(index, newConfig);
+  runModel();
+}
+
+// Define reorderIntervention
+function reorderIntervention(order, index, direction) {
+  let newOrder = [...order];
+  if (direction === "up" && index > 0) {
+    [newOrder[index - 1], newOrder[index]] = [
+      newOrder[index],
+      newOrder[index - 1],
+    ];
+  } else if (direction === "down" && index < newOrder.length - 1) {
+    [newOrder[index], newOrder[index + 1]] = [
+      newOrder[index + 1],
+      newOrder[index],
+    ];
+  }
+  manager.setInterventionOrder(newOrder);
+  runModel();
+}
+return {TableView,QuickviewForm,TimelineView,MapView,createInterventionManager,loadData,loadGeoData,initState,buildingsData,geoData,state,listOfTech,manager,runModel,interventions,timelineModifications,selectedInterventionIndex,tableFilteredData,modifyIntervention,reorderIntervention};
+}});
+
+define({id: "b859e33c", mode: "inline", inputs: ["TableView","buildingsData","state","display"], body: async (TableView,buildingsData,state,display) => {
+display(await(
+TableView(buildingsData, state)
+))
+}});
+
+define({id: "2450e36c", mode: "inline", inputs: ["TimelineView","state","manager","runModel","display"], body: async (TimelineView,state,manager,runModel,display) => {
+display(await(
+TimelineView(state, manager, runModel)
+))
+}});
+
+define({id: "956d5a97", mode: "inline", inputs: ["QuickviewForm","state","manager","runModel","tableFilteredData","display"], body: async (QuickviewForm,state,manager,runModel,tableFilteredData,display) => {
+display(await(
+QuickviewForm(state, manager, runModel, tableFilteredData)
+))
+}});
+
+</script>
+<div id="observablehq-center">
+<main id="observablehq-main" class="observablehq">
+<div class="observablehq observablehq--block"><!--:1e9c393a:--></div>
+<div class="observablehq observablehq--block"><!--:5c6f0cc1:--></div>
+<!-- Stylesheets -->
+<style> .main-top { grid-row: 1; } .main-bottom { grid-row: 2; } </style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css">
+<link rel="stylesheet" href="./styles/bulma-quickview.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">	
+<link rel="stylesheet" href="./styles/dashboard.css">
+<div class="grid-container">
+	<!-- Left Panel: Table and Timeline -->
+	<div id="left-panel">
+	<!-- Table View -->
+	<div class="left-top"> <observablehq-loading></observablehq-loading><!--:b859e33c:--> </div>
+	<!-- Timeline View -->
+	<div class="left-bottom"> <observablehq-loading></observablehq-loading><!--:2450e36c:--> </div>
+</div>
+<!-- Main Panel: Map Only -->
+<!-- <div id="main-panel"> ${MapView(buildingsData, geoData, state)} </div> -->
+</div>
+<!-- Quickview Modal -->
+<p><observablehq-loading></observablehq-loading><!--:956d5a97:--></p>
+</main>
+</div>
