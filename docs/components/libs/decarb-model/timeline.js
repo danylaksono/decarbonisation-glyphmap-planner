@@ -60,53 +60,34 @@ export function createTimelineInterface(
   // Set up maximum block height
   const maxBlockHeight = 40;
 
-  // Fixed row height for interventions
-  const rowHeight = maxBlockHeight + 5; // 5px padding
-
-  // Calculate total content height based on number of interventions
-  const contentHeight = interventions.length * rowHeight;
-
-  // Flag to determine if scrolling is needed
-  const needsScrolling = contentHeight > innerHeight;
-
-  // Visible range for scrolling
-  let scrollPosition = 0;
-  const visibleRows = Math.floor(innerHeight / rowHeight);
-
   // Create scales for x-axis (years) and y-axis (intervention rows)
   const xScale = d3
     .scaleLinear()
     .domain([minYear - 1, maxYear + 1]) // Add buffer year on each side
     .range([0, innerWidth]);
 
-  // Modified yScale to handle potentially larger range of interventions
+  // const fixedPadding = 1; // pixels between blocks
+  // const totalPaddingSpace = fixedPadding * (interventions.length - 1);
+  // const availableBlockSpace = innerHeight - totalPaddingSpace;
+  // const blockHeight = Math.min(
+  //   maxBlockHeight,
+  //   availableBlockSpace / interventions.length
+  // );
+
+  // const yScale = d3
+  //   .scaleBand()
+  //   .domain(interventions.map((_, i) => i))
+  //   .range([0, innerHeight])
+  //   .paddingInner(fixedPadding / (blockHeight + fixedPadding)) // converts pixels to ratio
+  //   .paddingOuter(0);
   const yScale = d3
-    .scalePoint()
+    .scaleBand()
     .domain(interventions.map((_, i) => i))
-    .range([0, needsScrolling ? contentHeight : innerHeight])
-    .padding(0.1);
+    .range([0, innerHeight])
+    .padding(0.01);
 
-  // Create container elements - main SVG and the scrollable area
-  const container = d3
-    .create("div")
-    .style("position", "relative")
-    .style("width", width + "px")
-    .style("height", height + "px")
-    .style("overflow", "hidden");
-
-  const svg = container
-    .append("svg")
-    .attr("width", width)
-    .attr("height", height);
-
-  // Create a clip path to ensure content doesn't render outside the visible area
-  svg
-    .append("defs")
-    .append("clipPath")
-    .attr("id", "timeline-clip")
-    .append("rect")
-    .attr("width", innerWidth)
-    .attr("height", innerHeight);
+  // Create SVG container
+  const svg = d3.create("svg").attr("width", width).attr("height", height);
 
   const tooltip = d3
     .select("body")
@@ -116,22 +97,21 @@ export function createTimelineInterface(
     .style("position", "absolute")
     .style("pointer-events", "none");
 
+  const tooltipSvg = tooltip
+    .append("svg")
+    .attr("width", 200)
+    .attr("height", 150);
+
   // Track tooltip state
   let areTooltipsEnabled = tooltipsEnabled;
-  // add variables to track multi-selection
-  let selectedIndices = [];
-  let lastClickedIndex = null;
 
   // Create main group element with margins
   const g = svg
     .append("g")
     .attr("transform", `translate(${margin.left},${margin.top})`);
 
-  // Create a clipped content group for the scrollable content
-  const contentGroup = g
-    .append("g")
-    .attr("clip-path", "url(#timeline-clip)")
-    .attr("class", "scrollable-content");
+  // Remove any existing x-axis
+  g.selectAll(".x-axis").remove();
 
   // Add x-axis with year labels
   g.append("g")
@@ -152,94 +132,126 @@ export function createTimelineInterface(
     .attr("height", innerHeight)
     .attr("fill", "transparent")
     .on("click", function () {
-      selectedIndices = [];
-      lastClickedIndex = null;
-      contentGroup.selectAll(".block").classed("highlight", false);
+      g.selectAll(".block").classed("highlight", false);
       if (onClick) {
         onClick(null); // Pass null to indicate deselection
       }
     });
 
-  // Create a scroll function to update visible elements
-  function updateScroll() {
-    // Update the transform of the content group based on scroll position
-    contentGroup.attr("transform", `translate(0, ${-scrollPosition})`);
-
-    // Update which blocks are visible
-    contentGroup.selectAll(".intervention-group").style("display", (d, i) => {
-      const yPos = yScale(i);
-      return yPos >= scrollPosition - rowHeight &&
-        yPos <= scrollPosition + innerHeight
-        ? "block"
-        : "none";
-    });
+  // Ensure style element exists before trying to modify it
+  if (svg.select("style").empty()) {
+    svg.append("style").text("");
   }
 
-  // Add scrollbar if needed
-  if (needsScrolling) {
-    const scrollbar = container
-      .append("div")
-      .style("position", "absolute")
-      .style("right", "0")
-      .style("top", margin.top + "px")
-      .style("width", "10px")
-      .style("height", innerHeight + "px")
-      .style("background", "#f0f0f0")
-      .style("border-radius", "5px");
+  // Add drag-to-select functionality
+  let selectionRect = null;
+  let selectionStart = null;
 
-    const scrollThumb = scrollbar
-      .append("div")
-      .style("position", "absolute")
-      .style("width", "8px")
-      .style("left", "1px")
-      .style("background", "#aaa")
-      .style("border-radius", "4px")
-      .style("cursor", "pointer");
+  g.on("mousedown", function (event) {
+    // Only initiate on background, not on blocks
+    if (event.target.classList.contains("block")) return;
 
-    // Calculate scrollbar thumb height and position
-    const thumbHeight = Math.max(
-      30,
-      (innerHeight / contentHeight) * innerHeight
-    );
-    scrollThumb.style("height", thumbHeight + "px").style("top", "0px");
+    // Remove existing selection rectangle if any
+    if (selectionRect) selectionRect.remove();
 
-    // Add scrolling with mouse wheel
-    container.on("wheel", function (event) {
-      event.preventDefault();
-      const delta = event.deltaY;
-      scrollPosition = Math.max(
-        0,
-        Math.min(contentHeight - innerHeight, scrollPosition + delta)
-      );
-      const thumbPos =
-        (scrollPosition / (contentHeight - innerHeight)) *
-        (innerHeight - thumbHeight);
-      scrollThumb.style("top", thumbPos + "px");
-      updateScroll();
+    // Store starting position
+    selectionStart = d3.pointer(event);
+
+    // Create new selection rectangle
+    selectionRect = g
+      .append("rect")
+      .attr("class", "selection-area")
+      .attr("x", selectionStart[0])
+      .attr("y", selectionStart[1])
+      .attr("width", 0)
+      .attr("height", 0)
+      .attr("fill", "rgba(158, 202, 225, 0.3)")
+      .attr("stroke", "rgb(107, 174, 214)")
+      .attr("stroke-width", 1);
+  })
+    .on("mousemove", function (event) {
+      // Only proceed if we have a selection rectangle
+      if (!selectionRect || !selectionStart) return;
+
+      const currentPos = d3.pointer(event);
+
+      // Calculate rectangle dimensions
+      const x = Math.min(selectionStart[0], currentPos[0]);
+      const y = Math.min(selectionStart[1], currentPos[1]);
+      const width = Math.abs(currentPos[0] - selectionStart[0]);
+      const height = Math.abs(currentPos[1] - selectionStart[1]);
+
+      // Update rectangle position and size
+      selectionRect
+        .attr("x", x)
+        .attr("y", y)
+        .attr("width", width)
+        .attr("height", height);
+    })
+    .on("mouseup", function () {
+      // Only proceed if we have a selection rectangle
+      if (!selectionRect || !selectionStart) return;
+
+      // Get the selection rectangle's bounds
+      const selectX = parseFloat(selectionRect.attr("x"));
+      const selectY = parseFloat(selectionRect.attr("y"));
+      const selectWidth = parseFloat(selectionRect.attr("width"));
+      const selectHeight = parseFloat(selectionRect.attr("height"));
+
+      // Clear any previous selection
+      g.selectAll(".block").classed("highlight", false);
+
+      // Find all blocks that intersect with the selection rectangle
+      const selectedIndexes = [];
+      g.selectAll(".block").each(function (d, i) {
+        const block = d3.select(this);
+        const blockX = parseFloat(block.attr("x"));
+        const blockY = parseFloat(block.attr("y"));
+        const blockWidth = parseFloat(block.attr("width"));
+        const blockHeight = parseFloat(block.attr("height"));
+
+        // Check for rectangle intersection
+        if (
+          blockX < selectX + selectWidth &&
+          blockX + blockWidth > selectX &&
+          blockY < selectY + selectHeight &&
+          blockY + blockHeight > selectY
+        ) {
+          // Highlight selected block
+          block.classed("highlight", true);
+          selectedIndexes.push(interventions.indexOf(d));
+        }
+      });
+
+      // Call the onClick callback with the array of selected indexes
+      if (onClick && selectedIndexes.length > 0) {
+        onClick(
+          selectedIndexes.length === 1 ? selectedIndexes[0] : selectedIndexes
+        );
+      } else if (onClick && selectedIndexes.length === 0) {
+        // If nothing was selected, pass null
+        onClick(null);
+      }
+
+      // Remove the selection rectangle
+      selectionRect.remove();
+      selectionRect = null;
+      selectionStart = null;
     });
 
-    // Add drag behavior for the scrollbar thumb
-    const thumbDrag = d3.drag().on("drag", function (event) {
-      const thumbPos = Math.max(
-        0,
-        Math.min(
-          innerHeight - thumbHeight,
-          parseFloat(scrollThumb.style("top")) + event.dy
-        )
-      );
-      scrollThumb.style("top", thumbPos + "px");
-      scrollPosition =
-        (thumbPos / (innerHeight - thumbHeight)) *
-        (contentHeight - innerHeight);
-      updateScroll();
-    });
+  // Update CSS styles for selection interaction
+  svg.select("style").text(
+    svg.select("style").text() +
+      `
+    .selection-area {
+      pointer-events: none;
+    }
+  `
+  );
 
-    scrollThumb.call(thumbDrag);
-  }
-
-  // Intervention blocks - now added to the contentGroup
-  const blocks = contentGroup
-    .selectAll(".intervention-group")
+  // Intervention blocks
+  const blocks = g
+    .selectAll(".block")
     .data(interventions)
     .enter()
     .append("g")
@@ -254,46 +266,33 @@ export function createTimelineInterface(
       if (interventions.length === 1) {
         return innerHeight / 2 - maxBlockHeight / 2; // Center vertically
       } else {
-        return yScale(i) - maxBlockHeight / 2; // Center around the scale point
+        return yScale(i);
       }
     })
     .attr(
       "width",
       (d) => xScale(d.initialYear + d.duration) - xScale(d.initialYear)
     )
-    .attr("height", maxBlockHeight)
+    .attr("height", (d, i) => Math.min(yScale.bandwidth(), maxBlockHeight))
     .attr("fill", "#3388FF")
     .on("click", function (event, d) {
-      const index = interventions.indexOf(d);
-      if (event.shiftKey && lastClickedIndex !== null) {
-        const [start, end] = [lastClickedIndex, index].sort((a, b) => a - b);
-        selectedIndices = [];
-        for (let i = start; i <= end; i++) selectedIndices.push(i);
-      } else if (event.shiftKey) {
-        if (selectedIndices.includes(index)) {
-          selectedIndices = selectedIndices.filter((i) => i !== index);
-        } else {
-          selectedIndices.push(index);
-        }
-        lastClickedIndex = index;
-      } else {
-        selectedIndices = [index];
-        lastClickedIndex = index;
-      }
-      contentGroup
-        .selectAll(".block")
-        .classed("highlight", (_, i) => selectedIndices.includes(i));
+      // Clear any existing selection
+      g.selectAll(".block").classed("highlight", false);
+
+      // Highlight the clicked block
+      d3.select(this).classed("highlight", true);
+
+      // Trigger the click callback
       if (onClick) {
-        onClick(
-          selectedIndices.length === 1
-            ? selectedIndices[0]
-            : [...selectedIndices]
-        );
+        const index = interventions.indexOf(d);
+        onClick(index);
       }
+
+      // Stop event propagation to prevent background click
       event.stopPropagation();
     });
 
-  // Update text labels positioning for the intervention blocks
+  // Add text labels to the intervention blocks
   blocks
     .append("text")
     .attr("class", "block-label")
@@ -302,16 +301,16 @@ export function createTimelineInterface(
       (d) =>
         xScale(d.initialYear) +
         (xScale(d.initialYear + d.duration) - xScale(d.initialYear)) / 2
-    )
+    ) // Center horizontally
     .attr("y", (d, i) => {
       if (interventions.length === 1) {
-        return innerHeight / 2;
+        return innerHeight / 2; // Center vertically for single intervention
       } else {
-        return yScale(i); // Center on the point
+        return yScale(i) + Math.min(yScale.bandwidth(), maxBlockHeight) / 2; // Center in block
       }
     })
-    .attr("text-anchor", "middle")
-    .attr("dominant-baseline", "middle")
+    .attr("text-anchor", "middle") // Center text horizontally
+    .attr("dominant-baseline", "middle") // Center text vertically
     .attr("fill", "white")
     .attr("pointer-events", "none")
     .text((d) => d.tech)
@@ -329,21 +328,40 @@ export function createTimelineInterface(
         textLength = this.getComputedTextLength();
       }
     });
+  // blocks
+  //   .append("text")
+  //   .attr("class", "block-label")
+  //   .attr("x", (d) => xScale(d.initialYear) + 5)
+  //   // .attr("y", (d, i) => yScale(i) + yScale.bandwidth() / 2)
+  //   .attr("y", (d, i) => {
+  //     if (interventions.length === 1) {
+  //       return innerHeight / 2; // Center vertically
+  //     } else {
+  //       return yScale(i) + yScale.bandwidth() / 2;
+  //     }
+  //   })
+  //   .attr("dy", "0.35em")
+  //   .attr("fill", "white")
+  //   .attr("pointer-events", "none")
+  //   .text((d) => d.tech)
+  //   .style("font-size", "12px");
 
-  // Update resize handles positioning
+  // Resize handles
   blocks
     .append("rect")
     .attr("class", "resize-handle")
     .attr("x", (d) => xScale(d.initialYear + d.duration) - 4)
+    // .attr("y", (d, i) => yScale(i))
     .attr("y", (d, i) => {
       if (interventions.length === 1) {
-        return innerHeight / 2 - maxBlockHeight / 2;
+        return innerHeight / 2 - maxBlockHeight / 2; // Same as the block's y position
       } else {
-        return yScale(i) - maxBlockHeight / 2;
+        return yScale(i);
       }
     })
     .attr("width", 8)
-    .attr("height", maxBlockHeight)
+    // .attr("height", yScale.bandwidth())
+    .attr("height", (d, i) => Math.min(yScale.bandwidth(), maxBlockHeight))
     .attr("fill", "transparent")
     .attr("cursor", "ew-resize");
 
@@ -356,6 +374,8 @@ export function createTimelineInterface(
     })
     .on("drag", function (event, d) {
       // Calculate new position with constraints
+      // const mouseX = event.x;
+      // const newYear = Math.round(xScale.invert(mouseX));
       const adjustedX = event.x - d.dragOffset;
       const newYear = Math.round(xScale.invert(adjustedX));
       const [minAllowedYear, maxAllowedYear] = xScale.domain();
@@ -436,14 +456,28 @@ export function createTimelineInterface(
 
   // ---------------------- TOOLTIP ---------------------- //
   function updateTooltip(d) {
-    tooltip.selectAll("*").remove();
+    tooltipSvg.selectAll("*").remove();
 
     // Add title
-    tooltip.append("div").style("font-weight", "bold").text(d.tech);
+    tooltipSvg
+      .append("text")
+      .attr("x", 10)
+      .attr("y", 20)
+      .text(d.tech)
+      .style("font-weight", "bold");
 
     // Add details
-    tooltip.append("div").text(`Start: ${d.initialYear}`);
-    tooltip.append("div").text(`Duration: ${d.duration} years`);
+    tooltipSvg
+      .append("text")
+      .attr("x", 10)
+      .attr("y", 40)
+      .text(`Start: ${d.initialYear}`);
+
+    tooltipSvg
+      .append("text")
+      .attr("x", 10)
+      .attr("y", 60)
+      .text(`Duration: ${d.duration} years`);
 
     // Add mini budget graph if budget data exists
     if (d.yearlyBudgets) {
@@ -455,16 +489,11 @@ export function createTimelineInterface(
         return value.toString();
       };
 
-      const graphMargin = { top: 10, right: 10, bottom: 20, left: 40 };
+      const graphMargin = { top: 70, right: 10, bottom: 20, left: 40 };
       const graphWidth = 180 - graphMargin.left - graphMargin.right;
       const graphHeight = 40;
 
-      const graphSvg = tooltip
-        .append("svg")
-        .attr("width", graphWidth + graphMargin.left + graphMargin.right)
-        .attr("height", graphHeight + graphMargin.top + graphMargin.bottom);
-
-      const graphG = graphSvg
+      const graphG = tooltipSvg
         .append("g")
         .attr("transform", `translate(${graphMargin.left},${graphMargin.top})`);
 
@@ -513,6 +542,16 @@ export function createTimelineInterface(
         .attr("dx", "-.8em")
         .attr("dy", ".15em")
         .attr("transform", "rotate(-45)");
+
+      // Add x-axis label
+      // graphG
+      //   .append("text")
+      //   .attr("x", graphWidth / 2)
+      //   .attr("y", graphHeight + 20)
+      //   .attr("text-anchor", "middle")
+      //   .attr("fill", "black")
+      //   .style("font-size", "10px")
+      //   .text("Year");
 
       graphG
         .append("g")
@@ -600,28 +639,8 @@ export function createTimelineInterface(
     }
   `);
 
-  // Return the container node with added methods
-  const containerNode = container.node();
-  containerNode.toggleTooltips = toggleTooltips;
-
-  // Add a method to programmatically scroll
-  containerNode.scrollTo = function (position) {
-    if (!needsScrolling) return this;
-    scrollPosition = Math.max(
-      0,
-      Math.min(contentHeight - innerHeight, position)
-    );
-    const thumbHeight = Math.max(
-      30,
-      (innerHeight / contentHeight) * innerHeight
-    );
-    const thumbPos =
-      (scrollPosition / (contentHeight - innerHeight)) *
-      (innerHeight - thumbHeight);
-    container.select("div > div").style("top", thumbPos + "px");
-    updateScroll();
-    return this;
-  };
-
-  return containerNode;
+  // Return the SVG node with added methods
+  const svgNode = svg.node();
+  svgNode.toggleTooltips = toggleTooltips;
+  return svgNode;
 }
