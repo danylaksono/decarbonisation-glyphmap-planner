@@ -1134,7 +1134,7 @@ addInterventionBtn.addEventListener("click", () => {
     rolloverBudget: 0,
     optimizationStrategy: strategy,
     tech: techs,
-    technologies: JSON.stringify(techs),
+    technologies: techs,
     priorities: [],
     filters: [],
   };
