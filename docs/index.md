@@ -415,15 +415,14 @@ const filterManager = {
     <div class="left-top">
       <div class="card" style="overflow-x:hidden;">
           <header class="quickview-header">
-            <p class="title">Table View </p>
+            <p class="title">Table & Chart View </p>
           </header>              
           ${resize((width, height) => drawSorterTable(data, tableColumns, tableChanged, {
             width: width,
-            height: height-80,
+            height: height-40,
           })
           )
           }
-          ${getInitialData ? html`<p> No. of Filtered Data: ${getInitialData.length} </p>`: "" }
         </div>
     </div> <!-- left top -->
     <div class="left-bottom">
@@ -433,6 +432,7 @@ const filterManager = {
         </header>
             <div id="graph-container">
               <div id="timeline-panel">
+              ${getInitialData ? html`<p> No. of Filtered Data: ${getInitialData.length} </p>`: "" }
                 ${resize((width, height) => createTimelineInterface(
                 getInterventions,
                 (change) => {
@@ -482,9 +482,6 @@ const filterManager = {
     <div class="card" style="overflow-x:hidden; overflow-y:hidden; height:96vh;">
       <header class="quickview-header">
         <p class="title">Map View</p>
-        <button id="mapResetButton" class="btn reset tooltip" data-tooltip="Reset Filters" style="margin-right: 10px;">
-          <i class="fas fa-sync-alt"></i>
-        </button>
       </header>
           ${mapAggregationInput}
           ${(map_aggregate === "Building Level") ? "": timelineSwitchInput}
@@ -593,7 +590,7 @@ const moveDownButton = document.getElementById("moveDownButton");
 const resetAllButton = document.getElementById("resetAllButton");
 
 // Map reset button
-const mapResetButton = document.getElementById("mapResetButton");
+// const mapResetButton = document.getElementById("mapResetButton");
 
 // Other button event listeners...
 openQuickviewButton.addEventListener("click", () => {
@@ -602,11 +599,11 @@ openQuickviewButton.addEventListener("click", () => {
 });
 
 // Add map reset button event listener
-mapResetButton.addEventListener("click", (e) => {
-  e.stopPropagation();
-  log("[MAP] Reset triggered from map");
-  // resetState();
-});
+// mapResetButton.addEventListener("click", (e) => {
+//   e.stopPropagation();
+//   log("[MAP] Reset triggered from map");
+//   // resetState();
+// });
 
 // Existing event listeners...
 closeQuickviewButton.addEventListener("click", () => {
@@ -1122,12 +1119,22 @@ const addInterventionBtn = document.getElementById("addInterventionBtn");
 addInterventionBtn.addEventListener("click", () => {
   // log("Intervention button clicked");
 
+  // check for carbon-first or tech-first
+  const OPTIMISE_ALL = "Optimise All";
+  const isOptimiseAll = techsInput.value === OPTIMISE_ALL;
+
+  const strategy = isOptimiseAll ? "carbon-first" : "tech-first";
+  const techs = isOptimiseAll
+    ? Object.keys(listOfTech).join(", ")
+    : techsInput.value;
+
   const formData = {
     id: techsInput.value + "_" + startYearInput.value.toString(),
     initialYear: Number(startYearInput.value),
     rolloverBudget: 0,
-    optimizationStrategy: "tech-first",
-    tech: techsInput.value,
+    optimizationStrategy: strategy,
+    tech: techs,
+    technologies: JSON.stringify(techs),
     priorities: [],
     filters: [],
   };
@@ -1149,7 +1156,7 @@ const getNumericBudget = (value) => {
 <!--------------- Budget Allocator ---------------->
 
 ```js
-log(">> Budget Allocator...");
+// log(">> Budget Allocator...");
 
 // Budget Allocator
 const allocator = new BudgetAllocator(
@@ -1252,10 +1259,10 @@ function addNewIntervention(data) {
   manager.addIntervention(newConfig);
 
   // run the model
-  startTimer("run_model");
+  // startTimer("run_model");
   // log(">> Running the decarbonisation model...");
   runModel();
-  endTimer("run_model");
+  // endTimer("run_model");
 }
 ```
 
@@ -1573,7 +1580,15 @@ const excludedColumns = [
   "deprivation_decile",
 ]; // columns to exclude from the table
 
-const customOrder = ["id", "lsoa", "msoa", "EPC_rating"];
+const customOrder = [
+  "id",
+  "lsoa",
+  "msoa",
+  "EPC_rating",
+  "ashp_suitability",
+  "pv_suitability",
+  "gshp_suitability",
+];
 
 const tableColumns = [
   { column: "id", unique: true },
@@ -1634,7 +1649,7 @@ function tableChanged(event) {
 //   .map((index) => table.data?.[index])
 //   .filter(Boolean);
 
-log("Initial Data Fixed: ", getInitialData);
+// log("Initial Data Fixed: ", getInitialData);
 ```
 
 ```js

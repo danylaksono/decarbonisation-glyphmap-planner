@@ -19,28 +19,52 @@ export function createTimelineInterface(
     if (typeof intervention !== "object") {
       throw new Error(`Intervention at index ${i} is not an object`);
     }
-    if (typeof intervention.tech !== "string") {
-      throw new Error(`Intervention at index ${i} is missing a 'tech' string`);
+    if (!intervention.tech && !Array.isArray(intervention.technologies)) {
+      throw new Error(
+        `Intervention at index ${i} must have a 'tech' string or a 'technologies' array`
+      );
+    }
+    if (intervention.tech && typeof intervention.tech !== "string") {
+      throw new Error(
+        `Intervention at index ${i} has an invalid 'tech': expected string`
+      );
+    }
+    if (Array.isArray(intervention.technologies)) {
+      intervention.technologies.forEach((t, j) => {
+        if (typeof t !== "string") {
+          throw new Error(
+            `Intervention at index ${i} has non-string technology at index ${j}`
+          );
+        }
+      });
     }
     if (typeof intervention.initialYear !== "number") {
       throw new Error(
-        `Intervention '${intervention.tech}' is missing an 'initialYear' number`
+        `Intervention '${
+          intervention.tech || intervention.technologies.join(", ")
+        }' is missing an 'initialYear' number`
       );
     }
     if (typeof intervention.duration !== "number") {
       throw new Error(
-        `Intervention '${intervention.tech}' is missing a 'duration' number`
+        `Intervention '${
+          intervention.tech || intervention.technologies.join(", ")
+        }' is missing a 'duration' number`
       );
     }
     if (intervention.yearlyBudgets) {
       if (!Array.isArray(intervention.yearlyBudgets)) {
         throw new Error(
-          `Intervention '${intervention.tech}' has a 'yearlyBudgets' property that is not an array`
+          `Intervention '${
+            intervention.tech || intervention.technologies.join(", ")
+          }' has a 'yearlyBudgets' property that is not an array`
         );
       }
       if (intervention.yearlyBudgets.length !== intervention.duration) {
         throw new Error(
-          `Intervention '${intervention.tech}' has a 'yearlyBudgets' array with the wrong length`
+          `Intervention '${
+            intervention.tech || intervention.technologies.join(", ")
+          }' has a 'yearlyBudgets' array with the wrong length`
         );
       }
     }
@@ -66,20 +90,6 @@ export function createTimelineInterface(
     .domain([minYear - 1, maxYear + 1]) // Add buffer year on each side
     .range([0, innerWidth]);
 
-  // const fixedPadding = 1; // pixels between blocks
-  // const totalPaddingSpace = fixedPadding * (interventions.length - 1);
-  // const availableBlockSpace = innerHeight - totalPaddingSpace;
-  // const blockHeight = Math.min(
-  //   maxBlockHeight,
-  //   availableBlockSpace / interventions.length
-  // );
-
-  // const yScale = d3
-  //   .scaleBand()
-  //   .domain(interventions.map((_, i) => i))
-  //   .range([0, innerHeight])
-  //   .paddingInner(fixedPadding / (blockHeight + fixedPadding)) // converts pixels to ratio
-  //   .paddingOuter(0);
   const yScale = d3
     .scaleBand()
     .domain(interventions.map((_, i) => i))
@@ -249,6 +259,14 @@ export function createTimelineInterface(
   `
   );
 
+  // Helper function to compute the intervention label
+  function computeTechLabel(d) {
+    return (
+      d.tech ||
+      (Array.isArray(d.technologies) ? d.technologies.join(", ") : "Unknown")
+    );
+  }
+
   // Intervention blocks
   const blocks = g
     .selectAll(".block")
@@ -313,7 +331,7 @@ export function createTimelineInterface(
     .attr("dominant-baseline", "middle") // Center text vertically
     .attr("fill", "white")
     .attr("pointer-events", "none")
-    .text((d) => d.tech)
+    .text((d) => computeTechLabel(d))
     .style("font-size", "12px")
     .each(function (d) {
       // Truncate text if too long for block width
@@ -328,30 +346,12 @@ export function createTimelineInterface(
         textLength = this.getComputedTextLength();
       }
     });
-  // blocks
-  //   .append("text")
-  //   .attr("class", "block-label")
-  //   .attr("x", (d) => xScale(d.initialYear) + 5)
-  //   // .attr("y", (d, i) => yScale(i) + yScale.bandwidth() / 2)
-  //   .attr("y", (d, i) => {
-  //     if (interventions.length === 1) {
-  //       return innerHeight / 2; // Center vertically
-  //     } else {
-  //       return yScale(i) + yScale.bandwidth() / 2;
-  //     }
-  //   })
-  //   .attr("dy", "0.35em")
-  //   .attr("fill", "white")
-  //   .attr("pointer-events", "none")
-  //   .text((d) => d.tech)
-  //   .style("font-size", "12px");
 
   // Resize handles
   blocks
     .append("rect")
     .attr("class", "resize-handle")
     .attr("x", (d) => xScale(d.initialYear + d.duration) - 4)
-    // .attr("y", (d, i) => yScale(i))
     .attr("y", (d, i) => {
       if (interventions.length === 1) {
         return innerHeight / 2 - maxBlockHeight / 2; // Same as the block's y position
@@ -360,7 +360,6 @@ export function createTimelineInterface(
       }
     })
     .attr("width", 8)
-    // .attr("height", yScale.bandwidth())
     .attr("height", (d, i) => Math.min(yScale.bandwidth(), maxBlockHeight))
     .attr("fill", "transparent")
     .attr("cursor", "ew-resize");
@@ -374,8 +373,6 @@ export function createTimelineInterface(
     })
     .on("drag", function (event, d) {
       // Calculate new position with constraints
-      // const mouseX = event.x;
-      // const newYear = Math.round(xScale.invert(mouseX));
       const adjustedX = event.x - d.dragOffset;
       const newYear = Math.round(xScale.invert(adjustedX));
       const [minAllowedYear, maxAllowedYear] = xScale.domain();
@@ -463,7 +460,7 @@ export function createTimelineInterface(
       .append("text")
       .attr("x", 10)
       .attr("y", 20)
-      .text(d.tech)
+      .text(computeTechLabel(d))
       .style("font-weight", "bold");
 
     // Add details
@@ -542,16 +539,6 @@ export function createTimelineInterface(
         .attr("dx", "-.8em")
         .attr("dy", ".15em")
         .attr("transform", "rotate(-45)");
-
-      // Add x-axis label
-      // graphG
-      //   .append("text")
-      //   .attr("x", graphWidth / 2)
-      //   .attr("y", graphHeight + 20)
-      //   .attr("text-anchor", "middle")
-      //   .attr("fill", "black")
-      //   .style("font-size", "10px")
-      //   .text("Year");
 
       graphG
         .append("g")
