@@ -1124,9 +1124,7 @@ addInterventionBtn.addEventListener("click", () => {
   const isOptimiseAll = techsInput.value === OPTIMISE_ALL;
 
   const strategy = isOptimiseAll ? "carbon-first" : "tech-first";
-  const techs = isOptimiseAll
-    ? Object.keys(listOfTech).join(", ")
-    : techsInput.value;
+  const techs = isOptimiseAll ? Object.keys(listOfTech) : techsInput.value;
 
   const formData = {
     id: techsInput.value + "_" + startYearInput.value.toString(),

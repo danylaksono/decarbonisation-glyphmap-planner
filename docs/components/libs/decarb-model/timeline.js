@@ -21,21 +21,15 @@ export function createTimelineInterface(
     }
     if (!intervention.tech && !Array.isArray(intervention.technologies)) {
       throw new Error(
-        `Intervention at index ${i} must have a 'tech' string or a 'technologies' array`
+        `Intervention at index ${i} must have a 'tech' property or a 'technologies' array`
       );
     }
     if (intervention.tech && typeof intervention.tech !== "string") {
-      throw new Error(
-        `Intervention at index ${i} has an invalid 'tech': expected string`
-      );
+      intervention.tech = String(intervention.tech);
     }
     if (Array.isArray(intervention.technologies)) {
-      intervention.technologies.forEach((t, j) => {
-        if (typeof t !== "string") {
-          throw new Error(
-            `Intervention at index ${i} has non-string technology at index ${j}`
-          );
-        }
+      intervention.technologies = intervention.technologies.map((t, j) => {
+        return typeof t !== "string" ? String(t) : t;
       });
     }
     if (typeof intervention.initialYear !== "number") {
