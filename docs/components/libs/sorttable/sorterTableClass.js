@@ -195,6 +195,113 @@ export class sorterTable {
     }
   }
 
+  /**
+   * Efficiently update the table with new data or reset to initial data
+   * @param {Array} newData - New data array to use (optional, uses initialData if not provided)
+   * @param {Object} options - Configuration options
+   * @param {boolean} [options.replaceInitial=false] - Whether to replace the initialData reference
+   * @param {boolean} [options.updateTypes=false] - Whether to reinfer column types and thresholds
+   * @param {boolean} [options.resetState=true] - Whether to reset table state (sorting, selection, etc.)
+   * @param {boolean} [options.optimizeMemory=true] - Whether to apply memory optimization for large datasets
+   * @returns {Promise} A promise that resolves when the update is complete
+   */
+  updateData(newData, options = {}) {
+    // Cancel any pending updates
+    if (this._pendingUpdate) {
+      cancelAnimationFrame(this._pendingUpdate);
+    }
+
+    // Default options
+    const defaults = {
+      replaceInitial: false,
+      updateTypes: false,
+      resetState: true,
+      optimizeMemory: true,
+    };
+
+    const settings = { ...defaults, ...options };
+
+    return new Promise((resolve) => {
+      // Schedule update for next frame for better UI responsiveness
+      this._pendingUpdate = requestAnimationFrame(() => {
+        try {
+          // Start with initial data if newData not provided
+          if (!newData) {
+            if (!this.initialData) {
+              console.warn("No initialData available to reset to.");
+              resolve(false);
+              return;
+            }
+            newData = [...this.initialData];
+            settings.resetState = true; // Force reset when using initialData
+          }
+
+          // Update data reference
+          this.data = this.preprocessData(
+            newData,
+            this.columns.map((c) => c.column)
+          );
+
+          // Update initial data reference if specified
+          if (settings.replaceInitial) {
+            this.initialData = [...newData];
+          } else if (!this.initialData) {
+            // Initialize if not already set
+            this.initialData = [...newData];
+          }
+
+          // Reset indices to show all rows
+          this.dataInd = d3.range(newData.length);
+
+          // Reset state if requested
+          if (settings.resetState) {
+            // Clear selection state
+            this.selectedRows.clear();
+            this.compoundSorting = {};
+            this.rules = [];
+            this.history = [];
+            this.selectedColumn = null;
+            this.isAggregated = false;
+
+            // Reset sort controllers
+            this.sortControllers.forEach((ctrl) => {
+              if (ctrl.getDirection() !== "none") {
+                ctrl.toggleDirection();
+              }
+            });
+          }
+
+          // Reinfer types if requested
+          if (settings.updateTypes) {
+            this.inferColumnTypesAndThresholds(this.data);
+          }
+
+          // Rebuild the table with new data
+          this.rebuildTable();
+
+          // Apply memory optimizations if requested
+          if (settings.optimizeMemory && this.data.length > 1000) {
+            this.optimizeHistogramMemory();
+          }
+
+          // Notify listeners about the data update
+          this.changed({
+            type: "dataUpdate",
+            dataSize: this.data.length,
+            resetState: settings.resetState,
+          });
+
+          this._pendingUpdate = null;
+          resolve(true);
+        } catch (error) {
+          console.error("Error updating table data:", error);
+          this._pendingUpdate = null;
+          resolve(false);
+        }
+      });
+    });
+  }
+
   preprocessData(data, columnNames) {
     return data.map((row) => {
       const processed = { ...row };
@@ -1108,44 +1215,133 @@ export class sorterTable {
     });
   }
 
-  resetTable() {
+  resetTable(useInitialData = true) {
+    // Measure performance
+    const startTime = performance.now();
+
+    // Reset aggregation state
     if (this.isAggregated && this.initialData) {
-      this.data = [...this.initialData];
+      this.data = useInitialData ? [...this.initialData] : this.data;
       this.isAggregated = false;
+    } else if (useInitialData && this.initialData) {
+      // Reset to initial data even if not aggregated
+      this.data = [...this.initialData];
     }
+
+    // Reset indices to show all rows
     this.dataInd = d3.range(this.data.length);
+
+    // Clear selection state (implemented as a batch operation for better performance)
     this.selectedRows.clear();
     this.compoundSorting = {};
     this.rules = [];
     this.history = [];
     this.selectedColumn = null;
+
+    // Reset sort controllers
     this.sortControllers.forEach((ctrl) => {
       if (ctrl.getDirection() !== "none") {
         ctrl.toggleDirection();
       }
     });
+
+    // Reset columns to initial state (deep copy to avoid reference issues)
     this.columns = this.initialColumns.map((col) => ({ ...col }));
-    this.createHeader();
-    this.createTable();
-    this.visControllers.forEach((vc, index) => {
-      if (vc && vc.updateData) {
-        const columnData = this.dataInd.map(
-          (i) => this.data[i][this.columns[index].column]
-        );
-        vc.updateData(columnData);
-      }
+
+    // Rebuild the table in one efficient operation
+    this.rebuildTable();
+
+    // Update histograms efficiently
+    this.updateHistograms();
+
+    // Apply memory optimizations for large datasets
+    if (this.data.length > 10000) {
+      this.optimizeHistogramMemory();
+    }
+
+    // Notify listeners
+    this.changed({
+      type: "reset",
+      performanceMs: performance.now() - startTime,
     });
-    this.changed({ type: "reset" });
+
     if (this._containerNode) {
-      const event = new CustomEvent("reset", { detail: { source: this } });
+      const event = new CustomEvent("reset", {
+        detail: {
+          source: this,
+          performanceMs: performance.now() - startTime,
+        },
+      });
       this._containerNode.dispatchEvent(event);
     }
+
+    return this; // Enable method chaining
+  }
+
+  updateHistograms() {
+    // Use requestAnimationFrame to schedule histogram updates for better UI responsiveness
+    if (this._pendingHistogramUpdate) {
+      cancelAnimationFrame(this._pendingHistogramUpdate);
+    }
+
+    this._pendingHistogramUpdate = requestAnimationFrame(() => {
+      const startTime = performance.now();
+
+      // Update histograms in batches to prevent UI freezing
+      const batchSize = Math.max(1, Math.ceil(this.visControllers.length / 3));
+      const updateBatch = (startIdx) => {
+        const endIdx = Math.min(
+          startIdx + batchSize,
+          this.visControllers.length
+        );
+
+        for (let i = startIdx; i < endIdx; i++) {
+          const vc = this.visControllers[i];
+          if (vc && vc.updateData) {
+            const columnName = this.columns[i].column;
+            // Extract only the data needed for this histogram
+            const columnData = this.dataInd.map(
+              (i) => this.data[i][columnName]
+            );
+            vc.updateData(columnData);
+          }
+        }
+
+        // Continue with next batch if needed
+        if (endIdx < this.visControllers.length) {
+          setTimeout(() => updateBatch(endIdx), 0);
+        } else {
+          // All batches complete
+          logDebug(
+            `Histogram updates completed in ${performance.now() - startTime}ms`
+          );
+          this._pendingHistogramUpdate = null;
+        }
+      };
+
+      // Start first batch
+      updateBatch(0);
+    });
   }
 
   resetHistogramSelections() {
     this.visControllers.forEach((vc) => {
       if (vc instanceof HistogramController) {
         vc.resetSelection();
+      }
+    });
+  }
+
+  optimizeHistogramMemory() {
+    // Limit number of bins for large datasets
+    const maxBins = Math.min(50, Math.ceil(Math.sqrt(this.data.length)));
+
+    this.visControllers.forEach((vc) => {
+      if (vc instanceof HistogramController) {
+        // Reduce precision for large datasets
+        if (this.data.length > 10000) {
+          vc.setOptions({ precision: "low", maxBins });
+        }
       }
     });
   }
@@ -2427,6 +2623,35 @@ function HistogramController(data, binrules) {
         controller.table.selectionUpdated();
       }
     };
+  };
+
+  this.setOptions = function (options = {}) {
+    this.options = { ...(this.options || {}), ...options };
+
+    // Apply precision settings
+    if (options.precision === "low") {
+      // Reduce SVG dimensions for lower memory usage
+      if (this.svg) {
+        const currentWidth = this.svg.attr("width");
+        const currentHeight = this.svg.attr("height");
+
+        if (currentWidth > 60) {
+          this.svg.attr("width", 60);
+        }
+
+        if (currentHeight > 30) {
+          this.svg.attr("height", 30);
+        }
+      }
+    }
+
+    // Apply max bins limitation if data needs to be redrawn
+    if (options.maxBins && this.bins && this.bins.length > options.maxBins) {
+      // We'll need to rebuild bins with fewer buckets on next data update
+      this._maxBins = options.maxBins;
+    }
+
+    return this;
   };
 
   this.table = null;
