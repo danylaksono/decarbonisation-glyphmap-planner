@@ -893,6 +893,35 @@ export class sorterTable {
     return index;
   }
 
+  /**
+   * Updates the visual display of all rows to match the current selection state
+   * Particularly useful when selection is made programmatically through histograms
+   */
+  updateRowSelectionDisplay() {
+    // Only proceed if the table body exists
+    if (!this.tBody) return;
+
+    // For efficient lookup
+    const selectedSet = this.selectedRows;
+
+    // Update all visible rows
+    this.tBody.querySelectorAll("tr").forEach((tr) => {
+      const dataIndex = parseInt(tr.getAttribute("data-data-index"), 10);
+
+      if (selectedSet.has(dataIndex)) {
+        // Apply selection styling
+        tr.selected = true;
+        tr.style.fontWeight = "bold";
+        tr.style.color = "black";
+      } else {
+        // Apply unselected styling
+        tr.selected = false;
+        tr.style.fontWeight = "normal";
+        tr.style.color = "grey";
+      }
+    });
+  }
+
   createHeader() {
     if (this.tHead != null) {
       this.table.removeChild(this.tHead);
@@ -2531,21 +2560,34 @@ function HistogramController(data, binrules) {
           );
 
           if (controller.table) {
+            // First, clear previous selection if not using ctrl/shift for multi-select
+            if (!event.ctrlKey && !event.shiftKey) {
+              controller.table.clearSelection();
+            }
+
             // Get the original data indices for the items in this bin
-            // d.indeces contains indices relative to the current dataInd
-            const originalDataIndices = d.indeces.map(
+            // Need to validate the indices are correct to prevent incorrect selections
+            const validBinIndices = d.indeces.filter(
+              (idx) => idx >= 0 && idx < controller.table.dataInd.length
+            );
+            const originalDataIndices = validBinIndices.map(
               (rowIndex) => controller.table.dataInd[rowIndex]
             );
 
             // Update the main table's selection set
             if (d.selected) {
-              originalDataIndices.forEach((dataIndex) =>
-                controller.table.selectedRows.add(dataIndex)
-              );
+              // Update the internal selection set
+              originalDataIndices.forEach((dataIndex) => {
+                controller.table.selectedRows.add(dataIndex);
+              });
+
+              // Also update the visual display of the rows
+              controller.table.updateRowSelectionDisplay();
             } else {
-              originalDataIndices.forEach((dataIndex) =>
-                controller.table.selectedRows.delete(dataIndex)
-              );
+              originalDataIndices.forEach((dataIndex) => {
+                controller.table.selectedRows.delete(dataIndex);
+              });
+              controller.table.updateRowSelectionDisplay();
             }
 
             // Notify the table that the selection has changed
