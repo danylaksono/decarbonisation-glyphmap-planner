@@ -741,26 +741,54 @@ export class LeafletMap {
 
   /**
    * Resets the map to its initial state
+   * Optimized for performance with large datasets
+   * @param {Object} options - Reset options
+   * @param {Array<string>} options.layerIds - Specific layer IDs to reset (all layers if not specified)
+   * @param {boolean} options.resetView - Whether to reset the map view to initial bounds (default: false)
+   * @returns {boolean} - Success status
    */
-  resetMap() {
-    // Create new Map with deep copies of the original data
-    this.geoJsonData = new Map();
+  resetMap(options = {}) {
+    const { layerIds, resetView = false } = options;
+    const layersToReset = layerIds
+      ? layerIds.filter((id) => this.layers.has(id))
+      : Array.from(this.layers.keys());
 
-    // Properly deep copy each layer's original data
-    this.originalGeoJsonData.forEach((originalData, layerId) => {
-      // Create a proper deep copy to avoid reference issues
-      const deepCopy = JSON.parse(JSON.stringify(originalData));
-      this.geoJsonData.set(layerId, deepCopy);
+    if (layersToReset.length === 0) return false;
 
-      // Recreate clusters for each layer with the original data
-      const cluster = this._initializeCluster(deepCopy.features);
+    // Structure-sharing approach - more memory efficient than deep cloning
+    layersToReset.forEach((layerId) => {
+      const originalData = this.originalGeoJsonData.get(layerId);
+      if (!originalData) return;
+
+      // Create a shallow copy of the original data
+      const resetData = {
+        type: originalData.type,
+        // Create new features array with shallow copies of each feature
+        features: originalData.features.map((feature) => ({
+          type: feature.type,
+          geometry: feature.geometry,
+          // Only clone the properties object since that's where changes occur
+          properties: { ...feature.properties },
+        })),
+      };
+
+      // Replace current data with reset data
+      this.geoJsonData.set(layerId, resetData);
+
+      // Rebuild only the clusters that need updating
+      const cluster = this._initializeCluster(resetData.features);
       this.clusters.set(layerId, cluster);
-    });
 
-    // Update all map layers
-    this.layers.forEach((layer, layerId) => {
+      // Update markers for this layer
       this._updateMarkers(layerId);
     });
+
+    // Reset map view if specified
+    if (resetView && this.dataBounds && this.dataBounds.isValid()) {
+      this.map.fitBounds(this.dataBounds, { padding: [50, 50] });
+    }
+
+    return true;
   }
 
   /**

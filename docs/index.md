@@ -1460,41 +1460,41 @@ function updateTimeline() {
 
 <!-- ----------------  D A T A  ---------------- -->
 
-```js
-const selectedIntervenedBuildings =
-  selectedInterventionIndex === null
-    ? null
-    : Array.isArray(selectedInterventionIndex)
-    ? selectedInterventionIndex.flatMap(
-        (i) => getInterventions[i]?.intervenedBuildings ?? []
-      )
-    : getInterventions[selectedInterventionIndex]?.intervenedBuildings;
-
-// log(`[DATA] Selected Intervened buildings`, getInterventions[0]);
-
-console.log("[DATA] Get Interventions", getInterventions[0]);
-
-const flatData = selectedIntervenedBuildings?.map((p) => ({
-  ...p,
-  ...p.properties,
-}));
-
-log("[DATA] Intervened buildings", flatData);
-
-// const data =
+````js
+// const selectedIntervenedBuildings =
 //   selectedInterventionIndex === null
-//     ? stackedRecap?.buildings ?? buildingsData
-//     : flatData;
-```
+//     ? null
+//     : Array.isArray(selectedInterventionIndex)
+//     ? selectedInterventionIndex.flatMap(
+//         (i) => getInterventions[i]?.intervenedBuildings ?? []
+//       )
+//     : getInterventions[selectedInterventionIndex]?.intervenedBuildings;
 
-```js
-const data = getResetRequested
-  ? buildingsData
-  : selectedInterventionIndex === null
-  ? stackedRecap?.buildings ?? buildingsData
-  : flatData;
+// // log(`[DATA] Selected Intervened buildings`, getInterventions[0]);
 
-log("[DATA] DATA DATA DATA", data);
+// console.log("[DATA] Get Interventions", getInterventions[0]);
+
+// const flatData = selectedIntervenedBuildings?.map((p) => ({
+//   ...p,
+//   ...p.properties,
+// }));
+
+// log("[DATA] Intervened buildings", flatData);
+
+// // const data =
+// //   selectedInterventionIndex === null
+// //     ? stackedRecap?.buildings ?? buildingsData
+// //     : flatData;
+// ```
+
+// ```js
+// const data = getResetRequested
+//   ? buildingsData
+//   : selectedInterventionIndex === null
+//   ? stackedRecap?.buildings ?? buildingsData
+//   : flatData;
+
+// log("[DATA] DATA DATA DATA", data);
 
 // -----------------------------------------------
 // Get intervened buildings based on selection state
@@ -1539,7 +1539,7 @@ log("[DATA] DATA DATA DATA", data);
 //   data = flatData;
 // }
 // console.log("[DATA] DATA DATA DATA", data);
-```
+````
 
 ```js
 // This updates the stored interventions
