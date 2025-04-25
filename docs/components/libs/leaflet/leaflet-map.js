@@ -41,6 +41,7 @@ export class LeafletMap {
       tooltipFormatter: null,
       onSelect: null, // Callback for when points are selected
       onFilter: null, // Callback for when points are filtered
+      onReset: null, // Callback for when the map is reset
       debug: false, // Enable debug logging
       logLevel: "info", // Log level
       logCategories: ["general", "error"], // Enabled log categories
@@ -1267,6 +1268,16 @@ export class LeafletMap {
     // Reset map view if specified
     if (resetView && this.dataBounds && this.dataBounds.isValid()) {
       this.map.fitBounds(this.dataBounds, { padding: [50, 50] });
+    }
+
+    // Trigger the onReset callback if provided
+    if (typeof this.options.onReset === "function") {
+      try {
+        this.options.onReset();
+        this.logger.debug("events", "onReset callback executed");
+      } catch (error) {
+        this.logger.error("events", "Error in onReset callback", error);
+      }
     }
 
     return true;

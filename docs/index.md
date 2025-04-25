@@ -1311,10 +1311,13 @@ function resetTableAndMapSelections() {
   setInitialData(null);
 
   // revert map and table to original data
+  table.resetTable();
+  mapInstance.resetMap();
+
   // get all buildingsData id
-  let allBuildingIds = buildingsData.map((d) => d.id);
-  mapInstance.setFilteredData("buildings", { ids: allBuildingIds });
-  table.setFilteredDataById(allBuildingIds);
+  // let allBuildingIds = buildingsData.map((d) => d.id);
+  // mapInstance.setFilteredData("buildings", { ids: allBuildingIds });
+  // table.setFilteredDataById(allBuildingIds);
 
   // mapInstance.updateLayer("buildings", stackedRecap?.buildings, {
   //   fitBounds: true, // Automatically adjust view to show all new points
@@ -1662,6 +1665,7 @@ function tableChanged(event) {
     // log("[TABLE] Table Reset", event);
     // Reset everything when table reset is triggered
     // resetState();
+    setInitialData(null);
   }
 
   if (event.type === "selection") {
@@ -2261,6 +2265,10 @@ const mapInstance = new LeafletMap(leafletContainer, {
 
     // Apply filter using the filter manager
     filterManager.applyMapToTableFilter(idValues);
+  },
+  onReset: () => {
+    console.log("Map has been reset!");
+    setInitialData(null);
   },
   tooltipFormatter: (props) => `<strong>${props.id}</strong>`,
 });
