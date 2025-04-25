@@ -1205,37 +1205,6 @@ setSelectedAllocation(allocator.getAllocations());
 }
 ```
 
-<!-- morph animation logic -->
-
-```js
-log(">> Morph animation logic...");
-let playing = false; // Track play/pause state
-let direction = 1; // Controls the animation direction (0 to 1 or 1 to 0)
-let animationFrame; // Stores the requestAnimationFrame ID
-// let currentValue = 0; // Current value of the morph factor
-
-let currentValue = parseFloat(morphFactorInput.value); // Initialize currentValue with the slider value
-
-// Animation loop
-animate(currentValue, animationFrame, playing, direction);
-
-// Button click event listener
-playButton.addEventListener("click", () => {
-  playing = !playing; // Toggle play/pause state
-  playButton.innerHTML = playing
-    ? '<i class="fas fa-pause"></i>'
-    : '<i class="fas fa-play"></i>';
-
-  if (playing) {
-    // Start the animation with the current slider value
-    // const currentValue = parseFloat(morph_factor);
-    requestAnimationFrame(() => animate(currentValue));
-  } else {
-    cancelAnimationFrame(animationFrame); // Stop the animation
-  }
-});
-```
-
 <!-- ---------------- Functions ---------------- -->
 
 <!-- Intervention functions -->
@@ -1687,7 +1656,7 @@ function tableChanged(event) {
 ```js
 // startTimer("create_sorter_table");
 // log("[TABLE] Create table using data", data.length);
-console.log("[TABLE] Creating table using data", getModelData);
+// console.log("[TABLE] Creating table using data", getModelData);
 const table = new sorterTable(getModelData, tableColumns, tableChanged);
 // const table = createSorterTable(data, tableColumns, tableChanged);
 
@@ -2097,8 +2066,7 @@ function glyphMapSpec(width = 800, height = 600) {
 ```
 
 ```js
-// set and animate needs to be in here
-
+// set and animate needs to be in here for reactivity
 function set(input, value) {
   input.value = value;
   input.dispatchEvent(new Event("input", { bubbles: true }));
@@ -2128,6 +2096,41 @@ function animate(currentValue, animationFrame, playing = false, direction = 1) {
   if (playing) {
     animationFrame = requestAnimationFrame(() => animate(newValue)); // Pass the updated value
   }
+}
+```
+
+<!-- morph animation logic -->
+
+```js
+{
+  morph_factor;
+  playing;
+  log(">> Morph animation logic...");
+  let playing = false; // Track play/pause state
+  let direction = 1; // Controls the animation direction (0 to 1 or 1 to 0)
+  let animationFrame; // Stores the requestAnimationFrame ID
+  // let currentValue = 0; // Current value of the morph factor
+
+  let currentValue = parseFloat(morphFactorInput.value); // Initialize currentValue with the slider value
+
+  // Animation loop
+  animate(currentValue, animationFrame, playing, direction);
+
+  // Button click event listener
+  playButton.addEventListener("click", () => {
+    playing = !playing; // Toggle play/pause state
+    playButton.innerHTML = playing
+      ? '<i class="fas fa-pause"></i>'
+      : '<i class="fas fa-play"></i>';
+
+    if (playing) {
+      // Start the animation with the current slider value
+      // const currentValue = parseFloat(morph_factor);
+      requestAnimationFrame(() => animate(currentValue));
+    } else {
+      cancelAnimationFrame(animationFrame); // Stop the animation
+    }
+  });
 }
 ```
 
@@ -2211,7 +2214,6 @@ function interactiveDrawFn(mode) {
   return function drawFn(cell, x, y, cellSize, ctx, global, panel) {
     if (!cell) return;
     const padding = 2;
-
     ctx.globalAlpha = 1;
   };
 }
@@ -2231,25 +2233,6 @@ function interactiveDrawFn(mode) {
 const leafletContainer = document.createElement("div");
 document.body.appendChild(leafletContainer);
 
-// const mapInstance = createLeafletMapInstance(leafletContainer, data, {
-//   width: "300px",
-//   height: "300px",
-//   // onSelect: (selectedFeatures) => log("Map Selected:", selectedFeatures),
-//   onFilter: (filteredFeatures) => {
-//     // Transform features to just the IDs we need, making sure we have valid IDs
-//     const idValues = filteredFeatures
-//       .map((feature) => feature.properties?.id)
-//       .filter((id) => id !== undefined && id !== null);
-
-//     // Log filtering event
-//     log(`Map filtered: ${idValues.length} buildings`);
-
-//     // Apply filter using the filter manager
-//     filterManager.applyMapToTableFilter(idValues);
-//   },
-//   tooltipFormatter: (props) => `<strong>${props.id}</strong>`,
-// });
-
 const mapInstance = new LeafletMap(leafletContainer, {
   width: "300px",
   height: "300px",
@@ -2261,13 +2244,13 @@ const mapInstance = new LeafletMap(leafletContainer, {
       .filter((id) => id !== undefined && id !== null);
 
     // Log filtering event
-    log(`Map filtered: ${idValues.length} buildings`);
+    // log(`Map filtered: ${idValues.length} buildings`);
 
     // Apply filter using the filter manager
     filterManager.applyMapToTableFilter(idValues);
   },
   onReset: () => {
-    console.log("Map has been reset!");
+    console.log(">> Map reset");
     setInitialData(null);
   },
   tooltipFormatter: (props) => `<strong>${props.id}</strong>`,
@@ -2307,21 +2290,21 @@ function createLeafletMap(data, width, height) {
 <!-- ----------------  Main Plot  ---------------- -->
 
 ```js
-selectedInterventionIndex;
-// Step 1: Transform recap object into an array for easier processing
-const yearlySummaryArray = stackedRecap.yearlySummary
-  ? Object.entries(stackedRecap.yearlySummary).map(([year, values]) => ({
-      year: Number(year),
-      ...values,
-    }))
-  : null;
+// selectedInterventionIndex;
+// // Step 1: Transform recap object into an array for easier processing
+// const yearlySummaryArray = stackedRecap.yearlySummary
+//   ? Object.entries(stackedRecap.yearlySummary).map(([year, values]) => ({
+//       year: Number(year),
+//       ...values,
+//     }))
+//   : null;
 
-// Step 2: Normalize the data
-let keysToNormalise = [
-  "budgetSpent",
-  "buildingsIntervened",
-  "totalCarbonSaved",
-];
+// // Step 2: Normalize the data
+// let keysToNormalise = [
+//   "budgetSpent",
+//   "buildingsIntervened",
+//   "totalCarbonSaved",
+// ];
 ```
 
 <!--------------- Reset everything and move on --------------->
