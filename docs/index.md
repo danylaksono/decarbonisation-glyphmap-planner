@@ -267,6 +267,7 @@ const [timelineModifications, setTimelineModifications] = useState([]); // list 
 
 ```js
 const [getInitialData, setInitialData] = useState(null); // INITIAL DATA
+const [getModelData, setModelData] = useState(buildingsData); // INITIAL DATA
 ```
 
 ```js
@@ -417,7 +418,7 @@ const filterManager = {
           <header class="quickview-header">
             <p class="title">Table & Chart View </p>
           </header>              
-          ${resize((width, height) => drawSorterTable(data, tableColumns, tableChanged, {
+          ${resize((width, height) => drawSorterTable({
             width: width,
             height: height-40,
           })
@@ -442,7 +443,7 @@ const filterManager = {
                 (click) => {
                   if (click != null) {
                     setSelectedInterventionIndex(click);
-                    console.log("Clicked Interventions", click, getInterventions[click]);
+                    console.log("Clicked Interventions", click, interventions[click]);
                   } else {
                     console.log("No intervention selected");
                     setSelectedInterventionIndex(null);
@@ -763,7 +764,10 @@ resetAllButton.addEventListener("click", (e) => {
 ```js
 // startTimer("grouped_intervention");
 // display(html`<p>"Grouped Intervention"</p>`);
-const groupedData = MiniDecarbModel.group(data, ["lsoa", "interventionYear"]);
+const groupedData = MiniDecarbModel.group(getModelData, [
+  "lsoa",
+  "interventionYear",
+]);
 // endTimer("grouped_intervention");
 ```
 
@@ -778,9 +782,9 @@ const timelineDataArray = [
 
 ```js
 // startTimer("transform_intervention_data");
-function transformInterventionData(data, lsoaCode, fields) {
+function transformInterventionData(getModelData, lsoaCode, fields) {
   // Get the specific LSOA data
-  const lsoaData = data[lsoaCode];
+  const lsoaData = getModelData[lsoaCode];
   if (!lsoaData?.children) {
     return [];
   }
@@ -868,6 +872,7 @@ const listOfTech = {
 // --- Create an InterventionManager instance ---
 // initial building data from get initial data's id if it exist
 // else use the buildingsData
+
 let initialData;
 if (getInitialData && getInitialData.length > 0) {
   const initialIds = new Set(getInitialData.map((d) => d.id));
@@ -876,12 +881,13 @@ if (getInitialData && getInitialData.length > 0) {
   initialData = buildingsData;
 }
 
+const manager = new InterventionManager(initialData, listOfTech);
+// const manager = createInterventionManager(initialData, listOfTech);
+
 // log(
 //   "[MODEL] Running InterventionManager with initial data: ",
 //   initialData.length
 // );
-const manager = new InterventionManager(initialData, listOfTech);
-// const manager = createInterventionManager(initialData, listOfTech);
 ```
 
 <!-- ---------------- Input form declarations ---------------- -->
@@ -1130,7 +1136,7 @@ addInterventionBtn.addEventListener("click", () => {
     rolloverBudget: 0,
     optimizationStrategy: strategy,
     tech: techs,
-    technologies: techs,
+    technologies: techs, // for optimise all
     priorities: [],
     filters: [],
   };
@@ -1249,7 +1255,7 @@ function addNewIntervention(data) {
     // priorities: [],
     yearlyBudgets: yearlyBudgets,
   };
-  // log(">> CONFIG from session", newConfig);
+  console.log(">> CONFIG from session", newConfig);
 
   // add the new intervention to the model
   manager.addIntervention(newConfig);
@@ -1279,8 +1285,14 @@ function runModel() {
 
   // store to current interventions
   setInterventions(formatRecaps);
+  // store interventions to session to avoid reactive loop
+  // saveToSession("interventions", formatRecaps);
+
   const stackedRecap = manager.getStackedResults();
   setResults(stackedRecap);
+
+  // Update map and table with new data
+  // setModelData(stackedRecap?.buildings)
 
   // Reset table and map after intervention is applied
   resetTableAndMapSelections();
@@ -1298,19 +1310,24 @@ function resetTableAndMapSelections() {
   // Reset to full dataset
   setInitialData(null);
 
-  // // Reset the table - clear filters and restore original data
-  // if (table) {
-  //   log("[RESET] Resetting table filters");
-  //   table.resetAllFilters();
-  //   table.setData(buildingsData);
-  // }
+  // revert map and table to original data
+  // get all buildingsData id
+  let allBuildingIds = buildingsData.map((d) => d.id);
+  mapInstance.setFilteredData("buildings", { ids: allBuildingIds });
+  table.setFilteredDataById(allBuildingIds);
 
-  // // Reset the map - clear filters and show all buildings
-  // if (mapInstance) {
-  //   log("[RESET] Resetting map filters");
-  //   mapInstance.clearSelection();
-  //   mapInstance.updateLayer("buildings", buildingsData);
-  // }
+  // mapInstance.updateLayer("buildings", stackedRecap?.buildings, {
+  //   fitBounds: true, // Automatically adjust view to show all new points
+  //   clusterRadius: 50, // Customize clustering parameters
+  //   maxZoom: 18,
+  // });
+
+  // table.updateData(stackedRecap?.buildings, {
+  //   replaceInitial: false, // Keep original as reset point
+  //   updateTypes: true, // Re-infer column types
+  //   resetState: true, // Clear selections/sorting
+  //   optimizeMemory: true, // Apply memory optimizations
+  // });
 }
 ```
 
@@ -1443,13 +1460,14 @@ function updateTimeline() {
   timelinePanel.innerHTML = "";
   timelinePanel.appendChild(
     createTimelineInterface(
-      getInterventions,
+      interventions,
       (change) => {
         log("[TIMELINE] timeline change", change);
       },
       (click) => {
         setSelectedInterventionIndex(click);
-        log("[TIMELINE] timeline clicked block", getInterventions[click]);
+        // setModelData(flatData);
+        console.log("[TIMELINE] timeline clicked block", interventions[click]);
       },
       450,
       200
@@ -1461,25 +1479,25 @@ function updateTimeline() {
 <!-- ----------------  D A T A  ---------------- -->
 
 ````js
-// const selectedIntervenedBuildings =
-//   selectedInterventionIndex === null
-//     ? null
-//     : Array.isArray(selectedInterventionIndex)
-//     ? selectedInterventionIndex.flatMap(
-//         (i) => getInterventions[i]?.intervenedBuildings ?? []
-//       )
-//     : getInterventions[selectedInterventionIndex]?.intervenedBuildings;
+const selectedIntervenedBuildings =
+  selectedInterventionIndex === null
+    ? null
+    : Array.isArray(selectedInterventionIndex)
+    ? selectedInterventionIndex.flatMap(
+        (i) => interventions[i]?.intervenedBuildings ?? []
+      )
+    : interventions[selectedInterventionIndex]?.intervenedBuildings;
 
-// // log(`[DATA] Selected Intervened buildings`, getInterventions[0]);
+// log(`[DATA] Selected Intervened buildings`, getInterventions[0]);
 
-// console.log("[DATA] Get Interventions", getInterventions[0]);
+console.log("[DATA] Get Interventions", interventions[0]);
 
-// const flatData = selectedIntervenedBuildings?.map((p) => ({
-//   ...p,
-//   ...p.properties,
-// }));
+const flatData = selectedIntervenedBuildings?.map((p) => ({
+  ...p,
+  ...p.properties,
+}));
 
-// log("[DATA] Intervened buildings", flatData);
+log("[DATA] Intervened buildings", flatData);
 
 // // const data =
 // //   selectedInterventionIndex === null
@@ -1544,6 +1562,9 @@ function updateTimeline() {
 ```js
 // This updates the stored interventions
 const interventions = getInterventions;
+
+// get interventions from session
+// const interventions = getFromSession("interventions");
 console.log(">> Interventions", interventions);
 ```
 
@@ -1557,7 +1578,7 @@ timeline_switch;
 // log(">> Switching variables...", glyphVariables);
 
 // aggregate and normalise data for whole LA
-const overall_data = aggregateValues(data, glyphVariables, "sum", true);
+const overall_data = aggregateValues(getModelData, glyphVariables, "sum", true);
 const glyphData = glyphVariables.map((key) => overall_data[key]);
 ```
 
@@ -1599,7 +1620,7 @@ const customOrder = [
 
 const tableColumns = [
   { column: "id", unique: true },
-  ...Object.keys(data[0])
+  ...Object.keys(getModelData[0])
     .filter((key) => !excludedColumns.includes(key) && key !== "id")
     .sort((a, b) => {
       const indexA = customOrder.indexOf(a);
@@ -1662,10 +1683,11 @@ function tableChanged(event) {
 ```js
 // startTimer("create_sorter_table");
 // log("[TABLE] Create table using data", data.length);
-const table = new sorterTable(data, tableColumns, tableChanged);
+console.log("[TABLE] Creating table using data", getModelData);
+const table = new sorterTable(getModelData, tableColumns, tableChanged);
 // const table = createSorterTable(data, tableColumns, tableChanged);
 
-function drawSorterTable(data, columns, callback, options) {
+function drawSorterTable(options) {
   table.setContainerSize(options);
   return table.getNode();
 }
@@ -1726,7 +1748,7 @@ const aggregations = {
 
 const regular_geodata_withproperties = enrichGeoData(
   // buildingsData,
-  data,
+  getModelData,
   regular_geodata,
   "lsoa",
   "code",
@@ -1737,7 +1759,7 @@ const regular_geodata_withproperties = enrichGeoData(
 
 const cartogram_geodata_withproperties = enrichGeoData(
   // buildingsData,
-  data,
+  getModelData,
   cartogram_geodata,
   "lsoa",
   "code",
@@ -1879,7 +1901,7 @@ function glyphMapSpec(width = 800, height = 600) {
     // if map_aggregate == "Building Level", use Individual data. otherwise use Aggregated data
     data:
       map_aggregate === "Building Level"
-        ? Object.values(data)
+        ? Object.values(getModelData)
         : Object.values(keydata),
     getLocationFn: (row) =>
       map_aggregate == "Building Level"
@@ -2166,7 +2188,7 @@ function createGlyphMap(map_aggregate, width, height) {
         ...glyphMapSpec(width, height),
       });
     } else {
-      return createLeafletMap(data, width, height).leafletContainer;
+      return createLeafletMap(getModelData, width, height).leafletContainer;
     }
   } else if (map_aggregate == "LSOA Level") {
     return morphGlyphMap;
@@ -2243,7 +2265,7 @@ const mapInstance = new LeafletMap(leafletContainer, {
   tooltipFormatter: (props) => `<strong>${props.id}</strong>`,
 });
 
-mapInstance.addLayer("buildings", data, {
+mapInstance.addLayer("buildings", getModelData, {
   clusterRadius: 50,
   fitBounds: true,
 });
@@ -2311,6 +2333,8 @@ function resetState() {
 
   // Reset filter manager state
   filterManager.reset();
+
+  // setModelData(buildingsData);
 
   // Display notification
   // bulmaToast.toast({
