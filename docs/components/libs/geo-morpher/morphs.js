@@ -1,60 +1,19 @@
-import * as d3 from "npm:d3";
 import _ from "npm:lodash";
 import * as turf from "@turf/turf";
 import { require } from "npm:d3-require";
 import { OSGB } from "../osgb/index.js";
 import { enrichGeoData, transformGeometry } from "../helpers.js";
-
-const d3 = require("d3", "d3-geo-projection");
-const flubber = require("flubber@0.4");
+import flubber from "flubber";
+// const d3 = require("d3", "d3-geo-projection");
+// const flubber = await require("flubber@0.4");
 
 export function geoMorpher({
+  aggregations,
   regular_geodata,
   cartogram_geodata,
   getModelData,
   morph_factor,
-  _,
 }) {
-  // define the aggregation function for each column
-  const aggregations = {
-    // "id": 200004687243,
-    isIntervened: "count",
-    interventionYear: "sum",
-    interventionCost: "sum",
-    carbonSaved: "sum",
-    numInterventions: "sum",
-    interventionTechs: "count",
-    building_area: "sum",
-    garden_area: "sum",
-    ashp_suitability: "count",
-    ashp_size: "sum",
-    ashp_labour: "sum",
-    ashp_material: "sum",
-    ashp_total: "sum",
-    gshp_suitability: "count",
-    gshp_size: "sum",
-    gshp_labour: "sum",
-    gshp_material: "sum",
-    gshp_total: "sum",
-    heat_demand: "sum",
-    pv_suitability: "count",
-    pv_size: "sum",
-    pv_generation: "sum",
-    pv_labour: "sum",
-    pv_material: "sum",
-    pv_total: "sum",
-    substation_capacity_rating: "sum",
-    substation_peakload: "sum",
-    substation_headroom: "sum",
-    substation_headroom_pct: "sum",
-    substation_demand: "count",
-    deprivation_score: "sum",
-    deprivation_rank: "sum",
-    deprivation_decile: "sum",
-    fuel_poverty_households: "sum",
-    fuel_poverty_proportion: "sum",
-  };
-
   // Enrich geodata with properties
   const regular_geodata_withproperties = enrichGeoData(
     getModelData,
@@ -162,6 +121,7 @@ export function geoMorpher({
   return {
     keydata,
     regularGeodataLookup,
+    regularGeodataLsoaWgs84,
     cartogramGeodataLsoaLookup,
     geographyLsoaWgs84Lookup,
     cartogramLsoaWgs84Lookup,

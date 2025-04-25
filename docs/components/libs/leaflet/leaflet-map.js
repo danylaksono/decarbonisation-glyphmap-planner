@@ -1026,6 +1026,12 @@ export class LeafletMap {
     });
   }
 
+  invalidateSize(force = true) {
+    if (this.map && typeof this.map.invalidateSize === "function") {
+      this.map.invalidateSize(force);
+    }
+  }
+
   destroy() {
     try {
       this.logger.info("general", "Destroying map instance");

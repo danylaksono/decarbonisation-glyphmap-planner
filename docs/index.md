@@ -20,7 +20,7 @@ sql:
 ```js
 log(">> Importing libraries...");
 const d3 = require("d3", "d3-geo-projection");
-const flubber = require("flubber@0.4");
+// const flubber = require("flubber@0.4");
 
 import { require } from "npm:d3-require";
 import { Mutable } from "npm:@observablehq/stdlib";
@@ -53,7 +53,10 @@ import {
   plotOverallTimeline,
   plotOverallPotential,
 } from "./components/libs/plots.js";
+
 import { LeafletMap } from "./components/libs/leaflet/leaflet-map.js";
+
+import { geoMorpher } from "./components/libs/geo-morpher/morphs.js";
 
 // import { animate } from "./components/libs/utils.js";
 import {
@@ -1670,9 +1673,6 @@ function drawSorterTable(options) {
 <!-- ---------------- Glyph Maps ---------------- -->
 
 ```js
-// log(">> Geo-enrichment...");
-// geo-enrichment - combine geodata with building level properties
-
 // define the aggregation function for each column
 const aggregations = {
   // "id": 200004687243,
@@ -1719,135 +1719,21 @@ const aggregations = {
   fuel_poverty_proportion: "sum",
 };
 
-const regular_geodata_withproperties = enrichGeoData(
-  // buildingsData,
-  getModelData,
+const {
+  keydata,
+  regularGeodataLookup,
+  regularGeodataLsoaWgs84,
+  cartogramGeodataLsoaLookup,
+  geographyLsoaWgs84Lookup,
+  cartogramLsoaWgs84Lookup,
+  tweenWGS84Lookup,
+} = geoMorpher({
+  aggregations,
   regular_geodata,
-  "lsoa",
-  "code",
-  aggregations
-);
-
-// log("regular_geodata_withproperties_enriched", regular_geodata_withproperties);
-
-const cartogram_geodata_withproperties = enrichGeoData(
-  // buildingsData,
-  getModelData,
   cartogram_geodata,
-  "lsoa",
-  "code",
-  aggregations
-);
-```
-
-```js
-// Data processing functions
-// log(">> Data processing functions: Regular LSOA...");
-const osgb = new OSGB();
-let clone = turf.clone(regular_geodata);
-turf.coordEach(clone, (currentCoord) => {
-  const newCoord = osgb.toGeo(currentCoord);
-  currentCoord[0] = newCoord[0];
-  currentCoord[1] = newCoord[1];
+  getModelData,
+  morph_factor,
 });
-const regularGeodataLsoaWgs84 = clone;
-```
-
-```js
-// Data processing functions
-// log(">> Data processing functions: Cartogram LSOA...");
-const osgb = new OSGB();
-let clone = turf.clone(cartogram_geodata);
-turf.coordEach(clone, (currentCoord) => {
-  const newCoord = osgb.toGeo(currentCoord);
-  currentCoord[0] = newCoord[0];
-  currentCoord[1] = newCoord[1];
-});
-const cartogramGeodataLsoaWgs84 = clone;
-// display(cartogramLsoaWgs84());
-```
-
-```js
-// Create a lookup table for the key data - geography
-// this is already aggregated by LSOA in EnrichGeoData
-// startTimer("create_lookup_tables");
-// log(">> Create lookup tables...");
-const keydata = _.keyBy(
-  regular_geodata_withproperties.features.map((feat) => {
-    return {
-      code: feat.properties.code,
-      population: +feat.properties.population,
-      data: feat,
-    };
-  }),
-  "code"
-);
-// log(">>> Keydata", keydata);
-
-const regularGeodataLookup = _.keyBy(
-  regular_geodata_withproperties.features.map((feat) => {
-    return { ...feat, centroid: turf.getCoord(turf.centroid(feat.geometry)) };
-  }),
-  (feat) => feat.properties.code
-);
-
-const cartogramGeodataLsoaLookup = _.keyBy(
-  cartogram_geodata_withproperties.features.map((feat) => {
-    return { ...feat, centroid: turf.getCoord(turf.centroid(feat.geometry)) };
-  }),
-  (feat) => feat.properties.code
-);
-```
-
-```js
-const geographyLsoaWgs84Lookup = _.keyBy(
-  regular_geodata_withproperties.features.map((feat) => {
-    const transformedGeometry = transformGeometry(feat.geometry);
-    const centroid = turf.getCoord(turf.centroid(transformedGeometry));
-    return {
-      ...feat,
-      geometry: transformedGeometry,
-      centroid: centroid,
-    };
-  }),
-  (feat) => feat.properties.code
-);
-
-const cartogramLsoaWgs84Lookup = _.keyBy(
-  cartogram_geodata_withproperties.features.map((feat) => {
-    const transformedGeometry = transformGeometry(feat.geometry);
-    const centroid = turf.getCoord(turf.centroid(transformedGeometry));
-    return {
-      ...feat,
-      geometry: transformedGeometry,
-      centroid: centroid,
-    };
-  }),
-  (feat) => feat.properties.code
-);
-// endTimer("create_lookup_tables"); /// DEBUG: this took 5 minutes!!
-```
-
-```js
-// startTimer("create_flubber_interpolations");
-// Flubber interpolations
-const flubbers = {};
-for (const key of Object.keys(cartogramLsoaWgs84Lookup)) {
-  if (geographyLsoaWgs84Lookup[key] && cartogramLsoaWgs84Lookup[key]) {
-    flubbers[key] = flubber.interpolate(
-      turf.getCoords(geographyLsoaWgs84Lookup[key])[0],
-      turf.getCoords(cartogramLsoaWgs84Lookup[key])[0],
-      { string: false }
-    );
-  }
-}
-
-const tweenWGS84Lookup = _.mapValues(flubbers, (v, k) => {
-  const feat = turf.multiLineString([v(morph_factor)], { code: k });
-  feat.centroid = turf.getCoord(turf.centroid(feat.geometry));
-  return feat;
-});
-// endTimer("create_flubber_interpolations");
 ```
 
 ```js
@@ -2273,6 +2159,17 @@ mapInstance.addGeoJSONLayer("LSOA Boundary", lsoa_boundary, {
     layer.bindPopup(feature.properties.LSOA21NM);
   },
 });
+
+if (leafletContainer && mapInstance && mapInstance.map) {
+  const resizeObserver = new ResizeObserver((entries) => {
+    for (let entry of entries) {
+      if (entry.target === leafletContainer) {
+        mapInstance.invalidateSize();
+      }
+    }
+  });
+  resizeObserver.observe(leafletContainer);
+}
 ```
 
 ```js
@@ -2282,6 +2179,8 @@ function createLeafletMap(data, width, height) {
   mapInstance.setDimensions(width, height);
 
   return { leafletContainer, mapInstance };
+
+  mapInstance.invalidateSize(true);
 }
 
 // display(leafletContainer);
@@ -2337,4 +2236,8 @@ function resetState() {
   //   animate: { in: "fadeIn", out: "fadeOut" },
   // });
 }
+```
+
+```
+
 ```
