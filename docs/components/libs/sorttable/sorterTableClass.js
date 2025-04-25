@@ -71,6 +71,11 @@ export class sorterTable {
       customThresholds: options.customThresholds || null,
     });
 
+    // Initialize cache for expensive calculations
+    this._cache = {
+      binning: {}, // Cache for results from BinningService
+    };
+
     this.inferColumnTypesAndThresholds(data);
 
     // create table element
@@ -284,6 +289,12 @@ export class sorterTable {
             this.optimizeHistogramMemory();
           }
 
+          // Clear cache if types need updating
+          if (settings.updateTypes) {
+            logDebug("Clearing binning cache due to updateTypes=true");
+            this._cache.binning = {};
+          }
+
           // Notify listeners about the data update
           this.changed({
             type: "dataUpdate",
@@ -400,22 +411,52 @@ export class sorterTable {
 
     this.columns.forEach((colDef) => {
       const colName = colDef.column;
+      const cacheKey = colName; // Use column name as cache key
+
+      // --- Check Cache First ---
+      if (this._cache.binning[cacheKey]) {
+        logDebug(`Using cached binning info for ${colName}`);
+        const cachedInfo = this._cache.binning[cacheKey];
+        colDef.type = cachedInfo.type;
+        this.setColumnType(colName, cachedInfo.type); // Ensure columnTypes cache is also updated
+
+        // Assign cached binning results directly
+        colDef.thresholds = cachedInfo.thresholds;
+        colDef.bins = cachedInfo.bins;
+        colDef.nominals = cachedInfo.nominals;
+        colDef.dateRange = cachedInfo.dateRange;
+
+        // Skip further calculation for this column
+        return;
+      }
+
+      // --- If Not Cached: Calculate and Store ---
+      logDebug(`Calculating binning info for ${colName} (not cached)`);
       const type = this.getColumnType(data, colName);
       colDef.type = type;
       this.setColumnType(colName, type);
 
-      // logDebug("Inferred type for column:", colDef, type);
+      // Initialize storage for caching
+      const cacheEntry = {
+        type: type,
+        thresholds: undefined,
+        bins: undefined,
+        nominals: undefined,
+        dateRange: undefined,
+      };
 
       // threshold and binning for each type
       if (!colDef.unique) {
         try {
-          // If the user has predefined thresholds, use them.
+          // If the user has predefined thresholds, use them (don't cache these, they are static)
           if (
             colDef.thresholds &&
             Array.isArray(colDef.thresholds) &&
             colDef.thresholds.length
           ) {
             logDebug(`Using predefined thresholds for ${colName}`);
+            // Note: Predefined thresholds are not cached via this mechanism
+            // as they are part of the initial column definition.
           } else {
             // Otherwise, calculate them via binning service
             const bins = this.binningService.getBins(data, colName, type);
@@ -423,34 +464,51 @@ export class sorterTable {
 
             if (!bins || bins.length === 0) {
               warnDebug(`No bins generated for column: ${colName}`);
-              return;
+              // Still cache the type even if bins failed
+              this._cache.binning[cacheKey] = cacheEntry;
+              return; // Skip further processing for this column
             }
+
+            // Store calculated bins in the cache entry and colDef
+            cacheEntry.bins = bins;
+            colDef.bins = bins; // Assign to colDef as well
 
             // For continuous data, use computed bin boundaries
             if (type === "continuous") {
               // Avoid filtering out valid values (e.g., 0) by checking for undefined or null explicitly
-              colDef.thresholds = bins.map((bin) =>
+              const thresholds = bins.map((bin) =>
                 bin.x0 !== undefined && bin.x0 !== null ? bin.x0 : null
               );
-              colDef.bins = bins;
+              cacheEntry.thresholds = thresholds;
+              colDef.thresholds = thresholds; // Assign to colDef
               logDebug(
                 "Setting thresholds for continuous column:",
                 colName,
                 colDef
               );
             } else if (type === "ordinal") {
-              colDef.bins = bins;
-              colDef.nominals = bins
+              const nominals = bins
                 .map((bin) => bin.key)
                 .filter((key) => key !== undefined && key !== null);
+              cacheEntry.nominals = nominals;
+              colDef.nominals = nominals; // Assign to colDef
             } else if (type === "date") {
-              colDef.bins = bins;
-              colDef.dateRange = d3.extent(bins, (bin) => bin.date);
+              const dateRange = d3.extent(bins, (bin) => bin.date);
+              cacheEntry.dateRange = dateRange;
+              colDef.dateRange = dateRange; // Assign to colDef
             }
+
+            // Store the calculated results in the cache
+            this._cache.binning[cacheKey] = cacheEntry;
           }
         } catch (error) {
           errorDebug(`Error binning column ${colName}:`, error);
+          // Cache the type even if binning failed
+          this._cache.binning[cacheKey] = { type: type };
         }
+      } else {
+        // For unique columns, just cache the type
+        this._cache.binning[cacheKey] = { type: type };
       }
     });
   }
@@ -1244,9 +1302,25 @@ export class sorterTable {
     });
   }
 
-  resetTable(useInitialData = true) {
+  resetTable(useInitialData = true, options = {}) {
+    // Default options
+    const defaults = {
+      reInferTypes: false, // By default, reuse cached types/bins for speed
+    };
+    const settings = { ...defaults, ...options };
+
     // Measure performance
     const startTime = performance.now();
+
+    // Clear cache if requested
+    if (settings.reInferTypes) {
+      logDebug("Clearing binning cache due to resetTable option");
+      this._cache.binning = {};
+    } else {
+      logDebug("Retaining binning cache during resetTable for performance");
+      // Note: If data characteristics changed significantly,
+      // cached bins might become inaccurate. Use reInferTypes: true if needed.
+    }
 
     // Reset aggregation state
     if (this.isAggregated && this.initialData) {
