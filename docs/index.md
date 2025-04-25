@@ -2065,6 +2065,8 @@ function glyphMapSpec(width = 800, height = 600) {
 // display([...glyphMapSpec2()]);
 ```
 
+<!-- morph animation logic -->
+
 ```js
 // set and animate needs to be in here for reactivity
 function set(input, value) {
@@ -2099,12 +2101,10 @@ function animate(currentValue, animationFrame, playing = false, direction = 1) {
 }
 ```
 
-<!-- morph animation logic -->
-
 ```js
+// Morph animation logic
 {
-  morph_factor;
-  playing;
+  // morph_factor;
   log(">> Morph animation logic...");
   let playing = false; // Track play/pause state
   let direction = 1; // Controls the animation direction (0 to 1 or 1 to 0)
@@ -2161,17 +2161,6 @@ function animate(currentValue, animationFrame, playing = false, direction = 1) {
 ```
 
 ```js
-// extend the glyphMapSpec
-const glyphMapSpecWgs84 = {
-  ...glyphMapSpec(),
-  coordType: "mercator",
-  initialBB: turf.bbox(regularGeodataLsoaWgs84),
-  getLocationFn: (row) => geographyLsoaWgs84Lookup[row.code]?.centroid,
-};
-// display(glyphMapSpecWgs84);
-```
-
-```js
 //morphGlyphMap as a factory function returning an object with setGlyph
 function createMorphGlyphMap(width, height) {
   // Create the glyph map instance with the WGS84 specifications
@@ -2184,6 +2173,17 @@ function createMorphGlyphMap(width, height) {
   return glyphMapInstance;
 }
 const morphGlyphMap = createMorphGlyphMap(1000, 800);
+```
+
+```js
+// extend the glyphMapSpec
+const glyphMapSpecWgs84 = {
+  ...glyphMapSpec(),
+  coordType: "mercator",
+  initialBB: turf.bbox(regularGeodataLsoaWgs84),
+  getLocationFn: (row) => geographyLsoaWgs84Lookup[row.code]?.centroid,
+};
+// display(glyphMapSpecWgs84);
 ```
 
 ```js
@@ -2291,20 +2291,20 @@ function createLeafletMap(data, width, height) {
 
 ```js
 // selectedInterventionIndex;
-// // Step 1: Transform recap object into an array for easier processing
-// const yearlySummaryArray = stackedRecap.yearlySummary
-//   ? Object.entries(stackedRecap.yearlySummary).map(([year, values]) => ({
-//       year: Number(year),
-//       ...values,
-//     }))
-//   : null;
+// Step 1: Transform recap object into an array for easier processing
+const yearlySummaryArray = stackedRecap.yearlySummary
+  ? Object.entries(stackedRecap.yearlySummary).map(([year, values]) => ({
+      year: Number(year),
+      ...values,
+    }))
+  : null;
 
-// // Step 2: Normalize the data
-// let keysToNormalise = [
-//   "budgetSpent",
-//   "buildingsIntervened",
-//   "totalCarbonSaved",
-// ];
+// Step 2: Normalize the data
+let keysToNormalise = [
+  "budgetSpent",
+  "buildingsIntervened",
+  "totalCarbonSaved",
+];
 ```
 
 <!--------------- Reset everything and move on --------------->
