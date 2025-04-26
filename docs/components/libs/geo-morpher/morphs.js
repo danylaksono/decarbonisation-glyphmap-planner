@@ -1,11 +1,19 @@
 import _ from "npm:lodash";
 import * as turf from "@turf/turf";
 import { require } from "npm:d3-require";
+import flubber from "flubber";
 import { OSGB } from "../osgb/index.js";
 import { enrichGeoData, transformGeometry } from "../helpers.js";
-import flubber from "flubber";
+import { FileAttachment } from "observablehq:stdlib";
 // const d3 = require("d3", "d3-geo-projection");
 // const flubber = await require("flubber@0.4");
+
+// const lsoa_boundary = FileAttachment(
+//   "../../../../data/oxford_lsoa_boundary.geojson"
+// ).json();
+
+// const regular_geodata = FileAttachment("oxford_lsoas_regular.json").json();
+// const cartogram_geodata = FileAttachment("oxford_lsoas_cartogram.json").json();
 
 export function geoMorpher({
   aggregations,

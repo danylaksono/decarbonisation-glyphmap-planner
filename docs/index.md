@@ -436,7 +436,6 @@ const filterManager = {
         </header>
             <div id="graph-container">
               <div id="timeline-panel">
-              ${getInitialData ? html`<p> No. of Filtered Data: ${getInitialData.length} </p>`: "" }
                 ${resize((width, height) => createTimelineInterface(
                 interventions,
                 (change) => {
@@ -446,9 +445,11 @@ const filterManager = {
                 (click) => {
                   if (click != null) {
                     setSelectedInterventionIndex(click);
+                    filterSelectedIntervention();
                     console.log("Clicked Interventions", click, interventions[click]);
                   } else {
                     console.log("No intervention selected");
+                    filterStackedInterventions()
                     setSelectedInterventionIndex(null);
                   }
                 },
@@ -883,7 +884,9 @@ if (getInitialData && getInitialData.length > 0) {
 } else {
   initialData = buildingsData;
 }
+```
 
+```js
 const manager = new InterventionManager(initialData, listOfTech);
 // const manager = createInterventionManager(initialData, listOfTech);
 
@@ -1121,10 +1124,11 @@ const filterByIds = (suitableIds) => {
 ```js
 // ----------------- QuickView Event Listeners -----------------
 const addInterventionBtn = document.getElementById("addInterventionBtn");
+console.log("interview btn", addInterventionBtn);
 
 // Add New Intervention button logic
 addInterventionBtn.addEventListener("click", () => {
-  // log("Intervention button clicked");
+  console.log("Intervention button clicked");
 
   // check for carbon-first or tech-first
   const OPTIMISE_ALL = "Optimise All";
@@ -1267,13 +1271,12 @@ function runModel() {
   // setModelData(stackedRecap?.buildings)
 
   // Reset table and map after intervention is applied
-  resetTableAndMapSelections();
+  filterStackedInterventions();
 }
 ```
 
 ```js
-// New function to reset table and map selections without affecting interventions
-function resetTableAndMapSelections() {
+function filterStackedInterventions() {
   log("[INTERVENTION] Resetting table and map selections for new intervention");
 
   // Reset the filter manager
@@ -1282,27 +1285,56 @@ function resetTableAndMapSelections() {
   // Reset to full dataset
   setInitialData(null);
 
-  // revert map and table to original data
-  table.resetTable();
-  mapInstance.resetMap();
+  // filter table and map based on stacked intervention
+  // format the IDs as objects with an id property as expected by the table
+  let buildingsArray = stackedRecap?.buildings;
+  let currentIdObject =
+    buildingsArray?.map((building) => ({ id: building.id })) || [];
+  table.setFilteredDataById(currentIdObject);
+  // mapfiltering accept array
+  let currentIdList = buildingsArray?.map((building) => building.id) || [];
+  mapInstance.setFilteredData("buildings", { ids: currentIdList });
+}
+```
 
-  // get all buildingsData id
-  // let allBuildingIds = buildingsData.map((d) => d.id);
-  // mapInstance.setFilteredData("buildings", { ids: allBuildingIds });
-  // table.setFilteredDataById(allBuildingIds);
+```js
+function filterSelectedIntervention() {
+  log(
+    "[INTERVENTION] Resetting table and map selections for clicked intervention",
+    interventions[selectedInterventionIndex]
+  );
 
-  // mapInstance.updateLayer("buildings", stackedRecap?.buildings, {
-  //   fitBounds: true, // Automatically adjust view to show all new points
-  //   clusterRadius: 50, // Customize clustering parameters
-  //   maxZoom: 18,
-  // });
+  // Reset the filter manager
+  filterManager.reset();
 
-  // table.updateData(stackedRecap?.buildings, {
-  //   replaceInitial: false, // Keep original as reset point
-  //   updateTypes: true, // Re-infer column types
-  //   resetState: true, // Clear selections/sorting
-  //   optimizeMemory: true, // Apply memory optimizations
-  // });
+  // Reset to full dataset
+  setInitialData(null);
+
+  // setup flatdata
+  let selectedIntervenedBuildings =
+    selectedInterventionIndex === null
+      ? null
+      : Array.isArray(selectedInterventionIndex)
+      ? selectedInterventionIndex.flatMap(
+          (i) => interventions[i]?.intervenedBuildings ?? []
+        )
+      : interventions[selectedInterventionIndex]?.intervenedBuildings;
+
+  // flatData is from a single intervetntion
+  // flatten the intervened buildings
+  let flatData = selectedIntervenedBuildings?.map((p) => ({
+    ...p,
+    ...p.properties,
+  }));
+
+  // filter table and map based on stacked intervention
+  // format the IDs as objects with an id property as expected by the table
+  let currentIdObject =
+    flatData?.map((building) => ({ id: building.id })) || [];
+  table.setFilteredDataById(currentIdObject);
+  // mapfiltering accept array
+  let currentIdList = flatData?.map((building) => building.id) || [];
+  mapInstance.setFilteredData("buildings", { ids: currentIdList });
 }
 ```
 
@@ -1441,7 +1473,6 @@ function updateTimeline() {
       },
       (click) => {
         setSelectedInterventionIndex(click);
-        // setModelData(flatData);
         console.log("[TIMELINE] timeline clicked block", interventions[click]);
       },
       450,
@@ -1454,25 +1485,26 @@ function updateTimeline() {
 <!-- ----------------  D A T A  ---------------- -->
 
 ````js
-const selectedIntervenedBuildings =
-  selectedInterventionIndex === null
-    ? null
-    : Array.isArray(selectedInterventionIndex)
-    ? selectedInterventionIndex.flatMap(
-        (i) => interventions[i]?.intervenedBuildings ?? []
-      )
-    : interventions[selectedInterventionIndex]?.intervenedBuildings;
+// const selectedIntervenedBuildings =
+//   selectedInterventionIndex === null
+//     ? null
+//     : Array.isArray(selectedInterventionIndex)
+//     ? selectedInterventionIndex.flatMap(
+//         (i) => interventions[i]?.intervenedBuildings ?? []
+//       )
+//     : interventions[selectedInterventionIndex]?.intervenedBuildings;
 
-// log(`[DATA] Selected Intervened buildings`, getInterventions[0]);
+// // log(`[DATA] Selected Intervened buildings`, getInterventions[0]);
 
-console.log("[DATA] Get Interventions", interventions[0]);
+// console.log("[DATA] Get Interventions", interventions[0]);
 
-const flatData = selectedIntervenedBuildings?.map((p) => ({
-  ...p,
-  ...p.properties,
-}));
+// // flatData is from a single intervetntion
+// const flatData = selectedIntervenedBuildings?.map((p) => ({
+//   ...p,
+//   ...p.properties,
+// }));
 
-log("[DATA] Intervened buildings", flatData);
+// log("[DATA] Intervened buildings", flatData);
 
 // // const data =
 // //   selectedInterventionIndex === null
@@ -1645,15 +1677,6 @@ function tableChanged(event) {
     // log("Selection rule:", event.rule);
   }
 }
-```
-
-```js
-// Filter table data
-// const tableFilteredData = tableFiltered
-//   .map((index) => table.data?.[index])
-//   .filter(Boolean);
-
-// log("Initial Data Fixed: ", getInitialData);
 ```
 
 ```js
@@ -2224,7 +2247,9 @@ function resetState() {
   // Reset filter manager state
   filterManager.reset();
 
-  // setModelData(buildingsData);
+  // Reset table and map state
+  table.resetTable();
+  mapInstance.resetMap();
 
   // Display notification
   // bulmaToast.toast({
