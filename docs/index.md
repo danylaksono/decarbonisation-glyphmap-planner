@@ -1134,7 +1134,7 @@ const filterByIds = (suitableIds) => {
 ```js
 // ----------------- QuickView Event Listeners -----------------
 const addInterventionBtn = document.getElementById("addInterventionBtn");
-console.log("interview btn", addInterventionBtn);
+// console.log("interview btn", addInterventionBtn);
 
 // Add New Intervention button logic
 addInterventionBtn.addEventListener("click", () => {
@@ -1242,7 +1242,7 @@ function addNewIntervention(initialForm) {
   // } else {
   //   filteredBuildingsData = buildingsData;
   // }
-  console.log("INITIAL BUILDINGS");
+  console.log("INITIAL BUILDINGS", initialBuildings);
 
   const newConfig = {
     ...initialForm,
@@ -1291,7 +1291,7 @@ function runModel() {
   // setModelData(stackedRecap?.buildings)
 
   // Reset table and map after intervention is applied
-  filterStackedInterventions();
+  // filterStackedInterventions();
 }
 ```
 
