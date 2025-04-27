@@ -325,6 +325,7 @@ const filterManager = {
       this.currentIds = [...this.filters.map];
     }
     setInitialData(this.currentIds.map((id) => ({ id })));
+    saveToSession("initialids", this.currentIds);
     return true;
   },
   applyTableToMapFilter(idValues) {
@@ -340,6 +341,7 @@ const filterManager = {
       this.currentIds = [...this.filters.table];
     }
     setInitialData(this.currentIds.map((id) => ({ id })));
+    saveToSession("initialids", this.currentIds);
     return true;
   },
   reset() {
@@ -873,21 +875,29 @@ const listOfTech = {
 ```
 
 ```js
-// --- Create an InterventionManager instance ---
 // initial building data from get initial data's id if it exist
 // else use the buildingsData
 
-let initialData;
-if (getInitialData && getInitialData.length > 0) {
-  const initialIds = new Set(getInitialData.map((d) => d.id));
-  initialData = buildingsData.filter((b) => initialIds.has(b.id));
-} else {
-  initialData = buildingsData;
-}
+// let initialData;
+// if (getInitialData && getInitialData.length > 0) {
+//   const initialIds = new Set(getInitialData.map((d) => d.id));
+//   initialData = buildingsData.filter((b) => initialIds.has(b.id));
+// } else {
+//   initialData = buildingsData;
+// }
+
+// const filteredBuildingsData = null;
+// if (getInitialData && getInitialData.length > 0) {
+//   const initialIds = new Set(getInitialData.map((d) => d.id));
+//   filteredBuildingsData = buildingsData.filter((b) => initialIds.has(b.id));
+// } else {
+//   filteredBuildingsData = buildingsData;
+// }
 ```
 
 ```js
-const manager = new InterventionManager(initialData, listOfTech);
+// --- Create an InterventionManager instance ---
+const manager = new InterventionManager(buildingsData, listOfTech);
 // const manager = createInterventionManager(initialData, listOfTech);
 
 // log(
@@ -1218,15 +1228,25 @@ setSelectedAllocation(allocator.getAllocations());
 
 ```js
 // Handle form submission: add new intervention
-function addNewIntervention(data) {
+function addNewIntervention(initialForm) {
   // log(Date.now(), "Checking allocations now:", allocations);
   const currentAllocation = getFromSession("allocations");
-
-  // log(">> Current Allocation from session", currentAllocation);
   const yearlyBudgets = currentAllocation.map((item) => item.budget);
 
+  // buildings
+  const initialBuildings = getFromSession("initialids");
+  // const filteredBuildingsData = null;
+  // if (getInitialData && getInitialData.length > 0) {
+  //   const initialIds = new Set(getInitialData.map((d) => d.id));
+  //   filteredBuildingsData = buildingsData.filter((b) => initialIds.has(b.id));
+  // } else {
+  //   filteredBuildingsData = buildingsData;
+  // }
+  console.log("INITIAL BUILDINGS");
+
   const newConfig = {
-    ...data,
+    ...initialForm,
+    // buildings,
     // filters: [],
     // priorities: [],
     yearlyBudgets: yearlyBudgets,
@@ -2248,8 +2268,8 @@ function resetState() {
   filterManager.reset();
 
   // Reset table and map state
-  table.resetTable();
-  mapInstance.resetMap();
+  // table.resetTable();
+  // mapInstance.resetMap();
 
   // Display notification
   // bulmaToast.toast({
