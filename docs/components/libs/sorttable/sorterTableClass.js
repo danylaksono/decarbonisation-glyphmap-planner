@@ -2027,7 +2027,7 @@ export class sorterTable {
       borderRadius: "8px",
       padding: "20px",
       zIndex: 99999,
-      minWidth: "350px",
+      minWidth: "400px",
       boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
     });
 
@@ -2039,22 +2039,182 @@ export class sorterTable {
     const queriesContainer = document.createElement("div");
     dialog.appendChild(queriesContainer);
 
-    // Helper to get column names
-    const columnNames = this.columns.map((c) => c.column);
+    // Define type-specific operators
+    const operatorsByType = {
+      continuous: [">", ">=", "<", "<=", "==", "!=", "between"],
+      ordinal: ["==", "!=", "contains", "starts with", "ends with"],
+      date: ["before", "after", "on", "between"],
+      boolean: ["is true", "is false"],
+      default: [">", ">=", "<", "<=", "==", "!="],
+    };
 
-    // Operators
-    const operators = [">", ">=", "<", "<=", "==", "!="];
+    // Boolean operators for combining filters
     const boolOperators = ["AND", "OR"];
 
     // Store query rows
     let queryRows = [];
 
+    // Helper function to get column type
+    const getColumnType = (columnName) => {
+      const column = this.columns.find((c) => c.column === columnName);
+      // Return the column type if it exists, otherwise fall back to the one in columnTypes
+      return column?.type || this.columnTypes[columnName] || "ordinal";
+    };
+
+    // Helper function to create the appropriate input field based on column type
+    const createInputField = (columnName, container, existingValue = "") => {
+      const columnType = getColumnType(columnName);
+
+      // Remove any existing input field
+      const existingInput = container.querySelector(".value-input-container");
+      if (existingInput) {
+        container.removeChild(existingInput);
+      }
+
+      // Create a container for the input field(s)
+      const inputContainer = document.createElement("div");
+      inputContainer.className = "value-input-container";
+      inputContainer.style.display = "flex";
+      inputContainer.style.gap = "5px";
+      inputContainer.style.alignItems = "center";
+
+      let input;
+
+      switch (columnType) {
+        case "continuous":
+          // For numerical fields
+          input = document.createElement("input");
+          input.type = "number";
+          input.className = "value-input";
+          input.step = "any"; // Allow decimal values
+          input.style.width = "80px";
+          input.value = existingValue;
+
+          // Add a second input field for "between" operator
+          const secondInputContainer = document.createElement("div");
+          secondInputContainer.className = "second-input-container";
+          secondInputContainer.style.display = "none";
+
+          const andLabel = document.createElement("span");
+          andLabel.innerText = "and";
+          andLabel.style.margin = "0 5px";
+
+          const secondInput = document.createElement("input");
+          secondInput.type = "number";
+          secondInput.className = "second-value-input";
+          secondInput.step = "any";
+          secondInput.style.width = "80px";
+
+          secondInputContainer.appendChild(andLabel);
+          secondInputContainer.appendChild(secondInput);
+
+          inputContainer.appendChild(input);
+          inputContainer.appendChild(secondInputContainer);
+          break;
+
+        case "date":
+          // For date fields
+          input = document.createElement("input");
+          input.type = "date";
+          input.className = "value-input";
+          input.style.width = "140px";
+          input.value = existingValue;
+
+          // Add a second date input for "between" operator
+          const secondDateContainer = document.createElement("div");
+          secondDateContainer.className = "second-input-container";
+          secondDateContainer.style.display = "none";
+
+          const dateAndLabel = document.createElement("span");
+          dateAndLabel.innerText = "and";
+          dateAndLabel.style.margin = "0 5px";
+
+          const secondDateInput = document.createElement("input");
+          secondDateInput.type = "date";
+          secondDateInput.className = "second-value-input";
+          secondDateInput.style.width = "140px";
+
+          secondDateContainer.appendChild(dateAndLabel);
+          secondDateContainer.appendChild(secondDateInput);
+
+          inputContainer.appendChild(input);
+          inputContainer.appendChild(secondDateContainer);
+          break;
+
+        case "boolean":
+          // For boolean fields
+          const checkbox = document.createElement("input");
+          checkbox.type = "checkbox";
+          checkbox.className = "value-input";
+          checkbox.checked = existingValue === "true";
+          input = checkbox;
+          inputContainer.appendChild(input);
+          break;
+
+        default:
+          // Default to text input for ordinal or unknown types
+          input = document.createElement("input");
+          input.type = "text";
+          input.className = "value-input";
+          input.style.width = "140px";
+          input.value = existingValue;
+          inputContainer.appendChild(input);
+      }
+
+      container.appendChild(inputContainer);
+      return input;
+    };
+
+    // Helper function to update operators based on column type
+    const updateOperators = (columnName, opSelect, row) => {
+      const columnType = getColumnType(columnName);
+      const operators = operatorsByType[columnType] || operatorsByType.default;
+
+      // Store current operator if possible
+      const currentOp = opSelect.value;
+
+      // Clear existing options
+      opSelect.innerHTML = "";
+
+      // Add new options based on column type
+      operators.forEach((op) => {
+        const opt = document.createElement("option");
+        opt.value = op;
+        opt.innerText = op;
+        opSelect.appendChild(opt);
+      });
+
+      // Try to restore previous selection if it's valid for the new type
+      if (operators.includes(currentOp)) {
+        opSelect.value = currentOp;
+      }
+
+      // Handle showing/hiding the second input for "between" operator
+      const handleBetweenOperator = () => {
+        const secondInputContainer = row.querySelector(
+          ".second-input-container"
+        );
+        if (secondInputContainer) {
+          secondInputContainer.style.display =
+            opSelect.value === "between" ? "flex" : "none";
+        }
+      };
+
+      // Set up the change event for operator selection
+      opSelect.onchange = handleBetweenOperator;
+
+      // Initialize visibility of second input
+      handleBetweenOperator();
+
+      return opSelect;
+    };
+
     function createQueryRow(isFirst = false) {
       const row = document.createElement("div");
       row.style.display = "flex";
       row.style.alignItems = "center";
-      row.style.marginBottom = "8px";
-      row.style.gap = "6px";
+      row.style.marginBottom = "12px";
+      row.style.gap = "8px";
 
       // Boolean operator (not for first row)
       let boolOpSelect = null;
@@ -2069,31 +2229,45 @@ export class sorterTable {
         row.appendChild(boolOpSelect);
       }
 
-      // Column select
+      // Column select with labels showing column type
       const colSelect = document.createElement("select");
-      columnNames.forEach((col) => {
+      colSelect.style.minWidth = "120px";
+
+      // Helper method to create column options with type indicators
+      const createColumnOption = (columnName) => {
         const opt = document.createElement("option");
-        opt.value = col;
-        opt.innerText = col;
-        colSelect.appendChild(opt);
+        opt.value = columnName;
+
+        const columnType = getColumnType(columnName);
+        const typeIndicator = columnType ? ` (${columnType})` : "";
+
+        opt.innerText = `${columnName}${typeIndicator}`;
+        return opt;
+      };
+
+      // Add all column options
+      this.columns.forEach((c) => {
+        colSelect.appendChild(createColumnOption(c.column));
       });
+
       row.appendChild(colSelect);
 
-      // Operator select
+      // Operator select (will be populated based on column type)
       const opSelect = document.createElement("select");
-      operators.forEach((op) => {
-        const opt = document.createElement("option");
-        opt.value = op;
-        opt.innerText = op;
-        opSelect.appendChild(opt);
-      });
+      opSelect.style.minWidth = "100px";
       row.appendChild(opSelect);
 
-      // Value input
-      const valInput = document.createElement("input");
-      valInput.type = "text";
-      valInput.style.width = "80px";
-      row.appendChild(valInput);
+      // Update operators when column changes
+      colSelect.onchange = () => {
+        updateOperators(colSelect.value, opSelect, row);
+        createInputField(colSelect.value, row);
+      };
+
+      // Create initial value input field
+      createInputField(colSelect.value, row);
+
+      // Initialize operators based on the selected column
+      updateOperators(colSelect.value, opSelect, row);
 
       // Remove button
       if (!isFirst) {
@@ -2117,13 +2291,18 @@ export class sorterTable {
     }
 
     // Add first query row
-    createQueryRow(true);
+    createQueryRow.call(this, true);
 
     // Add Query button
     const addBtn = document.createElement("button");
     addBtn.innerText = "+ Add Query";
-    addBtn.style.margin = "8px 0";
-    addBtn.onclick = () => createQueryRow(false);
+    addBtn.style.margin = "12px 0";
+    addBtn.style.padding = "6px 12px";
+    addBtn.style.backgroundColor = "#f0f0f0";
+    addBtn.style.border = "1px solid #ccc";
+    addBtn.style.borderRadius = "4px";
+    addBtn.style.cursor = "pointer";
+    addBtn.onclick = () => createQueryRow.call(this, false);
     dialog.appendChild(addBtn);
 
     // Submit and Cancel buttons
@@ -2131,14 +2310,14 @@ export class sorterTable {
     btnRow.style.display = "flex";
     btnRow.style.justifyContent = "flex-end";
     btnRow.style.gap = "10px";
-    btnRow.style.marginTop = "12px";
+    btnRow.style.marginTop = "20px";
 
     const submitBtn = document.createElement("button");
     submitBtn.innerText = "Apply Filter";
     submitBtn.style.background = "#2196F3";
     submitBtn.style.color = "#fff";
     submitBtn.style.border = "none";
-    submitBtn.style.padding = "6px 14px";
+    submitBtn.style.padding = "8px 16px";
     submitBtn.style.borderRadius = "4px";
     submitBtn.style.cursor = "pointer";
 
@@ -2146,7 +2325,7 @@ export class sorterTable {
     cancelBtn.innerText = "Cancel";
     cancelBtn.style.background = "#eee";
     cancelBtn.style.border = "none";
-    cancelBtn.style.padding = "6px 14px";
+    cancelBtn.style.padding = "8px 16px";
     cancelBtn.style.borderRadius = "4px";
     cancelBtn.style.cursor = "pointer";
 
@@ -2156,29 +2335,127 @@ export class sorterTable {
       // Build filter functions
       let filters = [];
       let boolOps = [];
+
       for (let i = 0; i < queryRows.length; ++i) {
         const row = queryRows[i];
+
+        // Extract values from the row
         let idx = 0;
         let boolOp = null;
+
         if (i > 0) {
           boolOp = row.children[idx++].value;
           boolOps.push(boolOp);
         }
-        const col = row.children[idx++].value;
-        const op = row.children[idx++].value;
-        const valRaw = row.children[idx++].value;
-        let val;
-        // Try to parse as number, fallback to string
-        if (!isNaN(Number(valRaw)) && valRaw.trim() !== "") {
-          val = Number(valRaw);
-        } else {
-          val = valRaw;
+
+        const columnName = row.children[idx++].value;
+        const operator = row.children[idx++].value;
+
+        // Get column type
+        const columnType = getColumnType(columnName);
+
+        // Get input container which has the value input(s)
+        const inputContainer = row.querySelector(".value-input-container");
+        const valueInput = inputContainer.querySelector(".value-input");
+        const secondValueInput = inputContainer.querySelector(
+          ".second-value-input"
+        );
+
+        // Process the input based on column type and operator
+        let filterFunction;
+
+        switch (columnType) {
+          case "continuous":
+            if (operator === "between" && secondValueInput) {
+              const val1 = parseFloat(valueInput.value);
+              const val2 = parseFloat(secondValueInput.value);
+
+              filterFunction = (dataObj) => {
+                const value = dataObj[columnName];
+                return value >= val1 && value <= val2;
+              };
+            } else {
+              let val = parseFloat(valueInput.value);
+
+              // Use the standard filter for other operators
+              filterFunction = createDynamicFilter(columnName, operator, val);
+            }
+            break;
+
+          case "date":
+            if (operator === "between" && secondValueInput) {
+              const date1 = new Date(valueInput.value);
+              const date2 = new Date(secondValueInput.value);
+
+              filterFunction = (dataObj) => {
+                const value = new Date(dataObj[columnName]);
+                return value >= date1 && value <= date2;
+              };
+            } else {
+              const dateValue = new Date(valueInput.value);
+
+              filterFunction = (dataObj) => {
+                const value = new Date(dataObj[columnName]);
+
+                switch (operator) {
+                  case "before":
+                    return value < dateValue;
+                  case "after":
+                    return value > dateValue;
+                  case "on":
+                    return value.toDateString() === dateValue.toDateString();
+                  default:
+                    return false;
+                }
+              };
+            }
+            break;
+
+          case "boolean":
+            const boolValue = operator === "is true";
+
+            filterFunction = (dataObj) => {
+              const value = dataObj[columnName];
+              return Boolean(value) === boolValue;
+            };
+            break;
+
+          default: // ordinal or text fields
+            const textValue = valueInput.value;
+
+            filterFunction = (dataObj) => {
+              const value = String(dataObj[columnName] || "");
+
+              switch (operator) {
+                case "==":
+                  return value === textValue;
+                case "!=":
+                  return value !== textValue;
+                case "contains":
+                  return value.includes(textValue);
+                case "starts with":
+                  return value.startsWith(textValue);
+                case "ends with":
+                  return value.endsWith(textValue);
+                default:
+                  // Fall back to standard filter for numeric comparisons
+                  return createDynamicFilter(
+                    columnName,
+                    operator,
+                    textValue
+                  )(dataObj);
+              }
+            };
         }
-        filters.push(createDynamicFilter(col, op, val));
+
+        filters.push(filterFunction);
       }
 
       // Compose filters with AND/OR
       let combinedFilter = (row) => {
+        // Handle edge case of no filters
+        if (filters.length === 0) return true;
+
         let result = filters[0](row);
         for (let i = 1; i < filters.length; ++i) {
           if (boolOps[i - 1] === "AND") {
