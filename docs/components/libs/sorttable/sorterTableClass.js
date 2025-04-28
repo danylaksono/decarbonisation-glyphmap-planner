@@ -1229,76 +1229,99 @@ export class sorterTable {
       return; // No rows to process, exit early
     }
 
+    // Create a Map of data indices to positions in dataInd array for efficient lookup
+    const dataIndPositionMap = new Map();
+    this.dataInd.forEach((dataIndex, position) => {
+      dataIndPositionMap.set(dataIndex, position);
+    });
+
+    // For each row in the current view, attach event listeners
     Array.from(rows).forEach((tr) => {
-      tr.addEventListener("click", (event) => {
-        const rowIndex = parseInt(tr.getAttribute("data-row-index"), 10);
-        if (isNaN(rowIndex)) return;
+      // Clone the row to remove any existing event listeners
+      const newTr = tr.cloneNode(true);
+
+      // Get the actual data index (not the row position)
+      const dataIndex = parseInt(tr.getAttribute("data-data-index"), 10);
+      if (isNaN(dataIndex)) {
+        // If data-data-index is missing, copy the existing attributes and move on
+        tr.parentNode.replaceChild(newTr, tr);
+        return;
+      }
+
+      // Add click event with improved selection logic
+      newTr.addEventListener("click", (event) => {
+        if (isNaN(dataIndex)) return;
+
         if (event.shiftKey) {
-          // Use the selection set instead of relying on current DOM only.
+          // Use dataInd positions for range calculation, not DOM positions
           let selectedIndices = Array.from(this.selectedRows);
-          if (selectedIndices.length === 0) selectedIndices = [rowIndex];
-          const start = Math.min(...selectedIndices, rowIndex);
-          const end = Math.max(...selectedIndices, rowIndex);
-          for (let i = start; i <= end; i++) {
-            // Update the selection set for all indices in the range.
-            this.selectedRows.add(i);
-            // Update visible selection if the row is rendered.
-            const trToSelect = this.tBody.querySelector(
-              `tr[data-row-index="${i}"]`
-            );
-            if (trToSelect) {
-              this.selectRow(trToSelect);
+
+          if (selectedIndices.length === 0) {
+            // If nothing selected, just select this row
+            this.selectedRows.add(dataIndex);
+            this.selectRow(newTr);
+          } else {
+            // Find positions in dataInd for start/end of range
+            const positions = selectedIndices
+              .map((index) => dataIndPositionMap.get(index))
+              .filter((pos) => pos !== undefined);
+
+            // Add current position
+            const currentPosition = dataIndPositionMap.get(dataIndex);
+
+            // Calculate range in terms of positions in dataInd
+            const startPos = Math.min(...positions, currentPosition);
+            const endPos = Math.max(...positions, currentPosition);
+
+            // Select all rows in this range
+            for (let pos = startPos; pos <= endPos; pos++) {
+              const indexToSelect = this.dataInd[pos];
+              this.selectedRows.add(indexToSelect);
+
+              // Update visible selection if the row is rendered
+              const trToSelect = this.tBody.querySelector(
+                `tr[data-data-index="${indexToSelect}"]`
+              );
+              if (trToSelect) {
+                this.selectRow(trToSelect);
+              }
             }
           }
-        } else if (event.ctrlKey) {
-          if (tr.selected) {
-            this.unselectRow(tr);
+        } else if (event.ctrlKey || event.metaKey) {
+          // Toggle selection state of this row
+          if (this.selectedRows.has(dataIndex)) {
+            this.selectedRows.delete(dataIndex);
+            this.unselectRow(newTr);
           } else {
-            this.selectRow(tr);
+            this.selectedRows.add(dataIndex);
+            this.selectRow(newTr);
           }
         } else {
+          // Regular click - clear selection and select only this row
           this.clearSelection();
-          this.selectRow(tr);
+          this.selectedRows.add(dataIndex);
+          this.selectRow(newTr);
         }
+
         this.selectionUpdated();
       });
-      // tr.addEventListener("click", (event) => {
-      //   const rowIndex = parseInt(tr.getAttribute("data-row-index"), 10);
-      //   if (isNaN(rowIndex)) return;
-      //   if (this.shiftDown) {
-      //     let s = this.getSelection().map((s) => s.index);
-      //     if (s.length == 0) s = [rowIndex];
-      //     let minSelIndex = Math.min(...s);
-      //     let maxSelIndex = Math.max(...s);
-      //     if (rowIndex <= minSelIndex) {
-      //       for (let i = rowIndex; i < minSelIndex; i++) {
-      //         const trToSelect = this.tBody.querySelectorAll("tr")[i];
-      //         if (trToSelect) this.selectRow(trToSelect);
-      //       }
-      //     } else if (rowIndex >= maxSelIndex) {
-      //       for (let i = maxSelIndex + 1; i <= rowIndex; i++) {
-      //         const trToSelect = this.tBody.querySelectorAll("tr")[i];
-      //         if (trToSelect) this.selectRow(trToSelect);
-      //       }
-      //     }
-      //   } else if (this.ctrlDown) {
-      //     if (tr.selected) {
-      //       this.unselectRow(tr);
-      //     } else {
-      //       this.selectRow(tr);
-      //     }
-      //   } else {
-      //     this.clearSelection();
-      //     this.selectRow(tr);
-      //   }
-      //   this.selectionUpdated();
-      // });
-      tr.addEventListener("mouseover", () => {
-        tr.style.backgroundColor = "#f0f0f0";
+
+      // Add hover events
+      newTr.addEventListener("mouseover", () => {
+        newTr.style.backgroundColor = "#f0f0f0";
       });
-      tr.addEventListener("mouseout", () => {
-        tr.style.backgroundColor = "";
+
+      newTr.addEventListener("mouseout", () => {
+        newTr.style.backgroundColor = "";
       });
+
+      // Replace old row with new one that has proper listeners
+      tr.parentNode.replaceChild(newTr, tr);
+
+      // Reflect current selection state
+      if (this.selectedRows.has(dataIndex)) {
+        this.selectRow(newTr);
+      }
     });
   }
 
