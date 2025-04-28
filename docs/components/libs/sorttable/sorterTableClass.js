@@ -155,7 +155,8 @@ export class sorterTable {
       width: "100%",
       borderCollapse: "collapse",
       // border: "1px solid #ddd",
-      fontFamily: "Arial, sans-serif",
+      // fontFamily: "Arial, sans-serif",
+      fontFamily: "'Inter', 'Roboto', 'Open Sans', system-ui, sans-serif",
       fontSize: "14px",
     });
 

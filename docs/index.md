@@ -270,7 +270,10 @@ const [timelineModifications, setTimelineModifications] = useState([]); // list 
 
 ```js
 const [getInitialData, setInitialData] = useState(null); // INITIAL DATA
-const [getModelData, setModelData] = useState(buildingsData); // INITIAL DATA
+const [getModelData, setModelData] = useState(buildingsData); // MODEL DATA
+
+// table
+const [getTableRule, setTableRule] = useState([]);
 ```
 
 ```js
@@ -417,19 +420,25 @@ const filterManager = {
 <!-- ---------------- HTML Layout ---------------- -->
 
 <div class="grid-container" style="padding:2px; height:100vh;">
-  <div id="left-panel" style="overflow-x:hidden; overflow-y:hidden; height:96vh;">
+  <div id="left-panel" style="overflow-x:hidden; overflow-y:hidden; height:98vh;">
     <div class="left-top">
-      <div class="card" style="overflow-x:hidden;">
+      <div class="card" style="overflow:hidden; padding: 5px;">
           <header class="quickview-header">
             <p class="title">Table & Chart View </p>
-          </header>              
-          ${resize((width, height) => drawSorterTable({
-            width: width,
-            height: height-40,
-          })
-          )
-          }
-        </div>
+          </header>
+          <div id="table-container" style="height:100%; overflow-y:hidden">
+            ${resize(
+                (width, height) => drawSorterTable({
+                width: width,
+                height: height-60,
+              })
+              )
+            }
+            <span style="padding:2px;">
+              <i> ${getTableRule? getTableRule.join('; '): ''} </i>
+            </span>
+          </div>
+      </div> <!-- card -->
     </div> <!-- left top -->
     <div class="left-bottom">
         <div class="card" style="overflow-y: hidden;">
@@ -469,7 +478,7 @@ const filterManager = {
                 <button id="deleteButton" class="btn erase tooltip" data-tooltip="Remove Intervention" aria-label="Delete">
                   <i class="fas fa-trash" style="color:red;"></i>
                 </button>
-                <button id="moveUpButton" class="btn move-up tooltip" data-tooltip="Move Up" 
+                <button id="moveUpButton" class="btn move-up tooltip" data-tooltip="Move Up"
                 aria-label="Move Up">
                   <i class="fas fa-arrow-up"></i>
                 </button>
@@ -478,7 +487,7 @@ const filterManager = {
                 </button>
                 <button id="resetAllButton" class="btn reset-all tooltip" data-tooltip="Start Over" aria-label="Move Down">
                   <i class="fas fa-sync-alt"></i>
-                </button>                
+                </button>
               </nav>
             </div> <!-- graph container -->
       </div> <!-- card -->
@@ -486,7 +495,7 @@ const filterManager = {
     </div> <!-- left panel -->
 
   <div id="main-panel">
-    <div class="card" style="overflow-x:hidden; overflow-y:hidden; height:96vh;">
+    <div class="card" style="overflow-x:hidden; overflow-y:hidden; height:98vh;">
       <header class="quickview-header">
         <p class="title">Map View</p>
       </header>
@@ -1672,6 +1681,9 @@ function tableChanged(event) {
     log("Filter rule:", event.rule);
     // log("Filtered IDs:", event.ids);
 
+    // set table rule
+    setTableRule(event.rule);
+
     // Use the new filterState to handle filtering
     const idValues = event.ids.map((item) => item.id);
     filterManager.applyTableToMapFilter(idValues);
@@ -1707,6 +1719,7 @@ const table = new sorterTable(getModelData, tableColumns, tableChanged);
 // const table = createSorterTable(data, tableColumns, tableChanged);
 
 function drawSorterTable(options) {
+  console.log("setting table size", options);
   table.setContainerSize(options);
   return table.getNode();
 }
@@ -2281,8 +2294,4 @@ function resetState() {
   //   animate: { in: "fadeIn", out: "fadeOut" },
   // });
 }
-```
-
-```
-
 ```
