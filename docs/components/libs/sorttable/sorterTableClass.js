@@ -6,7 +6,7 @@ import { BinningService } from "./BinningService.js";
 import { SmallMultiplesView } from "./small_multiples.js";
 
 // Control debug output - set to true during development, false in production
-const DEBUG = true;
+const DEBUG = false;
 
 // Custom logging functions that respect the DEBUG flag
 const logDebug = (...args) => DEBUG && console.log(...args);
@@ -679,10 +679,25 @@ export class sorterTable {
 
   filter() {
     const prevDataInd = [...this.dataInd];
-    this.rules.push(this.getSelectionRule());
+    // this.rules.push(this.getSelectionRule());
+    const selectionRule = this.getSelectionRule();
+
+    // Only add valid rules
+    if (selectionRule) {
+      this.rules.push(selectionRule);
+    }
+
     const selected = this.getSelection();
     this.dataInd = selected.map((s) => s.index);
-    this.history.push({ type: "filter", data: prevDataInd });
+
+    // this.history.push({ type: "filter", data: prevDataInd });
+    this.history.push({
+      type: "filter",
+      data: prevDataInd,
+      rule: selectionRule,
+    });
+
+    // Rebuild the table and update visualizations
     this.createTable();
     this.visControllers.forEach((vc, vci) => {
       if (vc instanceof HistogramController) {
@@ -690,17 +705,22 @@ export class sorterTable {
         vc.setData(this.dataInd.map((i) => this.data[i][columnName]));
       }
     });
+
+    // recording the filtered IDs
     const idColumn = "id";
     const filteredIds = this.dataInd.map((i) => {
       const idValue =
         this.data[i]?.[idColumn] !== undefined ? this.data[i][idColumn] : i;
       return { id: idValue };
     });
+
+    // record the filter change
     this.changed({
       type: "filter",
       indeces: this.dataInd,
       ids: filteredIds,
-      rule: this.getSelectionRule(),
+      // rule: this.getSelectionRule(),
+      rule: selectionRule,
     });
   }
 
@@ -708,38 +728,127 @@ export class sorterTable {
     const { consecutive = true } = options;
     const baseIndices = consecutive ? this.dataInd : d3.range(this.data.length);
     const prevDataInd = [...this.dataInd];
+
+    // Apply the filter function to the data
     this.dataInd = baseIndices.filter((index) =>
       filterFunction(this.data[index])
     );
+
+    // Custom filter rules can be passed in the options
+    const customRule = options.customRule || [
+      `Custom filter applied (${this.dataInd.length} rows)`,
+    ];
+
+    // Add to rules list if filtering was effective
+    if (this.dataInd.length !== prevDataInd.length) {
+      this.rules.push(customRule);
+    }
+
+    // track history
     this.history.push({ type: "filter", data: prevDataInd });
+
+    // Rebuild the table and update visualizations
     this.rebuildTable();
     this.visControllers.forEach((vc) => {
       if (vc && vc.updateData) {
         vc.updateData(this.dataInd.map((i) => this.data[i][vc.columnName]));
       }
     });
-    this.changed({ type: "customFilter", indices: this.dataInd });
+
+    // recording the filtered IDs
+    const idColumn = "id";
+    const filteredIds = this.dataInd.map((i) => {
+      const idValue =
+        this.data[i]?.[idColumn] !== undefined ? this.data[i][idColumn] : i;
+      return { id: idValue };
+    });
+
+    // this.changed({ type: "customFilter", indices: this.dataInd });
+    this.changed({
+      type: "filter",
+      indeces: this.dataInd,
+      ids: filteredIds,
+      rule: customRule,
+    });
+  }
+
+  // helper method for setting selection rule from external mechanisms
+  setSelectionRuleFromExternal(rule) {
+    if (!Array.isArray(rule)) {
+      rule = [rule];
+    }
+    // Store the rule for later retrieval
+    this._externalSelectionRule = rule;
+    return this;
   }
 
   getAllRules() {
     return this.rules;
   }
 
+  // undo() {
+  //   if (this.history.length > 0) {
+  //     let u = this.history.pop();
+  //     if (u.type === "filter" || u.type === "filterById" || u.type === "sort") {
+  //       this.dataInd = [...u.data];
+  //       this.createTable();
+  //       this.visControllers.forEach((vc, vci) =>
+  //         vc.updateData(
+  //           this.dataInd.map((i) => this.data[i][this.columns[vci].column])
+  //         )
+  //       );
+  //       this.changed({
+  //         type: "undo",
+  //         indeces: this.dataInd,
+  //         sort: this.compoundSorting,
+  //       });
+  //     } else if (u.type === "shiftcol") {
+  //       this._isUndoing = true;
+  //       const reverseDir = u.dir === "left" ? "right" : "left";
+  //       this.shiftCol(u.columnName, reverseDir);
+  //       this._isUndoing = false;
+  //     } else if (u.type === "aggregate") {
+  //       this.data = u.data;
+  //       this.dataInd = u.dataInd;
+  //       this.isAggregated = false;
+  //       this.rebuildTable();
+  //       this.changed({
+  //         type: "undo",
+  //         indeces: this.dataInd,
+  //         sort: this.compoundSorting,
+  //       });
+  //     }
+  //   }
+  // }
+
   undo() {
     if (this.history.length > 0) {
       let u = this.history.pop();
       if (u.type === "filter" || u.type === "filterById" || u.type === "sort") {
         this.dataInd = [...u.data];
+
+        // If we're undoing a filter, also remove the corresponding rule
+        if (
+          (u.type === "filter" || u.type === "filterById") &&
+          this.rules.length > 0
+        ) {
+          this.rules.pop();
+        }
+
         this.createTable();
-        this.visControllers.forEach((vc, vci) =>
-          vc.updateData(
-            this.dataInd.map((i) => this.data[i][this.columns[vci].column])
-          )
-        );
+        this.visControllers.forEach((vc, vci) => {
+          if (vc && vc.updateData && this.columns[vci]) {
+            vc.updateData(
+              this.dataInd.map((i) => this.data[i][this.columns[vci].column])
+            );
+          }
+        });
+
         this.changed({
           type: "undo",
           indeces: this.dataInd,
           sort: this.compoundSorting,
+          rules: this.rules,
         });
       } else if (u.type === "shiftcol") {
         this._isUndoing = true;
@@ -755,6 +864,7 @@ export class sorterTable {
           type: "undo",
           indeces: this.dataInd,
           sort: this.compoundSorting,
+          rules: this.rules,
         });
       }
     }
@@ -782,78 +892,160 @@ export class sorterTable {
     let sel = this.getSelection();
     let sortKeys = Object.keys(this.compoundSorting);
 
-    // Check if there is no selection or no sorting applied
-    if (sortKeys.length === 0 || sel.length === 0) {
+    // Handle case where no rows are selected or no sorting is applied
+    if (sel.length === 0) {
+      // Return null when no selection exists
       return null;
-    } else {
-      let col = sortKeys[0];
-      // Safely get first and last index
-      let firstIndex = sel.length > 0 ? sel[0].index : 0;
-      let lastIndex = sel.length > 0 ? sel[sel.length - 1].index : 0;
+    }
 
-      if (firstIndex === 0 && lastIndex === this.dataInd.length - 1) return [];
-      else {
-        let rule = [];
-        let r = "";
-        if (
-          firstIndex > 0 &&
-          this.data[this.dataInd[firstIndex - 1]][col] !=
-            this.data[this.dataInd[firstIndex]][col]
-        ) {
+    // If we have selection but no sorting, create a rule based on set membership
+    if (sortKeys.length === 0) {
+      // Create a rule based on the values of the first visible column
+      const firstVisibleCol = this.columns[0].column;
+      const uniqueValues = new Set(sel.map((s) => s.data[firstVisibleCol]));
+
+      if (uniqueValues.size <= 5) {
+        // For small sets, list all values
+        return [
+          `${firstVisibleCol} is one of: ${Array.from(uniqueValues).join(
+            ", "
+          )}`,
+        ];
+      } else {
+        // For larger sets, summarize the selection
+        return [
+          `Selection includes ${sel.length} rows (${Math.round(
+            (sel.length / this.dataInd.length) * 100
+          )}% of visible data)`,
+        ];
+      }
+    }
+
+    // If we reach here, we have both selection and sorting
+    let col = sortKeys[0];
+
+    // Create a map of data indices to their positions in dataInd for efficient lookup
+    const dataIndPositions = new Map();
+    this.dataInd.forEach((dataIndex, position) => {
+      dataIndPositions.set(dataIndex, position);
+    });
+
+    // Find the positions of the selected items in the sorted dataInd array
+    const selectedPositions = sel
+      .map((s) => dataIndPositions.get(s.index))
+      .filter((pos) => pos !== undefined)
+      .sort((a, b) => a - b);
+
+    // If no valid positions, return null
+    if (selectedPositions.length === 0) {
+      return null;
+    }
+
+    const minPosition = selectedPositions[0];
+    const maxPosition = selectedPositions[selectedPositions.length - 1];
+
+    // If selection spans the entire dataset, return empty array
+    if (minPosition === 0 && maxPosition === this.dataInd.length - 1) return [];
+
+    // Check if selection is contiguous
+    const isContiguous =
+      maxPosition - minPosition + 1 === selectedPositions.length;
+
+    let rule = [];
+    let r = "";
+
+    if (isContiguous) {
+      // Lower boundary check
+      if (minPosition > 0) {
+        const minValue = this.data[this.dataInd[minPosition]][col];
+        const prevValue = this.data[this.dataInd[minPosition - 1]][col];
+
+        if (minValue != prevValue) {
           r =
             col +
-            (this.compoundSorting[col].how === "up"
-              ? " lower than "
-              : " higher than ") +
-            this.data[this.dataInd[firstIndex]][col];
+            (this.compoundSorting[col].how === "up" ? " >= " : " <= ") +
+            minValue;
         }
-        if (
-          lastIndex < this.dataInd.length - 1 &&
-          this.data[this.dataInd[lastIndex + 1]][col] !=
-            this.data[this.dataInd[lastIndex]][col]
-        ) {
-          if (r.length == 0)
+      }
+
+      // Upper boundary check
+      if (maxPosition < this.dataInd.length - 1) {
+        const maxValue = this.data[this.dataInd[maxPosition]][col];
+        const nextValue = this.data[this.dataInd[maxPosition + 1]][col];
+
+        if (maxValue != nextValue) {
+          if (r.length === 0) {
             r =
               col +
-              (this.compoundSorting[col].how === "up"
-                ? " lower than "
-                : " higher than ") +
-              this.data[this.dataInd[lastIndex]][col];
-          else
+              (this.compoundSorting[col].how === "up" ? " <= " : " >= ") +
+              maxValue;
+          } else {
             r =
               r +
               (this.compoundSorting[col].how === "up"
-                ? " and lower than"
-                : "  and higher than ") +
-              this.data[this.dataInd[lastIndex]][col];
+                ? " AND <= "
+                : " AND >= ") +
+              maxValue;
+          }
         }
-        if (r.length > 0) rule.push(r);
+      }
+    } else {
+      // For non-contiguous selection, provide a more descriptive rule
+      const selectedValues = new Set(
+        selectedPositions.map((pos) => this.data[this.dataInd[pos]][col])
+      );
 
-        if (this.compoundSorting[col].how === "up")
-          r =
-            col +
-            " in bottom " +
-            this.percentalize(lastIndex / this.data.length, "top") +
-            " percentile";
-        else
-          r =
-            col +
-            " in top " +
-            this.percentalize(1 - lastIndex / this.data.length, "bottom") +
-            " percentile";
-        rule.push(r);
+      if (selectedValues.size <= 5) {
+        r = `${col} is one of: ${Array.from(selectedValues).join(", ")}`;
+      } else {
+        // For many values, provide range
+        const values = Array.from(selectedValues).sort((a, b) => {
+          // Handle various data types
+          if (typeof a === "number" && typeof b === "number") {
+            return a - b;
+          }
+          return String(a).localeCompare(String(b));
+        });
 
-        return rule;
+        r = `${col} ranges from ${values[0]} to ${values[values.length - 1]} (${
+          selectedValues.size
+        } distinct values)`;
       }
     }
+
+    if (r.length > 0) rule.push(r);
+
+    // Add percentile information when sorting is applied
+    if (this.compoundSorting[col]) {
+      if (this.compoundSorting[col].how === "up") {
+        r = `${col} in bottom ${Math.round(
+          ((maxPosition + 1) / this.dataInd.length) * 100
+        )}% percentile`;
+      } else {
+        r = `${col} in top ${Math.round(
+          ((this.dataInd.length - minPosition) / this.dataInd.length) * 100
+        )}% percentile`;
+      }
+      rule.push(r);
+    }
+
+    return rule;
   }
 
   selectionUpdated() {
+    // use external rule if set
+    const calculatedRule = this.getSelectionRule();
+    const rule = this._externalSelectionRule || calculatedRule;
+
+    // Clear external rule after use
+    this._externalSelectionRule = null;
+
     this.changed({
       type: "selection",
       indeces: this.dataInd,
       selection: this.getSelection(),
-      rule: this.getSelectionRule(),
+      // rule: this.getSelectionRule(),
+      rule: rule,
     });
   }
 
@@ -1368,7 +1560,51 @@ export class sorterTable {
     // Rebuild table view
     this.createHeader();
     this.createTable();
-    return this;
+
+    // additional steaps
+    // Reset indices to show all rows
+    this.dataInd = d3.range(this.data.length);
+
+    // Clear selection state
+    this.clearSelection();
+    // this.selectedRows.clear();
+    this.compoundSorting = {};
+    this.rules = [];
+    this.history = [];
+    this.selectedColumn = null;
+
+    // Reset sort controllers
+    this.sortControllers.forEach((ctrl) => {
+      if (ctrl.getDirection() !== "none") {
+        ctrl.toggleDirection();
+      }
+    });
+
+    // Update histograms efficiently
+    this.updateHistograms();
+
+    // Apply memory optimizations for large datasets
+    if (this.data.length > 10000) {
+      this.optimizeHistogramMemory();
+    }
+
+    // Notify listeners
+    this.changed({
+      type: "reset",
+      performanceMs: performance.now() - startTime,
+    });
+
+    if (this._containerNode) {
+      const event = new CustomEvent("reset", {
+        detail: {
+          source: this,
+          performanceMs: performance.now() - startTime,
+        },
+      });
+      this._containerNode.dispatchEvent(event);
+    }
+
+    return this; // Enable method chaining
   }
 
   updateHistograms() {

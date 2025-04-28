@@ -1669,7 +1669,7 @@ function tableChanged(event) {
 
   if (event.type === "filter") {
     // log("Filtered indices:", event.indeces);
-    // log("Filter rule:", event.rule);
+    log("Filter rule:", event.rule);
     // log("Filtered IDs:", event.ids);
 
     // Use the new filterState to handle filtering
