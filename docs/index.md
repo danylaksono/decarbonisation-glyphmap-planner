@@ -1686,7 +1686,7 @@ function tableChanged(event) {
   }
 
   if (event.type === "reset") {
-    // log("[TABLE] Table Reset", event);
+    log("[TABLE] Table Reset", event);
     // Reset everything when table reset is triggered
     // resetState();
     setInitialData(null);

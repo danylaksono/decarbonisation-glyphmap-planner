@@ -6,12 +6,22 @@ import { BinningService } from "./BinningService.js";
 import { SmallMultiplesView } from "./small_multiples.js";
 
 // Control debug output - set to true during development, false in production
-const DEBUG = false;
+const DEBUG = true;
 
 // Custom logging functions that respect the DEBUG flag
 const logDebug = (...args) => DEBUG && console.log(...args);
 const warnDebug = (...args) => DEBUG && console.warn(...args);
 const errorDebug = (...args) => console.error(...args); // Errors always show
+
+// Utility to deep clone objects/arrays
+function deepClone(obj) {
+  try {
+    return JSON.parse(JSON.stringify(obj));
+  } catch (e) {
+    warnDebug("deepClone failed, returning original object:", e);
+    return obj;
+  }
+}
 
 export class sorterTable {
   constructor(data, columnNames, changed, options = {}) {
@@ -84,6 +94,11 @@ export class sorterTable {
 
     this.initialColumns = JSON.parse(JSON.stringify(this.columns));
     this.initialData = [...data]; // Store a copy of the original data
+
+    // Initialize caches for resetTable
+    this._initialDataCache = deepClone(this.initialData);
+    this._initialColumnsCache = deepClone(this.initialColumns);
+    this._initialDataIndCache = d3.range(this.initialData.length);
 
     logDebug("Initial columns:", this.columns);
 
@@ -1326,82 +1341,34 @@ export class sorterTable {
   }
 
   resetTable(useInitialData = true, options = {}) {
-    // Default options
-    const defaults = {
-      reInferTypes: false, // By default, reuse cached types/bins for speed
-    };
-    const settings = { ...defaults, ...options };
-
-    // Measure performance
-    const startTime = performance.now();
-
-    // Clear cache if requested
-    if (settings.reInferTypes) {
-      logDebug("Clearing binning cache due to resetTable option");
-      this._cache.binning = {};
-    } else {
-      logDebug("Retaining binning cache during resetTable for performance");
-      // Note: If data characteristics changed significantly,
-      // cached bins might become inaccurate. Use reInferTypes: true if needed.
-    }
-
-    // Reset aggregation state
-    if (this.isAggregated && this.initialData) {
-      this.data = useInitialData ? [...this.initialData] : this.data;
-      this.isAggregated = false;
-    } else if (useInitialData && this.initialData) {
-      // Reset to initial data even if not aggregated
-      this.data = [...this.initialData];
-    }
-
-    // Reset indices to show all rows
-    this.dataInd = d3.range(this.data.length);
-
-    // Clear selection state (implemented as a batch operation for better performance)
-    this.selectedRows.clear();
-    this.compoundSorting = {};
-    this.rules = [];
-    this.history = [];
-    this.selectedColumn = null;
-
-    // Reset sort controllers
-    this.sortControllers.forEach((ctrl) => {
-      if (ctrl.getDirection() !== "none") {
-        ctrl.toggleDirection();
+    // Delegate to updateData to reset to initialData via history mechanism
+    this._isUndoing = true;
+    while (this.history.length > 0) {
+      // fast undo without side-effects
+      const last = this.history.pop();
+      if (
+        last.type === "filter" ||
+        last.type === "filterById" ||
+        last.type === "sort"
+      ) {
+        this.dataInd = last.data;
+      } else if (last.type === "shiftcol") {
+        // reverse column shift
+        const revDir = last.dir === "left" ? "right" : "left";
+        this.shiftCol(last.columnName, revDir);
+      } else if (last.type === "aggregate") {
+        this.data = last.data;
+        this.dataInd = last.dataInd;
+        this.isAggregated = false;
       }
-    });
-
-    // Reset columns to initial state (deep copy to avoid reference issues)
-    this.columns = this.initialColumns.map((col) => ({ ...col }));
-
-    // Rebuild the table in one efficient operation
-    this.rebuildTable();
-
-    // Update histograms efficiently
-    this.updateHistograms();
-
-    // Apply memory optimizations for large datasets
-    if (this.data.length > 10000) {
-      this.optimizeHistogramMemory();
     }
-
-    // Notify listeners
-    this.changed({
-      type: "reset",
-      performanceMs: performance.now() - startTime,
-    });
-
-    if (this._containerNode) {
-      const event = new CustomEvent("reset", {
-        detail: {
-          source: this,
-          performanceMs: performance.now() - startTime,
-        },
-      });
-      this._containerNode.dispatchEvent(event);
-    }
-
-    return this; // Enable method chaining
+    this._isUndoing = false;
+    // Restore initial column order
+    this.columns = deepClone(this.initialColumns);
+    // Rebuild table view
+    this.createHeader();
+    this.createTable();
+    return this;
   }
 
   updateHistograms() {
