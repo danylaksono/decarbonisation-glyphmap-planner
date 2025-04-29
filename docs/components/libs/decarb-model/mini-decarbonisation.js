@@ -322,17 +322,24 @@ export class InterventionManager {
     for (const config of this.interventionConfigs) {
       // Defensive: Use config.buildings if valid, else fallback to this.buildings
       let buildingsToUse = this.buildings;
+      // if (Array.isArray(config.buildings) && config.buildings.length > 0) {
+      //   const valid = config.buildings.every(
+      //     (b) => b && typeof b === "object" && "id" in b && "properties" in b
+      //   );
+      //   if (valid) {
+      //     buildingsToUse = config.buildings;
+      //   } else {
+      //     warn(
+      //       `Intervention ${config.id}: Invalid buildings array detected, falling back to manager's buildings.`
+      //     );
+      //   }
+      // }
       if (Array.isArray(config.buildings) && config.buildings.length > 0) {
-        const valid = config.buildings.every(
-          (b) => b && typeof b === "object" && "id" in b && "properties" in b
+        buildingsToUse = config.buildings;
+      } else {
+        warn(
+          `Intervention ${config.id}: Invalid buildings array detected, falling back to manager's buildings.`
         );
-        if (valid) {
-          buildingsToUse = config.buildings;
-        } else {
-          warn(
-            `Intervention ${config.id}: Invalid buildings array detected, falling back to manager's buildings.`
-          );
-        }
       }
 
       const model = new MiniDecarbModel(buildingsToUse, config.id);

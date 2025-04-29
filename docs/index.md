@@ -426,17 +426,15 @@ const filterManager = {
           <header class="quickview-header">
             <p class="title">Table & Chart View </p>
           </header>
-          <div id="table-container" style="height:100%; overflow-y:hidden">
+          <div id="table-container" style="height:90%; overflow-y:hidden">
             ${resize(
                 (width, height) => drawSorterTable({
                 width: width,
-                height: height-60,
+                height: height-20,
               })
               )
             }
-            <span style="padding:2px;">
-              <i> ${getTableRule? getTableRule.join('; '): ''} </i>
-            </span>
+             ${getTableRule? getTableRule.join('; '): ''}
           </div>
       </div> <!-- card -->
     </div> <!-- left top -->
@@ -459,8 +457,9 @@ const filterManager = {
                     filterSelectedIntervention();
                     console.log("Clicked Interventions", click, interventions[click]);
                   } else {
+                    // clicking on background
                     console.log("No intervention selected");
-                    filterStackedInterventions()
+                    filterStackedInterventions();
                     setSelectedInterventionIndex(null);
                   }
                 },
@@ -516,7 +515,9 @@ const filterManager = {
     <span class="delete" data-dismiss="quickview" id="closeQuickviewButton"></span>
   </header>
   <div class="quickview-body">
-    ${getInitialData ? html`<i> Using ${getInitialData.length} Filtered Data </i>`: "" }
+    <div style="padding: 6px;">
+      ${getInitialData ? html`<i> Using ${getInitialData.length} Filtered Data </i>`: "" }
+    </div>
     <div class="quickview-block">
       <form id="quickviewForm">
         <!-- Technology Selection -->
@@ -1233,6 +1234,28 @@ setSelectedAllocation(allocator.getAllocations());
 
 <!-- ---------------- Functions ---------------- -->
 
+```js
+// buildings
+// const initialBuildings = getFromSession("initialids");
+// let filteredBuildingsData = null;
+// if (getInitialData && getInitialData.length > 0) {
+//   const initialIds = new Set(getInitialData.map((d) => d.id));
+//   filteredBuildingsData = buildingsData.filter((b) => initialIds.has(b.id));
+// } else {
+//   filteredBuildingsData = buildingsData;
+// }
+// console.log("INITIAL BUILDINGS", filteredBuildingsData);
+function getFilteredBuildingsData() {
+  const initialBuildings = getFromSession("initialids");
+  if (initialBuildings && initialBuildings.length > 0) {
+    const initialIds = new Set(initialBuildings);
+    return buildingsData.filter((b) => initialIds.has(b.id));
+  } else {
+    return buildingsData;
+  }
+}
+```
+
 <!-- Intervention functions -->
 
 ```js
@@ -1242,20 +1265,13 @@ function addNewIntervention(initialForm) {
   const currentAllocation = getFromSession("allocations");
   const yearlyBudgets = currentAllocation.map((item) => item.budget);
 
-  // buildings
-  const initialBuildings = getFromSession("initialids");
-  // const filteredBuildingsData = null;
-  // if (getInitialData && getInitialData.length > 0) {
-  //   const initialIds = new Set(getInitialData.map((d) => d.id));
-  //   filteredBuildingsData = buildingsData.filter((b) => initialIds.has(b.id));
-  // } else {
-  //   filteredBuildingsData = buildingsData;
-  // }
-  console.log("INITIAL BUILDINGS", initialBuildings);
+  const buildingsForIntervention = getFilteredBuildingsData();
+
+  console.log("VALIDATE THIS BUILDING", [...buildingsForIntervention]);
 
   const newConfig = {
     ...initialForm,
-    // buildings,
+    buildings: [...buildingsForIntervention],
     // filters: [],
     // priorities: [],
     yearlyBudgets: yearlyBudgets,
@@ -1312,7 +1328,7 @@ function filterStackedInterventions() {
   filterManager.reset();
 
   // Reset to full dataset
-  setInitialData(null);
+  // setInitialData(null);
 
   // filter table and map based on stacked intervention
   // format the IDs as objects with an id property as expected by the table
@@ -1337,7 +1353,7 @@ function filterSelectedIntervention() {
   filterManager.reset();
 
   // Reset to full dataset
-  setInitialData(null);
+  // setInitialData(null);
 
   // setup flatdata
   let selectedIntervenedBuildings =
@@ -2266,14 +2282,11 @@ let keysToNormalise = [
 
 ```js
 function resetState() {
-  // log("[RESET] Requesting application state reset...");
-
-  // Instead of directly manipulating components, just set the reset flag
-  // and let the reactive cells handle the actual component updates
+  log("[RESET] Requesting application state reset...");
   setResetRequested(true);
 
-  // Reset basic state variables that won't cause circular references
-  setInitialData(null);
+  // Reset basic state variables
+  // setInitialData(null);
   setSelectedTableRow([]);
   setSelectedInterventionIndex(null);
 
@@ -2281,8 +2294,8 @@ function resetState() {
   filterManager.reset();
 
   // Reset table and map state
-  // table.resetTable();
-  // mapInstance.resetMap();
+  table.resetTable();
+  mapInstance.resetMap();
 
   // Display notification
   // bulmaToast.toast({

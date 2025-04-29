@@ -872,7 +872,7 @@ export class sorterTable {
   }
 
   rebuildTable() {
-    console.log(">>> Rebuilding table...");
+    logDebug(">>> Rebuilding table...");
     this.createHeader();
     this.createTable();
   }
@@ -1535,6 +1535,7 @@ export class sorterTable {
 
   resetTable(useInitialData = true, options = {}) {
     // Delegate to updateData to reset to initialData via history mechanism
+    const startTime = performance.now();
     this._isUndoing = true;
     while (this.history.length > 0) {
       // fast undo without side-effects
@@ -1948,6 +1949,7 @@ export class sorterTable {
 
   getNode() {
     let container = document.createElement("div");
+    container.id = "sorter-table-container";
     container.style.width = "100%";
     container.style.display = "flex";
     container.style.flexDirection = "row";
