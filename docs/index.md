@@ -429,15 +429,21 @@ const filterManager = {
             <p class="title">Table & Chart View </p>
           </header>
           <div id="table-container" style="height:90%; overflow-y:hidden">
-            ${getTableRule? getTableRule.join('; '): ''}
             ${resize(
                 (width, height) => drawSorterTable({
                 width: width,
-                height: height-20,
+                height: height,
               })
               )
             }
           </div>
+          <footer class="card-footer">
+          <p class="card-footer-item">
+            <span>
+              <i> ${getTableRule? getTableRule.join("; ") : ""} </i>
+            </span>
+          </p>
+        </footer>
       </div> <!-- card -->
     </div> <!-- left top -->
     <div class="left-bottom">
@@ -1734,6 +1740,7 @@ function tableChanged(event) {
     // Reset everything when table reset is triggered
     // resetState();
     setInitialData(null);
+    setTableRule([]);
   }
 
   if (event.type === "selection") {
@@ -1754,6 +1761,7 @@ const table = new sorterTable(getModelData, tableColumns, tableChanged);
 function drawSorterTable(options) {
   // console.log("setting table size", options);
   table.setContainerSize(options);
+  // table.setMessage(getTableRule ? getTableRule.join("; ") : "");
   return table.getNode();
 }
 // endTimer("create_sorter_table");
@@ -2314,19 +2322,6 @@ let keysToNormalise = [
 function resetState() {
   log("[RESET] Requesting application state reset...");
   setResetRequested(true);
-
-  // Reset basic state variables
-  // setInitialData(null);
-  // setSelectedTableRow([]);
-  // setSelectedInterventionIndex(null);
-
-  // Reset filter manager state
-  // filterManager.reset();
-
-  // Reset table and map state
-  // setModelData(buildingsData);
-  // table.resetTable();
-  // mapInstance.resetMap();
 }
 ```
 
@@ -2343,8 +2338,9 @@ function resetState() {
       // // Reset the table - clear filters and restore original data
       // table.resetTable();
       // mapInstance.resetMap();
-      setModelData(buildingsData);
+      setSelectedIntervention(null);
       setInitialData(null);
+      setModelData(buildingsData);
     } catch (err) {
       error("[RESET] Error during reset:", err);
     }
