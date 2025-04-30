@@ -3,6 +3,13 @@ import { OSGB } from "./osgb/index.js";
 
 const proj = new OSGB();
 
+export function getNumericBudget(value) {
+  // Remove commas and parse the value as a number
+  let budget = parseFloat(value.replace(/,/g, "").replace(/£/g, ""));
+  // log("budget in billions", budget * 1e6);
+  return budget * 1000;
+}
+
 /**
  * Infer visualization-oriented data types (e.g., Quantitative, Nominal, Temporal, Ordinal).
  * @param {Array} data - Array of objects or arrays.

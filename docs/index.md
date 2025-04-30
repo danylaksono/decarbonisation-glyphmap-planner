@@ -71,6 +71,7 @@ import {
   transformGeometry,
   normalisebyGroup,
   aggregateValues,
+  getNumericBudget,
   // set,
   // applyTransformationToShapes,
 } from "./components/libs/helpers.js";
@@ -437,10 +438,10 @@ const filterManager = {
               )
             }
           </div>
-          <footer class="card-footer">
+          <footer class="card-footer" style="overflow-y:auto;">
           <p class="card-footer-item">
             <span>
-              <i> ${getTableRule? getTableRule.join("; ") : ""} </i>
+              <small> <i> ${getTableRule? getTableRule.join("; ") : ""} </i> </small>
             </span>
           </p>
         </footer>
@@ -1066,60 +1067,68 @@ const filterByIds = (suitableIds) => {
 // ----------------- QuickView Event Listeners -----------------
 const addInterventionBtn = document.getElementById("addInterventionBtn");
 // console.log("interview btn", addInterventionBtn);
-
 log("Attaching listener to addInterventionBtn");
 // console.trace("###[TRACE]### addInterventionBtn called");
-
-// Add New Intervention button logic
-addInterventionBtn.addEventListener("click", () => {
-  console.log("Intervention button clicked");
-
-  // check for carbon-first or tech-first
-  const OPTIMISE_ALL = "Optimise All";
-  const isOptimiseAll = techsInput.value === OPTIMISE_ALL;
-
-  const strategy = isOptimiseAll ? "carbon-first" : "tech-first";
-  const techs = isOptimiseAll ? Object.keys(listOfTech) : techsInput.value;
-
-  const formData = {
-    id: techsInput.value + "_" + startYearInput.value.toString(),
-    initialYear: Number(startYearInput.value),
-    rolloverBudget: 0,
-    optimizationStrategy: strategy,
-    tech: techs,
-    technologies: techs, // for optimise all
-    priorities: [],
-    filters: [],
-  };
-
-  // addNewIntervention(formData);
-
-  const buildingsForIntervention = getFilteredBuildingsData();
-
-  // try: UNIFIED INTERVENTION PROCESS
-  const { stackedResults, formattedRecaps } = processIntervention(
-    formData,
-    buildingsForIntervention
-  );
-
-  // Only update state at the very end, minimizing reactivity
-  setInterventions(formattedRecaps);
-  setResults(stackedResults);
-
-  quickviewDefault.classList.remove("is-active"); // Close quickview after submission
-
-  // reset states
-  // resetState();
-});
 ```
 
 ```js
-const getNumericBudget = (value) => {
-  // Remove commas and parse the value as a number
-  let budget = parseFloat(value.replace(/,/g, "").replace(/£/g, ""));
-  // log("budget in billions", budget * 1e6);
-  return budget * 1000;
-};
+{
+  let interventionProcessing = false;
+  // Add New Intervention button logic
+  addInterventionBtn.addEventListener("click", () => {
+    if (interventionProcessing) return;
+    interventionProcessing = true;
+
+    console.log("Intervention button clicked");
+
+    // check for carbon-first or tech-first
+    const OPTIMISE_ALL = "Optimise All";
+    const isOptimiseAll = techsInput.value === OPTIMISE_ALL;
+
+    const strategy = isOptimiseAll ? "carbon-first" : "tech-first";
+    const techs = isOptimiseAll ? Object.keys(listOfTech) : techsInput.value;
+
+    const formData = {
+      id: techsInput.value + "_" + startYearInput.value.toString(),
+      initialYear: Number(startYearInput.value),
+      rolloverBudget: 0,
+      optimizationStrategy: strategy,
+      tech: techs,
+      technologies: techs, // for optimise all
+      priorities: [],
+      filters: [],
+    };
+
+    // addNewIntervention(formData);
+
+    const buildingsForIntervention = getFilteredBuildingsData();
+
+    // try: UNIFIED INTERVENTION PROCESS
+    const { stackedResults, formattedRecaps } = processIntervention(
+      formData,
+      buildingsForIntervention
+    );
+
+    // Only update state at the very end, minimizing reactivity
+    setInterventions(formattedRecaps);
+    setResults(stackedResults);
+
+    quickviewDefault.classList.remove("is-active"); // Close quickview after submission
+
+    // reset states
+    // resetState();
+    interventionProcessing = false;
+  });
+}
+```
+
+```js
+// const getNumericBudget = (value) => {
+//   // Remove commas and parse the value as a number
+//   let budget = parseFloat(value.replace(/,/g, "").replace(/£/g, ""));
+//   // log("budget in billions", budget * 1e6);
+//   return budget * 1000;
+// };
 ```
 
 <!--------------- Budget Allocator ---------------->
@@ -1201,43 +1210,48 @@ function getFilteredBuildingsData() {
 
 ```js
 // Handle form submission: add new intervention
-function addNewIntervention(initialForm) {
-  // console.trace("###[TRACE]### addNewIntervention called");
-  // log(Date.now(), "Checking allocations now:", allocations);
-  const currentAllocation = getFromSession("allocations");
-  const yearlyBudgets = currentAllocation.map((item) => item.budget);
+// function addNewIntervention(initialForm) {
+//   // console.trace("###[TRACE]### addNewIntervention called");
+//   // log(Date.now(), "Checking allocations now:", allocations);
+//   const currentAllocation = getFromSession("allocations");
+//   const yearlyBudgets = currentAllocation.map((item) => item.budget);
 
-  // this is the building that is resulted from filter
-  // which will be used to run the model intervention
-  const buildingsForIntervention = getFilteredBuildingsData();
+//   // this is the building that is resulted from filter
+//   // which will be used to run the model intervention
+//   const buildingsForIntervention = getFilteredBuildingsData();
 
-  // console.log("VALIDATE THIS BUILDING", [...buildingsForIntervention]);
+//   // console.log("VALIDATE THIS BUILDING", [...buildingsForIntervention]);
 
-  const newConfig = {
-    ...initialForm,
-    buildings: [...buildingsForIntervention],
-    // filters: [],
-    // priorities: [],
-    yearlyBudgets: yearlyBudgets,
-  };
-  console.log(">> CONFIG from session", newConfig);
+//   const newConfig = {
+//     ...initialForm,
+//     buildings: [...buildingsForIntervention],
+//     // filters: [],
+//     // priorities: [],
+//     yearlyBudgets: yearlyBudgets,
+//   };
+//   console.log(">> CONFIG from session", newConfig);
 
-  // add the new intervention to the model
-  manager.addIntervention(newConfig);
+//   // add the new intervention to the model
+//   manager.addIntervention(newConfig);
 
-  // run the model
-  // startTimer("run_model");
-  // log(">> Running the decarbonisation model...");
-  runModel();
-  // endTimer("run_model");
-}
+//   // run the model
+//   // startTimer("run_model");
+//   // log(">> Running the decarbonisation model...");
+//   runModel();
+//   // endTimer("run_model");
+// }
 ```
 
 ```js
 // function to run the model
+startTimer("run_model");
+let modelProcessing = false;
 function runModel() {
+  if (modelProcessing) return;
+  modelProcessing = true;
+
   // console.trace("###[TRACE]### runModel called");
-  // log("[MODEL] Running the decarbonisation model...");
+  log("[MODEL] Running the decarbonisation model...");
   const recaps = manager.runInterventions();
   const formatRecaps = recaps.map((r) => {
     return {
@@ -1259,12 +1273,17 @@ function runModel() {
 
   // Reset table and map after intervention is applied
   // filterStackedInterventions();
+
+  modelProcessing = false;
 }
+endTimer("run_model");
 ```
 
 ```js
 function filterStackedInterventions() {
-  log("[INTERVENTION] Resetting table and map selections for new intervention");
+  log(
+    "[INTERVENTION] Processing table and map selections for new intervention"
+  );
 
   // Reset the filter manager
   filterManager.reset();
@@ -1299,7 +1318,7 @@ function filterSelectedIntervention(index, interventions) {
   // let interventions = updateInterventions();
 
   log(
-    "[INTERVENTION] Resetting table and map selections for clicked intervention",
+    "[INTERVENTION] Processing table and map selections for clicked intervention",
     interventions[index]
   );
 
@@ -1453,22 +1472,6 @@ function modifyIntervention(index, newConfig) {
 ```
 
 ```js
-// function to update building filter
-function updateBuildingFilter(column, value) {
-  log(">> Updating building filter...", column, value);
-  const filter = filterByIds(
-    table.data
-      .filter((d) => d[column] === value)
-      .map((d) => d?.id)
-      .filter(Boolean)
-  );
-  log(">> Filter", filter);
-  manager.addFilter(filter);
-  runModel();
-}
-```
-
-```js
 // update timeline drawing
 function updateTimeline() {
   const timelinePanel = document.getElementById("timeline-panel");
@@ -1496,139 +1499,67 @@ function updateTimeline() {
 <!-- ----------------  D A T A  ---------------- -->
 
 ```js
-// MAIN INTERVENTION PROCESSOR
-function processIntervention(config, buildings) {
-  // 1. get allocation from session
-  const currentAllocation = getFromSession("allocations");
-  const yearlyBudgets = currentAllocation.map((item) => item.budget);
+{
+  // MAIN INTERVENTION PROCESSOR
+  startTimer("process_intervention");
+  log("process intervention");
+  let previousInterventionConfig = null;
 
-  // 2. create complete intervention config
-  const interventionConfig = {
-    ...config,
-    buildings: [...buildings],
-    yearlyBudgets: yearlyBudgets,
-  };
+  function processIntervention(config, buildings) {
+    // 1. get allocation from session
+    const currentAllocation = getFromSession("allocations");
+    const yearlyBudgets = currentAllocation.map((item) => item.budget);
 
-  // 3. add intervention to manager
-  const addSuccess = manager.addIntervention(interventionConfig);
-  if (!addSuccess) return null;
+    // 2. create complete intervention config
+    const interventionConfig = {
+      ...config,
+      buildings: [...buildings],
+      yearlyBudgets: yearlyBudgets,
+    };
 
-  // 4. run interventions
-  const recaps = manager.runInterventions();
+    // reactivity police
+    // If the same configuration has been used previously, skip processing
+    if (
+      previousInterventionConfig &&
+      JSON.stringify(previousInterventionConfig) ===
+        JSON.stringify(interventionConfig)
+    ) {
+      return;
+    }
 
-  // 5. format intervention data
-  const formattedRecaps = recaps.map((r) => ({
-    ...r,
-    interventionId: r.modelId,
-    initialYear: Number(Object.keys(r.yearlyStats)[0]),
-    tech: r.techName,
-    duration: r.projectDuration,
-  }));
+    // 3. add intervention to manager
+    const addSuccess = manager.addIntervention(interventionConfig);
+    if (!addSuccess) return null;
 
-  // 6. get stacked results
-  const stackedResults = manager.getStackedResults();
+    // 4. run interventions
+    const recaps = manager.runInterventions();
 
-  // 7. store formatted recaps and results to session
-  saveToSession("lastInterventions", formattedRecaps);
+    // 5. format intervention data
+    const formattedRecaps = recaps.map((r) => ({
+      ...r,
+      interventionId: r.modelId,
+      initialYear: Number(Object.keys(r.yearlyStats)[0]),
+      tech: r.techName,
+      duration: r.projectDuration,
+    }));
 
-  // return the stacked results
-  return {
-    stackedResults,
-    formattedRecaps,
-  };
+    // 6. get stacked results
+    const stackedResults = manager.getStackedResults();
+
+    // 7. store formatted recaps and results to session
+    // saveToSession("lastInterventions", formattedRecaps);
+
+    // return the stacked results
+    return {
+      stackedResults,
+      formattedRecaps,
+    };
+  }
+  endTimer("process_intervention");
 }
 ```
 
-````js
-// const selectedIntervenedBuildings =
-//   selectedInterventionIndex === null
-//     ? null
-//     : Array.isArray(selectedInterventionIndex)
-//     ? selectedInterventionIndex.flatMap(
-//         (i) => interventions[i]?.intervenedBuildings ?? []
-//       )
-//     : interventions[selectedInterventionIndex]?.intervenedBuildings;
-
-// // log(`[DATA] Selected Intervened buildings`, getInterventions[0]);
-
-// console.log("[DATA] Get Interventions", interventions[0]);
-
-// // flatData is from a single intervetntion
-// const flatData = selectedIntervenedBuildings?.map((p) => ({
-//   ...p,
-//   ...p.properties,
-// }));
-
-// log("[DATA] Intervened buildings", flatData);
-
-// // const data =
-// //   selectedInterventionIndex === null
-// //     ? stackedRecap?.buildings ?? buildingsData
-// //     : flatData;
-// ```
-
-// ```js
-// const data = getResetRequested
-//   ? buildingsData
-//   : selectedInterventionIndex === null
-//   ? stackedRecap?.buildings ?? buildingsData
-//   : flatData;
-
-// log("[DATA] DATA DATA DATA", data);
-
-// -----------------------------------------------
-// Get intervened buildings based on selection state
-// let selectedIntervenedBuildings = null;
-
-// if (selectedInterventionIndex !== null) {
-//   if (Array.isArray(selectedInterventionIndex)) {
-//     // Multiple selections: collect buildings from all selected interventions
-//     selectedIntervenedBuildings = selectedInterventionIndex.flatMap(
-//       (i) => getInterventions[i]?.intervenedBuildings ?? []
-//     );
-//   } else {
-//     // Single selection: get buildings from the selected intervention
-//     selectedIntervenedBuildings =
-//       getInterventions[selectedInterventionIndex]?.intervenedBuildings;
-//   }
-// }
-
-// console.log("[DATA] Get Interventions", getInterventions[0]);
-
-// // Transform buildings data when available
-// let flatData = null;
-// if (selectedIntervenedBuildings) {
-//   flatData = selectedIntervenedBuildings.map((p) => ({
-//     ...p,
-//     ...p.properties,
-//   }));
-// }
-
-// console.log("[DATA] Intervened buildings", selectedIntervenedBuildings?.length);
-
-// // Determine which data set to use
-// let data;
-// if (getResetRequested) {
-//   data = buildingsData;
-// } else if (selectedInterventionIndex === null) {
-//   // No selection: use recap buildings or fall back to all buildings
-//   data = stackedRecap?.buildings ?? buildingsData;
-//   // data = buildingsData;
-// } else {
-//   // Selection exists: use the transformed buildings data
-//   data = flatData;
-// }
-// console.log("[DATA] DATA DATA DATA", data);
-````
-
 ```js
-// This updates the stored interventions
-// const interventions = getInterventions;
-
-// get interventions from session
-// const interventions = getFromSession("interventions");
-// console.log(">> Interventions", interventions);
-
 function updateInterventions() {
   // console.trace("###[TRACE]### updateInterventions called");
   log("get filtered buildings data");
@@ -1643,7 +1574,7 @@ function updateInterventions() {
 ```
 
 ```js
-// this updates stackedRecap
+// this updates stackedRecap from getResults
 const stackedRecap = getResults;
 console.log(">> Stacked Recap", stackedRecap);
 ```
@@ -1752,20 +1683,16 @@ function tableChanged(event) {
 ```
 
 ```js
-// startTimer("create_sorter_table");
+startTimer("create_sorter_table");
 // log("[TABLE] Create table using data", data.length);
-// console.log("[TABLE] Creating table using data", getModelData);
-
 const table = new sorterTable(getModelData, tableColumns, tableChanged);
-// const table = createSorterTable(data, tableColumns, tableChanged);
 
 function drawSorterTable(options) {
   // console.log("setting table size", options);
   table.setContainerSize(options);
-  // table.setMessage(getTableRule ? getTableRule.join("; ") : "");
   return table.getNode();
 }
-// endTimer("create_sorter_table");
+endTimer("create_sorter_table");
 ```
 
 <!-- ---------------- Glyph Maps ---------------- -->
@@ -2179,7 +2106,7 @@ function createGlyphMap(map_aggregate, width, height) {
         ...glyphMapSpec(width, height),
       });
     } else {
-      return createLeafletMap(getModelData, width, height).leafletContainer;
+      return createLeafletMap(width, height).leafletContainer;
     }
   } else if (map_aggregate == "LSOA Level") {
     return morphGlyphMap;
@@ -2285,7 +2212,7 @@ if (leafletContainer && mapInstance && mapInstance.map) {
 
 ```js
 // Leaflet map
-function createLeafletMap(data, width, height) {
+function createLeafletMap(width, height) {
   // log(">> Create Leaflet Map with... ", width, height);
   mapInstance.setDimensions(width, height);
 
@@ -2341,6 +2268,11 @@ function resetState() {
       // mapInstance.resetMap();
       setSelectedInterventionIndex(null);
       setInitialData(null);
+
+      // cleaning up session storages
+      sessionStorage.removeItem("initialids");
+      sessionStorage.removeItem("allocations");
+
       setModelData(buildingsData);
     } catch (err) {
       error("[RESET] Error during reset:", err);
