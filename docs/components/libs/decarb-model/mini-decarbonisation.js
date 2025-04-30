@@ -228,8 +228,24 @@ export class InterventionManager {
         }
       }
 
+      // Defensive: Use config.buildings if valid, else fallback to this.buildings
+      let buildingsToUse = this.buildings;
+      if (Array.isArray(config.buildings) && config.buildings.length > 0) {
+        // Defensive: check for valid building objects (must have id and properties)
+        const valid = config.buildings.every(
+          (b) => b && typeof b === "object" && "id" in b && "properties" in b
+        );
+        if (valid) {
+          buildingsToUse = config.buildings;
+        } else {
+          warn(
+            `Intervention ${config.id}: Invalid buildings array detected, falling back to manager's buildings.`
+          );
+        }
+      }
+
       // Create the model
-      const model = new MiniDecarbModel(this.buildings, this.nextModelId++);
+      const model = new MiniDecarbModel(buildingsToUse, this.nextModelId++);
 
       // Set initial year, optimization strategy, technologies, priorities, and filters (no changes)
       model.setInitialYear(configCopy.initialYear || 0);
@@ -304,7 +320,29 @@ export class InterventionManager {
 
     // Use the interventionConfigs array directly, which will be in the correct order
     for (const config of this.interventionConfigs) {
-      const model = new MiniDecarbModel(this.buildings, config.id);
+      // Defensive: Use config.buildings if valid, else fallback to this.buildings
+      let buildingsToUse = this.buildings;
+      // if (Array.isArray(config.buildings) && config.buildings.length > 0) {
+      //   const valid = config.buildings.every(
+      //     (b) => b && typeof b === "object" && "id" in b && "properties" in b
+      //   );
+      //   if (valid) {
+      //     buildingsToUse = config.buildings;
+      //   } else {
+      //     warn(
+      //       `Intervention ${config.id}: Invalid buildings array detected, falling back to manager's buildings.`
+      //     );
+      //   }
+      // }
+      if (Array.isArray(config.buildings) && config.buildings.length > 0) {
+        buildingsToUse = config.buildings;
+      } else {
+        warn(
+          `Intervention ${config.id}: Invalid buildings array detected, falling back to manager's buildings.`
+        );
+      }
+
+      const model = new MiniDecarbModel(buildingsToUse, config.id);
 
       model.setInitialYear(config.initialYear || 0);
       model.setRolloverBudget(this.currentRolloverBudget); // Apply current rollover
@@ -354,10 +392,6 @@ export class InterventionManager {
       }
 
       const recap = model.run();
-      // recap.intervenedBuildings = model
-      //   .getFilteredBuildings()
-      //   .filter((b) => b.isIntervened);
-      // recap.allBuildings = model.getFilteredBuildings(); // Use the filtered list
       this.results.push(recap);
 
       // Update current rollover budget
