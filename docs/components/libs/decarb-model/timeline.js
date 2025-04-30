@@ -591,17 +591,27 @@ export function createTimelineInterface(
 
   // Add CSS styles
   svg.append("style").text(`
+    .resize-handle {
+      pointer-events: none;
+    }
+    .resize-handle.active {
+      pointer-events: all;
+    }
     .resize-handle:hover {
       stroke: #666;
       stroke-width: 1px;
+    }
+    .block {
+      stroke: none;
     }
     .block-label {
       font-family: sans-serif;
       user-select: none;
     }
-    .highlight {
-      stroke: orange;
-      stroke-width: 3px;
+    .block.highlight {
+      stroke: orange !important;
+      stroke-width: 3px !important;
+    }
     }
     .tooltip {
       background: white;

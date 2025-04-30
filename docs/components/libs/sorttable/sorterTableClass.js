@@ -659,6 +659,8 @@ export class sorterTable {
       );
     });
     this.dataInd = matchingDataIndices;
+
+    logDebug("Filtering table using:", ids);
     this.history.push({ type: "filterById", data: prevDataInd });
     this.rebuildTable();
     this.visControllers.forEach((vc, vci) => {

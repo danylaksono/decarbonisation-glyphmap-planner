@@ -239,7 +239,7 @@ endTimer("glyph_variables_and_colours");
 ```js
 // wrapper to Observable's Mutable
 function useState(value) {
-  console.trace("####### STATE #####");
+  // console.trace("####### STATE #####");
   const state = Mutable(value);
   const setState = (value) => (state.value = value);
   return [state, setState];
@@ -353,6 +353,7 @@ const filterManager = {
     this.currentIds = [];
     this.filters.map = null;
     this.filters.table = null;
+    setTableRule([]);
     setInitialData(null);
   },
 };
@@ -428,6 +429,7 @@ const filterManager = {
             <p class="title">Table & Chart View </p>
           </header>
           <div id="table-container" style="height:90%; overflow-y:hidden">
+            ${getTableRule? getTableRule.join('; '): ''}
             ${resize(
                 (width, height) => drawSorterTable({
                 width: width,
@@ -435,7 +437,6 @@ const filterManager = {
               })
               )
             }
-             ${getTableRule? getTableRule.join('; '): ''}
           </div>
       </div> <!-- card -->
     </div> <!-- left top -->
@@ -457,13 +458,13 @@ const filterManager = {
                     (click) => {
                       if (click != null) {
                         setSelectedInterventionIndex(click);
-                        filterSelectedIntervention();
+                        filterSelectedIntervention(click, interventions);
                         console.log("Clicked Interventions", click, interventions[click]);
                       } else {
                         // clicking on background
                         console.log("No intervention selected");
-                        filterStackedInterventions();
                         setSelectedInterventionIndex(null);
+                        filterStackedInterventions();
                       }
                     },
                     width || 800,
@@ -475,6 +476,10 @@ const filterManager = {
                 <button id="openQuickviewButton" data-show="quickview" class="btn tooltip" data-tooltip="Add New Intervention" aria-label="Add">
                   <i class="fas fa-plus"></i>
                 </button>
+                <button id="resetAllButton" class="btn reset-all tooltip" data-tooltip="Start Over" aria-label="Move Down">
+                  <i class="fas fa-sync-alt"></i>
+                </button>
+                <div class="button-separator"></div>
                 <button id="editButton" class="btn edit tooltip" data-tooltip="Apply Modification" aria-label="Edit">
                   <i class="fas fa-edit" style="color:green;"></i>
                 </button>
@@ -487,9 +492,6 @@ const filterManager = {
                 </button>
                 <button id="moveDownButton" class="btn move-down tooltip" data-tooltip="Move Down" aria-label="Move Down">
                   <i class="fas fa-arrow-down"></i>
-                </button>
-                <button id="resetAllButton" class="btn reset-all tooltip" data-tooltip="Start Over" aria-label="Move Down">
-                  <i class="fas fa-sync-alt"></i>
                 </button>
               </nav>
             </div> <!-- graph container -->
@@ -619,13 +621,6 @@ openQuickviewButton.addEventListener("click", () => {
   // log("Open quickview");
 });
 
-// Add map reset button event listener
-// mapResetButton.addEventListener("click", (e) => {
-//   e.stopPropagation();
-//   log("[MAP] Reset triggered from map");
-//   // resetState();
-// });
-
 // Existing event listeners...
 closeQuickviewButton.addEventListener("click", () => {
   quickviewDefault.classList.remove("is-active");
@@ -704,81 +699,14 @@ resetAllButton.addEventListener("click", (e) => {
 
     try {
       // // Reset the table - clear filters and restore original data
-      // if (table) {
-      //   log("[RESET] Resetting table filters");
-      //   table.resetAllFilters();
-      //   table.setData(buildingsData);
-      // }
-      // // Reset the map - clear filters and show all buildings
-      // if (mapInstance) {
-      //   log("[RESET] Resetting map filters");
-      //   mapInstance.clearSelection();
-      //   mapInstance.updateLayer("buildings", buildingsData);
-      // }
-      // log("[RESET] Application state has been reset successfully");
-      // Display success notification
-      // bulmaToast.toast({
-      //   message: "All filters have been reset",
-      //   type: "is-success",
-      //   position: "bottom-right",
-      //   duration: 3000,
-      //   dismissible: true,
-      //   animate: { in: "fadeIn", out: "fadeOut" },
       // });
     } catch (err) {
       error("[RESET] Error during reset:", err);
-
-      // Display error notification
-      // bulmaToast.toast({
-      //   message: "Error resetting filters: " + err.message,
-      //   type: "is-danger",
-      //   position: "bottom-right",
-      //   duration: 3000,
-      //   dismissible: true,
-      // });
     }
-
     // Reset the flag after processing
     // setResetRequested(false);
   }
 }
-```
-
-<!------------------ INSTANTIATION  ------------------>
-
-```js
-// Factory for sorterTable
-// function createSorterTable(data, columns, onChange, options = {}) {
-//   console.log("[TABLE] Creating sorterTable instance...");
-//   console.log("[TABLE] Columns: ", columns);
-//   const table = new sorterTable(data, columns, onChange);
-//   if (options.width && options.height) {
-//     table.setContainerSize(options);
-//   }
-//   return table;
-// }
-```
-
-```js
-// Factory for InterventionManager
-// function createInterventionManager(data, techList) {
-//   console.log("[INTERVENTION] Creating InterventionManager instance...");
-//   return new InterventionManager(data, techList);
-// }
-```
-
-```js
-// Factory for LeafletMap
-// function createLeafletMapInstance(container, data, options = {}) {
-//   console.log("[MAP] Creating LeafletMap instance...");
-//   const map = new LeafletMap(container, options);
-//   map.addLayer("buildings", data, {
-//     clusterRadius: 50,
-//     fitBounds: true,
-//   });
-//   map.setSelectionLayer("buildings");
-//   return map;
-// }
 ```
 
 ```js
@@ -1154,7 +1082,7 @@ const addInterventionBtn = document.getElementById("addInterventionBtn");
 // console.log("interview btn", addInterventionBtn);
 
 log("Attaching listener to addInterventionBtn");
-console.trace("###[TRACE]### addInterventionBtn called");
+// console.trace("###[TRACE]### addInterventionBtn called");
 
 // Add New Intervention button logic
 addInterventionBtn.addEventListener("click", () => {
@@ -1182,7 +1110,7 @@ addInterventionBtn.addEventListener("click", () => {
 
   const buildingsForIntervention = getFilteredBuildingsData();
 
-  // try: process everything in one go
+  // try: UNIFIED INTERVENTION PROCESS
   const { stackedResults, formattedRecaps } = processIntervention(
     formData,
     buildingsForIntervention
@@ -1285,7 +1213,7 @@ function getFilteredBuildingsData() {
 ```js
 // Handle form submission: add new intervention
 function addNewIntervention(initialForm) {
-  console.trace("###[TRACE]### addNewIntervention called");
+  // console.trace("###[TRACE]### addNewIntervention called");
   // log(Date.now(), "Checking allocations now:", allocations);
   const currentAllocation = getFromSession("allocations");
   const yearlyBudgets = currentAllocation.map((item) => item.budget);
@@ -1317,7 +1245,7 @@ function addNewIntervention(initialForm) {
 ```js
 // function to run the model
 function runModel() {
-  console.trace("###[TRACE]### runModel called");
+  // console.trace("###[TRACE]### runModel called");
   // log("[MODEL] Running the decarbonisation model...");
   const recaps = manager.runInterventions();
   const formatRecaps = recaps.map((r) => {
@@ -1358,6 +1286,8 @@ function filterStackedInterventions() {
   let buildingsArray = stackedRecap?.buildings;
   let currentIdObject =
     buildingsArray?.map((building) => ({ id: building.id })) || [];
+
+  log("current ID for stackedRecap filtering", currentIdObject);
   table.setFilteredDataById(currentIdObject);
   // mapfiltering accept array
   let currentIdList = buildingsArray?.map((building) => building.id) || [];
@@ -1366,30 +1296,29 @@ function filterStackedInterventions() {
 ```
 
 ```js
-function filterSelectedIntervention() {
+function filterSelectedIntervention(index, interventions) {
   // update interventions
-  let interventions = updateInterventions();
+  // if commented - tried getting from the timeline instead
+  // let interventions = updateInterventions();
 
   log(
     "[INTERVENTION] Resetting table and map selections for clicked intervention",
-    interventions[selectedInterventionIndex]
+    interventions[index]
   );
 
   // Reset the filter manager
-  filterManager.reset();
+  // filterManager.reset();
 
   // Reset to full dataset
   // setInitialData(null);
 
   // setup flatdata
   let selectedIntervenedBuildings =
-    selectedInterventionIndex === null
+    index === null
       ? null
-      : Array.isArray(selectedInterventionIndex)
-      ? selectedInterventionIndex.flatMap(
-          (i) => interventions[i]?.intervenedBuildings ?? []
-        )
-      : interventions[selectedInterventionIndex]?.intervenedBuildings;
+      : Array.isArray(index)
+      ? index.flatMap((i) => interventions[i]?.intervenedBuildings ?? [])
+      : interventions[index]?.intervenedBuildings;
 
   // flatData is from a single intervetntion
   // flatten the intervened buildings
@@ -1402,9 +1331,14 @@ function filterSelectedIntervention() {
   // format the IDs as objects with an id property as expected by the table
   let currentIdObject =
     flatData?.map((building) => ({ id: building.id })) || [];
-  table.setFilteredDataById(currentIdObject);
-  // mapfiltering accept array
   let currentIdList = flatData?.map((building) => building.id) || [];
+
+  log("currently selected flat data", currentIdList);
+
+  table.resetTable();
+  table.setFilteredDataById(currentIdList);
+  // mapfiltering accept array
+  // let currentIdList = flatData?.map((building) => building.id) || [];
   mapInstance.setFilteredData("buildings", { ids: currentIdList });
 }
 ```
@@ -2382,15 +2316,5 @@ function resetState() {
   // Reset table and map state
   table.resetTable();
   mapInstance.resetMap();
-
-  // Display notification
-  // bulmaToast.toast({
-  //   message: "Resetting all filters...",
-  //   type: "is-info",
-  //   position: "bottom-right",
-  //   duration: 2,
-  //   dismissible: true,
-  //   animate: { in: "fadeIn", out: "fadeOut" },
-  // });
 }
 ```

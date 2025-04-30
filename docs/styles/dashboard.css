@@ -200,6 +200,13 @@ html {
   background-color: #cccccc;
 }
 
+#timeline-buttons .button-separator {
+  width: 100%;
+  height: 1px;
+  background-color: #ddd;
+  margin: 8px 0;
+}
+
 .quickview {
   max-width: 400px;
   /* overflow-y: hidden; */
