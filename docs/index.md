@@ -239,6 +239,7 @@ endTimer("glyph_variables_and_colours");
 ```js
 // wrapper to Observable's Mutable
 function useState(value) {
+  console.trace("####### STATE #####");
   const state = Mutable(value);
   const setState = (value) => (state.value = value);
   return [state, setState];
@@ -260,7 +261,7 @@ const [getInitialFilter, setInitialFilter] = useState(null); // INITIAL FILTER
 const [getSelectedTableRow, setSelectedTableRow] = useState([]); // selected table row
 const [getInterventions, setInterventions] = useState([]); // list of interventions
 const [getResults, setResults] = useState([]); // list of results, from running model
-const [selectedIntervention, setSelectedIntervention] = useState(null); // selected intervention in timeline
+// const [selectedIntervention, setSelectedIntervention] = useState(null); // selected intervention in timeline
 const [selectedInterventionIndex, setSelectedInterventionIndex] =
   useState(null); // selected intervention index
 const [timelineModifications, setTimelineModifications] = useState([]); // list of budget allocations
@@ -445,27 +446,30 @@ const filterManager = {
         </header>
             <div id="graph-container">
               <div id="timeline-panel">
-                ${resize((width, height) => createTimelineInterface(
-                interventions,
-                (change) => {
-                  console.log("Timeline changed", change);
-                  setTimelineModifications(change);
-                },
-                (click) => {
-                  if (click != null) {
-                    setSelectedInterventionIndex(click);
-                    filterSelectedIntervention();
-                    console.log("Clicked Interventions", click, interventions[click]);
-                  } else {
-                    // clicking on background
-                    console.log("No intervention selected");
-                    filterStackedInterventions();
-                    setSelectedInterventionIndex(null);
-                  }
-                },
-                width || 800,
-                height || 300
-                ))}
+                ${resize((width, height) => {
+                  const interventions = updateInterventions(); // scoped and fresh
+                  return createTimelineInterface(
+                    interventions,
+                    (change) => {
+                      console.log("Timeline changed", change);
+                      setTimelineModifications(change);
+                    },
+                    (click) => {
+                      if (click != null) {
+                        setSelectedInterventionIndex(click);
+                        filterSelectedIntervention();
+                        console.log("Clicked Interventions", click, interventions[click]);
+                      } else {
+                        // clicking on background
+                        console.log("No intervention selected");
+                        filterStackedInterventions();
+                        setSelectedInterventionIndex(null);
+                      }
+                    },
+                    width || 800,
+                    height || 300
+                  );
+                })}
               </div> <!-- timeline panel -->
               <nav id="timeline-buttons">
                 <button id="openQuickviewButton" data-show="quickview" class="btn tooltip" data-tooltip="Add New Intervention" aria-label="Add">
@@ -799,6 +803,9 @@ const timelineDataArray = [
 ```js
 // startTimer("transform_intervention_data");
 function transformInterventionData(getModelData, lsoaCode, fields) {
+  // update interventions
+  let interventions = updateInterventions();
+
   // Get the specific LSOA data
   const lsoaData = getModelData[lsoaCode];
   if (!lsoaData?.children) {
@@ -1146,6 +1153,9 @@ const filterByIds = (suitableIds) => {
 const addInterventionBtn = document.getElementById("addInterventionBtn");
 // console.log("interview btn", addInterventionBtn);
 
+log("Attaching listener to addInterventionBtn");
+console.trace("###[TRACE]### addInterventionBtn called");
+
 // Add New Intervention button logic
 addInterventionBtn.addEventListener("click", () => {
   console.log("Intervention button clicked");
@@ -1246,6 +1256,7 @@ setSelectedAllocation(allocator.getAllocations());
 // }
 // console.log("INITIAL BUILDINGS", filteredBuildingsData);
 function getFilteredBuildingsData() {
+  log("get filtered buildings data");
   const initialBuildings = getFromSession("initialids");
   if (initialBuildings && initialBuildings.length > 0) {
     const initialIds = new Set(initialBuildings);
@@ -1261,6 +1272,7 @@ function getFilteredBuildingsData() {
 ```js
 // Handle form submission: add new intervention
 function addNewIntervention(initialForm) {
+  console.trace("###[TRACE]### addNewIntervention called");
   // log(Date.now(), "Checking allocations now:", allocations);
   const currentAllocation = getFromSession("allocations");
   const yearlyBudgets = currentAllocation.map((item) => item.budget);
@@ -1292,6 +1304,7 @@ function addNewIntervention(initialForm) {
 ```js
 // function to run the model
 function runModel() {
+  console.trace("###[TRACE]### runModel called");
   // log("[MODEL] Running the decarbonisation model...");
   const recaps = manager.runInterventions();
   const formatRecaps = recaps.map((r) => {
@@ -1307,13 +1320,10 @@ function runModel() {
   // store to current interventions
   setInterventions(formatRecaps);
   // store interventions to session to avoid reactive loop
-  // saveToSession("interventions", formatRecaps);
+  // saveToSession("interventions", formatRecaps); // data exveed session storage capacity
 
-  const stackedRecap = manager.getStackedResults();
-  setResults(stackedRecap);
-
-  // Update map and table with new data
-  // setModelData(stackedRecap?.buildings)
+  let stacked = manager.getStackedResults();
+  setResults(stacked);
 
   // Reset table and map after intervention is applied
   // filterStackedInterventions();
@@ -1344,6 +1354,9 @@ function filterStackedInterventions() {
 
 ```js
 function filterSelectedIntervention() {
+  // update interventions
+  let interventions = updateInterventions();
+
   log(
     "[INTERVENTION] Resetting table and map selections for clicked intervention",
     interventions[selectedInterventionIndex]
@@ -1454,7 +1467,8 @@ function modifyIntervention(index, newConfig) {
   if (newConfig.duration !== newConfig.projectDuration) {
     log("Assigning new budget allocations..");
 
-    // calculate yearlyBudgets by creating an array of newConfig.projectDuration length where each item's value is from initialBudget divided by newConfig.projectDuration.
+    // calculate yearlyBudgets by creating an array of newConfig.projectDuration length
+    // where each item's value is from initialBudget divided by newConfig.projectDuration.
     const initialBudget = newConfig.initialBudget;
     yearlyBudgets = Array(newConfig.duration)
       .fill(initialBudget / newConfig.duration)
@@ -1510,6 +1524,9 @@ function updateBuildingFilter(column, value) {
 function updateTimeline() {
   const timelinePanel = document.getElementById("timeline-panel");
   timelinePanel.innerHTML = "";
+
+  const interventions = updateInterventions();
+
   timelinePanel.appendChild(
     createTimelineInterface(
       interventions,
@@ -1613,14 +1630,27 @@ function updateTimeline() {
 
 ```js
 // This updates the stored interventions
-const interventions = getInterventions;
+// const interventions = getInterventions;
 
 // get interventions from session
 // const interventions = getFromSession("interventions");
-console.log(">> Interventions", interventions);
+// console.log(">> Interventions", interventions);
+
+function updateInterventions() {
+  console.trace("###[TRACE]### updateInterventions called");
+  log("get filtered buildings data");
+  // const interventions = getFromSession("interventions"); // data exceed storage capacity
+  const interventions = getInterventions;
+  if (interventions && interventions.length > 0) {
+    return interventions;
+  } else {
+    return [];
+  }
+}
 ```
 
 ```js
+// this updates stackedRecap
 const stackedRecap = getResults;
 console.log(">> Stacked Recap", stackedRecap);
 ```
@@ -1690,7 +1720,7 @@ const tableColumns = [
 ```js
 // Table events
 function tableChanged(event) {
-  // log("Table changed:", event);
+  log("Table changed:", event);
 
   if (event.type === "filter") {
     // log("Filtered indices:", event.indeces);
@@ -1735,7 +1765,7 @@ const table = new sorterTable(getModelData, tableColumns, tableChanged);
 // const table = createSorterTable(data, tableColumns, tableChanged);
 
 function drawSorterTable(options) {
-  console.log("setting table size", options);
+  // console.log("setting table size", options);
   table.setContainerSize(options);
   return table.getNode();
 }
