@@ -480,7 +480,9 @@ export function applyTransformationToShapes(geographicShapes) {
 
 export function normaliseData(data, keysToNormalise) {
   if (!Array.isArray(data) || data.length === 0) {
-    throw new Error("Data must be a non-empty array.");
+    // throw new Error("Data must be a non-empty array.");
+    console.warn("Data must be a non-empty array.");
+    return data; // Return original data if empty
   }
 
   // First, gather all values for each key

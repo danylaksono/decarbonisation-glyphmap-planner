@@ -454,7 +454,8 @@ const filterManager = {
             <div id="graph-container">
               <div id="timeline-panel">
                 ${resize((width, height) => {
-                  const interventions = updateInterventions(); // scoped and fresh
+                  const interventions = updateInterventions();
+                  console.log("COMPOSING TIMELINE INTERFACE");
                   return createTimelineInterface(
                     interventions,
                     (change) => {
