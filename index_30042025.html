@@ -815,6 +815,27 @@ resetAllButton.addEventListener("click", (e) => {
 return {openQuickviewButton,closeQuickviewButton,quickviewDefault,cancelButton,editButton,deleteButton,moveUpButton,moveDownButton,resetAllButton};
 }});
 
+define({id: "46b6912f", inputs: ["getResetRequested","error"], body: (getResetRequested,error) => {
+// Handle component resets in a reactive cell to avoid circular references
+{
+  // This cell responds to reset requests
+  getResetRequested;
+
+  if (getResetRequested) {
+    // log("[RESET] Processing application state reset...");
+
+    try {
+      // // Reset the table - clear filters and restore original data
+      // });
+    } catch (err) {
+      error("[RESET] Error during reset:", err);
+    }
+    // Reset the flag after processing
+    // setResetRequested(false);
+  }
+}
+}});
+
 define({id: "941eea5c", inputs: ["MiniDecarbModel","getModelData"], outputs: ["groupedData"], body: (MiniDecarbModel,getModelData) => {
 // startTimer("grouped_intervention");
 // display(html`<p>"Grouped Intervention"</p>`);
@@ -1198,7 +1219,7 @@ const filterByIds = (suitableIds) => {
 return {filterByIds};
 }});
 
-define({id: "ca0f8731", inputs: ["log","techsInput","listOfTech","startYearInput","getFilteredBuildingsData","processIntervention","setInterventions","setResults","quickviewDefault"], outputs: ["addInterventionBtn"], body: (log,techsInput,listOfTech,startYearInput,getFilteredBuildingsData,processIntervention,setInterventions,setResults,quickviewDefault) => {
+define({id: "2467f726", inputs: ["log","techsInput","listOfTech","startYearInput","getFilteredBuildingsData","processIntervention","setInterventions","setResults","quickviewDefault","resetState"], outputs: ["addInterventionBtn"], body: (log,techsInput,listOfTech,startYearInput,getFilteredBuildingsData,processIntervention,setInterventions,setResults,quickviewDefault,resetState) => {
 // ----------------- QuickView Event Listeners -----------------
 const addInterventionBtn = document.getElementById("addInterventionBtn");
 // console.log("interview btn", addInterventionBtn);
@@ -1245,7 +1266,7 @@ addInterventionBtn.addEventListener("click", () => {
   quickviewDefault.classList.remove("is-active"); // Close quickview after submission
 
   // reset states
-  // resetState();
+  resetState();
 });
 return {addInterventionBtn};
 }});
@@ -1334,7 +1355,7 @@ function getFilteredBuildingsData() {
 return {getFilteredBuildingsData};
 }});
 
-define({id: "bbfbf34c", inputs: ["getFromSession","getFilteredBuildingsData","manager","runModel"], outputs: ["addNewIntervention"], body: (getFromSession,getFilteredBuildingsData,manager,runModel) => {
+define({id: "afca9404", inputs: ["getFromSession","getFilteredBuildingsData","manager","runModel"], outputs: ["addNewIntervention"], body: (getFromSession,getFilteredBuildingsData,manager,runModel) => {
 // Handle form submission: add new intervention
 function addNewIntervention(initialForm) {
   // console.trace("###[TRACE]### addNewIntervention called");
@@ -1342,11 +1363,9 @@ function addNewIntervention(initialForm) {
   const currentAllocation = getFromSession("allocations");
   const yearlyBudgets = currentAllocation.map((item) => item.budget);
 
-  // this is the building that is resulted from filter
-  // which will be used to run the model intervention
   const buildingsForIntervention = getFilteredBuildingsData();
 
-  // console.log("VALIDATE THIS BUILDING", [...buildingsForIntervention]);
+  console.log("VALIDATE THIS BUILDING", [...buildingsForIntervention]);
 
   const newConfig = {
     ...initialForm,
@@ -1399,7 +1418,7 @@ function runModel() {
 return {runModel};
 }});
 
-define({id: "b6724078", inputs: ["log","filterManager","stackedRecap","setModelData"], outputs: ["filterStackedInterventions"], body: (log,filterManager,stackedRecap,setModelData) => {
+define({id: "1298f825", inputs: ["log","filterManager","stackedRecap","table","mapInstance"], outputs: ["filterStackedInterventions"], body: (log,filterManager,stackedRecap,table,mapInstance) => {
 function filterStackedInterventions() {
   log("[INTERVENTION] Resetting table and map selections for new intervention");
 
@@ -1411,26 +1430,22 @@ function filterStackedInterventions() {
 
   // filter table and map based on stacked intervention
   // format the IDs as objects with an id property as expected by the table
-  let buildingsArray = stackedRecap ? stackedRecap?.buildings : [];
+  let buildingsArray = stackedRecap?.buildings;
+  let currentIdObject =
+    buildingsArray?.map((building) => ({ id: building.id })) || [];
+  let currentIdList = buildingsArray?.map((building) => building.id) || [];
 
-  // UPDATE MODEL DATA
-  setModelData(buildingsArray);
-
-  // let currentIdObject =
-  //   buildingsArray?.map((building) => ({ id: building.id })) || [];
+  log("current ID for stackedRecap filtering", currentIdList);
+  table.resetTable();
+  table.setFilteredDataById(currentIdList);
+  // mapfiltering accept array
   // let currentIdList = buildingsArray?.map((building) => building.id) || [];
-
-  // log("current ID for stackedRecap filtering", currentIdList);
-  // table.resetTable();
-  // table.setFilteredDataById(currentIdList);
-  // // mapfiltering accept array
-  // // let currentIdList = buildingsArray?.map((building) => building.id) || [];
-  // mapInstance.setFilteredData("buildings", { ids: currentIdList });
+  mapInstance.setFilteredData("buildings", { ids: currentIdList });
 }
 return {filterStackedInterventions};
 }});
 
-define({id: "b3432dd8", inputs: ["log","setModelData"], outputs: ["filterSelectedIntervention"], body: (log,setModelData) => {
+define({id: "2bcedf23", inputs: ["log","table","mapInstance"], outputs: ["filterSelectedIntervention"], body: (log,table,mapInstance) => {
 function filterSelectedIntervention(index, interventions) {
   // update interventions
   // if commented - tried getting from the timeline instead
@@ -1458,28 +1473,24 @@ function filterSelectedIntervention(index, interventions) {
   let selectedIntervenedBuildings = interventions[index]?.intervenedBuildings;
   // flatData is from a single intervetntion
   // flatten the intervened buildings
-
   let flatData = selectedIntervenedBuildings?.map((p) => ({
     ...p,
     ...p.properties,
   }));
 
-  // UPDATE MODEL DATA
-  setModelData(flatData);
-
   // filter table and map based on stacked intervention
   // format the IDs as objects with an id property as expected by the table
-  // let currentIdObject =
-  //   flatData?.map((building) => ({ id: building.id })) || [];
+  let currentIdObject =
+    flatData?.map((building) => ({ id: building.id })) || [];
+  let currentIdList = flatData?.map((building) => building.id) || [];
+
+  log("currently selected flat data", currentIdList);
+
+  table.resetTable();
+  table.setFilteredDataById(currentIdList);
+  // mapfiltering accept array
   // let currentIdList = flatData?.map((building) => building.id) || [];
-
-  // log("currently selected flat data", currentIdList);
-
-  // table.resetTable();
-  // table.setFilteredDataById(currentIdList);
-  // // mapfiltering accept array
-  // // let currentIdList = flatData?.map((building) => building.id) || [];
-  // mapInstance.setFilteredData("buildings", { ids: currentIdList });
+  mapInstance.setFilteredData("buildings", { ids: currentIdList });
 }
 return {filterSelectedIntervention};
 }});
@@ -1636,8 +1647,7 @@ function updateTimeline() {
 return {updateTimeline};
 }});
 
-define({id: "48a4fb6c", inputs: ["getFromSession","manager","saveToSession"], outputs: ["processIntervention"], body: (getFromSession,manager,saveToSession) => {
-// MAIN INTERVENTION PROCESSOR
+define({id: "1fa2a4f4", inputs: ["getFromSession","manager","saveToSession"], outputs: ["processIntervention"], body: (getFromSession,manager,saveToSession) => {
 function processIntervention(config, buildings) {
   // 1. get allocation from session
   const currentAllocation = getFromSession("allocations");
@@ -1792,8 +1802,8 @@ console.log(">> Stacked Recap", stackedRecap);
 return {stackedRecap};
 }});
 
-define({id: "3bf23f9b", inputs: ["aggregateValues","getModelData","glyphVariables"], outputs: ["overall_data","glyphData"], body: (aggregateValues,getModelData,glyphVariables) => {
-// timeline_switch;
+define({id: "0d24f1a6", inputs: ["timeline_switch","aggregateValues","getModelData","glyphVariables"], outputs: ["overall_data","glyphData"], body: (timeline_switch,aggregateValues,getModelData,glyphVariables) => {
+timeline_switch;
 // log(">> Switching variables...", glyphVariables);
 
 // aggregate and normalise data for whole LA
@@ -1895,11 +1905,10 @@ function tableChanged(event) {
 return {tableChanged};
 }});
 
-define({id: "fe36e34a", inputs: ["sorterTable","getModelData","tableColumns","tableChanged"], outputs: ["table","drawSorterTable"], body: (sorterTable,getModelData,tableColumns,tableChanged) => {
+define({id: "9339fef7", inputs: ["sorterTable","getModelData","tableColumns","tableChanged"], outputs: ["table","drawSorterTable"], body: (sorterTable,getModelData,tableColumns,tableChanged) => {
 // startTimer("create_sorter_table");
 // log("[TABLE] Create table using data", data.length);
 // console.log("[TABLE] Creating table using data", getModelData);
-
 const table = new sorterTable(getModelData, tableColumns, tableChanged);
 // const table = createSorterTable(data, tableColumns, tableChanged);
 
@@ -2361,7 +2370,7 @@ define({id: "42a819d2", body: () => {
 // }
 }});
 
-define({id: "45e8b6ae", inputs: ["LeafletMap","filterManager","setInitialData","getModelData","lsoa_boundary","ResizeObserver"], outputs: ["leafletContainer","mapInstance"], body: (LeafletMap,filterManager,setInitialData,getModelData,lsoa_boundary,ResizeObserver) => {
+define({id: "b50553eb", inputs: ["LeafletMap","filterManager","setInitialData","getModelData","lsoa_boundary","ResizeObserver"], outputs: ["leafletContainer","mapInstance"], body: (LeafletMap,filterManager,setInitialData,getModelData,lsoa_boundary,ResizeObserver) => {
 const leafletContainer = document.createElement("div");
 document.body.appendChild(leafletContainer);
 
@@ -2385,20 +2394,7 @@ const mapInstance = new LeafletMap(leafletContainer, {
     console.log(">> Map reset");
     setInitialData(null);
   },
-  // tooltipFormatter: (props) => `<strong>${props.id}</strong>`,
-  tooltipFormatter: (props) => `
-    <div style="max-height:150px; max-width:200px; overflow-y:auto; padding:4px; font-size:12px;">
-      <strong>${props.id}</strong>
-      <hr style="margin:3px 0">
-      ${Object.entries(props)
-        .filter(([key]) => key !== "id" && key !== "geometry")
-        .map(
-          ([key, value]) =>
-            `<div><span style="font-weight:bold">${key}:</span> ${value}</div>`
-        )
-        .join("")}
-    </div>
-  `,
+  tooltipFormatter: (props) => `<strong>${props.id}</strong>`,
 });
 
 mapInstance.addLayer("buildings", getModelData, {
@@ -2466,49 +2462,24 @@ let keysToNormalise = [
 return {yearlySummaryArray,keysToNormalise};
 }});
 
-define({id: "429e6139", inputs: ["log","setResetRequested"], outputs: ["resetState"], body: (log,setResetRequested) => {
+define({id: "66cd6346", inputs: ["log","setResetRequested","setSelectedTableRow","setSelectedInterventionIndex","filterManager","table","mapInstance"], outputs: ["resetState"], body: (log,setResetRequested,setSelectedTableRow,setSelectedInterventionIndex,filterManager,table,mapInstance) => {
 function resetState() {
   log("[RESET] Requesting application state reset...");
   setResetRequested(true);
 
   // Reset basic state variables
   // setInitialData(null);
-  // setSelectedTableRow([]);
-  // setSelectedInterventionIndex(null);
+  setSelectedTableRow([]);
+  setSelectedInterventionIndex(null);
 
   // Reset filter manager state
-  // filterManager.reset();
+  filterManager.reset();
 
   // Reset table and map state
-  // setModelData(buildingsData);
-  // table.resetTable();
-  // mapInstance.resetMap();
+  table.resetTable();
+  mapInstance.resetMap();
 }
 return {resetState};
-}});
-
-define({id: "3703914e", inputs: ["getResetRequested","log","setModelData","buildingsData","setInitialData","error","setResetRequested"], body: (getResetRequested,log,setModelData,buildingsData,setInitialData,error,setResetRequested) => {
-// Handle component resets to avoid circular references
-{
-  // This cell responds to reset requests
-  getResetRequested;
-
-  if (getResetRequested) {
-    log("[RESET] Processing application state reset...");
-
-    try {
-      // // Reset the table - clear filters and restore original data
-      // table.resetTable();
-      // mapInstance.resetMap();
-      setModelData(buildingsData);
-      setInitialData(null);
-    } catch (err) {
-      error("[RESET] Error during reset:", err);
-    }
-    // Reset the flag after processing
-    setResetRequested(false);
-  }
-}
 }});
 
 </script>
@@ -2688,6 +2659,7 @@ define({id: "3703914e", inputs: ["getResetRequested","log","setModelData","build
   </footer>
 </div>
 <div class="observablehq observablehq--block"><!--:408a7fde:--></div>
+<div class="observablehq observablehq--block"><!--:46b6912f:--></div>
 <div class="observablehq observablehq--block"><!--:941eea5c:--></div>
 <div class="observablehq observablehq--block"><!--:11645756:--></div>
 <div class="observablehq observablehq--block"><!--:031ba52a:--></div>
@@ -2711,7 +2683,7 @@ define({id: "3703914e", inputs: ["getResetRequested","log","setModelData","build
 <div class="observablehq observablehq--block"><!--:a4dfa623:--></div>
 <div class="observablehq observablehq--block"><!--:65366340:--></div>
 <div class="observablehq observablehq--block"><!--:905fa32c:--></div>
-<div class="observablehq observablehq--block"><!--:ca0f8731:--></div>
+<div class="observablehq observablehq--block"><!--:2467f726:--></div>
 <div class="observablehq observablehq--block"><!--:05f22762:--></div>
 <!--------------- Budget Allocator ---------------->
 <div class="observablehq observablehq--block"><!--:49d26315:--></div>
@@ -2721,24 +2693,24 @@ define({id: "3703914e", inputs: ["getResetRequested","log","setModelData","build
 <!-- ---------------- Functions ---------------- -->
 <div class="observablehq observablehq--block"><!--:7d40ba2a:--></div>
 <!-- Intervention functions -->
-<div class="observablehq observablehq--block"><!--:bbfbf34c:--></div>
+<div class="observablehq observablehq--block"><!--:afca9404:--></div>
 <div class="observablehq observablehq--block"><!--:1d2b6856:--></div>
-<div class="observablehq observablehq--block"><!--:b6724078:--></div>
-<div class="observablehq observablehq--block"><!--:b3432dd8:--></div>
+<div class="observablehq observablehq--block"><!--:1298f825:--></div>
+<div class="observablehq observablehq--block"><!--:2bcedf23:--></div>
 <div class="observablehq observablehq--block"><!--:360f9020:--></div>
 <div class="observablehq observablehq--block"><!--:58c76880:--></div>
 <div class="observablehq observablehq--block"><!--:947015a3:--></div>
 <div class="observablehq observablehq--block"><!--:b620e97e:--></div>
 <!-- ----------------  D A T A  ---------------- -->
-<div class="observablehq observablehq--block"><!--:48a4fb6c:--></div>
+<div class="observablehq observablehq--block"><!--:1fa2a4f4:--></div>
 <div class="observablehq observablehq--block"><!--:3d8c1d79:--></div>
 <div class="observablehq observablehq--block"><!--:62fbb8a0:--></div>
 <div class="observablehq observablehq--block"><!--:a2784493:--></div>
-<div class="observablehq observablehq--block"><!--:3bf23f9b:--></div>
+<div class="observablehq observablehq--block"><!--:0d24f1a6:--></div>
 <!-- ---------------- Sortable Table ---------------- -->
 <div class="observablehq observablehq--block"><!--:52b7ae03:--></div>
 <div class="observablehq observablehq--block"><!--:692e1b36:--></div>
-<div class="observablehq observablehq--block"><!--:fe36e34a:--></div>
+<div class="observablehq observablehq--block"><!--:9339fef7:--></div>
 <!-- ---------------- Glyph Maps ---------------- -->
 <div class="observablehq observablehq--block"><!--:e50e7397:--></div>
 <div class="observablehq observablehq--block"><!--:4965f46a:--></div>
@@ -2752,12 +2724,11 @@ define({id: "3703914e", inputs: ["getResetRequested","log","setModelData","build
 <div class="observablehq observablehq--block"><!--:2af496d8:--></div>
 <div class="observablehq observablehq--block"><!--:c1625ed2:--></div>
 <div class="observablehq observablehq--block"><!--:42a819d2:--></div>
-<div class="observablehq observablehq--block"><!--:45e8b6ae:--></div>
+<div class="observablehq observablehq--block"><!--:b50553eb:--></div>
 <div class="observablehq observablehq--block"><!--:b441315a:--></div>
 <!-- ----------------  Main Plot  ---------------- -->
 <div class="observablehq observablehq--block"><!--:426e39f3:--></div>
 <!--------------- Reset everything and move on --------------->
-<div class="observablehq observablehq--block"><!--:429e6139:--></div>
-<div class="observablehq observablehq--block"><!--:3703914e:--></div>
+<div class="observablehq observablehq--block"><!--:66cd6346:--></div>
 </main>
 </div>

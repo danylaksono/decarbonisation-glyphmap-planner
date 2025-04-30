@@ -2,7 +2,7 @@ body,
 html {
   height: 100%;
   margin: 0 !important;
-  /* overflow: hidden; */
+  overflow: hidden;
   padding: 0;
   font-family: var(--bulma-body-family);
 }
@@ -141,8 +141,14 @@ html {
   justify-content: space-between;
   width: 100%;
   /* border: 1px solid #ddd; */
-  padding: 6px;
+  padding: 4px;
   box-sizing: border-box;
+}
+
+#sorter-table-container {
+  width: 100%;
+  padding: 4px;
+  overflow: hidden !important;
 }
 
 /* Panel styling */
@@ -192,6 +198,13 @@ html {
   opacity: 0.6;
   cursor: not-allowed;
   background-color: #cccccc;
+}
+
+#timeline-buttons .button-separator {
+  width: 100%;
+  height: 1px;
+  background-color: #ddd;
+  margin: 8px 0;
 }
 
 .quickview {

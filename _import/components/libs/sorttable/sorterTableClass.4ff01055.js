@@ -13,6 +13,16 @@ const logDebug = (...args) => DEBUG && console.log(...args);
 const warnDebug = (...args) => DEBUG && console.warn(...args);
 const errorDebug = (...args) => console.error(...args); // Errors always show
 
+// Utility to deep clone objects/arrays
+function deepClone(obj) {
+  try {
+    return JSON.parse(JSON.stringify(obj));
+  } catch (e) {
+    warnDebug("deepClone failed, returning original object:", e);
+    return obj;
+  }
+}
+
 export class sorterTable {
   constructor(data, columnNames, changed, options = {}) {
     // Initialize core properties first
@@ -71,6 +81,11 @@ export class sorterTable {
       customThresholds: options.customThresholds || null,
     });
 
+    // Initialize cache for expensive calculations
+    this._cache = {
+      binning: {}, // Cache for results from BinningService
+    };
+
     this.inferColumnTypesAndThresholds(data);
 
     // create table element
@@ -79,6 +94,11 @@ export class sorterTable {
 
     this.initialColumns = JSON.parse(JSON.stringify(this.columns));
     this.initialData = [...data]; // Store a copy of the original data
+
+    // Initialize caches for resetTable
+    this._initialDataCache = deepClone(this.initialData);
+    this._initialColumnsCache = deepClone(this.initialColumns);
+    this._initialDataIndCache = d3.range(this.initialData.length);
 
     logDebug("Initial columns:", this.columns);
 
@@ -135,7 +155,8 @@ export class sorterTable {
       width: "100%",
       borderCollapse: "collapse",
       // border: "1px solid #ddd",
-      fontFamily: "Arial, sans-serif",
+      // fontFamily: "Arial, sans-serif",
+      fontFamily: "'Inter', 'Roboto', 'Open Sans', system-ui, sans-serif",
       fontSize: "14px",
     });
 
@@ -193,6 +214,119 @@ export class sorterTable {
         }
       }
     }
+  }
+
+  /**
+   * Efficiently update the table with new data or reset to initial data
+   * @param {Array} newData - New data array to use (optional, uses initialData if not provided)
+   * @param {Object} options - Configuration options
+   * @param {boolean} [options.replaceInitial=false] - Whether to replace the initialData reference
+   * @param {boolean} [options.updateTypes=false] - Whether to reinfer column types and thresholds
+   * @param {boolean} [options.resetState=true] - Whether to reset table state (sorting, selection, etc.)
+   * @param {boolean} [options.optimizeMemory=true] - Whether to apply memory optimization for large datasets
+   * @returns {Promise} A promise that resolves when the update is complete
+   */
+  updateData(newData, options = {}) {
+    // Cancel any pending updates
+    if (this._pendingUpdate) {
+      cancelAnimationFrame(this._pendingUpdate);
+    }
+
+    // Default options
+    const defaults = {
+      replaceInitial: false,
+      updateTypes: false,
+      resetState: true,
+      optimizeMemory: true,
+    };
+
+    const settings = { ...defaults, ...options };
+
+    return new Promise((resolve) => {
+      // Schedule update for next frame for better UI responsiveness
+      this._pendingUpdate = requestAnimationFrame(() => {
+        try {
+          // Start with initial data if newData not provided
+          if (!newData) {
+            if (!this.initialData) {
+              console.warn("No initialData available to reset to.");
+              resolve(false);
+              return;
+            }
+            newData = [...this.initialData];
+            settings.resetState = true; // Force reset when using initialData
+          }
+
+          // Update data reference
+          this.data = this.preprocessData(
+            newData,
+            this.columns.map((c) => c.column)
+          );
+
+          // Update initial data reference if specified
+          if (settings.replaceInitial) {
+            this.initialData = [...newData];
+          } else if (!this.initialData) {
+            // Initialize if not already set
+            this.initialData = [...newData];
+          }
+
+          // Reset indices to show all rows
+          this.dataInd = d3.range(newData.length);
+
+          // Reset state if requested
+          if (settings.resetState) {
+            // Clear selection state
+            this.selectedRows.clear();
+            this.compoundSorting = {};
+            this.rules = [];
+            this.history = [];
+            this.selectedColumn = null;
+            this.isAggregated = false;
+
+            // Reset sort controllers
+            this.sortControllers.forEach((ctrl) => {
+              if (ctrl.getDirection() !== "none") {
+                ctrl.toggleDirection();
+              }
+            });
+          }
+
+          // Reinfer types if requested
+          if (settings.updateTypes) {
+            this.inferColumnTypesAndThresholds(this.data);
+          }
+
+          // Rebuild the table with new data
+          this.rebuildTable();
+
+          // Apply memory optimizations if requested
+          if (settings.optimizeMemory && this.data.length > 1000) {
+            this.optimizeHistogramMemory();
+          }
+
+          // Clear cache if types need updating
+          if (settings.updateTypes) {
+            logDebug("Clearing binning cache due to updateTypes=true");
+            this._cache.binning = {};
+          }
+
+          // Notify listeners about the data update
+          this.changed({
+            type: "dataUpdate",
+            dataSize: this.data.length,
+            resetState: settings.resetState,
+          });
+
+          this._pendingUpdate = null;
+          resolve(true);
+        } catch (error) {
+          console.error("Error updating table data:", error);
+          this._pendingUpdate = null;
+          resolve(false);
+        }
+      });
+    });
   }
 
   preprocessData(data, columnNames) {
@@ -293,22 +427,52 @@ export class sorterTable {
 
     this.columns.forEach((colDef) => {
       const colName = colDef.column;
+      const cacheKey = colName; // Use column name as cache key
+
+      // --- Check Cache First ---
+      if (this._cache.binning[cacheKey]) {
+        logDebug(`Using cached binning info for ${colName}`);
+        const cachedInfo = this._cache.binning[cacheKey];
+        colDef.type = cachedInfo.type;
+        this.setColumnType(colName, cachedInfo.type); // Ensure columnTypes cache is also updated
+
+        // Assign cached binning results directly
+        colDef.thresholds = cachedInfo.thresholds;
+        colDef.bins = cachedInfo.bins;
+        colDef.nominals = cachedInfo.nominals;
+        colDef.dateRange = cachedInfo.dateRange;
+
+        // Skip further calculation for this column
+        return;
+      }
+
+      // --- If Not Cached: Calculate and Store ---
+      logDebug(`Calculating binning info for ${colName} (not cached)`);
       const type = this.getColumnType(data, colName);
       colDef.type = type;
       this.setColumnType(colName, type);
 
-      // logDebug("Inferred type for column:", colDef, type);
+      // Initialize storage for caching
+      const cacheEntry = {
+        type: type,
+        thresholds: undefined,
+        bins: undefined,
+        nominals: undefined,
+        dateRange: undefined,
+      };
 
       // threshold and binning for each type
       if (!colDef.unique) {
         try {
-          // If the user has predefined thresholds, use them.
+          // If the user has predefined thresholds, use them (don't cache these, they are static)
           if (
             colDef.thresholds &&
             Array.isArray(colDef.thresholds) &&
             colDef.thresholds.length
           ) {
             logDebug(`Using predefined thresholds for ${colName}`);
+            // Note: Predefined thresholds are not cached via this mechanism
+            // as they are part of the initial column definition.
           } else {
             // Otherwise, calculate them via binning service
             const bins = this.binningService.getBins(data, colName, type);
@@ -316,34 +480,51 @@ export class sorterTable {
 
             if (!bins || bins.length === 0) {
               warnDebug(`No bins generated for column: ${colName}`);
-              return;
+              // Still cache the type even if bins failed
+              this._cache.binning[cacheKey] = cacheEntry;
+              return; // Skip further processing for this column
             }
+
+            // Store calculated bins in the cache entry and colDef
+            cacheEntry.bins = bins;
+            colDef.bins = bins; // Assign to colDef as well
 
             // For continuous data, use computed bin boundaries
             if (type === "continuous") {
               // Avoid filtering out valid values (e.g., 0) by checking for undefined or null explicitly
-              colDef.thresholds = bins.map((bin) =>
+              const thresholds = bins.map((bin) =>
                 bin.x0 !== undefined && bin.x0 !== null ? bin.x0 : null
               );
-              colDef.bins = bins;
+              cacheEntry.thresholds = thresholds;
+              colDef.thresholds = thresholds; // Assign to colDef
               logDebug(
                 "Setting thresholds for continuous column:",
                 colName,
                 colDef
               );
             } else if (type === "ordinal") {
-              colDef.bins = bins;
-              colDef.nominals = bins
+              const nominals = bins
                 .map((bin) => bin.key)
                 .filter((key) => key !== undefined && key !== null);
+              cacheEntry.nominals = nominals;
+              colDef.nominals = nominals; // Assign to colDef
             } else if (type === "date") {
-              colDef.bins = bins;
-              colDef.dateRange = d3.extent(bins, (bin) => bin.date);
+              const dateRange = d3.extent(bins, (bin) => bin.date);
+              cacheEntry.dateRange = dateRange;
+              colDef.dateRange = dateRange; // Assign to colDef
             }
+
+            // Store the calculated results in the cache
+            this._cache.binning[cacheKey] = cacheEntry;
           }
         } catch (error) {
           errorDebug(`Error binning column ${colName}:`, error);
+          // Cache the type even if binning failed
+          this._cache.binning[cacheKey] = { type: type };
         }
+      } else {
+        // For unique columns, just cache the type
+        this._cache.binning[cacheKey] = { type: type };
       }
     });
   }
@@ -478,6 +659,8 @@ export class sorterTable {
       );
     });
     this.dataInd = matchingDataIndices;
+
+    logDebug("Filtering table using:", ids);
     this.history.push({ type: "filterById", data: prevDataInd });
     this.rebuildTable();
     this.visControllers.forEach((vc, vci) => {
@@ -499,10 +682,25 @@ export class sorterTable {
 
   filter() {
     const prevDataInd = [...this.dataInd];
-    this.rules.push(this.getSelectionRule());
+    // this.rules.push(this.getSelectionRule());
+    const selectionRule = this.getSelectionRule();
+
+    // Only add valid rules
+    if (selectionRule) {
+      this.rules.push(selectionRule);
+    }
+
     const selected = this.getSelection();
     this.dataInd = selected.map((s) => s.index);
-    this.history.push({ type: "filter", data: prevDataInd });
+
+    // this.history.push({ type: "filter", data: prevDataInd });
+    this.history.push({
+      type: "filter",
+      data: prevDataInd,
+      rule: selectionRule,
+    });
+
+    // Rebuild the table and update visualizations
     this.createTable();
     this.visControllers.forEach((vc, vci) => {
       if (vc instanceof HistogramController) {
@@ -510,17 +708,22 @@ export class sorterTable {
         vc.setData(this.dataInd.map((i) => this.data[i][columnName]));
       }
     });
+
+    // recording the filtered IDs
     const idColumn = "id";
     const filteredIds = this.dataInd.map((i) => {
       const idValue =
         this.data[i]?.[idColumn] !== undefined ? this.data[i][idColumn] : i;
       return { id: idValue };
     });
+
+    // record the filter change
     this.changed({
       type: "filter",
       indeces: this.dataInd,
       ids: filteredIds,
-      rule: this.getSelectionRule(),
+      // rule: this.getSelectionRule(),
+      rule: selectionRule,
     });
   }
 
@@ -528,38 +731,127 @@ export class sorterTable {
     const { consecutive = true } = options;
     const baseIndices = consecutive ? this.dataInd : d3.range(this.data.length);
     const prevDataInd = [...this.dataInd];
+
+    // Apply the filter function to the data
     this.dataInd = baseIndices.filter((index) =>
       filterFunction(this.data[index])
     );
+
+    // Custom filter rules can be passed in the options
+    const customRule = options.customRule || [
+      `Custom filter applied (${this.dataInd.length} rows)`,
+    ];
+
+    // Add to rules list if filtering was effective
+    if (this.dataInd.length !== prevDataInd.length) {
+      this.rules.push(customRule);
+    }
+
+    // track history
     this.history.push({ type: "filter", data: prevDataInd });
+
+    // Rebuild the table and update visualizations
     this.rebuildTable();
     this.visControllers.forEach((vc) => {
       if (vc && vc.updateData) {
         vc.updateData(this.dataInd.map((i) => this.data[i][vc.columnName]));
       }
     });
-    this.changed({ type: "customFilter", indices: this.dataInd });
+
+    // recording the filtered IDs
+    const idColumn = "id";
+    const filteredIds = this.dataInd.map((i) => {
+      const idValue =
+        this.data[i]?.[idColumn] !== undefined ? this.data[i][idColumn] : i;
+      return { id: idValue };
+    });
+
+    // this.changed({ type: "customFilter", indices: this.dataInd });
+    this.changed({
+      type: "filter",
+      indeces: this.dataInd,
+      ids: filteredIds,
+      rule: customRule,
+    });
+  }
+
+  // helper method for setting selection rule from external mechanisms
+  setSelectionRuleFromExternal(rule) {
+    if (!Array.isArray(rule)) {
+      rule = [rule];
+    }
+    // Store the rule for later retrieval
+    this._externalSelectionRule = rule;
+    return this;
   }
 
   getAllRules() {
     return this.rules;
   }
 
+  // undo() {
+  //   if (this.history.length > 0) {
+  //     let u = this.history.pop();
+  //     if (u.type === "filter" || u.type === "filterById" || u.type === "sort") {
+  //       this.dataInd = [...u.data];
+  //       this.createTable();
+  //       this.visControllers.forEach((vc, vci) =>
+  //         vc.updateData(
+  //           this.dataInd.map((i) => this.data[i][this.columns[vci].column])
+  //         )
+  //       );
+  //       this.changed({
+  //         type: "undo",
+  //         indeces: this.dataInd,
+  //         sort: this.compoundSorting,
+  //       });
+  //     } else if (u.type === "shiftcol") {
+  //       this._isUndoing = true;
+  //       const reverseDir = u.dir === "left" ? "right" : "left";
+  //       this.shiftCol(u.columnName, reverseDir);
+  //       this._isUndoing = false;
+  //     } else if (u.type === "aggregate") {
+  //       this.data = u.data;
+  //       this.dataInd = u.dataInd;
+  //       this.isAggregated = false;
+  //       this.rebuildTable();
+  //       this.changed({
+  //         type: "undo",
+  //         indeces: this.dataInd,
+  //         sort: this.compoundSorting,
+  //       });
+  //     }
+  //   }
+  // }
+
   undo() {
     if (this.history.length > 0) {
       let u = this.history.pop();
       if (u.type === "filter" || u.type === "filterById" || u.type === "sort") {
         this.dataInd = [...u.data];
+
+        // If we're undoing a filter, also remove the corresponding rule
+        if (
+          (u.type === "filter" || u.type === "filterById") &&
+          this.rules.length > 0
+        ) {
+          this.rules.pop();
+        }
+
         this.createTable();
-        this.visControllers.forEach((vc, vci) =>
-          vc.updateData(
-            this.dataInd.map((i) => this.data[i][this.columns[vci].column])
-          )
-        );
+        this.visControllers.forEach((vc, vci) => {
+          if (vc && vc.updateData && this.columns[vci]) {
+            vc.updateData(
+              this.dataInd.map((i) => this.data[i][this.columns[vci].column])
+            );
+          }
+        });
+
         this.changed({
           type: "undo",
           indeces: this.dataInd,
           sort: this.compoundSorting,
+          rules: this.rules,
         });
       } else if (u.type === "shiftcol") {
         this._isUndoing = true;
@@ -575,13 +867,14 @@ export class sorterTable {
           type: "undo",
           indeces: this.dataInd,
           sort: this.compoundSorting,
+          rules: this.rules,
         });
       }
     }
   }
 
   rebuildTable() {
-    console.log(">>> Rebuilding table...");
+    logDebug(">>> Rebuilding table...");
     this.createHeader();
     this.createTable();
   }
@@ -602,78 +895,160 @@ export class sorterTable {
     let sel = this.getSelection();
     let sortKeys = Object.keys(this.compoundSorting);
 
-    // Check if there is no selection or no sorting applied
-    if (sortKeys.length === 0 || sel.length === 0) {
+    // Handle case where no rows are selected or no sorting is applied
+    if (sel.length === 0) {
+      // Return null when no selection exists
       return null;
-    } else {
-      let col = sortKeys[0];
-      // Safely get first and last index
-      let firstIndex = sel.length > 0 ? sel[0].index : 0;
-      let lastIndex = sel.length > 0 ? sel[sel.length - 1].index : 0;
+    }
 
-      if (firstIndex === 0 && lastIndex === this.dataInd.length - 1) return [];
-      else {
-        let rule = [];
-        let r = "";
-        if (
-          firstIndex > 0 &&
-          this.data[this.dataInd[firstIndex - 1]][col] !=
-            this.data[this.dataInd[firstIndex]][col]
-        ) {
+    // If we have selection but no sorting, create a rule based on set membership
+    if (sortKeys.length === 0) {
+      // Create a rule based on the values of the first visible column
+      const firstVisibleCol = this.columns[0].column;
+      const uniqueValues = new Set(sel.map((s) => s.data[firstVisibleCol]));
+
+      if (uniqueValues.size <= 5) {
+        // For small sets, list all values
+        return [
+          `${firstVisibleCol} is one of: ${Array.from(uniqueValues).join(
+            ", "
+          )}`,
+        ];
+      } else {
+        // For larger sets, summarize the selection
+        return [
+          `Selection includes ${sel.length} rows (${Math.round(
+            (sel.length / this.dataInd.length) * 100
+          )}% of visible data)`,
+        ];
+      }
+    }
+
+    // If we reach here, we have both selection and sorting
+    let col = sortKeys[0];
+
+    // Create a map of data indices to their positions in dataInd for efficient lookup
+    const dataIndPositions = new Map();
+    this.dataInd.forEach((dataIndex, position) => {
+      dataIndPositions.set(dataIndex, position);
+    });
+
+    // Find the positions of the selected items in the sorted dataInd array
+    const selectedPositions = sel
+      .map((s) => dataIndPositions.get(s.index))
+      .filter((pos) => pos !== undefined)
+      .sort((a, b) => a - b);
+
+    // If no valid positions, return null
+    if (selectedPositions.length === 0) {
+      return null;
+    }
+
+    const minPosition = selectedPositions[0];
+    const maxPosition = selectedPositions[selectedPositions.length - 1];
+
+    // If selection spans the entire dataset, return empty array
+    if (minPosition === 0 && maxPosition === this.dataInd.length - 1) return [];
+
+    // Check if selection is contiguous
+    const isContiguous =
+      maxPosition - minPosition + 1 === selectedPositions.length;
+
+    let rule = [];
+    let r = "";
+
+    if (isContiguous) {
+      // Lower boundary check
+      if (minPosition > 0) {
+        const minValue = this.data[this.dataInd[minPosition]][col];
+        const prevValue = this.data[this.dataInd[minPosition - 1]][col];
+
+        if (minValue != prevValue) {
           r =
             col +
-            (this.compoundSorting[col].how === "up"
-              ? " lower than "
-              : " higher than ") +
-            this.data[this.dataInd[firstIndex]][col];
+            (this.compoundSorting[col].how === "up" ? " >= " : " <= ") +
+            minValue;
         }
-        if (
-          lastIndex < this.dataInd.length - 1 &&
-          this.data[this.dataInd[lastIndex + 1]][col] !=
-            this.data[this.dataInd[lastIndex]][col]
-        ) {
-          if (r.length == 0)
+      }
+
+      // Upper boundary check
+      if (maxPosition < this.dataInd.length - 1) {
+        const maxValue = this.data[this.dataInd[maxPosition]][col];
+        const nextValue = this.data[this.dataInd[maxPosition + 1]][col];
+
+        if (maxValue != nextValue) {
+          if (r.length === 0) {
             r =
               col +
-              (this.compoundSorting[col].how === "up"
-                ? " lower than "
-                : " higher than ") +
-              this.data[this.dataInd[lastIndex]][col];
-          else
+              (this.compoundSorting[col].how === "up" ? " <= " : " >= ") +
+              maxValue;
+          } else {
             r =
               r +
               (this.compoundSorting[col].how === "up"
-                ? " and lower than"
-                : "  and higher than ") +
-              this.data[this.dataInd[lastIndex]][col];
+                ? " AND <= "
+                : " AND >= ") +
+              maxValue;
+          }
         }
-        if (r.length > 0) rule.push(r);
+      }
+    } else {
+      // For non-contiguous selection, provide a more descriptive rule
+      const selectedValues = new Set(
+        selectedPositions.map((pos) => this.data[this.dataInd[pos]][col])
+      );
 
-        if (this.compoundSorting[col].how === "up")
-          r =
-            col +
-            " in bottom " +
-            this.percentalize(lastIndex / this.data.length, "top") +
-            " percentile";
-        else
-          r =
-            col +
-            " in top " +
-            this.percentalize(1 - lastIndex / this.data.length, "bottom") +
-            " percentile";
-        rule.push(r);
+      if (selectedValues.size <= 5) {
+        r = `${col} is one of: ${Array.from(selectedValues).join(", ")}`;
+      } else {
+        // For many values, provide range
+        const values = Array.from(selectedValues).sort((a, b) => {
+          // Handle various data types
+          if (typeof a === "number" && typeof b === "number") {
+            return a - b;
+          }
+          return String(a).localeCompare(String(b));
+        });
 
-        return rule;
+        r = `${col} ranges from ${values[0]} to ${values[values.length - 1]} (${
+          selectedValues.size
+        } distinct values)`;
       }
     }
+
+    if (r.length > 0) rule.push(r);
+
+    // Add percentile information when sorting is applied
+    if (this.compoundSorting[col]) {
+      if (this.compoundSorting[col].how === "up") {
+        r = `${col} in bottom ${Math.round(
+          ((maxPosition + 1) / this.dataInd.length) * 100
+        )}% percentile`;
+      } else {
+        r = `${col} in top ${Math.round(
+          ((this.dataInd.length - minPosition) / this.dataInd.length) * 100
+        )}% percentile`;
+      }
+      rule.push(r);
+    }
+
+    return rule;
   }
 
   selectionUpdated() {
+    // use external rule if set
+    const calculatedRule = this.getSelectionRule();
+    const rule = this._externalSelectionRule || calculatedRule;
+
+    // Clear external rule after use
+    this._externalSelectionRule = null;
+
     this.changed({
       type: "selection",
       indeces: this.dataInd,
       selection: this.getSelection(),
-      rule: this.getSelectionRule(),
+      // rule: this.getSelectionRule(),
+      rule: rule,
     });
   }
 
@@ -784,6 +1159,35 @@ export class sorterTable {
       if (t == tr) index = i;
     });
     return index;
+  }
+
+  /**
+   * Updates the visual display of all rows to match the current selection state
+   * Particularly useful when selection is made programmatically through histograms
+   */
+  updateRowSelectionDisplay() {
+    // Only proceed if the table body exists
+    if (!this.tBody) return;
+
+    // For efficient lookup
+    const selectedSet = this.selectedRows;
+
+    // Update all visible rows
+    this.tBody.querySelectorAll("tr").forEach((tr) => {
+      const dataIndex = parseInt(tr.getAttribute("data-data-index"), 10);
+
+      if (selectedSet.has(dataIndex)) {
+        // Apply selection styling
+        tr.selected = true;
+        tr.style.fontWeight = "bold";
+        tr.style.color = "black";
+      } else {
+        // Apply unselected styling
+        tr.selected = false;
+        tr.style.fontWeight = "normal";
+        tr.style.color = "grey";
+      }
+    });
   }
 
   createHeader() {
@@ -1035,117 +1439,322 @@ export class sorterTable {
       return; // No rows to process, exit early
     }
 
+    // Create a Map of data indices to positions in dataInd array for efficient lookup
+    const dataIndPositionMap = new Map();
+    this.dataInd.forEach((dataIndex, position) => {
+      dataIndPositionMap.set(dataIndex, position);
+    });
+
+    // For each row in the current view, attach event listeners
     Array.from(rows).forEach((tr) => {
-      tr.addEventListener("click", (event) => {
-        const rowIndex = parseInt(tr.getAttribute("data-row-index"), 10);
-        if (isNaN(rowIndex)) return;
+      // Clone the row to remove any existing event listeners
+      const newTr = tr.cloneNode(true);
+
+      // Get the actual data index (not the row position)
+      const dataIndex = parseInt(tr.getAttribute("data-data-index"), 10);
+      if (isNaN(dataIndex)) {
+        // If data-data-index is missing, copy the existing attributes and move on
+        tr.parentNode.replaceChild(newTr, tr);
+        return;
+      }
+
+      // Add click event with improved selection logic
+      newTr.addEventListener("click", (event) => {
+        if (isNaN(dataIndex)) return;
+
         if (event.shiftKey) {
-          // Use the selection set instead of relying on current DOM only.
+          // Use dataInd positions for range calculation, not DOM positions
           let selectedIndices = Array.from(this.selectedRows);
-          if (selectedIndices.length === 0) selectedIndices = [rowIndex];
-          const start = Math.min(...selectedIndices, rowIndex);
-          const end = Math.max(...selectedIndices, rowIndex);
-          for (let i = start; i <= end; i++) {
-            // Update the selection set for all indices in the range.
-            this.selectedRows.add(i);
-            // Update visible selection if the row is rendered.
-            const trToSelect = this.tBody.querySelector(
-              `tr[data-row-index="${i}"]`
-            );
-            if (trToSelect) {
-              this.selectRow(trToSelect);
+
+          if (selectedIndices.length === 0) {
+            // If nothing selected, just select this row
+            this.selectedRows.add(dataIndex);
+            this.selectRow(newTr);
+          } else {
+            // Find positions in dataInd for start/end of range
+            const positions = selectedIndices
+              .map((index) => dataIndPositionMap.get(index))
+              .filter((pos) => pos !== undefined);
+
+            // Add current position
+            const currentPosition = dataIndPositionMap.get(dataIndex);
+
+            // Calculate range in terms of positions in dataInd
+            const startPos = Math.min(...positions, currentPosition);
+            const endPos = Math.max(...positions, currentPosition);
+
+            // Select all rows in this range
+            for (let pos = startPos; pos <= endPos; pos++) {
+              const indexToSelect = this.dataInd[pos];
+              this.selectedRows.add(indexToSelect);
+
+              // Update visible selection if the row is rendered
+              const trToSelect = this.tBody.querySelector(
+                `tr[data-data-index="${indexToSelect}"]`
+              );
+              if (trToSelect) {
+                this.selectRow(trToSelect);
+              }
             }
           }
-        } else if (event.ctrlKey) {
-          if (tr.selected) {
-            this.unselectRow(tr);
+        } else if (event.ctrlKey || event.metaKey) {
+          // Toggle selection state of this row
+          if (this.selectedRows.has(dataIndex)) {
+            this.selectedRows.delete(dataIndex);
+            this.unselectRow(newTr);
           } else {
-            this.selectRow(tr);
+            this.selectedRows.add(dataIndex);
+            this.selectRow(newTr);
           }
         } else {
+          // Regular click - clear selection and select only this row
           this.clearSelection();
-          this.selectRow(tr);
+          this.selectedRows.add(dataIndex);
+          this.selectRow(newTr);
         }
+
         this.selectionUpdated();
       });
-      // tr.addEventListener("click", (event) => {
-      //   const rowIndex = parseInt(tr.getAttribute("data-row-index"), 10);
-      //   if (isNaN(rowIndex)) return;
-      //   if (this.shiftDown) {
-      //     let s = this.getSelection().map((s) => s.index);
-      //     if (s.length == 0) s = [rowIndex];
-      //     let minSelIndex = Math.min(...s);
-      //     let maxSelIndex = Math.max(...s);
-      //     if (rowIndex <= minSelIndex) {
-      //       for (let i = rowIndex; i < minSelIndex; i++) {
-      //         const trToSelect = this.tBody.querySelectorAll("tr")[i];
-      //         if (trToSelect) this.selectRow(trToSelect);
-      //       }
-      //     } else if (rowIndex >= maxSelIndex) {
-      //       for (let i = maxSelIndex + 1; i <= rowIndex; i++) {
-      //         const trToSelect = this.tBody.querySelectorAll("tr")[i];
-      //         if (trToSelect) this.selectRow(trToSelect);
-      //       }
-      //     }
-      //   } else if (this.ctrlDown) {
-      //     if (tr.selected) {
-      //       this.unselectRow(tr);
-      //     } else {
-      //       this.selectRow(tr);
-      //     }
-      //   } else {
-      //     this.clearSelection();
-      //     this.selectRow(tr);
-      //   }
-      //   this.selectionUpdated();
-      // });
-      tr.addEventListener("mouseover", () => {
-        tr.style.backgroundColor = "#f0f0f0";
+
+      // Add hover events
+      newTr.addEventListener("mouseover", () => {
+        newTr.style.backgroundColor = "#f0f0f0";
       });
-      tr.addEventListener("mouseout", () => {
-        tr.style.backgroundColor = "";
+
+      newTr.addEventListener("mouseout", () => {
+        newTr.style.backgroundColor = "";
       });
+
+      // Replace old row with new one that has proper listeners
+      tr.parentNode.replaceChild(newTr, tr);
+
+      // Reflect current selection state
+      if (this.selectedRows.has(dataIndex)) {
+        this.selectRow(newTr);
+      }
     });
   }
 
-  resetTable() {
-    if (this.isAggregated && this.initialData) {
-      this.data = [...this.initialData];
-      this.isAggregated = false;
+  resetTable(useInitialData = true, options = {}) {
+    // Delegate to updateData to reset to initialData via history mechanism
+    const startTime = performance.now();
+    this._isUndoing = true;
+    while (this.history.length > 0) {
+      // fast undo without side-effects
+      const last = this.history.pop();
+      if (
+        last.type === "filter" ||
+        last.type === "filterById" ||
+        last.type === "sort"
+      ) {
+        this.dataInd = last.data;
+      } else if (last.type === "shiftcol") {
+        // reverse column shift
+        const revDir = last.dir === "left" ? "right" : "left";
+        this.shiftCol(last.columnName, revDir);
+      } else if (last.type === "aggregate") {
+        this.data = last.data;
+        this.dataInd = last.dataInd;
+        this.isAggregated = false;
+      }
     }
+    this._isUndoing = false;
+    // Restore initial column order
+    this.columns = deepClone(this.initialColumns);
+    // Rebuild table view
+    this.createHeader();
+    this.createTable();
+
+    // additional steaps
+    // Reset indices to show all rows
     this.dataInd = d3.range(this.data.length);
-    this.selectedRows.clear();
+
+    // Clear selection state
+    this.clearSelection();
+    // this.selectedRows.clear();
     this.compoundSorting = {};
     this.rules = [];
     this.history = [];
     this.selectedColumn = null;
+
+    // Reset sort controllers
     this.sortControllers.forEach((ctrl) => {
       if (ctrl.getDirection() !== "none") {
         ctrl.toggleDirection();
       }
     });
-    this.columns = this.initialColumns.map((col) => ({ ...col }));
-    this.createHeader();
-    this.createTable();
-    this.visControllers.forEach((vc, index) => {
-      if (vc && vc.updateData) {
-        const columnData = this.dataInd.map(
-          (i) => this.data[i][this.columns[index].column]
-        );
-        vc.updateData(columnData);
-      }
+
+    // Update histograms efficiently
+    this.updateHistograms();
+
+    // Apply memory optimizations for large datasets
+    if (this.data.length > 10000) {
+      this.optimizeHistogramMemory();
+    }
+
+    // Notify listeners
+    this.changed({
+      type: "reset",
+      performanceMs: performance.now() - startTime,
     });
-    this.changed({ type: "reset" });
+
     if (this._containerNode) {
-      const event = new CustomEvent("reset", { detail: { source: this } });
+      const event = new CustomEvent("reset", {
+        detail: {
+          source: this,
+          performanceMs: performance.now() - startTime,
+        },
+      });
       this._containerNode.dispatchEvent(event);
     }
+
+    return this; // Enable method chaining
+  }
+
+  // resetTable(useInitialData = true, options = {}) {
+  //   // Reset table with cached data
+  //   // Default options
+  //   const defaults = {
+  //     reInferTypes: false, // By default, reuse cached types/bins for speed
+  //   };
+  //   const settings = { ...defaults, ...options };
+
+  //   // Measure performance
+  //   const startTime = performance.now();
+
+  //   // Clear cache if requested
+  //   if (settings.reInferTypes) {
+  //     logDebug("Clearing binning cache due to resetTable option");
+  //     this._cache.binning = {};
+  //   } else {
+  //     logDebug("Retaining binning cache during resetTable for performance");
+  //     // Note: If data characteristics changed significantly,
+  //     // cached bins might become inaccurate. Use reInferTypes: true if needed.
+  //   }
+
+  //   // Reset aggregation state
+  //   if (this.isAggregated && this.initialData) {
+  //     this.data = useInitialData ? [...this.initialData] : this.data;
+  //     this.isAggregated = false;
+  //   } else if (useInitialData && this.initialData) {
+  //     // Reset to initial data even if not aggregated
+  //     this.data = [...this.initialData];
+  //   }
+
+  //   // Reset indices to show all rows
+  //   this.dataInd = d3.range(this.data.length);
+
+  //   // Clear selection state (implemented as a batch operation for better performance)
+  //   this.selectedRows.clear();
+  //   this.compoundSorting = {};
+  //   this.rules = [];
+  //   this.history = [];
+  //   this.selectedColumn = null;
+
+  //   // Reset sort controllers
+  //   this.sortControllers.forEach((ctrl) => {
+  //     if (ctrl.getDirection() !== "none") {
+  //       ctrl.toggleDirection();
+  //     }
+  //   });
+
+  //   // Reset columns to initial state (deep copy to avoid reference issues)
+  //   this.columns = this.initialColumns.map((col) => ({ ...col }));
+
+  //   // Rebuild the table in one efficient operation
+  //   this.rebuildTable();
+
+  //   // Update histograms efficiently
+  //   this.updateHistograms();
+
+  //   // Apply memory optimizations for large datasets
+  //   if (this.data.length > 10000) {
+  //     this.optimizeHistogramMemory();
+  //   }
+
+  //   // Notify listeners
+  //   this.changed({
+  //     type: "reset",
+  //     performanceMs: performance.now() - startTime,
+  //   });
+
+  //   if (this._containerNode) {
+  //     const event = new CustomEvent("reset", {
+  //       detail: {
+  //         source: this,
+  //         performanceMs: performance.now() - startTime,
+  //       },
+  //     });
+  //     this._containerNode.dispatchEvent(event);
+  //   }
+
+  //   return this; // Enable method chaining
+  // }
+
+  updateHistograms() {
+    // Use requestAnimationFrame to schedule histogram updates for better UI responsiveness
+    if (this._pendingHistogramUpdate) {
+      cancelAnimationFrame(this._pendingHistogramUpdate);
+    }
+
+    this._pendingHistogramUpdate = requestAnimationFrame(() => {
+      const startTime = performance.now();
+
+      // Update histograms in batches to prevent UI freezing
+      const batchSize = Math.max(1, Math.ceil(this.visControllers.length / 3));
+      const updateBatch = (startIdx) => {
+        const endIdx = Math.min(
+          startIdx + batchSize,
+          this.visControllers.length
+        );
+
+        for (let i = startIdx; i < endIdx; i++) {
+          const vc = this.visControllers[i];
+          if (vc && vc.updateData) {
+            const columnName = this.columns[i].column;
+            // Extract only the data needed for this histogram
+            const columnData = this.dataInd.map(
+              (i) => this.data[i][columnName]
+            );
+            vc.updateData(columnData);
+          }
+        }
+
+        // Continue with next batch if needed
+        if (endIdx < this.visControllers.length) {
+          setTimeout(() => updateBatch(endIdx), 0);
+        } else {
+          // All batches complete
+          logDebug(
+            `Histogram updates completed in ${performance.now() - startTime}ms`
+          );
+          this._pendingHistogramUpdate = null;
+        }
+      };
+
+      // Start first batch
+      updateBatch(0);
+    });
   }
 
   resetHistogramSelections() {
     this.visControllers.forEach((vc) => {
       if (vc instanceof HistogramController) {
         vc.resetSelection();
+      }
+    });
+  }
+
+  optimizeHistogramMemory() {
+    // Limit number of bins for large datasets
+    const maxBins = Math.min(50, Math.ceil(Math.sqrt(this.data.length)));
+
+    this.visControllers.forEach((vc) => {
+      if (vc instanceof HistogramController) {
+        // Reduce precision for large datasets
+        if (this.data.length > 10000) {
+          vc.setOptions({ precision: "low", maxBins });
+        }
       }
     });
   }
@@ -1422,6 +2031,7 @@ export class sorterTable {
 
   getNode() {
     let container = document.createElement("div");
+    container.id = "sorter-table-container";
     container.style.width = "100%";
     container.style.display = "flex";
     container.style.flexDirection = "row";
@@ -1705,7 +2315,7 @@ export class sorterTable {
       borderRadius: "8px",
       padding: "20px",
       zIndex: 99999,
-      minWidth: "350px",
+      minWidth: "400px",
       boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
     });
 
@@ -1717,22 +2327,182 @@ export class sorterTable {
     const queriesContainer = document.createElement("div");
     dialog.appendChild(queriesContainer);
 
-    // Helper to get column names
-    const columnNames = this.columns.map((c) => c.column);
+    // Define type-specific operators
+    const operatorsByType = {
+      continuous: [">", ">=", "<", "<=", "==", "!=", "between"],
+      ordinal: ["==", "!=", "contains", "starts with", "ends with"],
+      date: ["before", "after", "on", "between"],
+      boolean: ["is true", "is false"],
+      default: [">", ">=", "<", "<=", "==", "!="],
+    };
 
-    // Operators
-    const operators = [">", ">=", "<", "<=", "==", "!="];
+    // Boolean operators for combining filters
     const boolOperators = ["AND", "OR"];
 
     // Store query rows
     let queryRows = [];
 
+    // Helper function to get column type
+    const getColumnType = (columnName) => {
+      const column = this.columns.find((c) => c.column === columnName);
+      // Return the column type if it exists, otherwise fall back to the one in columnTypes
+      return column?.type || this.columnTypes[columnName] || "ordinal";
+    };
+
+    // Helper function to create the appropriate input field based on column type
+    const createInputField = (columnName, container, existingValue = "") => {
+      const columnType = getColumnType(columnName);
+
+      // Remove any existing input field
+      const existingInput = container.querySelector(".value-input-container");
+      if (existingInput) {
+        container.removeChild(existingInput);
+      }
+
+      // Create a container for the input field(s)
+      const inputContainer = document.createElement("div");
+      inputContainer.className = "value-input-container";
+      inputContainer.style.display = "flex";
+      inputContainer.style.gap = "5px";
+      inputContainer.style.alignItems = "center";
+
+      let input;
+
+      switch (columnType) {
+        case "continuous":
+          // For numerical fields
+          input = document.createElement("input");
+          input.type = "number";
+          input.className = "value-input";
+          input.step = "any"; // Allow decimal values
+          input.style.width = "80px";
+          input.value = existingValue;
+
+          // Add a second input field for "between" operator
+          const secondInputContainer = document.createElement("div");
+          secondInputContainer.className = "second-input-container";
+          secondInputContainer.style.display = "none";
+
+          const andLabel = document.createElement("span");
+          andLabel.innerText = "and";
+          andLabel.style.margin = "0 5px";
+
+          const secondInput = document.createElement("input");
+          secondInput.type = "number";
+          secondInput.className = "second-value-input";
+          secondInput.step = "any";
+          secondInput.style.width = "80px";
+
+          secondInputContainer.appendChild(andLabel);
+          secondInputContainer.appendChild(secondInput);
+
+          inputContainer.appendChild(input);
+          inputContainer.appendChild(secondInputContainer);
+          break;
+
+        case "date":
+          // For date fields
+          input = document.createElement("input");
+          input.type = "date";
+          input.className = "value-input";
+          input.style.width = "140px";
+          input.value = existingValue;
+
+          // Add a second date input for "between" operator
+          const secondDateContainer = document.createElement("div");
+          secondDateContainer.className = "second-input-container";
+          secondDateContainer.style.display = "none";
+
+          const dateAndLabel = document.createElement("span");
+          dateAndLabel.innerText = "and";
+          dateAndLabel.style.margin = "0 5px";
+
+          const secondDateInput = document.createElement("input");
+          secondDateInput.type = "date";
+          secondDateInput.className = "second-value-input";
+          secondDateInput.style.width = "140px";
+
+          secondDateContainer.appendChild(dateAndLabel);
+          secondDateContainer.appendChild(secondDateInput);
+
+          inputContainer.appendChild(input);
+          inputContainer.appendChild(secondDateContainer);
+          break;
+
+        case "boolean":
+          // For boolean fields
+          const checkbox = document.createElement("input");
+          checkbox.type = "checkbox";
+          checkbox.className = "value-input";
+          checkbox.checked = existingValue === "true";
+          input = checkbox;
+          inputContainer.appendChild(input);
+          break;
+
+        default:
+          // Default to text input for ordinal or unknown types
+          input = document.createElement("input");
+          input.type = "text";
+          input.className = "value-input";
+          input.style.width = "140px";
+          input.value = existingValue;
+          inputContainer.appendChild(input);
+      }
+
+      container.appendChild(inputContainer);
+      return input;
+    };
+
+    // Helper function to update operators based on column type
+    const updateOperators = (columnName, opSelect, row) => {
+      const columnType = getColumnType(columnName);
+      const operators = operatorsByType[columnType] || operatorsByType.default;
+
+      // Store current operator if possible
+      const currentOp = opSelect.value;
+
+      // Clear existing options
+      opSelect.innerHTML = "";
+
+      // Add new options based on column type
+      operators.forEach((op) => {
+        const opt = document.createElement("option");
+        opt.value = op;
+        opt.innerText = op;
+        opSelect.appendChild(opt);
+      });
+
+      // Try to restore previous selection if it's valid for the new type
+      if (operators.includes(currentOp)) {
+        opSelect.value = currentOp;
+      }
+
+      // Handle showing/hiding the second input for "between" operator
+      const handleBetweenOperator = () => {
+        const secondInputContainer = row.querySelector(
+          ".second-input-container"
+        );
+        if (secondInputContainer) {
+          secondInputContainer.style.display =
+            opSelect.value === "between" ? "flex" : "none";
+        }
+      };
+
+      // Set up the change event for operator selection
+      opSelect.onchange = handleBetweenOperator;
+
+      // Initialize visibility of second input
+      handleBetweenOperator();
+
+      return opSelect;
+    };
+
     function createQueryRow(isFirst = false) {
       const row = document.createElement("div");
       row.style.display = "flex";
       row.style.alignItems = "center";
-      row.style.marginBottom = "8px";
-      row.style.gap = "6px";
+      row.style.marginBottom = "12px";
+      row.style.gap = "8px";
 
       // Boolean operator (not for first row)
       let boolOpSelect = null;
@@ -1747,31 +2517,45 @@ export class sorterTable {
         row.appendChild(boolOpSelect);
       }
 
-      // Column select
+      // Column select with labels showing column type
       const colSelect = document.createElement("select");
-      columnNames.forEach((col) => {
+      colSelect.style.minWidth = "120px";
+
+      // Helper method to create column options with type indicators
+      const createColumnOption = (columnName) => {
         const opt = document.createElement("option");
-        opt.value = col;
-        opt.innerText = col;
-        colSelect.appendChild(opt);
+        opt.value = columnName;
+
+        const columnType = getColumnType(columnName);
+        const typeIndicator = columnType ? ` (${columnType})` : "";
+
+        opt.innerText = `${columnName}${typeIndicator}`;
+        return opt;
+      };
+
+      // Add all column options
+      this.columns.forEach((c) => {
+        colSelect.appendChild(createColumnOption(c.column));
       });
+
       row.appendChild(colSelect);
 
-      // Operator select
+      // Operator select (will be populated based on column type)
       const opSelect = document.createElement("select");
-      operators.forEach((op) => {
-        const opt = document.createElement("option");
-        opt.value = op;
-        opt.innerText = op;
-        opSelect.appendChild(opt);
-      });
+      opSelect.style.minWidth = "100px";
       row.appendChild(opSelect);
 
-      // Value input
-      const valInput = document.createElement("input");
-      valInput.type = "text";
-      valInput.style.width = "80px";
-      row.appendChild(valInput);
+      // Update operators when column changes
+      colSelect.onchange = () => {
+        updateOperators(colSelect.value, opSelect, row);
+        createInputField(colSelect.value, row);
+      };
+
+      // Create initial value input field
+      createInputField(colSelect.value, row);
+
+      // Initialize operators based on the selected column
+      updateOperators(colSelect.value, opSelect, row);
 
       // Remove button
       if (!isFirst) {
@@ -1795,13 +2579,18 @@ export class sorterTable {
     }
 
     // Add first query row
-    createQueryRow(true);
+    createQueryRow.call(this, true);
 
     // Add Query button
     const addBtn = document.createElement("button");
     addBtn.innerText = "+ Add Query";
-    addBtn.style.margin = "8px 0";
-    addBtn.onclick = () => createQueryRow(false);
+    addBtn.style.margin = "12px 0";
+    addBtn.style.padding = "6px 12px";
+    addBtn.style.backgroundColor = "#f0f0f0";
+    addBtn.style.border = "1px solid #ccc";
+    addBtn.style.borderRadius = "4px";
+    addBtn.style.cursor = "pointer";
+    addBtn.onclick = () => createQueryRow.call(this, false);
     dialog.appendChild(addBtn);
 
     // Submit and Cancel buttons
@@ -1809,14 +2598,14 @@ export class sorterTable {
     btnRow.style.display = "flex";
     btnRow.style.justifyContent = "flex-end";
     btnRow.style.gap = "10px";
-    btnRow.style.marginTop = "12px";
+    btnRow.style.marginTop = "20px";
 
     const submitBtn = document.createElement("button");
     submitBtn.innerText = "Apply Filter";
     submitBtn.style.background = "#2196F3";
     submitBtn.style.color = "#fff";
     submitBtn.style.border = "none";
-    submitBtn.style.padding = "6px 14px";
+    submitBtn.style.padding = "8px 16px";
     submitBtn.style.borderRadius = "4px";
     submitBtn.style.cursor = "pointer";
 
@@ -1824,7 +2613,7 @@ export class sorterTable {
     cancelBtn.innerText = "Cancel";
     cancelBtn.style.background = "#eee";
     cancelBtn.style.border = "none";
-    cancelBtn.style.padding = "6px 14px";
+    cancelBtn.style.padding = "8px 16px";
     cancelBtn.style.borderRadius = "4px";
     cancelBtn.style.cursor = "pointer";
 
@@ -1834,29 +2623,127 @@ export class sorterTable {
       // Build filter functions
       let filters = [];
       let boolOps = [];
+
       for (let i = 0; i < queryRows.length; ++i) {
         const row = queryRows[i];
+
+        // Extract values from the row
         let idx = 0;
         let boolOp = null;
+
         if (i > 0) {
           boolOp = row.children[idx++].value;
           boolOps.push(boolOp);
         }
-        const col = row.children[idx++].value;
-        const op = row.children[idx++].value;
-        const valRaw = row.children[idx++].value;
-        let val;
-        // Try to parse as number, fallback to string
-        if (!isNaN(Number(valRaw)) && valRaw.trim() !== "") {
-          val = Number(valRaw);
-        } else {
-          val = valRaw;
+
+        const columnName = row.children[idx++].value;
+        const operator = row.children[idx++].value;
+
+        // Get column type
+        const columnType = getColumnType(columnName);
+
+        // Get input container which has the value input(s)
+        const inputContainer = row.querySelector(".value-input-container");
+        const valueInput = inputContainer.querySelector(".value-input");
+        const secondValueInput = inputContainer.querySelector(
+          ".second-value-input"
+        );
+
+        // Process the input based on column type and operator
+        let filterFunction;
+
+        switch (columnType) {
+          case "continuous":
+            if (operator === "between" && secondValueInput) {
+              const val1 = parseFloat(valueInput.value);
+              const val2 = parseFloat(secondValueInput.value);
+
+              filterFunction = (dataObj) => {
+                const value = dataObj[columnName];
+                return value >= val1 && value <= val2;
+              };
+            } else {
+              let val = parseFloat(valueInput.value);
+
+              // Use the standard filter for other operators
+              filterFunction = createDynamicFilter(columnName, operator, val);
+            }
+            break;
+
+          case "date":
+            if (operator === "between" && secondValueInput) {
+              const date1 = new Date(valueInput.value);
+              const date2 = new Date(secondValueInput.value);
+
+              filterFunction = (dataObj) => {
+                const value = new Date(dataObj[columnName]);
+                return value >= date1 && value <= date2;
+              };
+            } else {
+              const dateValue = new Date(valueInput.value);
+
+              filterFunction = (dataObj) => {
+                const value = new Date(dataObj[columnName]);
+
+                switch (operator) {
+                  case "before":
+                    return value < dateValue;
+                  case "after":
+                    return value > dateValue;
+                  case "on":
+                    return value.toDateString() === dateValue.toDateString();
+                  default:
+                    return false;
+                }
+              };
+            }
+            break;
+
+          case "boolean":
+            const boolValue = operator === "is true";
+
+            filterFunction = (dataObj) => {
+              const value = dataObj[columnName];
+              return Boolean(value) === boolValue;
+            };
+            break;
+
+          default: // ordinal or text fields
+            const textValue = valueInput.value;
+
+            filterFunction = (dataObj) => {
+              const value = String(dataObj[columnName] || "");
+
+              switch (operator) {
+                case "==":
+                  return value === textValue;
+                case "!=":
+                  return value !== textValue;
+                case "contains":
+                  return value.includes(textValue);
+                case "starts with":
+                  return value.startsWith(textValue);
+                case "ends with":
+                  return value.endsWith(textValue);
+                default:
+                  // Fall back to standard filter for numeric comparisons
+                  return createDynamicFilter(
+                    columnName,
+                    operator,
+                    textValue
+                  )(dataObj);
+              }
+            };
         }
-        filters.push(createDynamicFilter(col, op, val));
+
+        filters.push(filterFunction);
       }
 
       // Compose filters with AND/OR
       let combinedFilter = (row) => {
+        // Handle edge case of no filters
+        if (filters.length === 0) return true;
+
         let result = filters[0](row);
         for (let i = 1; i < filters.length; ++i) {
           if (boolOps[i - 1] === "AND") {
@@ -2335,21 +3222,34 @@ function HistogramController(data, binrules) {
           );
 
           if (controller.table) {
+            // First, clear previous selection if not using ctrl/shift for multi-select
+            if (!event.ctrlKey && !event.shiftKey) {
+              controller.table.clearSelection();
+            }
+
             // Get the original data indices for the items in this bin
-            // d.indeces contains indices relative to the current dataInd
-            const originalDataIndices = d.indeces.map(
+            // Need to validate the indices are correct to prevent incorrect selections
+            const validBinIndices = d.indeces.filter(
+              (idx) => idx >= 0 && idx < controller.table.dataInd.length
+            );
+            const originalDataIndices = validBinIndices.map(
               (rowIndex) => controller.table.dataInd[rowIndex]
             );
 
             // Update the main table's selection set
             if (d.selected) {
-              originalDataIndices.forEach((dataIndex) =>
-                controller.table.selectedRows.add(dataIndex)
-              );
+              // Update the internal selection set
+              originalDataIndices.forEach((dataIndex) => {
+                controller.table.selectedRows.add(dataIndex);
+              });
+
+              // Also update the visual display of the rows
+              controller.table.updateRowSelectionDisplay();
             } else {
-              originalDataIndices.forEach((dataIndex) =>
-                controller.table.selectedRows.delete(dataIndex)
-              );
+              originalDataIndices.forEach((dataIndex) => {
+                controller.table.selectedRows.delete(dataIndex);
+              });
+              controller.table.updateRowSelectionDisplay();
             }
 
             // Notify the table that the selection has changed
@@ -2427,6 +3327,35 @@ function HistogramController(data, binrules) {
         controller.table.selectionUpdated();
       }
     };
+  };
+
+  this.setOptions = function (options = {}) {
+    this.options = { ...(this.options || {}), ...options };
+
+    // Apply precision settings
+    if (options.precision === "low") {
+      // Reduce SVG dimensions for lower memory usage
+      if (this.svg) {
+        const currentWidth = this.svg.attr("width");
+        const currentHeight = this.svg.attr("height");
+
+        if (currentWidth > 60) {
+          this.svg.attr("width", 60);
+        }
+
+        if (currentHeight > 30) {
+          this.svg.attr("height", 30);
+        }
+      }
+    }
+
+    // Apply max bins limitation if data needs to be redrawn
+    if (options.maxBins && this.bins && this.bins.length > options.maxBins) {
+      // We'll need to rebuild bins with fewer buckets on next data update
+      this._maxBins = options.maxBins;
+    }
+
+    return this;
   };
 
   this.table = null;
