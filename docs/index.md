@@ -689,27 +689,6 @@ resetAllButton.addEventListener("click", (e) => {
 ```
 
 ```js
-// Handle component resets in a reactive cell to avoid circular references
-{
-  // This cell responds to reset requests
-  getResetRequested;
-
-  if (getResetRequested) {
-    // log("[RESET] Processing application state reset...");
-
-    try {
-      // // Reset the table - clear filters and restore original data
-      // });
-    } catch (err) {
-      error("[RESET] Error during reset:", err);
-    }
-    // Reset the flag after processing
-    // setResetRequested(false);
-  }
-}
-```
-
-```js
 // startTimer("grouped_intervention");
 // display(html`<p>"Grouped Intervention"</p>`);
 const groupedData = MiniDecarbModel.group(getModelData, [
@@ -1123,7 +1102,7 @@ addInterventionBtn.addEventListener("click", () => {
   quickviewDefault.classList.remove("is-active"); // Close quickview after submission
 
   // reset states
-  resetState();
+  // resetState();
 });
 ```
 
@@ -1221,9 +1200,11 @@ function addNewIntervention(initialForm) {
   const currentAllocation = getFromSession("allocations");
   const yearlyBudgets = currentAllocation.map((item) => item.budget);
 
+  // this is the building that is resulted from filter
+  // which will be used to run the model intervention
   const buildingsForIntervention = getFilteredBuildingsData();
 
-  console.log("VALIDATE THIS BUILDING", [...buildingsForIntervention]);
+  // console.log("VALIDATE THIS BUILDING", [...buildingsForIntervention]);
 
   const newConfig = {
     ...initialForm,
@@ -1508,6 +1489,7 @@ function updateTimeline() {
 <!-- ----------------  D A T A  ---------------- -->
 
 ```js
+// MAIN INTERVENTION PROCESSOR
 function processIntervention(config, buildings) {
   // 1. get allocation from session
   const currentAllocation = getFromSession("allocations");
@@ -1660,7 +1642,7 @@ console.log(">> Stacked Recap", stackedRecap);
 ```
 
 ```js
-timeline_switch;
+// timeline_switch;
 // log(">> Switching variables...", glyphVariables);
 
 // aggregate and normalise data for whole LA
@@ -1765,6 +1747,7 @@ function tableChanged(event) {
 // startTimer("create_sorter_table");
 // log("[TABLE] Create table using data", data.length);
 // console.log("[TABLE] Creating table using data", getModelData);
+
 const table = new sorterTable(getModelData, tableColumns, tableChanged);
 // const table = createSorterTable(data, tableColumns, tableChanged);
 
@@ -2245,7 +2228,20 @@ const mapInstance = new LeafletMap(leafletContainer, {
     console.log(">> Map reset");
     setInitialData(null);
   },
-  tooltipFormatter: (props) => `<strong>${props.id}</strong>`,
+  // tooltipFormatter: (props) => `<strong>${props.id}</strong>`,
+  tooltipFormatter: (props) => `
+    <div style="max-height:150px; max-width:200px; overflow-y:auto; padding:4px; font-size:12px;">
+      <strong>${props.id}</strong>
+      <hr style="margin:3px 0">
+      ${Object.entries(props)
+        .filter(([key]) => key !== "id" && key !== "geometry")
+        .map(
+          ([key, value]) =>
+            `<div><span style="font-weight:bold">${key}:</span> ${value}</div>`
+        )
+        .join("")}
+    </div>
+  `,
 });
 
 mapInstance.addLayer("buildings", getModelData, {
@@ -2321,14 +2317,39 @@ function resetState() {
 
   // Reset basic state variables
   // setInitialData(null);
-  setSelectedTableRow([]);
-  setSelectedInterventionIndex(null);
+  // setSelectedTableRow([]);
+  // setSelectedInterventionIndex(null);
 
   // Reset filter manager state
-  filterManager.reset();
+  // filterManager.reset();
 
   // Reset table and map state
-  table.resetTable();
-  mapInstance.resetMap();
+  // setModelData(buildingsData);
+  // table.resetTable();
+  // mapInstance.resetMap();
+}
+```
+
+```js
+// Handle component resets to avoid circular references
+{
+  // This cell responds to reset requests
+  getResetRequested;
+
+  if (getResetRequested) {
+    log("[RESET] Processing application state reset...");
+
+    try {
+      // // Reset the table - clear filters and restore original data
+      // table.resetTable();
+      // mapInstance.resetMap();
+      setModelData(buildingsData);
+      setInitialData(null);
+    } catch (err) {
+      error("[RESET] Error during reset:", err);
+    }
+    // Reset the flag after processing
+    setResetRequested(false);
+  }
 }
 ```

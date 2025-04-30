@@ -1611,6 +1611,86 @@ export class sorterTable {
     return this; // Enable method chaining
   }
 
+  // resetTable(useInitialData = true, options = {}) {
+  //   // Reset table with cached data
+  //   // Default options
+  //   const defaults = {
+  //     reInferTypes: false, // By default, reuse cached types/bins for speed
+  //   };
+  //   const settings = { ...defaults, ...options };
+
+  //   // Measure performance
+  //   const startTime = performance.now();
+
+  //   // Clear cache if requested
+  //   if (settings.reInferTypes) {
+  //     logDebug("Clearing binning cache due to resetTable option");
+  //     this._cache.binning = {};
+  //   } else {
+  //     logDebug("Retaining binning cache during resetTable for performance");
+  //     // Note: If data characteristics changed significantly,
+  //     // cached bins might become inaccurate. Use reInferTypes: true if needed.
+  //   }
+
+  //   // Reset aggregation state
+  //   if (this.isAggregated && this.initialData) {
+  //     this.data = useInitialData ? [...this.initialData] : this.data;
+  //     this.isAggregated = false;
+  //   } else if (useInitialData && this.initialData) {
+  //     // Reset to initial data even if not aggregated
+  //     this.data = [...this.initialData];
+  //   }
+
+  //   // Reset indices to show all rows
+  //   this.dataInd = d3.range(this.data.length);
+
+  //   // Clear selection state (implemented as a batch operation for better performance)
+  //   this.selectedRows.clear();
+  //   this.compoundSorting = {};
+  //   this.rules = [];
+  //   this.history = [];
+  //   this.selectedColumn = null;
+
+  //   // Reset sort controllers
+  //   this.sortControllers.forEach((ctrl) => {
+  //     if (ctrl.getDirection() !== "none") {
+  //       ctrl.toggleDirection();
+  //     }
+  //   });
+
+  //   // Reset columns to initial state (deep copy to avoid reference issues)
+  //   this.columns = this.initialColumns.map((col) => ({ ...col }));
+
+  //   // Rebuild the table in one efficient operation
+  //   this.rebuildTable();
+
+  //   // Update histograms efficiently
+  //   this.updateHistograms();
+
+  //   // Apply memory optimizations for large datasets
+  //   if (this.data.length > 10000) {
+  //     this.optimizeHistogramMemory();
+  //   }
+
+  //   // Notify listeners
+  //   this.changed({
+  //     type: "reset",
+  //     performanceMs: performance.now() - startTime,
+  //   });
+
+  //   if (this._containerNode) {
+  //     const event = new CustomEvent("reset", {
+  //       detail: {
+  //         source: this,
+  //         performanceMs: performance.now() - startTime,
+  //       },
+  //     });
+  //     this._containerNode.dispatchEvent(event);
+  //   }
+
+  //   return this; // Enable method chaining
+  // }
+
   updateHistograms() {
     // Use requestAnimationFrame to schedule histogram updates for better UI responsiveness
     if (this._pendingHistogramUpdate) {
