@@ -1178,7 +1178,20 @@ addInterventionBtn.addEventListener("click", () => {
     filters: [],
   };
 
-  addNewIntervention(formData);
+  // addNewIntervention(formData);
+
+  const buildingsForIntervention = getFilteredBuildingsData();
+
+  // try: process everything in one go
+  const { stackedResults, formattedRecaps } = processIntervention(
+    formData,
+    buildingsForIntervention
+  );
+
+  // Only update state at the very end, minimizing reactivity
+  setInterventions(formattedRecaps);
+  setResults(stackedResults);
+
   quickviewDefault.classList.remove("is-active"); // Close quickview after submission
 });
 ```
@@ -1546,6 +1559,49 @@ function updateTimeline() {
 
 <!-- ----------------  D A T A  ---------------- -->
 
+```js
+function processIntervention(config, buildings) {
+  // 1. get allocation from session
+  const currentAllocation = getFromSession("allocations");
+  const yearlyBudgets = currentAllocation.map((item) => item.budget);
+
+  // 2. create complete intervention config
+  const interventionConfig = {
+    ...config,
+    buildings: [...buildings],
+    yearlyBudgets: yearlyBudgets,
+  };
+
+  // 3. add intervention to manager
+  const addSuccess = manager.addIntervention(interventionConfig);
+  if (!addSuccess) return null;
+
+  // 4. run interventions
+  const recaps = manager.runInterventions();
+
+  // 5. format intervention data
+  const formattedRecaps = recaps.map((r) => ({
+    ...r,
+    interventionId: r.modelId,
+    initialYear: Number(Object.keys(r.yearlyStats)[0]),
+    tech: r.techName,
+    duration: r.projectDuration,
+  }));
+
+  // 6. get stacked results
+  const stackedResults = manager.getStackedResults();
+
+  // 7. store formatted recaps and results to session
+  saveToSession("lastInterventions", formattedRecaps);
+
+  // return the stacked results
+  return {
+    stackedResults,
+    formattedRecaps,
+  };
+}
+```
+
 ````js
 // const selectedIntervenedBuildings =
 //   selectedInterventionIndex === null
@@ -1637,7 +1693,7 @@ function updateTimeline() {
 // console.log(">> Interventions", interventions);
 
 function updateInterventions() {
-  console.trace("###[TRACE]### updateInterventions called");
+  // console.trace("###[TRACE]### updateInterventions called");
   log("get filtered buildings data");
   // const interventions = getFromSession("interventions"); // data exceed storage capacity
   const interventions = getInterventions;
