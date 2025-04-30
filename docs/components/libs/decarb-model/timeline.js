@@ -591,9 +591,6 @@ export function createTimelineInterface(
 
   // Add CSS styles
   svg.append("style").text(`
-    .resize-handle {
-      pointer-events: none;
-    }
     .resize-handle.active {
       pointer-events: all;
     }

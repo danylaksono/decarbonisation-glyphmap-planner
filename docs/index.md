@@ -2339,7 +2339,7 @@ function resetState() {
       // // Reset the table - clear filters and restore original data
       // table.resetTable();
       // mapInstance.resetMap();
-      setSelectedIntervention(null);
+      setSelectedInterventionIndex(null);
       setInitialData(null);
       setModelData(buildingsData);
     } catch (err) {
