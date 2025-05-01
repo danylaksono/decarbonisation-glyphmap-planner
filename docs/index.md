@@ -1713,6 +1713,11 @@ function tableChanged(event) {
 
   if (event.type === "selection") {
     setSelectedTableRow(event.selection);
+    log("selected row", event.selection[0].data);
+    mapInstance.flyTo(
+      { x: event.selection[0].data.x, y: event.selection[0].data.y },
+      18
+    );
     // log("Selection rule:", event.rule);
   }
 }
@@ -1842,6 +1847,7 @@ const aggregations = {
   fuel_poverty_proportion: "sum",
 };
 
+// this works but causing lags due to passing data back and forth
 // const {
 //   keydata,
 //   regularGeodataLookup,
@@ -1912,7 +1918,7 @@ const cartogramGeodataLsoaWgs84 = clone;
 // Create a lookup table for the key data - geography
 // this is already aggregated by LSOA in EnrichGeoData
 // startTimer("create*lookup_tables");
-// log(">> Create lookup tables...");
+log(">> Create lookup tables...");
 const keydata = _.keyBy(
   regular_geodata_withproperties.features.map((feat) => {
     return {
