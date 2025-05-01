@@ -71,6 +71,7 @@ import {
   transformGeometry,
   normalisebyGroup,
   aggregateValues,
+  getNumericBudget,
   // set,
   // applyTransformationToShapes,
 } from "./components/libs/helpers.js";
@@ -267,6 +268,15 @@ const [selectedInterventionIndex, setSelectedInterventionIndex] =
 const [timelineModifications, setTimelineModifications] = useState([]); // list of budget allocations
 ```
 
+```js
+// FLAGS
+const [getModelProcessingFlag, setModelProcessingFlag] = useState(false);
+const [getInterventionProcessingFlag, setInterventionProcessingFlag] =
+  useState(false);
+const [getPreviousInterventionConfig, setPreviousInterventionConfig] =
+  useState(null);
+```
+
 <!------------ HANDLE BI-DIRECTIONAL TABLE-MAP SELECTION -------------->
 
 ```js
@@ -429,15 +439,21 @@ const filterManager = {
             <p class="title">Table & Chart View </p>
           </header>
           <div id="table-container" style="height:90%; overflow-y:hidden">
-            ${getTableRule? getTableRule.join('; '): ''}
             ${resize(
                 (width, height) => drawSorterTable({
                 width: width,
-                height: height-20,
+                height: height,
               })
               )
             }
           </div>
+          <footer class="card-footer" style="overflow-y:auto;">
+          <p class="card-footer-item">
+            <span>
+              <small> <i> ${getTableRule? getTableRule.join("; ") : ""} </i> </small>
+            </span>
+          </p>
+        </footer>
       </div> <!-- card -->
     </div> <!-- left top -->
     <div class="left-bottom">
@@ -448,7 +464,8 @@ const filterManager = {
             <div id="graph-container">
               <div id="timeline-panel">
                 ${resize((width, height) => {
-                  const interventions = updateInterventions(); // scoped and fresh
+                  const interventions = updateInterventions();
+                  console.log("COMPOSING TIMELINE INTERFACE");
                   return createTimelineInterface(
                     interventions,
                     (change) => {
@@ -1055,66 +1072,6 @@ const filterByIds = (suitableIds) => {
 };
 ```
 
-```js
-// ----------------- QuickView Event Listeners -----------------
-const addInterventionBtn = document.getElementById("addInterventionBtn");
-// console.log("interview btn", addInterventionBtn);
-
-log("Attaching listener to addInterventionBtn");
-// console.trace("###[TRACE]### addInterventionBtn called");
-
-// Add New Intervention button logic
-addInterventionBtn.addEventListener("click", () => {
-  console.log("Intervention button clicked");
-
-  // check for carbon-first or tech-first
-  const OPTIMISE_ALL = "Optimise All";
-  const isOptimiseAll = techsInput.value === OPTIMISE_ALL;
-
-  const strategy = isOptimiseAll ? "carbon-first" : "tech-first";
-  const techs = isOptimiseAll ? Object.keys(listOfTech) : techsInput.value;
-
-  const formData = {
-    id: techsInput.value + "_" + startYearInput.value.toString(),
-    initialYear: Number(startYearInput.value),
-    rolloverBudget: 0,
-    optimizationStrategy: strategy,
-    tech: techs,
-    technologies: techs, // for optimise all
-    priorities: [],
-    filters: [],
-  };
-
-  // addNewIntervention(formData);
-
-  const buildingsForIntervention = getFilteredBuildingsData();
-
-  // try: UNIFIED INTERVENTION PROCESS
-  const { stackedResults, formattedRecaps } = processIntervention(
-    formData,
-    buildingsForIntervention
-  );
-
-  // Only update state at the very end, minimizing reactivity
-  setInterventions(formattedRecaps);
-  setResults(stackedResults);
-
-  quickviewDefault.classList.remove("is-active"); // Close quickview after submission
-
-  // reset states
-  // resetState();
-});
-```
-
-```js
-const getNumericBudget = (value) => {
-  // Remove commas and parse the value as a number
-  let budget = parseFloat(value.replace(/,/g, "").replace(/£/g, ""));
-  // log("budget in billions", budget * 1e6);
-  return budget * 1000;
-};
-```
-
 <!--------------- Budget Allocator ---------------->
 
 ```js
@@ -1165,6 +1122,107 @@ setSelectedAllocation(allocator.getAllocations());
 }
 ```
 
+```js
+// ----------------- QuickView Event Listeners -----------------
+const addInterventionBtn = document.getElementById("addInterventionBtn");
+// console.log("interview btn", addInterventionBtn);
+log("Attaching listener to addInterventionBtn");
+// console.trace("###[TRACE]### addInterventionBtn called");
+```
+
+```js
+{
+  /// TEST IF FORMDATA IS REACTIVE
+  const formData = {
+    id: techsInput.value + "_" + startYearInput.value.toString(),
+    initialYear: Number(startYearInput.value),
+    rolloverBudget: 0,
+    optimizationStrategy: techsInput.value,
+    tech: techsInput.value,
+    technologies: techsInput.value, // for optimise all
+    priorities: [],
+    filters: [],
+  };
+  log("TEST if formdata is reactive", formData);
+}
+```
+
+```js
+{
+  // let interventionProcessing = false;
+
+  // Add New Intervention button logic
+  addInterventionBtn.addEventListener("click", () => {
+    console.log("Intervention button clicked");
+
+    // check for carbon-first or tech-first
+    const OPTIMISE_ALL = "Optimise All";
+    const isOptimiseAll = techsInput.value === OPTIMISE_ALL;
+
+    const strategy = isOptimiseAll ? "carbon-first" : "tech-first";
+    const techs = isOptimiseAll ? Object.keys(listOfTech) : techsInput.value;
+
+    // Get filtered building IDs (if any), sorted and limited for efficiency
+    const buildingsForIntervention = getFilteredBuildingsData();
+    const buildingIds = buildingsForIntervention
+      .map((b) => b.id)
+      .sort()
+      .slice(0, 10) // limit to first 10 for performance
+      .join("_");
+
+    // Deterministic ID based on key attributes
+    const formDataId = [
+      Array.isArray(techs) ? techs.join("+") : techs,
+      startYearInput.value,
+      projectLengthInput.value,
+      allocationTypeInput.value,
+      buildingIds,
+    ].join("_");
+
+    const formData = {
+      // id: techsInput.value + "_" + startYearInput.value.toString(),
+      id: formDataId,
+      initialYear: Number(startYearInput.value),
+      rolloverBudget: 0,
+      optimizationStrategy: strategy,
+      tech: techs,
+      technologies: techs, // for optimise all
+      priorities: [],
+      filters: [],
+    };
+
+    // if ID already exists, skip further processing
+    if (
+      getInterventions.some((intervention) => intervention.id === formData.id)
+    ) {
+      console.log(
+        "TEST Intervention ID already exists. Skipping further processing."
+      );
+      return;
+    }
+
+    // legacy
+    // addNewIntervention(formData);
+    // const buildingsForIntervention = getFilteredBuildingsData();
+
+    // try: UNIFIED INTERVENTION PROCESS
+    const { stackedResults, formattedRecaps } = processIntervention(
+      formData,
+      buildingsForIntervention
+    );
+
+    // Only update state at the very end, minimizing reactivity
+    setInterventions(formattedRecaps);
+    setResults(stackedResults);
+
+    quickviewDefault.classList.remove("is-active"); // Close quickview after submission
+
+    // reset states
+    // resetState();
+  });
+}
+```
+
 <!-- ---------------- Functions ---------------- -->
 
 ```js
@@ -1194,43 +1252,48 @@ function getFilteredBuildingsData() {
 
 ```js
 // Handle form submission: add new intervention
-function addNewIntervention(initialForm) {
-  // console.trace("###[TRACE]### addNewIntervention called");
-  // log(Date.now(), "Checking allocations now:", allocations);
-  const currentAllocation = getFromSession("allocations");
-  const yearlyBudgets = currentAllocation.map((item) => item.budget);
+// function addNewIntervention(initialForm) {
+//   // console.trace("###[TRACE]### addNewIntervention called");
+//   // log(Date.now(), "Checking allocations now:", allocations);
+//   const currentAllocation = getFromSession("allocations");
+//   const yearlyBudgets = currentAllocation.map((item) => item.budget);
 
-  // this is the building that is resulted from filter
-  // which will be used to run the model intervention
-  const buildingsForIntervention = getFilteredBuildingsData();
+//   // this is the building that is resulted from filter
+//   // which will be used to run the model intervention
+//   const buildingsForIntervention = getFilteredBuildingsData();
 
-  // console.log("VALIDATE THIS BUILDING", [...buildingsForIntervention]);
+//   // console.log("VALIDATE THIS BUILDING", [...buildingsForIntervention]);
 
-  const newConfig = {
-    ...initialForm,
-    buildings: [...buildingsForIntervention],
-    // filters: [],
-    // priorities: [],
-    yearlyBudgets: yearlyBudgets,
-  };
-  console.log(">> CONFIG from session", newConfig);
+//   const newConfig = {
+//     ...initialForm,
+//     buildings: [...buildingsForIntervention],
+//     // filters: [],
+//     // priorities: [],
+//     yearlyBudgets: yearlyBudgets,
+//   };
+//   console.log(">> CONFIG from session", newConfig);
 
-  // add the new intervention to the model
-  manager.addIntervention(newConfig);
+//   // add the new intervention to the model
+//   manager.addIntervention(newConfig);
 
-  // run the model
-  // startTimer("run_model");
-  // log(">> Running the decarbonisation model...");
-  runModel();
-  // endTimer("run_model");
-}
+//   // run the model
+//   // startTimer("run_model");
+//   // log(">> Running the decarbonisation model...");
+//   runModel();
+//   // endTimer("run_model");
+// }
 ```
 
 ```js
 // function to run the model
+startTimer("run_model");
+let getModelProcessingFlag = false;
 function runModel() {
+  if (getModelProcessingFlag) return;
+  setModelProcessingFlag(true);
+
   // console.trace("###[TRACE]### runModel called");
-  // log("[MODEL] Running the decarbonisation model...");
+  log("[MODEL] Running the decarbonisation model...");
   const recaps = manager.runInterventions();
   const formatRecaps = recaps.map((r) => {
     return {
@@ -1252,12 +1315,17 @@ function runModel() {
 
   // Reset table and map after intervention is applied
   // filterStackedInterventions();
+
+  setModelProcessingFlag(false);
 }
+endTimer("run_model");
 ```
 
 ```js
 function filterStackedInterventions() {
-  log("[INTERVENTION] Resetting table and map selections for new intervention");
+  log(
+    "[INTERVENTION] Processing table and map selections for new intervention"
+  );
 
   // Reset the filter manager
   filterManager.reset();
@@ -1267,7 +1335,7 @@ function filterStackedInterventions() {
 
   // filter table and map based on stacked intervention
   // format the IDs as objects with an id property as expected by the table
-  let buildingsArray = stackedRecap ? stackedRecap?.buildings : [];
+  let buildingsArray = getResults ? getResults?.buildings : [];
 
   // UPDATE MODEL DATA
   setModelData(buildingsArray);
@@ -1292,7 +1360,7 @@ function filterSelectedIntervention(index, interventions) {
   // let interventions = updateInterventions();
 
   log(
-    "[INTERVENTION] Resetting table and map selections for clicked intervention",
+    "[INTERVENTION] Processing table and map selections for clicked intervention",
     interventions[index]
   );
 
@@ -1446,22 +1514,6 @@ function modifyIntervention(index, newConfig) {
 ```
 
 ```js
-// function to update building filter
-function updateBuildingFilter(column, value) {
-  log(">> Updating building filter...", column, value);
-  const filter = filterByIds(
-    table.data
-      .filter((d) => d[column] === value)
-      .map((d) => d?.id)
-      .filter(Boolean)
-  );
-  log(">> Filter", filter);
-  manager.addFilter(filter);
-  runModel();
-}
-```
-
-```js
 // update timeline drawing
 function updateTimeline() {
   const timelinePanel = document.getElementById("timeline-panel");
@@ -1490,6 +1542,9 @@ function updateTimeline() {
 
 ```js
 // MAIN INTERVENTION PROCESSOR
+startTimer("process_intervention");
+log("process intervention");
+
 function processIntervention(config, buildings) {
   // 1. get allocation from session
   const currentAllocation = getFromSession("allocations");
@@ -1501,6 +1556,28 @@ function processIntervention(config, buildings) {
     buildings: [...buildings],
     yearlyBudgets: yearlyBudgets,
   };
+
+  // Create a lightweight signature for comparison
+  const configSignature = {
+    ...config,
+    buildingCount: buildings.length,
+    yearlyBudgets: yearlyBudgets,
+  };
+
+  log("previous signature", getPreviousInterventionConfig);
+  log("current signature", configSignature);
+
+  // reactivity police - compare only the signature, not the full configuration
+  if (
+    getPreviousInterventionConfig &&
+    _.isEqual(getPreviousInterventionConfig, configSignature)
+  ) {
+    log("[WARN] accidental reactivity. skip processing");
+    return;
+  }
+
+  // Store just the signature for future comparisons
+  setPreviousInterventionConfig(configSignature);
 
   // 3. add intervention to manager
   const addSuccess = manager.addIntervention(interventionConfig);
@@ -1521,110 +1598,19 @@ function processIntervention(config, buildings) {
   // 6. get stacked results
   const stackedResults = manager.getStackedResults();
 
-  // 7. store formatted recaps and results to session
-  saveToSession("lastInterventions", formattedRecaps);
-
   // return the stacked results
   return {
     stackedResults,
     formattedRecaps,
   };
 }
+endTimer("process_intervention");
 ```
 
-````js
-// const selectedIntervenedBuildings =
-//   selectedInterventionIndex === null
-//     ? null
-//     : Array.isArray(selectedInterventionIndex)
-//     ? selectedInterventionIndex.flatMap(
-//         (i) => interventions[i]?.intervenedBuildings ?? []
-//       )
-//     : interventions[selectedInterventionIndex]?.intervenedBuildings;
-
-// // log(`[DATA] Selected Intervened buildings`, getInterventions[0]);
-
-// console.log("[DATA] Get Interventions", interventions[0]);
-
-// // flatData is from a single intervetntion
-// const flatData = selectedIntervenedBuildings?.map((p) => ({
-//   ...p,
-//   ...p.properties,
-// }));
-
-// log("[DATA] Intervened buildings", flatData);
-
-// // const data =
-// //   selectedInterventionIndex === null
-// //     ? stackedRecap?.buildings ?? buildingsData
-// //     : flatData;
-// ```
-
-// ```js
-// const data = getResetRequested
-//   ? buildingsData
-//   : selectedInterventionIndex === null
-//   ? stackedRecap?.buildings ?? buildingsData
-//   : flatData;
-
-// log("[DATA] DATA DATA DATA", data);
-
-// -----------------------------------------------
-// Get intervened buildings based on selection state
-// let selectedIntervenedBuildings = null;
-
-// if (selectedInterventionIndex !== null) {
-//   if (Array.isArray(selectedInterventionIndex)) {
-//     // Multiple selections: collect buildings from all selected interventions
-//     selectedIntervenedBuildings = selectedInterventionIndex.flatMap(
-//       (i) => getInterventions[i]?.intervenedBuildings ?? []
-//     );
-//   } else {
-//     // Single selection: get buildings from the selected intervention
-//     selectedIntervenedBuildings =
-//       getInterventions[selectedInterventionIndex]?.intervenedBuildings;
-//   }
-// }
-
-// console.log("[DATA] Get Interventions", getInterventions[0]);
-
-// // Transform buildings data when available
-// let flatData = null;
-// if (selectedIntervenedBuildings) {
-//   flatData = selectedIntervenedBuildings.map((p) => ({
-//     ...p,
-//     ...p.properties,
-//   }));
-// }
-
-// console.log("[DATA] Intervened buildings", selectedIntervenedBuildings?.length);
-
-// // Determine which data set to use
-// let data;
-// if (getResetRequested) {
-//   data = buildingsData;
-// } else if (selectedInterventionIndex === null) {
-//   // No selection: use recap buildings or fall back to all buildings
-//   data = stackedRecap?.buildings ?? buildingsData;
-//   // data = buildingsData;
-// } else {
-//   // Selection exists: use the transformed buildings data
-//   data = flatData;
-// }
-// console.log("[DATA] DATA DATA DATA", data);
-````
-
 ```js
-// This updates the stored interventions
-// const interventions = getInterventions;
-
-// get interventions from session
-// const interventions = getFromSession("interventions");
-// console.log(">> Interventions", interventions);
-
 function updateInterventions() {
   // console.trace("###[TRACE]### updateInterventions called");
-  log("get filtered buildings data");
+  log("updating intervention");
   // const interventions = getFromSession("interventions"); // data exceed storage capacity
   const interventions = getInterventions;
   if (interventions && interventions.length > 0) {
@@ -1636,9 +1622,9 @@ function updateInterventions() {
 ```
 
 ```js
-// this updates stackedRecap
-const stackedRecap = getResults;
-console.log(">> Stacked Recap", stackedRecap);
+// this updates stackedRecap from getResults
+// const stackedRecap = getResults;
+// console.log(">> Stacked Recap", stackedRecap);
 ```
 
 ```js
@@ -1659,7 +1645,7 @@ const excludedColumns = [
   "properties",
   "x",
   "y",
-  "score",
+  // "score",
   "ashp_labour",
   "ashp_material",
   "pv_labour",
@@ -1680,6 +1666,7 @@ const customOrder = [
   "id",
   "lsoa",
   "msoa",
+  "score",
   "EPC_rating",
   "ashp_suitability",
   "pv_suitability",
@@ -1734,6 +1721,7 @@ function tableChanged(event) {
     // Reset everything when table reset is triggered
     // resetState();
     setInitialData(null);
+    setTableRule([]);
   }
 
   if (event.type === "selection") {
@@ -1744,20 +1732,69 @@ function tableChanged(event) {
 ```
 
 ```js
-// startTimer("create_sorter_table");
+startTimer("create_sorter_table");
+showGlobalLoading(true);
 // log("[TABLE] Create table using data", data.length);
-// console.log("[TABLE] Creating table using data", getModelData);
-
 const table = new sorterTable(getModelData, tableColumns, tableChanged);
-// const table = createSorterTable(data, tableColumns, tableChanged);
 
 function drawSorterTable(options) {
   // console.log("setting table size", options);
   table.setContainerSize(options);
   return table.getNode();
 }
-// endTimer("create_sorter_table");
+showGlobalLoading(false);
+endTimer("create_sorter_table");
 ```
+
+```js
+// spinner especially for table
+
+// Function to show/hide loading spinner
+function showTableSpinner(show) {
+  const container = document.getElementById("table-container");
+  if (!container) return;
+
+  // Remove existing spinner if any
+  const existingSpinner = container.querySelector(".spinner-container");
+  if (existingSpinner) {
+    container.removeChild(existingSpinner);
+  }
+
+  // Add new spinner if requested
+  if (show) {
+    const spinnerContainer = document.createElement("div");
+    spinnerContainer.className = "spinner-container";
+    spinnerContainer.style.cssText =
+      "position:absolute; top:0; left:0; right:0; bottom:0; display:flex; justify-content:center; align-items:center; background-color:rgba(255,255,255,0.7); z-index:10;";
+
+    const spinner = document.createElement("div");
+    spinner.className = "loader is-loading";
+    spinner.style.cssText = "height:80px; width:80px;";
+
+    spinnerContainer.appendChild(spinner);
+    container.appendChild(spinnerContainer);
+  }
+}
+```
+
+```js
+function showGlobalLoading(show = true) {
+  log("### global loading...");
+
+  const overlay = document.getElementById("global-loading-overlay");
+  if (!overlay) return;
+  overlay.style.display = show ? "flex" : "none";
+  // Optionally, blur the main content
+  document.body.style.overflow = show ? "hidden" : "";
+}
+```
+
+<div id="global-loading-overlay" style="display:none;">
+  <div class="loading-modal">
+    <div class="spinner"></div>
+    <div class="loading-text">Loading, please wait...</div>
+  </div>
+</div>
 
 <!-- ---------------- Glyph Maps ---------------- -->
 
@@ -2049,7 +2086,9 @@ function set(input, value) {
   input.dispatchEvent(new Event("input", { bubbles: true }));
   // console.log("input value:", input.value);
 }
+```
 
+```js
 function animate(currentValue, animationFrame, playing = false, direction = 1) {
   // Increment or decrement the value
   let newValue = currentValue + 0.01 * direction;
@@ -2170,7 +2209,7 @@ function createGlyphMap(map_aggregate, width, height) {
         ...glyphMapSpec(width, height),
       });
     } else {
-      return createLeafletMap(getModelData, width, height).leafletContainer;
+      return createLeafletMap(width, height).leafletContainer;
     }
   } else if (map_aggregate == "LSOA Level") {
     return morphGlyphMap;
@@ -2276,7 +2315,7 @@ if (leafletContainer && mapInstance && mapInstance.map) {
 
 ```js
 // Leaflet map
-function createLeafletMap(data, width, height) {
+function createLeafletMap(width, height) {
   // log(">> Create Leaflet Map with... ", width, height);
   mapInstance.setDimensions(width, height);
 
@@ -2293,8 +2332,8 @@ function createLeafletMap(data, width, height) {
 ```js
 // selectedInterventionIndex;
 // Step 1: Transform recap object into an array for easier processing
-const yearlySummaryArray = stackedRecap.yearlySummary
-  ? Object.entries(stackedRecap.yearlySummary).map(([year, values]) => ({
+const yearlySummaryArray = getResults.yearlySummary
+  ? Object.entries(getResults.yearlySummary).map(([year, values]) => ({
       year: Number(year),
       ...values,
     }))
@@ -2314,19 +2353,6 @@ let keysToNormalise = [
 function resetState() {
   log("[RESET] Requesting application state reset...");
   setResetRequested(true);
-
-  // Reset basic state variables
-  // setInitialData(null);
-  // setSelectedTableRow([]);
-  // setSelectedInterventionIndex(null);
-
-  // Reset filter manager state
-  // filterManager.reset();
-
-  // Reset table and map state
-  // setModelData(buildingsData);
-  // table.resetTable();
-  // mapInstance.resetMap();
 }
 ```
 
@@ -2343,8 +2369,15 @@ function resetState() {
       // // Reset the table - clear filters and restore original data
       // table.resetTable();
       // mapInstance.resetMap();
-      setModelData(buildingsData);
+      setTableRule([]);
+      setSelectedInterventionIndex(null);
       setInitialData(null);
+
+      // cleaning up session storages
+      sessionStorage.removeItem("initialids");
+      sessionStorage.removeItem("allocations");
+
+      setModelData(buildingsData);
     } catch (err) {
       error("[RESET] Error during reset:", err);
     }
