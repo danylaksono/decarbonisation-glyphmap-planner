@@ -13,14 +13,8 @@ export function createTimelineInterface(
   // Remove duplicate interventions based on deep equality
   // interventions = _.uniqWith(interventions, _.isEqual);
 
-  interventions = _.uniqBy(
-    interventions,
-    (d) =>
-      `${
-        d.tech ||
-        (Array.isArray(d.technologies) ? d.technologies.join(",") : "")
-      }|${d.initialYear}|${d.duration}`
-  );
+  // Make sure that there are no duplicates by modelId
+  interventions = _.uniqBy(interventions, (d) => d.modelId);
 
   console.log("Received interventions for timeline: ", interventions);
 

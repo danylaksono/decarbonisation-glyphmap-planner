@@ -447,10 +447,18 @@ const filterManager = {
               )
             }
           </div>
-          <footer class="card-footer" style="overflow-y:auto;">
+          <footer class="card-footer" style="overflow: auto;">
           <p class="card-footer-item">
             <span>
-              <small> <i> ${getTableRule? getTableRule.join("; ") : ""} </i> </small>
+              <small>
+                <i>
+                  ${
+                    getTableRule && getTableRule.join("; ").length > 120
+                      ? `<span title="${getTableRule.join("; ")}">${getTableRule.join("; ").slice(0, 120)}...</span>`
+                      : getTableRule ? getTableRule.join("; ") : ""
+                  }
+                </i>
+              </small>
             </span>
           </p>
         </footer>
@@ -485,7 +493,8 @@ const filterManager = {
                       }
                     },
                     width || 800,
-                    height || 300
+                    height || 300,
+                    true // tooltips enabled
                   );
                 })}
               </div> <!-- timeline panel -->
@@ -1101,6 +1110,7 @@ const budgetVisualiser = allocator.visualise(
   initialAllocations,
   (changes) => {
     // log("On Budget Updated", changes);
+    // update if the budget is changed
     setSelectedAllocation(changes);
   },
   400,
@@ -1128,23 +1138,6 @@ const addInterventionBtn = document.getElementById("addInterventionBtn");
 // console.log("interview btn", addInterventionBtn);
 log("Attaching listener to addInterventionBtn");
 // console.trace("###[TRACE]### addInterventionBtn called");
-```
-
-```js
-{
-  /// TEST IF FORMDATA IS REACTIVE
-  const formData = {
-    id: techsInput.value + "_" + startYearInput.value.toString(),
-    initialYear: Number(startYearInput.value),
-    rolloverBudget: 0,
-    optimizationStrategy: techsInput.value,
-    tech: techsInput.value,
-    technologies: techsInput.value, // for optimise all
-    priorities: [],
-    filters: [],
-  };
-  log("TEST if formdata is reactive", formData);
-}
 ```
 
 ```js
@@ -1251,7 +1244,7 @@ function getFilteredBuildingsData() {
 <!-- Intervention functions -->
 
 ```js
-// Handle form submission: add new intervention
+// // Handle form submission: add new intervention
 // function addNewIntervention(initialForm) {
 //   // console.trace("###[TRACE]### addNewIntervention called");
 //   // log(Date.now(), "Checking allocations now:", allocations);
@@ -1287,11 +1280,7 @@ function getFilteredBuildingsData() {
 ```js
 // function to run the model
 startTimer("run_model");
-let getModelProcessingFlag = false;
 function runModel() {
-  if (getModelProcessingFlag) return;
-  setModelProcessingFlag(true);
-
   // console.trace("###[TRACE]### runModel called");
   log("[MODEL] Running the decarbonisation model...");
   const recaps = manager.runInterventions();
@@ -1315,8 +1304,6 @@ function runModel() {
 
   // Reset table and map after intervention is applied
   // filterStackedInterventions();
-
-  setModelProcessingFlag(false);
 }
 endTimer("run_model");
 ```
@@ -1733,6 +1720,7 @@ function tableChanged(event) {
 
 ```js
 startTimer("create_sorter_table");
+injectGlobalLoadingOverlay();
 showGlobalLoading(true);
 // log("[TABLE] Create table using data", data.length);
 const table = new sorterTable(getModelData, tableColumns, tableChanged);
@@ -1779,22 +1767,31 @@ function showTableSpinner(show) {
 
 ```js
 function showGlobalLoading(show = true) {
-  log("### global loading...");
-
   const overlay = document.getElementById("global-loading-overlay");
   if (!overlay) return;
   overlay.style.display = show ? "flex" : "none";
+  log("### global loading...", show, overlay.style.display);
   // Optionally, blur the main content
   document.body.style.overflow = show ? "hidden" : "";
 }
 ```
 
-<div id="global-loading-overlay" style="display:none;">
-  <div class="loading-modal">
-    <div class="spinner"></div>
-    <div class="loading-text">Loading, please wait...</div>
-  </div>
-</div>
+```js
+function injectGlobalLoadingOverlay() {
+  if (!document.getElementById("global-loading-overlay")) {
+    const overlay = document.createElement("div");
+    overlay.id = "global-loading-overlay";
+    overlay.style.display = "none";
+    overlay.innerHTML = `
+      <div class="loading-modal">
+        <div class="spinner"></div>
+        <div class="loading-text">Loading, please wait...</div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+  }
+}
+```
 
 <!-- ---------------- Glyph Maps ---------------- -->
 
@@ -2374,8 +2371,8 @@ function resetState() {
       setInitialData(null);
 
       // cleaning up session storages
-      sessionStorage.removeItem("initialids");
-      sessionStorage.removeItem("allocations");
+      // sessionStorage.removeItem("initialids");
+      // sessionStorage.removeItem("allocations");
 
       setModelData(buildingsData);
     } catch (err) {
