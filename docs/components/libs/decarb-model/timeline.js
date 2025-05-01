@@ -13,14 +13,8 @@ export function createTimelineInterface(
   // Remove duplicate interventions based on deep equality
   // interventions = _.uniqWith(interventions, _.isEqual);
 
-  interventions = _.uniqBy(
-    interventions,
-    (d) =>
-      `${
-        d.tech ||
-        (Array.isArray(d.technologies) ? d.technologies.join(",") : "")
-      }|${d.initialYear}|${d.duration}`
-  );
+  // Make sure that there are no duplicates by modelId
+  interventions = _.uniqBy(interventions, (d) => d.modelId);
 
   console.log("Received interventions for timeline: ", interventions);
 
@@ -233,7 +227,12 @@ export function createTimelineInterface(
     })
     .attr(
       "width",
-      (d) => xScale(d.initialYear + d.duration) - xScale(d.initialYear)
+      // (d) => xScale(d.initialYear + d.duration) - xScale(d.initialYear)
+      (d) =>
+        xScale(d.initialYear + d.duration - 1) -
+        xScale(d.initialYear) +
+        xScale(d.initialYear + 1) -
+        xScale(d.initialYear)
     )
     .attr("height", (d, i) => Math.min(yScale.bandwidth(), maxBlockHeight))
     .attr("fill", "#3388FF")
@@ -450,6 +449,10 @@ export function createTimelineInterface(
       // Add x-axis with year labels
       const tickCount = Math.min(d.duration, 5); // Max 5 ticks
       const tickStep = Math.ceil(d.duration / tickCount);
+      const tickYears = d3.range(d.initialYear, d.initialYear + d.duration);
+      if (tickYears[tickYears.length - 1] !== d.initialYear + d.duration - 1) {
+        tickYears.push(d.initialYear + d.duration - 1);
+      }
 
       graphG
         .append("g")
@@ -458,9 +461,10 @@ export function createTimelineInterface(
           d3
             .axisBottom(xScale)
             .ticks(tickCount)
-            .tickValues(
-              d3.range(d.initialYear, d.initialYear + d.duration, tickStep)
-            )
+            .tickValues(tickYears)
+            // .tickValues(
+            //   d3.range(d.initialYear, d.initialYear + d.duration, tickStep)
+            // )
             .tickFormat(d3.format("d"))
         )
         .selectAll("text")
