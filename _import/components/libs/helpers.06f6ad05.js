@@ -3,6 +3,13 @@ import { OSGB } from "./osgb/index.1d2476df.js";
 
 const proj = new OSGB();
 
+export function getNumericBudget(value) {
+  // Remove commas and parse the value as a number
+  let budget = parseFloat(value.replace(/,/g, "").replace(/£/g, ""));
+  // log("budget in billions", budget * 1e6);
+  return budget * 1000;
+}
+
 /**
  * Infer visualization-oriented data types (e.g., Quantitative, Nominal, Temporal, Ordinal).
  * @param {Array} data - Array of objects or arrays.
@@ -480,7 +487,9 @@ export function applyTransformationToShapes(geographicShapes) {
 
 export function normaliseData(data, keysToNormalise) {
   if (!Array.isArray(data) || data.length === 0) {
-    throw new Error("Data must be a non-empty array.");
+    // throw new Error("Data must be a non-empty array.");
+    console.warn("Data must be a non-empty array.");
+    return data; // Return original data if empty
   }
 
   // First, gather all values for each key

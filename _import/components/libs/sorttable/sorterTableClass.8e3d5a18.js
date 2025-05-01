@@ -2014,7 +2014,7 @@ export class sorterTable {
     });
   }
 
-  percentalize(v, dir = "top") {
+  percentalize(v, dir = "bottom") {
     if (dir === "bottom") {
       for (let i = 1; i < this.percentiles.length; i++) {
         if (v >= this.percentiles[i - 1] && v <= this.percentiles[i]) {
