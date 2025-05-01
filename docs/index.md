@@ -268,6 +268,15 @@ const [selectedInterventionIndex, setSelectedInterventionIndex] =
 const [timelineModifications, setTimelineModifications] = useState([]); // list of budget allocations
 ```
 
+```js
+// FLAGS
+const [getModelProcessingFlag, setModelProcessingFlag] = useState(false);
+const [getInterventionProcessingFlag, setInterventionProcessingFlag] =
+  useState(false);
+const [getPreviousInterventionConfig, setPreviousInterventionConfig] =
+  useState(null);
+```
+
 <!------------ HANDLE BI-DIRECTIONAL TABLE-MAP SELECTION -------------->
 
 ```js
@@ -1063,74 +1072,6 @@ const filterByIds = (suitableIds) => {
 };
 ```
 
-```js
-// ----------------- QuickView Event Listeners -----------------
-const addInterventionBtn = document.getElementById("addInterventionBtn");
-// console.log("interview btn", addInterventionBtn);
-log("Attaching listener to addInterventionBtn");
-// console.trace("###[TRACE]### addInterventionBtn called");
-```
-
-```js
-{
-  let interventionProcessing = false;
-  // Add New Intervention button logic
-  addInterventionBtn.addEventListener("click", () => {
-    if (interventionProcessing) return;
-    interventionProcessing = true;
-
-    console.log("Intervention button clicked");
-
-    // check for carbon-first or tech-first
-    const OPTIMISE_ALL = "Optimise All";
-    const isOptimiseAll = techsInput.value === OPTIMISE_ALL;
-
-    const strategy = isOptimiseAll ? "carbon-first" : "tech-first";
-    const techs = isOptimiseAll ? Object.keys(listOfTech) : techsInput.value;
-
-    const formData = {
-      id: techsInput.value + "_" + startYearInput.value.toString(),
-      initialYear: Number(startYearInput.value),
-      rolloverBudget: 0,
-      optimizationStrategy: strategy,
-      tech: techs,
-      technologies: techs, // for optimise all
-      priorities: [],
-      filters: [],
-    };
-
-    // addNewIntervention(formData);
-
-    const buildingsForIntervention = getFilteredBuildingsData();
-
-    // try: UNIFIED INTERVENTION PROCESS
-    const { stackedResults, formattedRecaps } = processIntervention(
-      formData,
-      buildingsForIntervention
-    );
-
-    // Only update state at the very end, minimizing reactivity
-    setInterventions(formattedRecaps);
-    setResults(stackedResults);
-
-    quickviewDefault.classList.remove("is-active"); // Close quickview after submission
-
-    // reset states
-    // resetState();
-    interventionProcessing = false;
-  });
-}
-```
-
-```js
-// const getNumericBudget = (value) => {
-//   // Remove commas and parse the value as a number
-//   let budget = parseFloat(value.replace(/,/g, "").replace(/£/g, ""));
-//   // log("budget in billions", budget * 1e6);
-//   return budget * 1000;
-// };
-```
-
 <!--------------- Budget Allocator ---------------->
 
 ```js
@@ -1178,6 +1119,107 @@ setSelectedAllocation(allocator.getAllocations());
   // const newAllocation = selected ? selected : allocator.getAllocations();
   // log("newAllocation", newAllocation);
   saveToSession("allocations", getSelectedAllocation);
+}
+```
+
+```js
+// ----------------- QuickView Event Listeners -----------------
+const addInterventionBtn = document.getElementById("addInterventionBtn");
+// console.log("interview btn", addInterventionBtn);
+log("Attaching listener to addInterventionBtn");
+// console.trace("###[TRACE]### addInterventionBtn called");
+```
+
+```js
+{
+  /// TEST IF FORMDATA IS REACTIVE
+  const formData = {
+    id: techsInput.value + "_" + startYearInput.value.toString(),
+    initialYear: Number(startYearInput.value),
+    rolloverBudget: 0,
+    optimizationStrategy: techsInput.value,
+    tech: techsInput.value,
+    technologies: techsInput.value, // for optimise all
+    priorities: [],
+    filters: [],
+  };
+  log("TEST if formdata is reactive", formData);
+}
+```
+
+```js
+{
+  // let interventionProcessing = false;
+
+  // Add New Intervention button logic
+  addInterventionBtn.addEventListener("click", () => {
+    console.log("Intervention button clicked");
+
+    // check for carbon-first or tech-first
+    const OPTIMISE_ALL = "Optimise All";
+    const isOptimiseAll = techsInput.value === OPTIMISE_ALL;
+
+    const strategy = isOptimiseAll ? "carbon-first" : "tech-first";
+    const techs = isOptimiseAll ? Object.keys(listOfTech) : techsInput.value;
+
+    // Get filtered building IDs (if any), sorted and limited for efficiency
+    const buildingsForIntervention = getFilteredBuildingsData();
+    const buildingIds = buildingsForIntervention
+      .map((b) => b.id)
+      .sort()
+      .slice(0, 10) // limit to first 10 for performance
+      .join("_");
+
+    // Deterministic ID based on key attributes
+    const formDataId = [
+      Array.isArray(techs) ? techs.join("+") : techs,
+      startYearInput.value,
+      projectLengthInput.value,
+      allocationTypeInput.value,
+      buildingIds,
+    ].join("_");
+
+    const formData = {
+      // id: techsInput.value + "_" + startYearInput.value.toString(),
+      id: formDataId,
+      initialYear: Number(startYearInput.value),
+      rolloverBudget: 0,
+      optimizationStrategy: strategy,
+      tech: techs,
+      technologies: techs, // for optimise all
+      priorities: [],
+      filters: [],
+    };
+
+    // if ID already exists, skip further processing
+    if (
+      getInterventions.some((intervention) => intervention.id === formData.id)
+    ) {
+      console.log(
+        "TEST Intervention ID already exists. Skipping further processing."
+      );
+      return;
+    }
+
+    // legacy
+    // addNewIntervention(formData);
+    // const buildingsForIntervention = getFilteredBuildingsData();
+
+    // try: UNIFIED INTERVENTION PROCESS
+    const { stackedResults, formattedRecaps } = processIntervention(
+      formData,
+      buildingsForIntervention
+    );
+
+    // Only update state at the very end, minimizing reactivity
+    setInterventions(formattedRecaps);
+    setResults(stackedResults);
+
+    quickviewDefault.classList.remove("is-active"); // Close quickview after submission
+
+    // reset states
+    // resetState();
+  });
 }
 ```
 
@@ -1245,10 +1287,10 @@ function getFilteredBuildingsData() {
 ```js
 // function to run the model
 startTimer("run_model");
-let modelProcessing = false;
+let getModelProcessingFlag = false;
 function runModel() {
-  if (modelProcessing) return;
-  modelProcessing = true;
+  if (getModelProcessingFlag) return;
+  setModelProcessingFlag(true);
 
   // console.trace("###[TRACE]### runModel called");
   log("[MODEL] Running the decarbonisation model...");
@@ -1274,7 +1316,7 @@ function runModel() {
   // Reset table and map after intervention is applied
   // filterStackedInterventions();
 
-  modelProcessing = false;
+  setModelProcessingFlag(false);
 }
 endTimer("run_model");
 ```
@@ -1293,7 +1335,7 @@ function filterStackedInterventions() {
 
   // filter table and map based on stacked intervention
   // format the IDs as objects with an id property as expected by the table
-  let buildingsArray = stackedRecap ? stackedRecap?.buildings : [];
+  let buildingsArray = getResults ? getResults?.buildings : [];
 
   // UPDATE MODEL DATA
   setModelData(buildingsArray);
@@ -1499,70 +1541,76 @@ function updateTimeline() {
 <!-- ----------------  D A T A  ---------------- -->
 
 ```js
-{
-  // MAIN INTERVENTION PROCESSOR
-  startTimer("process_intervention");
-  log("process intervention");
-  let previousInterventionConfig = null;
+// MAIN INTERVENTION PROCESSOR
+startTimer("process_intervention");
+log("process intervention");
 
-  function processIntervention(config, buildings) {
-    // 1. get allocation from session
-    const currentAllocation = getFromSession("allocations");
-    const yearlyBudgets = currentAllocation.map((item) => item.budget);
+function processIntervention(config, buildings) {
+  // 1. get allocation from session
+  const currentAllocation = getFromSession("allocations");
+  const yearlyBudgets = currentAllocation.map((item) => item.budget);
 
-    // 2. create complete intervention config
-    const interventionConfig = {
-      ...config,
-      buildings: [...buildings],
-      yearlyBudgets: yearlyBudgets,
-    };
+  // 2. create complete intervention config
+  const interventionConfig = {
+    ...config,
+    buildings: [...buildings],
+    yearlyBudgets: yearlyBudgets,
+  };
 
-    // reactivity police
-    // If the same configuration has been used previously, skip processing
-    if (
-      previousInterventionConfig &&
-      JSON.stringify(previousInterventionConfig) ===
-        JSON.stringify(interventionConfig)
-    ) {
-      return;
-    }
+  // Create a lightweight signature for comparison
+  const configSignature = {
+    ...config,
+    buildingCount: buildings.length,
+    yearlyBudgets: yearlyBudgets,
+  };
 
-    // 3. add intervention to manager
-    const addSuccess = manager.addIntervention(interventionConfig);
-    if (!addSuccess) return null;
+  log("previous signature", getPreviousInterventionConfig);
+  log("current signature", configSignature);
 
-    // 4. run interventions
-    const recaps = manager.runInterventions();
-
-    // 5. format intervention data
-    const formattedRecaps = recaps.map((r) => ({
-      ...r,
-      interventionId: r.modelId,
-      initialYear: Number(Object.keys(r.yearlyStats)[0]),
-      tech: r.techName,
-      duration: r.projectDuration,
-    }));
-
-    // 6. get stacked results
-    const stackedResults = manager.getStackedResults();
-
-    // 7. store formatted recaps and results to session
-    // saveToSession("lastInterventions", formattedRecaps);
-
-    // return the stacked results
-    return {
-      stackedResults,
-      formattedRecaps,
-    };
+  // reactivity police - compare only the signature, not the full configuration
+  if (
+    getPreviousInterventionConfig &&
+    _.isEqual(getPreviousInterventionConfig, configSignature)
+  ) {
+    log("[WARN] accidental reactivity. skip processing");
+    return;
   }
-  endTimer("process_intervention");
+
+  // Store just the signature for future comparisons
+  setPreviousInterventionConfig(configSignature);
+
+  // 3. add intervention to manager
+  const addSuccess = manager.addIntervention(interventionConfig);
+  if (!addSuccess) return null;
+
+  // 4. run interventions
+  const recaps = manager.runInterventions();
+
+  // 5. format intervention data
+  const formattedRecaps = recaps.map((r) => ({
+    ...r,
+    interventionId: r.modelId,
+    initialYear: Number(Object.keys(r.yearlyStats)[0]),
+    tech: r.techName,
+    duration: r.projectDuration,
+  }));
+
+  // 6. get stacked results
+  const stackedResults = manager.getStackedResults();
+
+  // return the stacked results
+  return {
+    stackedResults,
+    formattedRecaps,
+  };
 }
+endTimer("process_intervention");
 ```
 
 ```js
 function updateInterventions() {
   // console.trace("###[TRACE]### updateInterventions called");
-  log("get filtered buildings data");
+  log("updating intervention");
   // const interventions = getFromSession("interventions"); // data exceed storage capacity
   const interventions = getInterventions;
   if (interventions && interventions.length > 0) {
@@ -1575,8 +1623,8 @@ function updateInterventions() {
 
 ```js
 // this updates stackedRecap from getResults
-const stackedRecap = getResults;
-console.log(">> Stacked Recap", stackedRecap);
+// const stackedRecap = getResults;
+// console.log(">> Stacked Recap", stackedRecap);
 ```
 
 ```js
@@ -1597,7 +1645,7 @@ const excludedColumns = [
   "properties",
   "x",
   "y",
-  "score",
+  // "score",
   "ashp_labour",
   "ashp_material",
   "pv_labour",
@@ -1618,6 +1666,7 @@ const customOrder = [
   "id",
   "lsoa",
   "msoa",
+  "score",
   "EPC_rating",
   "ashp_suitability",
   "pv_suitability",
@@ -1684,6 +1733,7 @@ function tableChanged(event) {
 
 ```js
 startTimer("create_sorter_table");
+showGlobalLoading(true);
 // log("[TABLE] Create table using data", data.length);
 const table = new sorterTable(getModelData, tableColumns, tableChanged);
 
@@ -1692,8 +1742,59 @@ function drawSorterTable(options) {
   table.setContainerSize(options);
   return table.getNode();
 }
+showGlobalLoading(false);
 endTimer("create_sorter_table");
 ```
+
+```js
+// spinner especially for table
+
+// Function to show/hide loading spinner
+function showTableSpinner(show) {
+  const container = document.getElementById("table-container");
+  if (!container) return;
+
+  // Remove existing spinner if any
+  const existingSpinner = container.querySelector(".spinner-container");
+  if (existingSpinner) {
+    container.removeChild(existingSpinner);
+  }
+
+  // Add new spinner if requested
+  if (show) {
+    const spinnerContainer = document.createElement("div");
+    spinnerContainer.className = "spinner-container";
+    spinnerContainer.style.cssText =
+      "position:absolute; top:0; left:0; right:0; bottom:0; display:flex; justify-content:center; align-items:center; background-color:rgba(255,255,255,0.7); z-index:10;";
+
+    const spinner = document.createElement("div");
+    spinner.className = "loader is-loading";
+    spinner.style.cssText = "height:80px; width:80px;";
+
+    spinnerContainer.appendChild(spinner);
+    container.appendChild(spinnerContainer);
+  }
+}
+```
+
+```js
+function showGlobalLoading(show = true) {
+  log("### global loading...");
+
+  const overlay = document.getElementById("global-loading-overlay");
+  if (!overlay) return;
+  overlay.style.display = show ? "flex" : "none";
+  // Optionally, blur the main content
+  document.body.style.overflow = show ? "hidden" : "";
+}
+```
+
+<div id="global-loading-overlay" style="display:none;">
+  <div class="loading-modal">
+    <div class="spinner"></div>
+    <div class="loading-text">Loading, please wait...</div>
+  </div>
+</div>
 
 <!-- ---------------- Glyph Maps ---------------- -->
 
@@ -1985,7 +2086,9 @@ function set(input, value) {
   input.dispatchEvent(new Event("input", { bubbles: true }));
   // console.log("input value:", input.value);
 }
+```
 
+```js
 function animate(currentValue, animationFrame, playing = false, direction = 1) {
   // Increment or decrement the value
   let newValue = currentValue + 0.01 * direction;
@@ -2229,8 +2332,8 @@ function createLeafletMap(width, height) {
 ```js
 // selectedInterventionIndex;
 // Step 1: Transform recap object into an array for easier processing
-const yearlySummaryArray = stackedRecap.yearlySummary
-  ? Object.entries(stackedRecap.yearlySummary).map(([year, values]) => ({
+const yearlySummaryArray = getResults.yearlySummary
+  ? Object.entries(getResults.yearlySummary).map(([year, values]) => ({
       year: Number(year),
       ...values,
     }))
@@ -2266,6 +2369,7 @@ function resetState() {
       // // Reset the table - clear filters and restore original data
       // table.resetTable();
       // mapInstance.resetMap();
+      setTableRule([]);
       setSelectedInterventionIndex(null);
       setInitialData(null);
 

@@ -1,4 +1,5 @@
 import * as d3 from "npm:d3";
+import _ from "npm:lodash";
 
 export function createTimelineInterface(
   interventions,
@@ -9,6 +10,18 @@ export function createTimelineInterface(
   tooltipsEnabled = false
 ) {
   // validate interventions
+  // Remove duplicate interventions based on deep equality
+  // interventions = _.uniqWith(interventions, _.isEqual);
+
+  interventions = _.uniqBy(
+    interventions,
+    (d) =>
+      `${
+        d.tech ||
+        (Array.isArray(d.technologies) ? d.technologies.join(",") : "")
+      }|${d.initialYear}|${d.duration}`
+  );
+
   console.log("Received interventions for timeline: ", interventions);
 
   if (!Array.isArray(interventions)) {
