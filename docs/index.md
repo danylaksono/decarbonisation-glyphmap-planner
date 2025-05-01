@@ -20,7 +20,7 @@ sql:
 ```js
 log(">> Importing libraries...");
 const d3 = require("d3", "d3-geo-projection");
-// const flubber = require("flubber@0.4");
+const flubber = require("flubber@0.4");
 
 import { require } from "npm:d3-require";
 import { Mutable } from "npm:@observablehq/stdlib";
@@ -1597,7 +1597,7 @@ endTimer("process_intervention");
 ```js
 function updateInterventions() {
   // console.trace("###[TRACE]### updateInterventions called");
-  log("updating intervention");
+  // log("updating intervention");
   // const interventions = getFromSession("interventions"); // data exceed storage capacity
   const interventions = getInterventions;
   if (interventions && interventions.length > 0) {
@@ -1793,7 +1793,7 @@ function injectGlobalLoadingOverlay() {
 }
 ```
 
-<!-- ---------------- Glyph Maps ---------------- -->
+<!-- ---------------- Morpher Maps ---------------- -->
 
 ```js
 // define the aggregation function for each column
@@ -1842,22 +1842,156 @@ const aggregations = {
   fuel_poverty_proportion: "sum",
 };
 
-const {
-  keydata,
-  regularGeodataLookup,
-  regularGeodataLsoaWgs84,
-  cartogramGeodataLsoaLookup,
-  geographyLsoaWgs84Lookup,
-  cartogramLsoaWgs84Lookup,
-  tweenWGS84Lookup,
-} = geoMorpher({
-  aggregations,
-  regular_geodata,
-  cartogram_geodata,
-  getModelData,
-  morph_factor,
-});
+// const {
+//   keydata,
+//   regularGeodataLookup,
+//   regularGeodataLsoaWgs84,
+//   cartogramGeodataLsoaLookup,
+//   geographyLsoaWgs84Lookup,
+//   cartogramLsoaWgs84Lookup,
+//   tweenWGS84Lookup,
+// } = geoMorpher({
+//   aggregations,
+//   regular_geodata,
+//   cartogram_geodata,
+//   getModelData,
+//   morph_factor,
+// });
 ```
+
+```js
+const regular_geodata_withproperties = enrichGeoData(
+  // buildingsData,
+  getModelData,
+  regular_geodata,
+  "lsoa",
+  "code",
+  aggregations
+);
+
+// log("regular_geodata_withproperties_enriched", regular_geodata_withproperties);
+
+const cartogram_geodata_withproperties = enrichGeoData(
+  // buildingsData,
+  getModelData,
+  cartogram_geodata,
+  "lsoa",
+  "code",
+  aggregations
+);
+```
+
+```js
+// Data processing functions
+// log(">> Data processing functions: Regular LSOA...");
+const osgb = new OSGB();
+let clone = turf.clone(regular_geodata);
+turf.coordEach(clone, (currentCoord) => {
+  const newCoord = osgb.toGeo(currentCoord);
+  currentCoord[0] = newCoord[0];
+  currentCoord[1] = newCoord[1];
+});
+const regularGeodataLsoaWgs84 = clone;
+```
+
+```js
+// Data processing functions
+// log(">> Data processing functions: Cartogram LSOA...");
+const osgb = new OSGB();
+let clone = turf.clone(cartogram_geodata);
+turf.coordEach(clone, (currentCoord) => {
+  const newCoord = osgb.toGeo(currentCoord);
+  currentCoord[0] = newCoord[0];
+  currentCoord[1] = newCoord[1];
+});
+const cartogramGeodataLsoaWgs84 = clone;
+// display(cartogramLsoaWgs84());
+```
+
+```js
+// Create a lookup table for the key data - geography
+// this is already aggregated by LSOA in EnrichGeoData
+// startTimer("create*lookup_tables");
+// log(">> Create lookup tables...");
+const keydata = _.keyBy(
+  regular_geodata_withproperties.features.map((feat) => {
+    return {
+      code: feat.properties.code,
+      population: +feat.properties.population,
+      data: feat,
+    };
+  }),
+  "code"
+);
+// log(">>> Keydata", keydata);
+
+const regularGeodataLookup = _.keyBy(
+  regular_geodata_withproperties.features.map((feat) => {
+    return { ...feat, centroid: turf.getCoord(turf.centroid(feat.geometry)) };
+  }),
+  (feat) => feat.properties.code
+);
+
+const cartogramGeodataLsoaLookup = _.keyBy(
+  cartogram_geodata_withproperties.features.map((feat) => {
+    return { ...feat, centroid: turf.getCoord(turf.centroid(feat.geometry)) };
+  }),
+  (feat) => feat.properties.code
+);
+```
+
+```js
+const geographyLsoaWgs84Lookup = _.keyBy(
+  regular_geodata_withproperties.features.map((feat) => {
+    const transformedGeometry = transformGeometry(feat.geometry);
+    const centroid = turf.getCoord(turf.centroid(transformedGeometry));
+    return {
+      ...feat,
+      geometry: transformedGeometry,
+      centroid: centroid,
+    };
+  }),
+  (feat) => feat.properties.code
+);
+
+const cartogramLsoaWgs84Lookup = _.keyBy(
+  cartogram_geodata_withproperties.features.map((feat) => {
+    const transformedGeometry = transformGeometry(feat.geometry);
+    const centroid = turf.getCoord(turf.centroid(transformedGeometry));
+    return {
+      ...feat,
+      geometry: transformedGeometry,
+      centroid: centroid,
+    };
+  }),
+  (feat) => feat.properties.code
+);
+// endTimer("create_lookup_tables"); /// DEBUG: this took 5 minutes!!
+```
+
+```js
+// startTimer("create_flubber_interpolations");
+// Flubber interpolations
+const flubbers = {};
+for (const key of Object.keys(cartogramLsoaWgs84Lookup)) {
+  if (geographyLsoaWgs84Lookup[key] && cartogramLsoaWgs84Lookup[key]) {
+    flubbers[key] = flubber.interpolate(
+      turf.getCoords(geographyLsoaWgs84Lookup[key])[0],
+      turf.getCoords(cartogramLsoaWgs84Lookup[key])[0],
+      { string: false }
+    );
+  }
+}
+
+const tweenWGS84Lookup = _.mapValues(flubbers, (v, k) => {
+  const feat = turf.multiLineString([v(morph_factor)], { code: k });
+  feat.centroid = turf.getCoord(turf.centroid(feat.geometry));
+  return feat;
+});
+// endTimer("create_flubber_interpolations");
+```
+
+<!-- ---------------- Glyph Maps ---------------- -->
 
 ```js
 // discretiser
@@ -1876,7 +2010,6 @@ function valueDiscretiser(geomLookup) {
 // log(">> Initialize the GlyphMap Specification...");
 // log("Sample x y from Data in Glyph", [data[0].x, data[0].y]);
 function glyphMapSpec(width = 800, height = 600) {
-  // const glyphMapSpec = {
   return {
     coordType: map_aggregate == "Building Level" ? "mercator" : "notmercator",
     initialBB: transformCoordinates(turf.bbox(regular_geodata)),
@@ -2047,27 +2180,27 @@ function glyphMapSpec(width = 800, height = 600) {
 
       postDrawFn: (cells, cellSize, ctx, global, panel) => {},
 
-      tooltipTextFn: (cell) => {
-        if (cell) {
-          log("cell on tooltip", cell.data);
-          // log("cell on tooltip", cell.records[0].code);
-          // setDetailOnDemand(cell.data);
-          // return cell.data.ashp_total;
-          return glyphVariables
-            .map((key) => {
-              const label = key.replace(/_/g, " ").toUpperCase();
-              const value = cell.data[key].toFixed(2);
-              return `<div class="tooltip-row">
-                <span class="label">${label}:</span>
-                <span class="value">${value}</span>
-              </div>`;
-            })
-            .join("");
-          // return `Total Building Area: ${cell.building_area.toFixed(2)} m^2`;
-        } else {
-          return "no data";
-        }
-      },
+      // tooltipTextFn: (cell) => {
+      //   if (cell) {
+      //     log("cell on tooltip", cell.data);
+      //     // log("cell on tooltip", cell.records[0].code);
+      //     // setDetailOnDemand(cell.data);
+      //     // return cell.data.ashp_total;
+      //     return glyphVariables
+      //       .map((key) => {
+      //         const label = key.replace(/_/g, " ").toUpperCase();
+      //         const value = cell.data[key].toFixed(2);
+      //         return `<div class="tooltip-row">
+      //           <span class="label">${label}:</span>
+      //           <span class="value">${value}</span>
+      //         </div>`;
+      //       })
+      //       .join("");
+      //     // return `Total Building Area: ${cell.building_area.toFixed(2)} m^2`;
+      //   } else {
+      //     return "no data";
+      //   }
+      // },
     },
   };
 }
@@ -2081,74 +2214,85 @@ function glyphMapSpec(width = 800, height = 600) {
 function set(input, value) {
   input.value = value;
   input.dispatchEvent(new Event("input", { bubbles: true }));
-  // console.log("input value:", input.value);
 }
-```
 
-```js
-function animate(currentValue, animationFrame, playing = false, direction = 1) {
-  // Increment or decrement the value
+let playing = false;
+let direction = 1;
+let animationFrame = null;
+
+function animate(currentValue) {
   let newValue = currentValue + 0.01 * direction;
 
-  // Reverse direction if boundaries are reached
-  // if (newValue >= 1 || newValue <= 0) {
-  //   direction *= -1;
-  //   newValue = Math.max(0, Math.min(1, newValue)); // Clamp value between 0 and 1
-  // }
   if (newValue >= 1 || newValue <= 0) {
-    newValue = Math.max(0, Math.min(1, newValue)); // Clamp value
-    playing = false; // Pause animation
-    playButton.innerHTML = '<i class="fas fa-play"></i>'; // Update button
+    direction *= -1;
+    newValue = Math.max(0, Math.min(1, newValue));
+    playing = false;
+    playButton.innerHTML = '<i class="fas fa-play"></i>';
     cancelAnimationFrame(animationFrame);
-    return; // Stop animation loop
+    return;
   }
 
-  // Update the slider and dispatch the "input" event for reactivity
   set(morphFactorInput, newValue);
 
   if (playing) {
-    animationFrame = requestAnimationFrame(() => animate(newValue)); // Pass the updated value
+    animationFrame = requestAnimationFrame(() => animate(newValue));
   }
 }
+
+let currentValue = parseFloat(morphFactorInput.value);
+
+playButton.addEventListener("click", () => {
+  playing = !playing;
+  playButton.innerHTML = playing
+    ? '<i class="fas fa-pause"></i>'
+    : '<i class="fas fa-play"></i>';
+
+  if (playing) {
+    currentValue = parseFloat(morphFactorInput.value);
+    animationFrame = requestAnimationFrame(() => animate(currentValue));
+  } else {
+    cancelAnimationFrame(animationFrame);
+  }
+});
 ```
 
 ```js
 // Morph animation logic
 {
-  // morph_factor;
+  // morph_factor;  // don't uncomment this - it will cause the animation to run on every slider change
   log(">> Morph animation logic...");
-  let playing = false; // Track play/pause state
-  let direction = 1; // Controls the animation direction (0 to 1 or 1 to 0)
-  let animationFrame; // Stores the requestAnimationFrame ID
-  // let currentValue = 0; // Current value of the morph factor
+  // let playing = false; // Track play/pause state
+  // let direction = 1; // Controls the animation direction (0 to 1 or 1 to 0)
+  // let animationFrame = null; // Stores the requestAnimationFrame ID
+  // // let currentValue = 0; // Current value of the morph factor
 
-  let currentValue = parseFloat(morphFactorInput.value); // Initialize currentValue with the slider value
+  // let currentValue = parseFloat(morphFactorInput.value); // Initialize currentValue with the slider value
+  // log("current morphing Value", currentValue);
+  // // Animation loop
+  // // animate(currentValue, animationFrame, playing, direction);
 
-  // Animation loop
-  animate(currentValue, animationFrame, playing, direction);
+  // // Button click event listener
+  // playButton.addEventListener("click", () => {
+  //   playing = !playing; // Toggle play/pause state
+  //   playButton.innerHTML = playing
+  //     ? '<i class="fas fa-pause"></i>'
+  //     : '<i class="fas fa-play"></i>';
 
-  // Button click event listener
-  playButton.addEventListener("click", () => {
-    playing = !playing; // Toggle play/pause state
-    playButton.innerHTML = playing
-      ? '<i class="fas fa-pause"></i>'
-      : '<i class="fas fa-play"></i>';
-
-    if (playing) {
-      // Start the animation with the current slider value
-      // const currentValue = parseFloat(morph_factor);
-      requestAnimationFrame(() => animate(currentValue));
-    } else {
-      cancelAnimationFrame(animationFrame); // Stop the animation
-    }
-  });
+  //   if (playing) {
+  //     // Start the animation with the current slider value
+  //     // const currentValue = parseFloat(morph_factor);
+  //     requestAnimationFrame(() => animate(currentValue, animationFrame, playing, direction););
+  //   } else {
+  //     cancelAnimationFrame(animationFrame); // Stop the animation
+  //   }
+  // });
 }
 ```
 
 ```js
 // Trigger Morphing function
 {
-  // log(">> Morphing...", morph_factor);
+  log(">> Morphing...", morph_factor);
   morph_factor; //causes code to run whenever the slider is moved
   morphGlyphMap.setGlyph({
     discretiserFn: valueDiscretiser(tweenWGS84Lookup),
