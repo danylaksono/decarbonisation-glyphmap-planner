@@ -886,12 +886,21 @@ const manager = new InterventionManager(buildingsData, listOfTech);
 
 ```js
 // --- technology ---
-const techsInput = Inputs.select(["PV", "ASHP", "GSHP", "Optimise All"], {
-  // label: html`<b>Technology</b>`,
-  value: "ASHP",
-  // submit: true,
-  // disabled: selectedIntervention ? true : false,
-});
+// const techsInput = Inputs.select(["PV", "ASHP", "GSHP", "Optimise All"], {
+const techsInput = Inputs.select(
+  new Map([
+    ["Rooftop Solar PV", "PV"],
+    ["Air Source Heat Pump", "ASHP"],
+    ["Ground SOurce Heat Pump", "GSHP"],
+    ["Optimise All", "Optimise All"],
+  ]),
+  {
+    // label: html`<b>Technology</b>`,
+    value: "ASHP",
+    // submit: true,
+    // disabled: selectedIntervention ? true : false,
+  }
+);
 // techsInput.style["max-width"] = "300px";
 Object.assign(techsInput, {
   oninput: (event) => event.isTrusted && event.stopImmediatePropagation(),
@@ -1861,7 +1870,7 @@ const aggregations = {
   // "x": -1.22156225350691,
   // "y": 51.7575669032743,
   building_area: "sum",
-  garden_area: "sum",
+  // garden_area: "sum",
   ashp_suitability: "count",
   ashp_size: "sum",
   ashp_labour: "sum",

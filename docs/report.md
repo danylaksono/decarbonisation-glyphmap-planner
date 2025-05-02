@@ -1,3 +1,10 @@
+---
+title: Model Documentation
+# toc: false
+sidebar: false
+# footer: false
+---
+
 # Decarbonisation Model Documentation
 
 ## Table of Contents
