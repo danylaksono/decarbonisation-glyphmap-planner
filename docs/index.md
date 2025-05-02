@@ -2230,25 +2230,6 @@ function glyphMapSpec(width = 800, height = 600) {
             // aggregate data for each cell
             cell.data = aggregateValues(cell.records, glyphVariables, "sum");
 
-            // Normalisation
-            const dataArray = cells.map((cell) => cell.data);
-            // console.log(">>> dataArray", dataArray);
-
-            const normalisedData = dataArray
-              ? normaliseData(dataArray, glyphVariables)
-              : [];
-            // Map normalized data back to cells
-            const normalisedCells = cells.map((cell, index) => ({
-              ...cell,
-              data: normalisedData[index],
-            }));
-
-            // Update cells with normalized data
-            cells.forEach((cell, index) => {
-              cell.data = normalisedData[index];
-            });
-            // log(">>>> cells data ", normalisedCells);
-
             console.log("[DEBUG] building level cell data", cell.data);
           } else {
             cell.data = {};
@@ -2256,6 +2237,29 @@ function glyphMapSpec(width = 800, height = 600) {
           }
         }
         // console.timeEnd("cell-data-processing");
+
+        // normalisation - for building level data only
+        // Normalisation
+        if (map_aggregate === "Building Level") {
+          // log(">>> Normalisation for building level data");
+          const dataArray = cells.map((cell) => cell.data);
+          console.log(">>> dataArray", dataArray);
+
+          const normalisedData = dataArray
+            ? normaliseData(dataArray, glyphVariables)
+            : [];
+          // Map normalized data back to cells
+          const normalisedCells = cells.map((cell, index) => ({
+            ...cell,
+            data: normalisedData[index],
+          }));
+
+          // Update cells with normalized data
+          cells.forEach((cell, index) => {
+            cell.data = normalisedData[index];
+          });
+          // log(">>>> cells data ", normalisedCells);
+        }
 
         // Prepare cell interaction
         let canvas = d3.select(panel).select("canvas").node();
