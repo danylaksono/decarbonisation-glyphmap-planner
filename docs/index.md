@@ -718,15 +718,17 @@ resetAllButton.addEventListener("click", (e) => {
 ```js
 // startTimer("grouped_intervention");
 // display(html`<p>"Grouped Intervention"</p>`);
+timeline_switch;
 const groupedData = MiniDecarbModel.group(getModelData, [
   "lsoa",
   "interventionYear",
 ]);
-// log("[DEBUG] Grouped Data: ", groupedData);
+log("[DEBUG] Grouped Data: ", groupedData);
 // endTimer("grouped_intervention");
 ```
 
 ```js
+timeline_switch;
 // display(html`<p>"Transformed Grouped Intervention"</p>`);
 const timelineDataArray = [
   "interventionCost",
@@ -736,28 +738,70 @@ const timelineDataArray = [
 
 // Pre-compute time series data for all LSOAs to optimize streamgraph rendering
 // This creates a lookup object for quick access when drawing the glyphs
-const timeSeriesLookup = {};
-if (groupedData) {
-  console.log("Pre-computing time series data for all LSOAs...");
-  Object.keys(groupedData).forEach((lsoaCode) => {
-    // Transform the time-series data once for each LSOA
-    const timeSeriesData = transformInterventionData(
-      groupedData,
-      lsoaCode,
-      timelineDataArray
-    );
 
-    // Store in the lookup for quick access
-    if (timeSeriesData && timeSeriesData.length > 0) {
-      timeSeriesLookup[lsoaCode] = timeSeriesData;
+function composeTimeseriesLookup(modelData) {
+  const timeSeriesLookup = {};
+  const timelineFields = timelineDataArray;
+
+  console.log("Pre-computing time series data for all LSOAs...");
+
+  // Step 1: Determine global min and max year
+  let globalMinYear = Infinity;
+  let globalMaxYear = -Infinity;
+
+  Object.values(modelData).forEach((lsoaData) => {
+    if (!lsoaData?.children) return;
+
+    const years = Object.keys(lsoaData.children).map(Number);
+    if (years.length > 0) {
+      const localMin = Math.min(...years);
+      const localMax = Math.max(...years);
+      globalMinYear = Math.min(globalMinYear, localMin);
+      globalMaxYear = Math.max(globalMaxYear, localMax);
     }
   });
+
+  if (!isFinite(globalMinYear) || !isFinite(globalMaxYear)) {
+    console.warn("No valid year range found in model data.");
+    return {};
+  }
+
+  const globalDuration = globalMaxYear - globalMinYear + 1;
   console.log(
-    `Time series data pre-computed for ${
+    `Using global year range ${globalMinYear}–${globalMaxYear} (${globalDuration} years)`
+  );
+
+  // Step 2: Build time series using consistent range
+  Object.keys(modelData).forEach((lsoaCode) => {
+    const timeSeriesData = transformInterventionData(
+      modelData,
+      lsoaCode,
+      timelineFields,
+      globalMinYear,
+      globalDuration
+    );
+
+    if (!timeSeriesData || timeSeriesData.length !== globalDuration) {
+      console.warn(
+        `[WARN] LSOA ${lsoaCode} returned inconsistent time series (${
+          timeSeriesData?.length ?? 0
+        } years)`
+      );
+    }
+
+    timeSeriesLookup[lsoaCode] = timeSeriesData;
+  });
+
+  console.log(
+    `✅ Time series data pre-computed for ${
       Object.keys(timeSeriesLookup).length
     } LSOAs`
   );
+
+  return timeSeriesLookup;
 }
+
+// console.log("[DEBUG] the time series data:", timeseriesLookup);
 ```
 
 ```js
@@ -769,76 +813,66 @@ function transformInterventionData(
   initialYear = null,
   duration = null
 ) {
-  // update interventions
-  let interventions = updateInterventions();
-
-  // Get the specific LSOA data
   const lsoaData = getModelData[lsoaCode];
+
   if (!lsoaData?.children) {
+    console.warn(`[SKIP] No children found for LSOA ${lsoaCode}`);
     return [];
   }
 
-  // Determine the full year range
-  let years = Object.keys(lsoaData.children).map(Number);
+  const childYears = Object.keys(lsoaData.children).map(Number);
   let minYear, maxYear;
 
-  // If initialYear and duration are provided, use them to set the range
   if (initialYear !== null && duration !== null) {
     minYear = initialYear;
     maxYear = initialYear + duration - 1;
-  } else if (years.length > 0) {
-    // Only use min/max from existing years if there are any
-    minYear = Math.min(...years);
-    maxYear = Math.max(...years);
+  } else if (childYears.length > 0) {
+    minYear = Math.min(...childYears);
+    maxYear = Math.max(...childYears);
   } else {
-    // If no intervention years and no explicit range, return empty array
+    console.warn(
+      `[SKIP] No intervention years and no range for LSOA ${lsoaCode}`
+    );
     return [];
   }
 
-  // Build a map of year to data for quick lookup
   const yearDataMap = {};
   Object.entries(lsoaData.children).forEach(([year, interventions]) => {
-    const yearData = { year: Number(year) };
-    fields.forEach((field) => {
-      yearData[field] = 0;
-    });
+    const numericYear = Number(year);
+    const yearData = { year: numericYear };
+    fields.forEach((field) => (yearData[field] = 0));
+
     interventions.forEach((intervention) => {
       if (intervention) {
         fields.forEach((field) => {
-          if (intervention[field] !== undefined) {
+          if (typeof intervention[field] === "number") {
             yearData[field] += intervention[field];
           }
         });
       }
     });
-    Object.keys(yearData).forEach((key) => {
-      if (typeof yearData[key] === "number") {
-        yearData[key] = Math.round(yearData[key] * 100) / 100;
-      }
+
+    fields.forEach((field) => {
+      yearData[field] = Math.round(yearData[field] * 100) / 100;
     });
-    yearDataMap[Number(year)] = yearData;
+
+    yearDataMap[numericYear] = yearData;
   });
 
-  // Build the complete time series, filling missing years with 0s
   const fullTimeSeries = [];
   for (let y = minYear; y <= maxYear; y++) {
     if (yearDataMap[y]) {
       fullTimeSeries.push(yearDataMap[y]);
     } else {
-      // Fill missing year with 0s
-      const emptyYear = { year: y };
-      fields.forEach((field) => {
-        emptyYear[field] = 0;
-      });
-      fullTimeSeries.push(emptyYear);
+      const empty = { year: y };
+      fields.forEach((field) => (empty[field] = 0));
+      fullTimeSeries.push(empty);
     }
   }
 
-  // Make sure the series is sorted by year
-  fullTimeSeries.sort((a, b) => a.year - b.year);
-
   return fullTimeSeries;
 }
+
 // endTimer("transform_intervention_data");
 ```
 
@@ -927,7 +961,7 @@ const techsInput = Inputs.select(
   new Map([
     ["Rooftop Solar PV", "PV"],
     ["Air Source Heat Pump", "ASHP"],
-    ["Ground SOurce Heat Pump", "GSHP"],
+    ["Ground Source Heat Pump", "GSHP"],
     ["Optimise All", "Optimise All"],
   ]),
   {
@@ -1657,51 +1691,51 @@ function processIntervention(config, buildings) {
   const stackedResults = manager.getStackedResults();
 
   // 7. Update the time series lookup with the new grouped data
-  console.log("Updating time series lookup after new intervention...");
-  const newGroupedData = MiniDecarbModel.group(stackedResults.buildings, [
-    "lsoa",
-    "interventionYear",
-  ]);
+  // console.log("Updating time series lookup after new intervention...");
+  // const newGroupedData = MiniDecarbModel.group(stackedResults.buildings, [
+  //   "lsoa",
+  //   "interventionYear",
+  // ]);
 
-  Object.keys(newGroupedData).forEach((lsoaCode) => {
-    // Try to get initialYear and duration from formattedRecaps for this LSOA
-    let initialYear = null;
-    let duration = null;
-    if (formattedRecaps && Array.isArray(formattedRecaps)) {
-      // Find the recap for this LSOA (if any)
-      const recap = formattedRecaps.find(
-        (r) => r.lsoa === lsoaCode || r.code === lsoaCode
-      );
-      if (recap) {
-        initialYear = recap.initialYear;
-        duration = recap.duration;
-        console.log(
-          `Using initialYear=${initialYear}, duration=${duration} for LSOA ${lsoaCode}`
-        );
-      } else {
-        // If no specific recap for this LSOA, try to use overall intervention details
-        // This ensures we have consistent timeline ranges across all LSOAs
-        if (formattedRecaps.length > 0) {
-          // Use the first intervention as a fallback
-          initialYear = formattedRecaps[0].initialYear;
-          duration = formattedRecaps[0].duration;
-          console.log(
-            `Using default initialYear=${initialYear}, duration=${duration} for LSOA ${lsoaCode}`
-          );
-        }
-      }
-    }
-    const timeSeriesData = transformInterventionData(
-      newGroupedData,
-      lsoaCode,
-      timelineDataArray,
-      initialYear,
-      duration
-    );
-    if (timeSeriesData && timeSeriesData.length > 0) {
-      timeSeriesLookup[lsoaCode] = timeSeriesData;
-    }
-  });
+  // Object.keys(newGroupedData).forEach((lsoaCode) => {
+  //   // Try to get initialYear and duration from formattedRecaps for this LSOA
+  //   let initialYear = null;
+  //   let duration = null;
+  //   if (formattedRecaps && Array.isArray(formattedRecaps)) {
+  //     // Find the recap for this LSOA (if any)
+  //     const recap = formattedRecaps.find(
+  //       (r) => r.lsoa === lsoaCode || r.code === lsoaCode
+  //     );
+  //     if (recap) {
+  //       initialYear = recap.initialYear;
+  //       duration = recap.duration;
+  //       console.log(
+  //         `Using initialYear=${initialYear}, duration=${duration} for LSOA ${lsoaCode}`
+  //       );
+  //     } else {
+  //       // If no specific recap for this LSOA, try to use overall intervention details
+  //       // This ensures we have consistent timeline ranges across all LSOAs
+  //       if (formattedRecaps.length > 0) {
+  //         // Use the first intervention as a fallback
+  //         initialYear = formattedRecaps[0].initialYear;
+  //         duration = formattedRecaps[0].duration;
+  //         console.log(
+  //           `Using default initialYear=${initialYear}, duration=${duration} for LSOA ${lsoaCode}`
+  //         );
+  //       }
+  //     }
+  //   }
+  //   const timeSeriesData = transformInterventionData(
+  //     newGroupedData,
+  //     lsoaCode,
+  //     timelineDataArray,
+  //     initialYear,
+  //     duration
+  //   );
+  //   if (timeSeriesData && timeSeriesData.length > 0) {
+  //     timeSeriesLookup[lsoaCode] = timeSeriesData;
+  //   }
+  // });
 
   // return the stacked results
   return {
@@ -2121,6 +2155,11 @@ const tweenWGS84Lookup = _.mapValues(flubbers, (v, k) => {
 ```
 
 ```js
+const timeSeriesLookup = composeTimeseriesLookup(groupedData);
+console.log("[DEBUG] timeSeriesLookup", timeSeriesLookup);
+```
+
+```js
 // passing data for the glyphmaps
 // DATA DATA DATA
 {
@@ -2415,12 +2454,6 @@ function glyphMapSpec(width = 800, height = 600) {
             }
           }
         }
-
-        // let rg = new RadialGlyph(
-        //   glyphVariables.map((key) => cellData[key]),
-        //   glyphColours
-        // );
-        // rg.draw(ctx, x, y, cellSize / 2);
       },
 
       postDrawFn: (cells, cellSize, ctx, global, panel) => {},
