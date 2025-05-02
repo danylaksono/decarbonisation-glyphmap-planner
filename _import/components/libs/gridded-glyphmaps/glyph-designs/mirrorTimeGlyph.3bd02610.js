@@ -1,3 +1,5 @@
+import * as d3 from "../../../../../_npm/d3@7.9.0/_esm.js";
+
 export function StreamGraphGlyph(
   data,
   timeKey = "year",
@@ -32,6 +34,25 @@ export function StreamGraphGlyph(
   // Private constants - directly use config keys
   const downwardKeys = config.downwardKeys;
   const upwardKeys = config.upwardKeys;
+
+  // Generate colour mapping for arbitrary keys
+  const defaultPalette = [
+    "#1f77b4",
+    "#ff7f0e",
+    "#2ca02c",
+    "#d62728",
+    "#9467bd",
+    "#8c564b",
+    "#e377c2",
+    "#7f7f7f",
+    "#bcbd22",
+    "#17becf",
+  ];
+  const allKeys = [...upwardKeys, ...downwardKeys];
+  const colourMapping = {};
+  allKeys.forEach((key, i) => {
+    colourMapping[key] = defaultPalette[i % defaultPalette.length];
+  });
 
   // Update data access methods
   this.getTimeValues = () => data.map((d) => d[timeKey]);
