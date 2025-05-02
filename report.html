@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Model Documentation | Decarbonisation Glyphmap Planner</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Source+Serif+Pro:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&amp;display=swap" crossorigin>
+<link rel="preload" as="style" href="./_observablehq/theme-air,near-midnight.css">
+<link rel="preload" as="style" href="./_npm/katex@0.16.22/dist/katex.min.css">
+<link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css2?family=Source+Serif+Pro:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&amp;display=swap" crossorigin>
+<link rel="stylesheet" type="text/css" href="./_observablehq/theme-air,near-midnight.css">
+<link rel="stylesheet" type="text/css" href="./_npm/katex@0.16.22/dist/katex.min.css">
+<link rel="modulepreload" href="./_observablehq/client.js">
+<link rel="modulepreload" href="./_observablehq/runtime.js">
+<link rel="modulepreload" href="./_observablehq/stdlib.js">
+<link rel="modulepreload" href="./_observablehq/stdlib/mermaid.js">
+<link rel="modulepreload" href="./_observablehq/stdlib/tex.js">
+<link rel="modulepreload" href="./_npm/mermaid@11.6.0/dist/mermaid.esm.min.mjs._esm.js">
+<link rel="modulepreload" href="./_npm/katex@0.16.22/_esm.js">
+<link rel="icon" type="image/png" href="./_file/observable.1af93621.png" sizes="32x32">
+<script type="module">
+
+import {define} from "./_observablehq/client.js";
+
+define({id: "9c4c3bcc", inputs: ["mermaid","display"], body: async (mermaid,display) => {
+display(await(
+await mermaid`classDiagram
+    InterventionManager "1" -- "*" MiniDecarbModel : manages
+    InterventionManager -- BuildingData : uses
+    MiniDecarbModel -- BuildingData : processes
+    MiniDecarbModel -- PriorityQueue : uses for Carbon-First
+    MiniDecarbModel -- Building : applies interventions
+
+    class InterventionManager {
+        +buildings
+        +listOfTech
+        +interventionConfigs
+        +results
+        +addIntervention()
+        +removeIntervention()
+        +runInterventionsWithRollover()
+    }
+
+    class MiniDecarbModel {
+        +buildings
+        +suitableBuildings
+        +config
+        +setOptimizationStrategy()
+        +addTechnology()
+        +filterSuitableBuildings()
+        +runCarbonFirstModel()
+        +runTechFirstModel()
+        +run()
+    }
+
+    class Building {
+        +id
+        +properties
+        +isIntervened
+        +interventionYear
+        +interventionCost
+        +carbonSaved
+    }
+
+    class PriorityQueue {
+	+enqueue()
+	+dequeue()
+	+peek()
+	+size()
+    }`
+))
+}});
+
+define({id: "07e91510", inputs: ["mermaid","display"], body: async (mermaid,display) => {
+display(await(
+await mermaid`flowchart LR
+    A[Input Data] --> B[Filtering]
+    B --> C[Prioritization]
+    C --> D[Budget Allocation]
+    D --> E[Intervention Application]
+    E --> F[Result Analysis]
+
+    style A fill:#f9f9f9,stroke:#333,stroke-width:1px
+    style B fill:#e6f2ff,stroke:#333,stroke-width:1px
+    style C fill:#e6f2ff,stroke:#333,stroke-width:1px
+    style D fill:#e6f2ff,stroke:#333,stroke-width:1px
+    style E fill:#e6f2ff,stroke:#333,stroke-width:1px
+    style F fill:#f9f9f9,stroke:#333,stroke-width:1px`
+))
+}});
+
+define({id: "c7781d7f", inputs: ["tex","display"], body: async (tex,display) => {
+display(await(
+tex.block`$$\text{Carbon Efficiency} = \frac{\text{Carbon Saved}}{\text{Intervention Cost}}$$`
+))
+}});
+
+define({id: "d15b4299", inputs: ["mermaid","display"], body: async (mermaid,display) => {
+display(await(
+await mermaid`flowchart TD
+    subgraph Setup
+        A1[Configure Years & Budgets] --> A2[Set Optimization Strategy]
+        A2 --> A3[Add Technologies]
+        A3 --> A4[Add Filters & Priorities]
+    end
+
+    subgraph Execution
+        B1[Filter Suitable Buildings] --> B2[Calculate Scores/Efficiencies]
+        B2 --> B3[Allocate Budget by Year]
+        B3 --> B4[Apply Interventions to Buildings]
+    end
+
+    subgraph Results
+        C1[Generate Yearly Stats] --> C2[Create Intervention Recap]
+        C2 --> C3[Analyse Carbon Savings]
+    end
+
+    Setup --> Execution
+    Execution --> Results`
+))
+}});
+
+define({id: "ad40dcad", inputs: ["mermaid","display"], body: async (mermaid,display) => {
+display(await(
+await mermaid`flowchart LR
+    subgraph AllBuildings[All Buildings]
+        B1[Building 1]
+        B2[Building 2]
+        B3[Building 3]
+        B4[Building 4]
+        B5[Building 5]
+        B6[Building 6]
+    end
+
+    subgraph TechFilter[Technology Suitability Filter]
+        F1{Tech Suitable?}
+    end
+
+    subgraph CustomFilter[Custom Filter]
+        F2{energy_rating < C?}
+    end
+
+    subgraph ResultBuildings[Suitable Buildings]
+        R1[Building 1]
+        R3[Building 3]
+        R5[Building 5]
+    end
+
+    AllBuildings --> TechFilter
+    TechFilter --> CustomFilter
+    CustomFilter --> ResultBuildings`
+))
+}});
+
+define({id: "6dc9e4d7", inputs: ["mermaid","display"], body: async (mermaid,display) => {
+display(await(
+await mermaid`gantt
+    title Budget Allocation and Rollover Example
+    dateFormat  YYYY
+    axisFormat %Y
+
+    section Year 1 (£1M)
+    Initial Budget         :a1, 2023, 1y
+    Spent (£800K)          :a2, 2023, 1y
+    Rollover (£200K)       :milestone, m1, 2023, 0d
+
+    section Year 2 (£1.5M)
+    Initial Budget         :b1, 2024, 1y
+    Year 1 Rollover        :b2, 2024, 1y
+    Spent (£1.4M)          :b3, 2024, 1y
+    Rollover (£300K)       :milestone, m2, 2024, 0d
+
+    section Year 3 (£2M)
+    Initial Budget         :c1, 2025, 1y
+    Year 2 Rollover        :c2, 2025, 1y
+    Spent (£2.3M)          :c3, 2025, 1y`
+))
+}});
+
+</script>
+<aside id="observablehq-toc" data-selector="h1:not(:first-of-type)[id], h2:first-child[id], :not(h1) + h2[id]">
+<nav>
+<div>Contents</div>
+<ol>
+<li class="observablehq-secondary-link"><a href="#introduction">Introduction</a></li>
+<li class="observablehq-secondary-link"><a href="#motivation-for-net-zero">Motivation for Net Zero</a></li>
+<li class="observablehq-secondary-link"><a href="#integration-into-visual-analytics-dashboards">Integration into Visual Analytics Dashboards</a></li>
+<li class="observablehq-secondary-link"><a href="#model-architecture">Model Architecture</a></li>
+<li class="observablehq-secondary-link"><a href="#key-classes">Key Classes</a></li>
+<li class="observablehq-secondary-link"><a href="#optimization-strategies">Optimization Strategies</a></li>
+<li class="observablehq-secondary-link"><a href="#intervention-workflow">Intervention Workflow</a></li>
+<li class="observablehq-secondary-link"><a href="#building-selection-%26-prioritization">Building Selection &amp; Prioritization</a></li>
+<li class="observablehq-secondary-link"><a href="#budget-allocation">Budget Allocation</a></li>
+<li class="observablehq-secondary-link"><a href="#example-scenarios">Example Scenarios</a></li>
+<li class="observablehq-secondary-link"><a href="#performance-considerations">Performance Considerations</a></li>
+<li class="observablehq-secondary-link"><a href="#troubleshooting">Troubleshooting</a></li>
+<li class="observablehq-secondary-link"><a href="#conclusion">Conclusion</a></li>
+</ol>
+</nav>
+</aside>
+<div id="observablehq-center">
+<main id="observablehq-main" class="observablehq">
+<h1 id="decarbonisation-model-documentation" tabindex="-1"><a class="observablehq-header-anchor" href="#decarbonisation-model-documentation">Decarbonisation Model Documentation</a></h1>
+<h2 id="table-of-contents" tabindex="-1"><a class="observablehq-header-anchor" href="#table-of-contents">Table of Contents</a></h2>
+<ol>
+<li><a href="#introduction">Introduction</a></li>
+<li><a href="#motivation-for-net-zero">Motivation for Net Zero</a></li>
+<li><a href="#integration-into-visual-analytics-dashboards">Integration into Visual Analytics Dashboards</a></li>
+<li><a href="#model-architecture">Model Architecture</a></li>
+<li><a href="#key-classes">Key Classes</a></li>
+<li><a href="#optimization-strategies">Optimization Strategies</a></li>
+<li><a href="#intervention-workflow">Intervention Workflow</a></li>
+<li><a href="#building-selection--prioritization">Building Selection &amp; Prioritization</a></li>
+<li><a href="#budget-allocation">Budget Allocation</a></li>
+<li><a href="#example-scenarios">Example Scenarios</a></li>
+<li><a href="#performance-considerations">Performance Considerations</a></li>
+<li><a href="#troubleshooting">Troubleshooting</a></li>
+</ol>
+<h2 id="introduction" tabindex="-1"><a class="observablehq-header-anchor" href="#introduction">Introduction</a></h2>
+<p>The decarbonisation model is designed to simulate and optimise Low Carbon Technology (LCT) interventions on buildings to reduce carbon emissions while respecting budget constraints. It supports two main optimization strategies:</p>
+<ol>
+<li><strong>Carbon-First</strong>: Prioritizes interventions with the highest carbon savings per unit cost</li>
+<li><strong>Tech-First</strong>: Applies a specific technology across buildings based on predefined priorities</li>
+</ol>
+<p>The model allows for multi-year planning with budget rollover, different prioritisation rules, and filtering of buildings based on various attributes.</p>
+<h2 id="motivation-for-net-zero" tabindex="-1"><a class="observablehq-header-anchor" href="#motivation-for-net-zero">Motivation for Net Zero</a></h2>
+<p>Simulation models like the mini decarbonisation model are increasingly important for planning and accelerating the deployment of Low Carbon Technologies (LCTs) to achieve net zero targets, especially in the UK. By enabling scenario analysis, these models help policymakers and planners understand the impact of different intervention strategies, budget allocations, and prioritisation rules before committing resources.</p>
+<p><strong>Key benefits and novel aspects include:</strong></p>
+<ul>
+<li><strong>Data-driven decision making:</strong> The model allows users to test and compare various LCT deployment strategies, supporting evidence-based policy and investment decisions.</li>
+<li><strong>Scenario flexibility:</strong> Users can simulate different optimisation strategies (e.g., carbon-first vs. tech-first), budget profiles, and custom building filters, reflecting the complexity of real-world decarbonisation challenges.</li>
+<li><strong>Multi-year planning:</strong> The ability to model budget rollover and sequential interventions mirrors actual funding cycles and policy rollouts, providing more actionable insights.</li>
+<li><strong>Targeted interventions:</strong> By filtering and prioritising buildings, the model ensures that resources are directed where they will have the greatest impact on carbon reduction.</li>
+<li><strong>Potential Novelty:</strong> The modular, empirical approach—where users can define custom filters, priorities, and intervention sequences—enables rapid prototyping and testing of new LCT deployment policies, which is not always possible with more rigid or aggregated models (<a href="https://www.sciencedirect.com/science/article/pii/S2949736122000069" target="_blank" rel="noopener noreferrer">see e.g., ScienceDirect</a>).</li>
+</ul>
+<p>In the UK context, where local authorities and national government face ambitious net zero targets, such simulation tools are valuable for:</p>
+<ul>
+<li>Identifying the most effective pathways to decarbonise building stock</li>
+<li>Optimising the use of limited public and private funding</li>
+<li>Supporting transparent, justifiable decision making for stakeholders</li>
+<li>Accelerating the adoption of innovative LCTs and policy mechanisms</li>
+</ul>
+<p>By harnessing simulation, planners can better anticipate the outcomes of their interventions, reduce risks, and accelerate progress towards net zero.</p>
+<h2 id="integration-into-visual-analytics-dashboards" tabindex="-1"><a class="observablehq-header-anchor" href="#integration-into-visual-analytics-dashboards">Integration into Visual Analytics Dashboards</a></h2>
+<p>Integrating the decarbonisation model within a visual analytics dashboard greatly enhances its practical value for decision makers and planners. Such dashboards provide an interactive environment where users can:</p>
+<ul>
+<li><strong>Explore intervention scenarios visually:</strong> Users can adjust parameters (e.g., budget, technology, priorities) and immediately see the projected impact on maps, charts, and tables, supporting rapid scenario analysis.</li>
+<li><strong>Refine budget allocations dynamically:</strong> The dashboard enables real-time experimentation with budget profiles and allocation strategies, helping users identify the most effective use of limited resources across years and regions.</li>
+<li><strong>Analyse spatial and temporal patterns:</strong> By linking model to interactive geospatial visualisations, decision makers can pinpoint which areas or building types benefit most from specific interventions, and track progress over time, while adjusting their preferences for budget allocations.</li>
+<li><strong>Drill down to building-level details:</strong> Interactive selection and filtering allow users to investigate individual buildings or groups, compare intervention outcomes, and tailor strategies to local needs.</li>
+<li><strong>Support collaborative decision making:</strong> Dashboards can facilitate communication between stakeholders by making complex model results accessible and transparent, fostering consensus on intervention priorities and trade-offs.</li>
+</ul>
+<p>This integration transforms the model from a static simulation tool into a powerful decision support system, enabling iterative, data-driven planning and continuous refinement of decarbonisation strategies.</p>
+<h2 id="model-architecture" tabindex="-1"><a class="observablehq-header-anchor" href="#model-architecture">Model Architecture</a></h2>
+<p>The model follows a modular architecture with two main classes:</p>
+<ul>
+<li><strong>InterventionManager</strong>: Manages multiple intervention configurations and sequencing</li>
+<li><strong>MiniDecarbModel</strong>: Handles the actual simulation logic for a single intervention</li>
+</ul>
+<div class="observablehq observablehq--block"><observablehq-loading></observablehq-loading><!--:9c4c3bcc:--></div>
+<h3 id="key-data-flows" tabindex="-1"><a class="observablehq-header-anchor" href="#key-data-flows">Key Data Flows</a></h3>
+<p>The following diagram summarises the main workflow of the mini decarbonisation model:</p>
+<div class="observablehq observablehq--block"><observablehq-loading></observablehq-loading><!--:07e91510:--></div>
+<p><strong>Explanation:</strong></p>
+<ul>
+<li><strong>Input Data:</strong> The model starts with a dataset of buildings and available LCT interventions.</li>
+<li><strong>Filtering:</strong> Buildings are filtered based on suitability for specific technologies and custom criteria.</li>
+<li><strong>Prioritization:</strong> Suitable buildings are ranked using configurable rules (e.g., carbon savings, cost, energy use).</li>
+<li><strong>Budget Allocation:</strong> The model allocates available budget across years, applying interventions to the highest-priority buildings first.</li>
+<li><strong>Intervention Application:</strong> Selected interventions are applied, updating building states and tracking costs and savings.</li>
+<li><strong>Result Analysis:</strong> The model outputs a detailed summary of interventions, costs, and carbon savings for each year.</li>
+</ul>
+<h2 id="key-classes" tabindex="-1"><a class="observablehq-header-anchor" href="#key-classes">Key Classes</a></h2>
+<h3 id="building-class" tabindex="-1"><a class="observablehq-header-anchor" href="#building-class">Building Class</a></h3>
+<p>Represents a building that can receive interventions:</p>
+<pre data-language="javascript"><code class="language-javascript"><span class="hljs-keyword">class</span> <span class="hljs-title class_">Building</span> {
+  <span class="hljs-title function_">constructor</span>(<span class="hljs-params">id, properties</span>) {
+    <span class="hljs-variable language_">this</span>.<span class="hljs-property">id</span> = id;
+    <span class="hljs-variable language_">this</span>.<span class="hljs-property">properties</span> = properties;
+    <span class="hljs-variable language_">this</span>.<span class="hljs-property">isIntervened</span> = <span class="hljs-literal">false</span>;
+    <span class="hljs-variable language_">this</span>.<span class="hljs-property">interventionYear</span> = <span class="hljs-literal">null</span>;
+    <span class="hljs-variable language_">this</span>.<span class="hljs-property">interventionCost</span> = <span class="hljs-literal">null</span>;
+    <span class="hljs-variable language_">this</span>.<span class="hljs-property">carbonSaved</span> = <span class="hljs-literal">null</span>;
+    <span class="hljs-variable language_">this</span>.<span class="hljs-property">score</span> = <span class="hljs-literal">null</span>;
+    <span class="hljs-variable language_">this</span>.<span class="hljs-property">numInterventions</span> = <span class="hljs-number">0</span>;
+  }
+}
+</code></pre>
+<h3 id="interventionmanager-class" tabindex="-1"><a class="observablehq-header-anchor" href="#interventionmanager-class">InterventionManager Class</a></h3>
+<p>Manages multiple intervention configurations:</p>
+<ul>
+<li>Adds, removes, and modifies interventions</li>
+<li>Controls execution order of interventions</li>
+<li>Handles budget rollover between sequential interventions</li>
+<li>Provides methods for retrieving and analyzing results</li>
+</ul>
+<h3 id="minidecarbmodel-class" tabindex="-1"><a class="observablehq-header-anchor" href="#minidecarbmodel-class">MiniDecarbModel Class</a></h3>
+<p>Core simulation class that:</p>
+<ul>
+<li>Filters suitable buildings based on technology requirements</li>
+<li>Calculates intervention costs and carbon savings</li>
+<li>Determines building priorities based on configured attributes</li>
+<li>Applies budget constraints and optimization strategies</li>
+<li>Generates detailed recap of interventions by year</li>
+</ul>
+<h2 id="optimization-strategies" tabindex="-1"><a class="observablehq-header-anchor" href="#optimization-strategies">Optimization Strategies</a></h2>
+<h3 id="carbon-first-strategy" tabindex="-1"><a class="observablehq-header-anchor" href="#carbon-first-strategy">Carbon-First Strategy</a></h3>
+<p>In this strategy, the model:</p>
+<ol>
+<li>Calculates potential carbon savings and costs for each building-technology pair</li>
+<li>Computes carbon efficiency (carbon saved per unit cost) for each intervention</li>
+<li>Uses a priority queue to process buildings with <strong>highest</strong> carbon efficiency first</li>
+<li>Continues until the budget is exhausted or all suitable buildings are intervened</li>
+</ol>
+<p>The priority queue uses a descending comparator function:</p>
+<pre data-language="javascript"><code class="language-javascript"><span class="hljs-keyword">const</span> pq = <span class="hljs-keyword">new</span> <span class="hljs-title class_">PriorityQueue</span>(<span class="hljs-function">(<span class="hljs-params">a, b</span>) =&gt;</span> b.<span class="hljs-property">carbonEfficiency</span> - a.<span class="hljs-property">carbonEfficiency</span>);
+</code></pre>
+<p>Carbon efficiency is calculated as:</p>
+<div class="observablehq observablehq--block"><observablehq-loading></observablehq-loading><!--:c7781d7f:--></div>
+<h3 id="tech-first-strategy" tabindex="-1"><a class="observablehq-header-anchor" href="#tech-first-strategy">Tech-First Strategy</a></h3>
+<p>In this strategy, the model:</p>
+<ol>
+<li>Applies a specific technology across all suitable buildings</li>
+<li>Sorts buildings based on custom priority rules (e.g., energy efficiency, building size)</li>
+<li>Processes buildings in order of priority until the budget is exhausted</li>
+</ol>
+<p>Building priority scores incorporate both:</p>
+<ul>
+<li>Ranking position in the sorted list</li>
+<li>Custom scoring functions from priority rules</li>
+</ul>
+<h2 id="intervention-workflow" tabindex="-1"><a class="observablehq-header-anchor" href="#intervention-workflow">Intervention Workflow</a></h2>
+<p>The general workflow for running an intervention is:</p>
+<div class="observablehq observablehq--block"><observablehq-loading></observablehq-loading><!--:d15b4299:--></div>
+<ol>
+<li><strong>Setup</strong>: Configure years, budgets, technologies, filters, and priorities</li>
+<li><strong>Filtering</strong>: Identify suitable buildings based on technology requirements and custom filters</li>
+<li><strong>Prioritization</strong>: Calculate scores or efficiencies for each building</li>
+<li><strong>Budget Allocation</strong>: Apply interventions year by year, respecting budget constraints</li>
+<li><strong>Results</strong>: Generate a detailed recap of interventions and their impact</li>
+</ol>
+<h2 id="building-selection-%26-prioritization" tabindex="-1"><a class="observablehq-header-anchor" href="#building-selection-%26-prioritization">Building Selection &amp; Prioritization</a></h2>
+<h3 id="filtering" tabindex="-1"><a class="observablehq-header-anchor" href="#filtering">Filtering</a></h3>
+<p>Buildings can be filtered using:</p>
+<ol>
+<li><strong>Technology suitability</strong>: Based on predefined attributes in building properties</li>
+<li><strong>Custom filters</strong>: Created with the <code>createDynamicFilter</code> method</li>
+</ol>
+<p>The diagram below illustrates the filtering process for building selection:</p>
+<div class="observablehq observablehq--block"><observablehq-loading></observablehq-loading><!--:ad40dcad:--></div>
+<p><strong>Explanation:</strong>
+Buildings are first filtered for technology suitability (e.g., only those that can support a given LCT). Additional custom filters (such as energy rating thresholds) further refine the selection. Only buildings passing all filters are considered for intervention, ensuring resources are targeted effectively.</p>
+<p>Example of creating a dynamic filter:</p>
+<pre data-language="javascript"><code class="language-javascript"><span class="hljs-keyword">const</span> filterFunction = <span class="hljs-title class_">MiniDecarbModel</span>.<span class="hljs-title function_">createDynamicFilter</span>(
+  <span class="hljs-string">"energy_rating"</span>, <span class="hljs-comment">// attribute to filter on</span>
+  <span class="hljs-string">"&lt;"</span>, <span class="hljs-comment">// operator</span>
+  <span class="hljs-string">"C"</span> <span class="hljs-comment">// threshold value</span>
+);
+
+model.<span class="hljs-title function_">addBuildingFilter</span>(
+  filterFunction,
+  <span class="hljs-string">"Only buildings with energy rating below C"</span>
+);
+</code></pre>
+<h3 id="prioritization" tabindex="-1"><a class="observablehq-header-anchor" href="#prioritization">Prioritization</a></h3>
+<p>In tech-first mode, buildings can be prioritized using:</p>
+<pre data-language="javascript"><code class="language-javascript">model.<span class="hljs-title function_">addPriority</span>(
+  <span class="hljs-string">"floor_area"</span>, <span class="hljs-comment">// attribute to prioritize on</span>
+  <span class="hljs-string">"desc"</span>, <span class="hljs-comment">// order (ascending or descending)</span>
+  <span class="hljs-literal">null</span>, <span class="hljs-comment">// optional custom scoring function</span>
+  <span class="hljs-number">2.0</span> <span class="hljs-comment">// weight in final score calculation</span>
+);
+</code></pre>
+<h2 id="budget-allocation" tabindex="-1"><a class="observablehq-header-anchor" href="#budget-allocation">Budget Allocation</a></h2>
+<p>The model allocates budget year by year:</p>
+<ol>
+<li>For each year, the available budget is the yearly allocation plus any rollover</li>
+<li>Interventions are applied until the budget is exhausted</li>
+<li>Any remaining budget can roll over to the next year</li>
+<li>Results track spent budget, remaining budget, and buildings intervened per year</li>
+</ol>
+<p>The following Gantt chart shows how the model manages budget allocation and rollover across multiple years:</p>
+<div class="observablehq observablehq--block"><observablehq-loading></observablehq-loading><!--:6dc9e4d7:--></div>
+<p><strong>Explanation:</strong>
+The model supports multi-year planning, with unspent budget rolling over to subsequent years. This enables more realistic simulation of funding cycles and helps identify optimal intervention pacing for maximum carbon savings within real-world constraints.</p>
+<h2 id="example-scenarios" tabindex="-1"><a class="observablehq-header-anchor" href="#example-scenarios">Example Scenarios</a></h2>
+<p>Below are some example scenarios demonstrating the model's capabilities:</p>
+<h3 id="scenario-1%3A-carbon-first-with-multiple-technologies" tabindex="-1"><a class="observablehq-header-anchor" href="#scenario-1%3A-carbon-first-with-multiple-technologies">Scenario 1: Carbon-First with Multiple Technologies</a></h3>
+<pre data-language="javascript"><code class="language-javascript"><span class="hljs-comment">// Setup buildings and technologies</span>
+<span class="hljs-keyword">const</span> buildings = [...]; <span class="hljs-comment">// Array of building data</span>
+<span class="hljs-keyword">const</span> techA = {
+  <span class="hljs-attr">name</span>: <span class="hljs-string">'Solar PV'</span>,
+  <span class="hljs-attr">config</span>: {
+    <span class="hljs-attr">suitabilityKey</span>: <span class="hljs-string">'solar_suitable'</span>,
+    <span class="hljs-attr">labourKey</span>: <span class="hljs-string">'solar_labour_cost'</span>,
+    <span class="hljs-attr">materialKey</span>: <span class="hljs-string">'solar_material_cost'</span>,
+    <span class="hljs-attr">savingsKey</span>: <span class="hljs-string">'solar_carbon_savings'</span>
+  }
+};
+<span class="hljs-keyword">const</span> techB = {
+  <span class="hljs-attr">name</span>: <span class="hljs-string">'Heat Pump'</span>,
+  <span class="hljs-attr">config</span>: {
+    <span class="hljs-attr">suitabilityKey</span>: <span class="hljs-string">'heatpump_suitable'</span>,
+    <span class="hljs-attr">labourKey</span>: <span class="hljs-string">'heatpump_labour_cost'</span>,
+    <span class="hljs-attr">materialKey</span>: <span class="hljs-string">'heatpump_material_cost'</span>,
+    <span class="hljs-attr">savingsKey</span>: <span class="hljs-string">'heatpump_carbon_savings'</span>
+  }
+};
+
+<span class="hljs-comment">// Create model</span>
+<span class="hljs-keyword">const</span> model = <span class="hljs-keyword">new</span> <span class="hljs-title class_">MiniDecarbModel</span>(buildings);
+model.<span class="hljs-title function_">setInitialYear</span>(<span class="hljs-number">2023</span>);
+model.<span class="hljs-title function_">setYearlyBudgets</span>([<span class="hljs-number">1000000</span>, <span class="hljs-number">1500000</span>, <span class="hljs-number">2000000</span>]); <span class="hljs-comment">// 3-year plan with increasing budget</span>
+model.<span class="hljs-title function_">setOptimizationStrategy</span>(<span class="hljs-string">'carbon-first'</span>);
+model.<span class="hljs-title function_">addTechnology</span>(techA);
+model.<span class="hljs-title function_">addTechnology</span>(techB);
+
+<span class="hljs-comment">// Add a filter for buildings over a certain size</span>
+<span class="hljs-keyword">const</span> sizeFilter = <span class="hljs-title class_">MiniDecarbModel</span>.<span class="hljs-title function_">createDynamicFilter</span>(<span class="hljs-string">'floor_area'</span>, <span class="hljs-string">'&gt;'</span>, <span class="hljs-number">100</span>);
+model.<span class="hljs-title function_">addBuildingFilter</span>(sizeFilter, <span class="hljs-string">'Large buildings only'</span>);
+
+<span class="hljs-comment">// Run model</span>
+<span class="hljs-keyword">const</span> results = model.<span class="hljs-title function_">run</span>();
+
+<span class="hljs-comment">// Example output shows buildings receiving interventions by year,</span>
+<span class="hljs-comment">// with the most efficient carbon-saving interventions happening first</span>
+</code></pre>
+<h3 id="scenario-2%3A-tech-first-with-building-priorities" tabindex="-1"><a class="observablehq-header-anchor" href="#scenario-2%3A-tech-first-with-building-priorities">Scenario 2: Tech-First with Building Priorities</a></h3>
+<pre data-language="javascript"><code class="language-javascript"><span class="hljs-comment">// Setup model for tech-first (focusing on Heat Pumps)</span>
+<span class="hljs-keyword">const</span> model = <span class="hljs-keyword">new</span> <span class="hljs-title class_">MiniDecarbModel</span>(buildings);
+model.<span class="hljs-title function_">setInitialYear</span>(<span class="hljs-number">2023</span>);
+model.<span class="hljs-title function_">setYearlyBudgets</span>([<span class="hljs-number">2000000</span>, <span class="hljs-number">2000000</span>]); <span class="hljs-comment">// 2-year plan with fixed budget</span>
+model.<span class="hljs-title function_">setOptimizationStrategy</span>(<span class="hljs-string">"tech-first"</span>);
+model.<span class="hljs-title function_">addTechnology</span>(techB); <span class="hljs-comment">// Heat Pump technology</span>
+
+<span class="hljs-comment">// Prioritize buildings based on multiple factors</span>
+model.<span class="hljs-title function_">addPriority</span>(<span class="hljs-string">"energy_consumption"</span>, <span class="hljs-string">"desc"</span>, <span class="hljs-literal">null</span>, <span class="hljs-number">2.0</span>); <span class="hljs-comment">// Higher energy use buildings first</span>
+model.<span class="hljs-title function_">addPriority</span>(<span class="hljs-string">"age"</span>, <span class="hljs-string">"desc"</span>, <span class="hljs-literal">null</span>, <span class="hljs-number">1.0</span>); <span class="hljs-comment">// Older buildings have secondary priority</span>
+
+<span class="hljs-comment">// Add a filter for public buildings only</span>
+<span class="hljs-keyword">const</span> publicBuildingFilter = <span class="hljs-title class_">MiniDecarbModel</span>.<span class="hljs-title function_">createDynamicFilter</span>(
+  <span class="hljs-string">"ownership"</span>,
+  <span class="hljs-string">"=="</span>,
+  <span class="hljs-string">"public"</span>
+);
+model.<span class="hljs-title function_">addBuildingFilter</span>(publicBuildingFilter, <span class="hljs-string">"Public buildings only"</span>);
+
+<span class="hljs-comment">// Run model</span>
+<span class="hljs-keyword">const</span> results = model.<span class="hljs-title function_">run</span>();
+
+<span class="hljs-comment">// Example output shows public buildings receiving heat pumps in order of</span>
+<span class="hljs-comment">// energy consumption (primary) and age (secondary), until budget is exhausted</span>
+</code></pre>
+<h3 id="scenario-3%3A-sequential-interventions-with-budget-rollover" tabindex="-1"><a class="observablehq-header-anchor" href="#scenario-3%3A-sequential-interventions-with-budget-rollover">Scenario 3: Sequential Interventions with Budget Rollover</a></h3>
+<pre data-language="javascript"><code class="language-javascript"><span class="hljs-comment">// Create intervention manager</span>
+<span class="hljs-keyword">const</span> manager = <span class="hljs-keyword">new</span> <span class="hljs-title class_">InterventionManager</span>(buildings, {
+  <span class="hljs-string">"Solar PV"</span>: techA,
+  <span class="hljs-string">"Heat Pump"</span>: techB,
+});
+
+<span class="hljs-comment">// First intervention: Solar PV on commercial buildings in 2023-2024</span>
+manager.<span class="hljs-title function_">addIntervention</span>({
+  <span class="hljs-attr">id</span>: <span class="hljs-string">"commercial-solar"</span>,
+  <span class="hljs-attr">initialYear</span>: <span class="hljs-number">2023</span>,
+  <span class="hljs-attr">yearlyBudgets</span>: [<span class="hljs-number">1000000</span>, <span class="hljs-number">1500000</span>],
+  <span class="hljs-attr">optimizationStrategy</span>: <span class="hljs-string">"tech-first"</span>,
+  <span class="hljs-attr">tech</span>: <span class="hljs-string">"Solar PV"</span>,
+  <span class="hljs-attr">filters</span>: [
+    {
+      <span class="hljs-attr">filterName</span>: <span class="hljs-string">"Commercial buildings only"</span>,
+      <span class="hljs-attr">filterFunction</span>: <span class="hljs-title class_">MiniDecarbModel</span>.<span class="hljs-title function_">createDynamicFilter</span>(
+        <span class="hljs-string">"building_type"</span>,
+        <span class="hljs-string">"=="</span>,
+        <span class="hljs-string">"commercial"</span>
+      ),
+    },
+  ],
+});
+
+<span class="hljs-comment">// Second intervention: Heat Pumps on residential buildings in 2025-2026</span>
+manager.<span class="hljs-title function_">addIntervention</span>({
+  <span class="hljs-attr">id</span>: <span class="hljs-string">"residential-heat-pumps"</span>,
+  <span class="hljs-attr">initialYear</span>: <span class="hljs-number">2025</span>,
+  <span class="hljs-attr">yearlyBudgets</span>: [<span class="hljs-number">2000000</span>, <span class="hljs-number">2000000</span>],
+  <span class="hljs-attr">optimizationStrategy</span>: <span class="hljs-string">"tech-first"</span>,
+  <span class="hljs-attr">tech</span>: <span class="hljs-string">"Heat Pump"</span>,
+  <span class="hljs-attr">filters</span>: [
+    {
+      <span class="hljs-attr">filterName</span>: <span class="hljs-string">"Residential buildings only"</span>,
+      <span class="hljs-attr">filterFunction</span>: <span class="hljs-title class_">MiniDecarbModel</span>.<span class="hljs-title function_">createDynamicFilter</span>(
+        <span class="hljs-string">"building_type"</span>,
+        <span class="hljs-string">"=="</span>,
+        <span class="hljs-string">"residential"</span>
+      ),
+    },
+  ],
+});
+
+<span class="hljs-comment">// Run all interventions with budget rollover</span>
+<span class="hljs-keyword">const</span> recaps = manager.<span class="hljs-title function_">runInterventionsWithRollover</span>();
+
+<span class="hljs-comment">// Results show each intervention's impact, with any remaining budget</span>
+<span class="hljs-comment">// from commercial-solar carrying over to the residential-heat-pumps</span>
+<span class="hljs-comment">// intervention if the years align</span>
+</code></pre>
+<h2 id="performance-considerations" tabindex="-1"><a class="observablehq-header-anchor" href="#performance-considerations">Performance Considerations</a></h2>
+<p>The model implements several optimization techniques:</p>
+<ol>
+<li>
+<p><strong>Caching</strong>:</p>
+<ul>
+<li>Building costs are cached to avoid recalculation</li>
+<li>Filtered buildings are cached and only updated when needed</li>
+<li>Available buildings are cached between years</li>
+</ul>
+</li>
+<li>
+<p><strong>Efficient Data Structures</strong>:</p>
+<ul>
+<li>Priority queue for carbon-first optimization</li>
+<li>Maps for fast lookups of building data</li>
+</ul>
+</li>
+<li>
+<p><strong>Single-Pass Operations</strong>:</p>
+<ul>
+<li>Building scores are calculated in a single pass where possible</li>
+<li>Filtering operations are combined when appropriate</li>
+</ul>
+</li>
+</ol>
+<h2 id="troubleshooting" tabindex="-1"><a class="observablehq-header-anchor" href="#troubleshooting">Troubleshooting</a></h2>
+<h3 id="common-issues" tabindex="-1"><a class="observablehq-header-anchor" href="#common-issues">Common Issues</a></h3>
+<ol>
+<li>
+<p><strong>Few Buildings Being Intervened</strong>:</p>
+<ul>
+<li>Check that the priority queue in carbon-first mode is ordering properly (should use descending order)</li>
+<li>Verify that building costs aren't unusually high compared to the budget</li>
+<li>Ensure building properties contain the correct keys for technology suitability</li>
+</ul>
+</li>
+<li>
+<p><strong>Unexpected Intervention Order</strong>:</p>
+<ul>
+<li>For carbon-first: check that carbon efficiency calculation is correct</li>
+<li>For tech-first: verify priority rules and their weights</li>
+</ul>
+</li>
+<li>
+<p><strong>Missing Carbon Savings Data</strong>:</p>
+<ul>
+<li>Ensure building properties include the savings keys specified in technology config</li>
+<li>Check for warnings in the console about missing data</li>
+</ul>
+</li>
+</ol>
+<h3 id="diagnostic-tools" tabindex="-1"><a class="observablehq-header-anchor" href="#diagnostic-tools">Diagnostic Tools</a></h3>
+<p>The model includes logging capabilities to diagnose issues:</p>
+<pre data-language="javascript"><code class="language-javascript"><span class="hljs-comment">// Enable detailed logging</span>
+model.<span class="hljs-title function_">setLogLevel</span>(<span class="hljs-string">"debug"</span>);
+
+<span class="hljs-comment">// Run with diagnostics</span>
+<span class="hljs-keyword">const</span> results = model.<span class="hljs-title function_">run</span>();
+</code></pre>
+<h2 id="conclusion" tabindex="-1"><a class="observablehq-header-anchor" href="#conclusion">Conclusion</a></h2>
+<p>The decarbonisation model provides a flexible framework for simulating building interventions with different strategies, priorities, and constraints. By carefully configuring the model parameters, users can explore a wide range of decarbonisation scenarios and optimise budget allocation for maximum carbon reduction impact.</p>
+</main>
+<footer id="observablehq-footer">
+<div>Built with <a href="https://observablehq.com/" target="_blank" rel="noopener noreferrer">Observable</a> on <a title="2025-05-02T05:41:04">May 2, 2025</a>.</div>
+</footer>
+</div>
