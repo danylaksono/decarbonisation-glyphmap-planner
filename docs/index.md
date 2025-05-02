@@ -780,13 +780,19 @@ function transformInterventionData(
 
   // Determine the full year range
   let years = Object.keys(lsoaData.children).map(Number);
-  let minYear = Math.min(...years);
-  let maxYear = Math.max(...years);
+  let minYear, maxYear;
 
   // If initialYear and duration are provided, use them to set the range
   if (initialYear !== null && duration !== null) {
     minYear = initialYear;
     maxYear = initialYear + duration - 1;
+  } else if (years.length > 0) {
+    // Only use min/max from existing years if there are any
+    minYear = Math.min(...years);
+    maxYear = Math.max(...years);
+  } else {
+    // If no intervention years and no explicit range, return empty array
+    return [];
   }
 
   // Build a map of year to data for quick lookup
@@ -827,6 +833,10 @@ function transformInterventionData(
       fullTimeSeries.push(emptyYear);
     }
   }
+
+  // Make sure the series is sorted by year
+  fullTimeSeries.sort((a, b) => a.year - b.year);
+
   return fullTimeSeries;
 }
 // endTimer("transform_intervention_data");
@@ -1665,6 +1675,20 @@ function processIntervention(config, buildings) {
       if (recap) {
         initialYear = recap.initialYear;
         duration = recap.duration;
+        console.log(
+          `Using initialYear=${initialYear}, duration=${duration} for LSOA ${lsoaCode}`
+        );
+      } else {
+        // If no specific recap for this LSOA, try to use overall intervention details
+        // This ensures we have consistent timeline ranges across all LSOAs
+        if (formattedRecaps.length > 0) {
+          // Use the first intervention as a fallback
+          initialYear = formattedRecaps[0].initialYear;
+          duration = formattedRecaps[0].duration;
+          console.log(
+            `Using default initialYear=${initialYear}, duration=${duration} for LSOA ${lsoaCode}`
+          );
+        }
       }
     }
     const timeSeriesData = transformInterventionData(
