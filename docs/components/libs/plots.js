@@ -351,3 +351,144 @@ export function plotOverallTimeline(data, width = 900, height = 600) {
 
   return container;
 }
+
+export function plotDualChartPanel(data, width = 900, height = 600) {
+  const margin = { top: 30, right: 150, bottom: 60, left: 80 };
+  const innerWidth = width - margin.left - margin.right;
+  const innerHeight = height - margin.top - margin.bottom;
+
+  const container = document.createElement("div");
+  container.style.position = "relative";
+  container.style.width = `${width}px`;
+  container.style.height = `${height}px`;
+
+  // Basic validation reused
+  if (!Array.isArray(data) || data.length === 0) {
+    container.textContent = "Please provide valid intervention data.";
+    return container;
+  }
+
+  const requiredFields = [
+    "year",
+    "budgetSpent",
+    "buildingsIntervened",
+    "totalCarbonSaved",
+  ];
+  const invalid = data.some(
+    (d) =>
+      !requiredFields.every((f) =>
+        f === "year"
+          ? Number.isInteger(d[f])
+          : typeof d[f] === "number" && !isNaN(d[f])
+      )
+  );
+  if (invalid) {
+    container.textContent = "Invalid data format.";
+    return container;
+  }
+
+  const svg = d3
+    .select(container)
+    .append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+  const chart = svg
+    .append("g")
+    .attr("transform", `translate(${margin.left},${margin.top})`);
+
+  const years = [...new Set(data.map((d) => d.year))].sort((a, b) => a - b);
+
+  const xScale = d3
+    .scaleBand()
+    .domain(years)
+    .range([0, innerWidth])
+    .padding(0.1);
+  const yScaleLeft = d3
+    .scaleLinear()
+    .domain([0, d3.max(data, (d) => d.budgetSpent + d.totalCarbonSaved) * 1.1])
+    .range([innerHeight, 0]);
+  const yScaleRight = d3
+    .scaleLinear()
+    .domain([0, d3.max(data, (d) => d.buildingsIntervened) * 1.1])
+    .range([innerHeight, 0]);
+
+  const colorScale = d3
+    .scaleOrdinal()
+    .domain(["Budget Spent", "Total Carbon Saved", "Buildings Intervened"])
+    .range(["#2C699A", "#2D936C", "#E63946"]);
+
+  const longData = data.flatMap((d) => [
+    { year: d.year, value: d.budgetSpent, category: "Budget Spent" },
+    { year: d.year, value: d.totalCarbonSaved, category: "Total Carbon Saved" },
+  ]);
+
+  const grouped = d3
+    .groups(longData, (d) => d.year)
+    .map(([year, values]) => values);
+
+  const stack = d3
+    .stack()
+    .keys(["Budget Spent", "Total Carbon Saved"])
+    .value((group, key) => group.find((d) => d.category === key)?.value || 0);
+  const stacked = stack(grouped);
+
+  const area = d3
+    .area()
+    .x((d, i) => xScale(years[i]) + xScale.bandwidth() / 2)
+    .y0((d) => yScaleLeft(d[0]))
+    .y1((d) => yScaleLeft(d[1]))
+    .curve(d3.curveMonotoneX);
+
+  chart
+    .selectAll(".area")
+    .data(stacked)
+    .join("path")
+    .attr("fill", (d) => colorScale(d.key))
+    .attr("d", area)
+    .attr("opacity", 0.8);
+
+  const line = d3
+    .line()
+    .x((d) => xScale(d.year) + xScale.bandwidth() / 2)
+    .y((d) => yScaleRight(d.buildingsIntervened))
+    .curve(d3.curveMonotoneX);
+
+  chart
+    .append("path")
+    .datum(data)
+    .attr("fill", "none")
+    .attr("stroke", colorScale("Buildings Intervened"))
+    .attr("stroke-width", 3.5)
+    .attr("d", line);
+
+  chart
+    .append("g")
+    .attr("transform", `translate(0,${innerHeight})`)
+    .call(d3.axisBottom(xScale).tickFormat(d3.format("d")));
+
+  chart
+    .append("g")
+    .call(d3.axisLeft(yScaleLeft))
+    .append("text")
+    .attr("x", -innerHeight / 2)
+    .attr("y", -60)
+    .attr("text-anchor", "middle")
+    .attr("transform", "rotate(-90)")
+    .attr("fill", "black")
+    .text("Budget & Carbon");
+
+  chart
+    .append("g")
+    .attr("transform", `translate(${innerWidth},0)`)
+    .call(d3.axisRight(yScaleRight))
+    .append("text")
+    .attr("x", -innerHeight / 2)
+    .attr("y", 50)
+    .attr("text-anchor", "middle")
+    .attr("transform", "rotate(-90)")
+    .attr("fill", "black")
+    .text("Buildings");
+
+  return container;
+}

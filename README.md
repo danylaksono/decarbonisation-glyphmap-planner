@@ -1,53 +1,57 @@
 # Decarbonisation Glyphmap Planner
 
-This is an [Observable Framework](https://observablehq.com/framework) project. To start the local preview server, run:
+Interactive dashboard for planning and visualising building decarbonisation interventions. Access the live app at: [decarb-vis.netlify.app](https://decarb-vis.netlify.app/)
 
-```
+## Overview
+
+This tool helps users simulate, prioritise, and allocate budgets for low-carbon technology (LCT) upgrades (e.g. heat pumps, solar PV) across building stock. It supports multi-year planning, custom intervention strategies, and visual analytics for scenario comparison.
+
+## Key Features
+
+- Visual timeline for managing and sequencing interventions
+- Interactive map and glyph-based visualisation of results
+- Customisable budget allocation and intervention parameters
+- Sortable/filterable building table for selection and analysis
+- Scenario comparison and summary statistics
+
+## Main Components
+
+- **Timeline View**: Manage, reorder, and edit interventions. Visualise intervention plans over time.
+- **Quickview Form**: Add new interventions with custom technology, budget, and schedule. Supports different allocation profiles.
+- **Map View**: Explore spatial impact of interventions using glyphmaps and aggregation controls.
+- **Table View**: Filter, sort, and select buildings for targeted interventions.
+- **Budget Allocator**: Flexible tool for distributing budgets across years and interventions.
+
+## Model Background
+
+The underlying model simulates LCT interventions on buildings, optimising for carbon savings or technology deployment under budget constraints. It supports:
+
+- Carbon-first and tech-first optimisation strategies
+- Multi-year, multi-intervention planning with budget rollover
+- Building filtering and prioritisation (e.g. by size, energy use, ownership)
+- Scenario analysis for policy and investment planning
+
+For detailed model documentation, see [`docs/report.md`](docs/report.md).
+
+## Getting Started
+
+To run locally:
+
+```bash
+npm install
 npm run dev
 ```
 
-Then visit <http://localhost:3000> to preview your project.
+Then visit [http://localhost:3000](http://localhost:3000)
 
-For more, see <https://observablehq.com/framework/getting-started>.
+## Project Structure
 
-## Project structure
+- `docs/components/` – UI components (TimelineView, QuickviewForm, MapView, TableView, BudgetAllocator)
+- `docs/data/` – Data loaders and static data
+- `docs/index.md` – Main dashboard page
+- `docs/report.md` – Model and methodology documentation
+- `observablehq.config.ts` – Project configuration
 
-A typical Framework project looks like this:
+## License
 
-```ini
-.
-├─ docs
-│  ├─ components
-│  │  └─ timeline.js           # an importable module
-│  ├─ data
-│  │  ├─ launches.csv.js       # a data loader
-│  │  └─ events.json           # a static data file
-│  ├─ example-dashboard.md     # a page
-│  ├─ example-report.md        # another page
-│  └─ index.md                 # the home page
-├─ .gitignore
-├─ observablehq.config.ts      # the project config file
-├─ package.json
-└─ README.md
-```
-
-**`docs`** - This is the “source root” — where your source files live. Pages go here. Each page is a Markdown file. Observable Framework uses [file-based routing](https://observablehq.com/framework/routing), which means that the name of the file controls where the page is served. You can create as many pages as you like. Use folders to organize your pages.
-
-**`docs/index.md`** - This is the home page for your site. You can have as many additional pages as you’d like, but you should always have a home page, too.
-
-**`docs/data`** - You can put [data loaders](https://observablehq.com/framework/loaders) or static data files anywhere in your source root, but we recommend putting them here.
-
-**`docs/components`** - You can put shared [JavaScript modules](https://observablehq.com/framework/javascript/imports) anywhere in your source root, but we recommend putting them here. This helps you pull code out of Markdown files and into JavaScript modules, making it easier to reuse code across pages, write tests and run linters, and even share code with vanilla web applications.
-
-**`observablehq.config.ts`** - This is the [project configuration](https://observablehq.com/framework/config) file, such as the pages and sections in the sidebar navigation, and the project’s title.
-
-## Command reference
-
-| Command           | Description                                              |
-| ----------------- | -------------------------------------------------------- |
-| `npm install`            | Install or reinstall dependencies                        |
-| `npm run dev`        | Start local preview server                               |
-| `npm run build`      | Build your static site, generating `./dist`              |
-| `npm run deploy`     | Deploy your project to Observable                        |
-| `npm run clean`      | Clear the local data loader cache                        |
-| `npm run observable` | Run commands like `observable help`                      |
+MIT
