@@ -721,6 +721,7 @@ const groupedData = MiniDecarbModel.group(getModelData, [
   "lsoa",
   "interventionYear",
 ]);
+// log("[TEST] Grouped Data: ", groupedData);
 // endTimer("grouped_intervention");
 ```
 
@@ -731,6 +732,31 @@ const timelineDataArray = [
   "carbonSaved",
   "numInterventions",
 ];
+
+// Pre-compute time series data for all LSOAs to optimize streamgraph rendering
+// This creates a lookup object for quick access when drawing the glyphs
+const timeSeriesLookup = {};
+if (groupedData) {
+  console.log("Pre-computing time series data for all LSOAs...");
+  Object.keys(groupedData).forEach((lsoaCode) => {
+    // Transform the time-series data once for each LSOA
+    const timeSeriesData = transformInterventionData(
+      groupedData,
+      lsoaCode,
+      timelineDataArray
+    );
+
+    // Store in the lookup for quick access
+    if (timeSeriesData && timeSeriesData.length > 0) {
+      timeSeriesLookup[lsoaCode] = timeSeriesData;
+    }
+  });
+  console.log(
+    `Time series data pre-computed for ${
+      Object.keys(timeSeriesLookup).length
+    } LSOAs`
+  );
+}
 ```
 
 ```js
@@ -1585,6 +1611,25 @@ function processIntervention(config, buildings) {
   // 6. get stacked results
   const stackedResults = manager.getStackedResults();
 
+  // 7. Update the time series lookup with the new grouped data
+  console.log("Updating time series lookup after new intervention...");
+  const newGroupedData = MiniDecarbModel.group(stackedResults.buildings, [
+    "lsoa",
+    "interventionYear",
+  ]);
+
+  Object.keys(newGroupedData).forEach((lsoaCode) => {
+    const timeSeriesData = transformInterventionData(
+      newGroupedData,
+      lsoaCode,
+      timelineDataArray
+    );
+
+    if (timeSeriesData && timeSeriesData.length > 0) {
+      timeSeriesLookup[lsoaCode] = timeSeriesData;
+    }
+  });
+
   // return the stacked results
   return {
     stackedResults,
@@ -1875,7 +1920,7 @@ const regular_geodata_withproperties = enrichGeoData(
   aggregations
 );
 
-log("regular_geodata_withproperties_enriched", regular_geodata_withproperties);
+// log("regular_geodata_withproperties_enriched", regular_geodata_withproperties);
 
 const cartogram_geodata_withproperties = enrichGeoData(
   // buildingsData,
@@ -1924,12 +1969,12 @@ const keydata = _.keyBy(
     return {
       code: feat.properties.code,
       population: +feat.properties.population,
-      data: feat,
+      data: feat.properties, // all the data
     };
   }),
   "code"
 );
-log(">>> Keydata", keydata);
+// log(">>> Keydata", keydata);
 
 const regularGeodataLookup = _.keyBy(
   regular_geodata_withproperties.features.map((feat) => {
@@ -2023,7 +2068,7 @@ function glyphMapSpec(width = 800, height = 600) {
     data:
       map_aggregate === "Building Level"
         ? Object.values(getModelData)
-        : Object.values(keydata),
+        : Object.values(keydata), // lsoa level
     getLocationFn: (row) =>
       map_aggregate == "Building Level"
         ? [row.x, row.y] // from individual building data
@@ -2060,15 +2105,24 @@ function glyphMapSpec(width = 800, height = 600) {
         // data normalisation
         // const normalData = normaliseData(cells, glyphVariables);
 
+        console.time("cell-data-processing");
         for (const cell of cells) {
           cell.data = {};
 
           if (cell.records && map_aggregate === "LSOA Level") {
-            cell.data = transformInterventionData(
-              groupedData,
-              cell.records[0].code,
-              timelineDataArray
-            );
+            const lsoaCode = cell.records[0].code;
+
+            // Use the pre-computed time series data if available
+            if (timeSeriesLookup && timeSeriesLookup[lsoaCode]) {
+              cell.data = timeSeriesLookup[lsoaCode];
+            } else {
+              // Fallback to on-the-fly computation if pre-computed data not available
+              cell.data = transformInterventionData(
+                groupedData,
+                lsoaCode,
+                timelineDataArray
+              );
+            }
           } else if (cell.records && map_aggregate === "Building Level") {
             // aggregate data for each cell
             cell.data = aggregateValues(cell.records, glyphVariables, "sum");
@@ -2076,6 +2130,7 @@ function glyphMapSpec(width = 800, height = 600) {
             cell.data = {};
           }
         }
+        console.timeEnd("cell-data-processing");
 
         // Normalisation
         const dataArray = cells.map((cell) => cell.data);
@@ -2126,7 +2181,7 @@ function glyphMapSpec(width = 800, height = 600) {
           ? cell.records[0].data.properties
           : cell.data; // when map_aggregate == "Building Level", use individual data
 
-        log("cell data to draw >>>", cellData);
+        // log("cell data to draw >>>", cellData);
         let timeData = cell.data[0];
         // log("timeData", timeData);
 
@@ -2156,10 +2211,10 @@ function glyphMapSpec(width = 800, height = 600) {
           ctx.stroke();
         }
 
-        log(
-          "Drawn in order >>>",
-          glyphVariables.map((key) => cellData[key])
-        );
+        // log(
+        //   "Drawn in order >>>",
+        //   glyphVariables.map((key) => cellData[key])
+        // );
 
         // draw the glyph
         if (map_aggregate === "Building Level") {
@@ -2169,15 +2224,30 @@ function glyphMapSpec(width = 800, height = 600) {
           );
           rg.draw(ctx, x, y, cellSize / 2);
         } else if (map_aggregate === "LSOA Level") {
-          log(">>> Drawing streamgraph glyph for LSOA level data...", cellData);
-          // format config for streamgraph
+          // Set up StreamGraphGlyph configuration
           let customConfig = {
             upwardKeys: ["carbonSaved"],
             downwardKeys: ["interventionCost"],
           };
 
-          let tg = new StreamGraphGlyph(timeData, "year", null, customConfig);
-          tg.draw(ctx, x, y, cellSize / 2);
+          // Make sure we have time series data to plot
+          if (cell.data && cell.data.length > 0) {
+            let tg = new StreamGraphGlyph(
+              cell.data,
+              "year",
+              null,
+              customConfig
+            );
+            tg.draw(ctx, x, y, cellSize / 2);
+          } else {
+            // Draw empty placeholder if no time data available
+            ctx.beginPath();
+            ctx.arc(x, y, cellSize / 4, 0, 2 * Math.PI);
+            ctx.fillStyle = "#eeeeee";
+            ctx.fill();
+            ctx.strokeStyle = "#cccccc";
+            ctx.stroke();
+          }
         }
 
         // let rg = new RadialGlyph(
@@ -2268,7 +2338,7 @@ playButton.addEventListener("click", () => {
 ```js
 // Trigger Morphing function
 {
-  log(">> Morphing...", morph_factor);
+  // log(">> Morphing...", morph_factor);
   morph_factor; //causes code to run whenever the slider is moved
   morphGlyphMap.setGlyph({
     discretiserFn: valueDiscretiser(tweenWGS84Lookup),
