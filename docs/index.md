@@ -20,7 +20,7 @@ sql:
 ```js
 log(">> Importing libraries...");
 const d3 = require("d3", "d3-geo-projection");
-// const flubber = require("flubber@0.4");
+const flubber = require("flubber@0.4");
 
 import { require } from "npm:d3-require";
 import { Mutable } from "npm:@observablehq/stdlib";
@@ -721,6 +721,7 @@ const groupedData = MiniDecarbModel.group(getModelData, [
   "lsoa",
   "interventionYear",
 ]);
+// log("[TEST] Grouped Data: ", groupedData);
 // endTimer("grouped_intervention");
 ```
 
@@ -731,6 +732,31 @@ const timelineDataArray = [
   "carbonSaved",
   "numInterventions",
 ];
+
+// Pre-compute time series data for all LSOAs to optimize streamgraph rendering
+// This creates a lookup object for quick access when drawing the glyphs
+const timeSeriesLookup = {};
+if (groupedData) {
+  console.log("Pre-computing time series data for all LSOAs...");
+  Object.keys(groupedData).forEach((lsoaCode) => {
+    // Transform the time-series data once for each LSOA
+    const timeSeriesData = transformInterventionData(
+      groupedData,
+      lsoaCode,
+      timelineDataArray
+    );
+
+    // Store in the lookup for quick access
+    if (timeSeriesData && timeSeriesData.length > 0) {
+      timeSeriesLookup[lsoaCode] = timeSeriesData;
+    }
+  });
+  console.log(
+    `Time series data pre-computed for ${
+      Object.keys(timeSeriesLookup).length
+    } LSOAs`
+  );
+}
 ```
 
 ```js
@@ -860,12 +886,21 @@ const manager = new InterventionManager(buildingsData, listOfTech);
 
 ```js
 // --- technology ---
-const techsInput = Inputs.select(["PV", "ASHP", "GSHP", "Optimise All"], {
-  // label: html`<b>Technology</b>`,
-  value: "ASHP",
-  // submit: true,
-  // disabled: selectedIntervention ? true : false,
-});
+// const techsInput = Inputs.select(["PV", "ASHP", "GSHP", "Optimise All"], {
+const techsInput = Inputs.select(
+  new Map([
+    ["Rooftop Solar PV", "PV"],
+    ["Air Source Heat Pump", "ASHP"],
+    ["Ground SOurce Heat Pump", "GSHP"],
+    ["Optimise All", "Optimise All"],
+  ]),
+  {
+    // label: html`<b>Technology</b>`,
+    value: "ASHP",
+    // submit: true,
+    // disabled: selectedIntervention ? true : false,
+  }
+);
 // techsInput.style["max-width"] = "300px";
 Object.assign(techsInput, {
   oninput: (event) => event.isTrusted && event.stopImmediatePropagation(),
@@ -1585,6 +1620,25 @@ function processIntervention(config, buildings) {
   // 6. get stacked results
   const stackedResults = manager.getStackedResults();
 
+  // 7. Update the time series lookup with the new grouped data
+  console.log("Updating time series lookup after new intervention...");
+  const newGroupedData = MiniDecarbModel.group(stackedResults.buildings, [
+    "lsoa",
+    "interventionYear",
+  ]);
+
+  Object.keys(newGroupedData).forEach((lsoaCode) => {
+    const timeSeriesData = transformInterventionData(
+      newGroupedData,
+      lsoaCode,
+      timelineDataArray
+    );
+
+    if (timeSeriesData && timeSeriesData.length > 0) {
+      timeSeriesLookup[lsoaCode] = timeSeriesData;
+    }
+  });
+
   // return the stacked results
   return {
     stackedResults,
@@ -1597,7 +1651,7 @@ endTimer("process_intervention");
 ```js
 function updateInterventions() {
   // console.trace("###[TRACE]### updateInterventions called");
-  log("updating intervention");
+  // log("updating intervention");
   // const interventions = getFromSession("interventions"); // data exceed storage capacity
   const interventions = getInterventions;
   if (interventions && interventions.length > 0) {
@@ -1713,6 +1767,11 @@ function tableChanged(event) {
 
   if (event.type === "selection") {
     setSelectedTableRow(event.selection);
+    log("selected row", event.selection[0].data);
+    mapInstance.flyTo(
+      { x: event.selection[0].data.x, y: event.selection[0].data.y },
+      18
+    );
     // log("Selection rule:", event.rule);
   }
 }
@@ -1793,7 +1852,7 @@ function injectGlobalLoadingOverlay() {
 }
 ```
 
-<!-- ---------------- Glyph Maps ---------------- -->
+<!-- ---------------- Morpher Maps ---------------- -->
 
 ```js
 // define the aggregation function for each column
@@ -1811,7 +1870,7 @@ const aggregations = {
   // "x": -1.22156225350691,
   // "y": 51.7575669032743,
   building_area: "sum",
-  garden_area: "sum",
+  // garden_area: "sum",
   ashp_suitability: "count",
   ashp_size: "sum",
   ashp_labour: "sum",
@@ -1842,22 +1901,157 @@ const aggregations = {
   fuel_poverty_proportion: "sum",
 };
 
-const {
-  keydata,
-  regularGeodataLookup,
-  regularGeodataLsoaWgs84,
-  cartogramGeodataLsoaLookup,
-  geographyLsoaWgs84Lookup,
-  cartogramLsoaWgs84Lookup,
-  tweenWGS84Lookup,
-} = geoMorpher({
-  aggregations,
-  regular_geodata,
-  cartogram_geodata,
-  getModelData,
-  morph_factor,
-});
+// this works but causing lags due to passing data back and forth
+// const {
+//   keydata,
+//   regularGeodataLookup,
+//   regularGeodataLsoaWgs84,
+//   cartogramGeodataLsoaLookup,
+//   geographyLsoaWgs84Lookup,
+//   cartogramLsoaWgs84Lookup,
+//   tweenWGS84Lookup,
+// } = geoMorpher({
+//   aggregations,
+//   regular_geodata,
+//   cartogram_geodata,
+//   getModelData,
+//   morph_factor,
+// });
 ```
+
+```js
+const regular_geodata_withproperties = enrichGeoData(
+  // buildingsData,
+  getModelData,
+  regular_geodata,
+  "lsoa",
+  "code",
+  aggregations
+);
+
+// log("regular_geodata_withproperties_enriched", regular_geodata_withproperties);
+
+const cartogram_geodata_withproperties = enrichGeoData(
+  // buildingsData,
+  getModelData,
+  cartogram_geodata,
+  "lsoa",
+  "code",
+  aggregations
+);
+```
+
+```js
+// Data processing functions
+// log(">> Data processing functions: Regular LSOA...");
+const osgb = new OSGB();
+let clone = turf.clone(regular_geodata);
+turf.coordEach(clone, (currentCoord) => {
+  const newCoord = osgb.toGeo(currentCoord);
+  currentCoord[0] = newCoord[0];
+  currentCoord[1] = newCoord[1];
+});
+const regularGeodataLsoaWgs84 = clone;
+```
+
+```js
+// Data processing functions
+// log(">> Data processing functions: Cartogram LSOA...");
+const osgb = new OSGB();
+let clone = turf.clone(cartogram_geodata);
+turf.coordEach(clone, (currentCoord) => {
+  const newCoord = osgb.toGeo(currentCoord);
+  currentCoord[0] = newCoord[0];
+  currentCoord[1] = newCoord[1];
+});
+const cartogramGeodataLsoaWgs84 = clone;
+// display(cartogramLsoaWgs84());
+```
+
+```js
+// Create a lookup table for the key data - geography
+// this is already aggregated by LSOA in EnrichGeoData
+// startTimer("create*lookup_tables");
+log(">> Create lookup tables...");
+const keydata = _.keyBy(
+  regular_geodata_withproperties.features.map((feat) => {
+    return {
+      code: feat.properties.code,
+      population: +feat.properties.population,
+      data: feat.properties, // all the data
+    };
+  }),
+  "code"
+);
+// log(">>> Keydata", keydata);
+
+const regularGeodataLookup = _.keyBy(
+  regular_geodata_withproperties.features.map((feat) => {
+    return { ...feat, centroid: turf.getCoord(turf.centroid(feat.geometry)) };
+  }),
+  (feat) => feat.properties.code
+);
+
+const cartogramGeodataLsoaLookup = _.keyBy(
+  cartogram_geodata_withproperties.features.map((feat) => {
+    return { ...feat, centroid: turf.getCoord(turf.centroid(feat.geometry)) };
+  }),
+  (feat) => feat.properties.code
+);
+```
+
+```js
+const geographyLsoaWgs84Lookup = _.keyBy(
+  regular_geodata_withproperties.features.map((feat) => {
+    const transformedGeometry = transformGeometry(feat.geometry);
+    const centroid = turf.getCoord(turf.centroid(transformedGeometry));
+    return {
+      ...feat,
+      geometry: transformedGeometry,
+      centroid: centroid,
+    };
+  }),
+  (feat) => feat.properties.code
+);
+
+const cartogramLsoaWgs84Lookup = _.keyBy(
+  cartogram_geodata_withproperties.features.map((feat) => {
+    const transformedGeometry = transformGeometry(feat.geometry);
+    const centroid = turf.getCoord(turf.centroid(transformedGeometry));
+    return {
+      ...feat,
+      geometry: transformedGeometry,
+      centroid: centroid,
+    };
+  }),
+  (feat) => feat.properties.code
+);
+// endTimer("create_lookup_tables"); /// DEBUG: this took 5 minutes!!
+```
+
+```js
+// startTimer("create_flubber_interpolations");
+// Flubber interpolations
+const flubbers = {};
+for (const key of Object.keys(cartogramLsoaWgs84Lookup)) {
+  if (geographyLsoaWgs84Lookup[key] && cartogramLsoaWgs84Lookup[key]) {
+    flubbers[key] = flubber.interpolate(
+      turf.getCoords(geographyLsoaWgs84Lookup[key])[0],
+      turf.getCoords(cartogramLsoaWgs84Lookup[key])[0],
+      { string: false }
+    );
+  }
+}
+
+const tweenWGS84Lookup = _.mapValues(flubbers, (v, k) => {
+  const feat = turf.multiLineString([v(morph_factor)], { code: k });
+  feat.centroid = turf.getCoord(turf.centroid(feat.geometry));
+  return feat;
+});
+// endTimer("create_flubber_interpolations");
+```
+
+<!-- ---------------- Glyph Maps ---------------- -->
 
 ```js
 // discretiser
@@ -1876,7 +2070,6 @@ function valueDiscretiser(geomLookup) {
 // log(">> Initialize the GlyphMap Specification...");
 // log("Sample x y from Data in Glyph", [data[0].x, data[0].y]);
 function glyphMapSpec(width = 800, height = 600) {
-  // const glyphMapSpec = {
   return {
     coordType: map_aggregate == "Building Level" ? "mercator" : "notmercator",
     initialBB: transformCoordinates(turf.bbox(regular_geodata)),
@@ -1884,7 +2077,7 @@ function glyphMapSpec(width = 800, height = 600) {
     data:
       map_aggregate === "Building Level"
         ? Object.values(getModelData)
-        : Object.values(keydata),
+        : Object.values(keydata), // lsoa level
     getLocationFn: (row) =>
       map_aggregate == "Building Level"
         ? [row.x, row.y] // from individual building data
@@ -1921,15 +2114,24 @@ function glyphMapSpec(width = 800, height = 600) {
         // data normalisation
         // const normalData = normaliseData(cells, glyphVariables);
 
+        console.time("cell-data-processing");
         for (const cell of cells) {
           cell.data = {};
 
           if (cell.records && map_aggregate === "LSOA Level") {
-            cell.data = transformInterventionData(
-              groupedData,
-              cell.records[0].code,
-              timelineDataArray
-            );
+            const lsoaCode = cell.records[0].code;
+
+            // Use the pre-computed time series data if available
+            if (timeSeriesLookup && timeSeriesLookup[lsoaCode]) {
+              cell.data = timeSeriesLookup[lsoaCode];
+            } else {
+              // Fallback to on-the-fly computation if pre-computed data not available
+              cell.data = transformInterventionData(
+                groupedData,
+                lsoaCode,
+                timelineDataArray
+              );
+            }
           } else if (cell.records && map_aggregate === "Building Level") {
             // aggregate data for each cell
             cell.data = aggregateValues(cell.records, glyphVariables, "sum");
@@ -1937,6 +2139,7 @@ function glyphMapSpec(width = 800, height = 600) {
             cell.data = {};
           }
         }
+        console.timeEnd("cell-data-processing");
 
         // Normalisation
         const dataArray = cells.map((cell) => cell.data);
@@ -2017,57 +2220,75 @@ function glyphMapSpec(width = 800, height = 600) {
           ctx.stroke();
         }
 
-        // if (map_aggregate === "Building Level") {
-        //   let rg = new RadialGlyph(
-        //     glyphVariables.map((key) => cellData[key]),
-        //     glyphColours
-        //   );
-        //   rg.draw(ctx, x, y, cellSize / 2);
-        // } else if (map_aggregate === "LSOA Level") {
-        //   log;
-        //   // format config for streamgraph
-        //   let customConfig = {
-        //     upwardKeys: ["carbonSaved"],
-        //     downwardKeys: ["interventionCost"],
-        //   };
-
-        //   let tg = new StreamGraphGlyph(timeData, "year", null, customConfig);
-        //   tg.draw(ctx, x, y, cellSize / 2);
-        // }
         // log(
         //   "Drawn in order >>>",
         //   glyphVariables.map((key) => cellData[key])
         // );
-        let rg = new RadialGlyph(
-          glyphVariables.map((key) => cellData[key]),
-          glyphColours
-        );
-        rg.draw(ctx, x, y, cellSize / 2);
+
+        // draw the glyph
+        if (map_aggregate === "Building Level") {
+          let rg = new RadialGlyph(
+            glyphVariables.map((key) => cellData[key]),
+            glyphColours
+          );
+          rg.draw(ctx, x, y, cellSize / 2);
+        } else if (map_aggregate === "LSOA Level") {
+          // Set up StreamGraphGlyph configuration
+          let customConfig = {
+            upwardKeys: ["carbonSaved"],
+            downwardKeys: ["interventionCost"],
+          };
+
+          // Make sure we have time series data to plot
+          if (cell.data && cell.data.length > 0) {
+            let tg = new StreamGraphGlyph(
+              cell.data,
+              "year",
+              null,
+              customConfig
+            );
+            tg.draw(ctx, x, y, cellSize / 2);
+          } else {
+            // Draw empty placeholder if no time data available
+            ctx.beginPath();
+            ctx.arc(x, y, cellSize / 4, 0, 2 * Math.PI);
+            ctx.fillStyle = "#eeeeee";
+            ctx.fill();
+            ctx.strokeStyle = "#cccccc";
+            ctx.stroke();
+          }
+        }
+
+        // let rg = new RadialGlyph(
+        //   glyphVariables.map((key) => cellData[key]),
+        //   glyphColours
+        // );
+        // rg.draw(ctx, x, y, cellSize / 2);
       },
 
       postDrawFn: (cells, cellSize, ctx, global, panel) => {},
 
-      tooltipTextFn: (cell) => {
-        if (cell) {
-          log("cell on tooltip", cell.data);
-          // log("cell on tooltip", cell.records[0].code);
-          // setDetailOnDemand(cell.data);
-          // return cell.data.ashp_total;
-          return glyphVariables
-            .map((key) => {
-              const label = key.replace(/_/g, " ").toUpperCase();
-              const value = cell.data[key].toFixed(2);
-              return `<div class="tooltip-row">
-                <span class="label">${label}:</span>
-                <span class="value">${value}</span>
-              </div>`;
-            })
-            .join("");
-          // return `Total Building Area: ${cell.building_area.toFixed(2)} m^2`;
-        } else {
-          return "no data";
-        }
-      },
+      // tooltipTextFn: (cell) => {
+      //   if (cell) {
+      //     log("cell on tooltip", cell.data);
+      //     // log("cell on tooltip", cell.records[0].code);
+      //     // setDetailOnDemand(cell.data);
+      //     // return cell.data.ashp_total;
+      //     return glyphVariables
+      //       .map((key) => {
+      //         const label = key.replace(/_/g, " ").toUpperCase();
+      //         const value = cell.data[key].toFixed(2);
+      //         return `<div class="tooltip-row">
+      //           <span class="label">${label}:</span>
+      //           <span class="value">${value}</span>
+      //         </div>`;
+      //       })
+      //       .join("");
+      //     // return `Total Building Area: ${cell.building_area.toFixed(2)} m^2`;
+      //   } else {
+      //     return "no data";
+      //   }
+      // },
     },
   };
 }
@@ -2081,68 +2302,46 @@ function glyphMapSpec(width = 800, height = 600) {
 function set(input, value) {
   input.value = value;
   input.dispatchEvent(new Event("input", { bubbles: true }));
-  // console.log("input value:", input.value);
 }
-```
 
-```js
-function animate(currentValue, animationFrame, playing = false, direction = 1) {
-  // Increment or decrement the value
+let playing = false;
+let direction = 1;
+let animationFrame = null;
+
+function animate(currentValue) {
   let newValue = currentValue + 0.01 * direction;
 
-  // Reverse direction if boundaries are reached
-  // if (newValue >= 1 || newValue <= 0) {
-  //   direction *= -1;
-  //   newValue = Math.max(0, Math.min(1, newValue)); // Clamp value between 0 and 1
-  // }
   if (newValue >= 1 || newValue <= 0) {
-    newValue = Math.max(0, Math.min(1, newValue)); // Clamp value
-    playing = false; // Pause animation
-    playButton.innerHTML = '<i class="fas fa-play"></i>'; // Update button
+    direction *= -1;
+    newValue = Math.max(0, Math.min(1, newValue));
+    playing = false;
+    playButton.innerHTML = '<i class="fas fa-play"></i>';
     cancelAnimationFrame(animationFrame);
-    return; // Stop animation loop
+    return;
   }
 
-  // Update the slider and dispatch the "input" event for reactivity
   set(morphFactorInput, newValue);
 
   if (playing) {
-    animationFrame = requestAnimationFrame(() => animate(newValue)); // Pass the updated value
+    animationFrame = requestAnimationFrame(() => animate(newValue));
   }
 }
-```
 
-```js
-// Morph animation logic
-{
-  // morph_factor;
-  log(">> Morph animation logic...");
-  let playing = false; // Track play/pause state
-  let direction = 1; // Controls the animation direction (0 to 1 or 1 to 0)
-  let animationFrame; // Stores the requestAnimationFrame ID
-  // let currentValue = 0; // Current value of the morph factor
+let currentValue = parseFloat(morphFactorInput.value);
 
-  let currentValue = parseFloat(morphFactorInput.value); // Initialize currentValue with the slider value
+playButton.addEventListener("click", () => {
+  playing = !playing;
+  playButton.innerHTML = playing
+    ? '<i class="fas fa-pause"></i>'
+    : '<i class="fas fa-play"></i>';
 
-  // Animation loop
-  animate(currentValue, animationFrame, playing, direction);
-
-  // Button click event listener
-  playButton.addEventListener("click", () => {
-    playing = !playing; // Toggle play/pause state
-    playButton.innerHTML = playing
-      ? '<i class="fas fa-pause"></i>'
-      : '<i class="fas fa-play"></i>';
-
-    if (playing) {
-      // Start the animation with the current slider value
-      // const currentValue = parseFloat(morph_factor);
-      requestAnimationFrame(() => animate(currentValue));
-    } else {
-      cancelAnimationFrame(animationFrame); // Stop the animation
-    }
-  });
-}
+  if (playing) {
+    currentValue = parseFloat(morphFactorInput.value);
+    animationFrame = requestAnimationFrame(() => animate(currentValue));
+  } else {
+    cancelAnimationFrame(animationFrame);
+  }
+});
 ```
 
 ```js
@@ -2159,7 +2358,7 @@ function animate(currentValue, animationFrame, playing = false, direction = 1) {
         .scaleSequential(d3.interpolateBlues)
         .domain([0, d3.max(cells.map((row) => row.building_area))]);
 
-      //draw a coloured polygon
+      //draw a coloured background polygon
       ctx.beginPath();
       ctx.rect(0, 0, panel.getWidth(), panel.getHeight());
       const colour = d3.color("#fff");

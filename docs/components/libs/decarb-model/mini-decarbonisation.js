@@ -893,9 +893,9 @@ export class MiniDecarbModel {
       this.suitableBuildingsNeedUpdate = false; // Reset after filtering
     }
 
-    // Create a priority queue for interventions, ordered by carbon efficiency (ascending)
+    // Create a priority queue for interventions, ordered by carbon efficiency (descending)
     const pq = new PriorityQueue(
-      (a, b) => a.carbonEfficiency - b.carbonEfficiency
+      (a, b) => b.carbonEfficiency - a.carbonEfficiency
     );
 
     // Add all available interventions to the priority queue initially
@@ -1346,7 +1346,7 @@ export class MiniDecarbModel {
     }
 
     // Validate operator
-    const validOperators = [">", ">=", "<", "<=", "<", "<=", "==", "!="];
+    const validOperators = [">", ">=", "<", "<=", "==", "!="];
     if (!validOperators.includes(operator)) {
       throw new Error(
         `Invalid operator: Supported operators are ${validOperators.join(
