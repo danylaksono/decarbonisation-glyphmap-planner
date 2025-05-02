@@ -30,7 +30,7 @@ export class LeafletMap {
       height: "400px",
       clusterRadius: 40,
       maxZoom: 20,
-      minZoom: 3,
+      minZoom: 10,
       minPoints: 3,
       defaultTile: "Carto Positron Light NoLabel",
       visibleBaseLayers: [
@@ -1019,7 +1019,7 @@ export class LeafletMap {
   flyTo(center, zoom) {
     return new Promise((resolve) => {
       this.map.flyTo([center.y, center.x], zoom || this.options.maxZoom, {
-        duration: 2,
+        duration: 1,
         easeLinearity: 0.5,
       });
       this.map.once("moveend", () => resolve());

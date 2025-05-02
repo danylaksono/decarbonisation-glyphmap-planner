@@ -425,7 +425,7 @@ const filterManager = {
     // );
 
     // Apply filter to map component
-    mapInstance.setFilteredData("buildings", { ids: filterManager.currentIds });
+    mapInstance.setFilteredData("Buildings", { ids: filterManager.currentIds });
   }
 }
 ```
@@ -2637,12 +2637,12 @@ const mapInstance = new LeafletMap(leafletContainer, {
   `,
 });
 
-mapInstance.addLayer("buildings", getModelData, {
+mapInstance.addLayer("Buildings", getModelData, {
   clusterRadius: 50,
   fitBounds: true,
 });
 
-mapInstance.setSelectionLayer("buildings");
+mapInstance.setSelectionLayer("Buildings");
 
 mapInstance.addGeoJSONLayer("LSOA Boundary", lsoa_boundary, {
   style: {
