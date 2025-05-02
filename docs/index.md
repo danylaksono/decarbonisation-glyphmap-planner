@@ -1875,7 +1875,7 @@ const regular_geodata_withproperties = enrichGeoData(
   aggregations
 );
 
-// log("regular_geodata_withproperties_enriched", regular_geodata_withproperties);
+log("regular_geodata_withproperties_enriched", regular_geodata_withproperties);
 
 const cartogram_geodata_withproperties = enrichGeoData(
   // buildingsData,
@@ -1929,7 +1929,7 @@ const keydata = _.keyBy(
   }),
   "code"
 );
-// log(">>> Keydata", keydata);
+log(">>> Keydata", keydata);
 
 const regularGeodataLookup = _.keyBy(
   regular_geodata_withproperties.features.map((feat) => {
@@ -2126,7 +2126,7 @@ function glyphMapSpec(width = 800, height = 600) {
           ? cell.records[0].data.properties
           : cell.data; // when map_aggregate == "Building Level", use individual data
 
-        // log("cell data to draw >>>", cellData);
+        log("cell data to draw >>>", cellData);
         let timeData = cell.data[0];
         // log("timeData", timeData);
 
@@ -2156,32 +2156,35 @@ function glyphMapSpec(width = 800, height = 600) {
           ctx.stroke();
         }
 
-        // if (map_aggregate === "Building Level") {
-        //   let rg = new RadialGlyph(
-        //     glyphVariables.map((key) => cellData[key]),
-        //     glyphColours
-        //   );
-        //   rg.draw(ctx, x, y, cellSize / 2);
-        // } else if (map_aggregate === "LSOA Level") {
-        //   log;
-        //   // format config for streamgraph
-        //   let customConfig = {
-        //     upwardKeys: ["carbonSaved"],
-        //     downwardKeys: ["interventionCost"],
-        //   };
-
-        //   let tg = new StreamGraphGlyph(timeData, "year", null, customConfig);
-        //   tg.draw(ctx, x, y, cellSize / 2);
-        // }
-        // log(
-        //   "Drawn in order >>>",
-        //   glyphVariables.map((key) => cellData[key])
-        // );
-        let rg = new RadialGlyph(
-          glyphVariables.map((key) => cellData[key]),
-          glyphColours
+        log(
+          "Drawn in order >>>",
+          glyphVariables.map((key) => cellData[key])
         );
-        rg.draw(ctx, x, y, cellSize / 2);
+
+        // draw the glyph
+        if (map_aggregate === "Building Level") {
+          let rg = new RadialGlyph(
+            glyphVariables.map((key) => cellData[key]),
+            glyphColours
+          );
+          rg.draw(ctx, x, y, cellSize / 2);
+        } else if (map_aggregate === "LSOA Level") {
+          log(">>> Drawing streamgraph glyph for LSOA level data...", cellData);
+          // format config for streamgraph
+          let customConfig = {
+            upwardKeys: ["carbonSaved"],
+            downwardKeys: ["interventionCost"],
+          };
+
+          let tg = new StreamGraphGlyph(timeData, "year", null, customConfig);
+          tg.draw(ctx, x, y, cellSize / 2);
+        }
+
+        // let rg = new RadialGlyph(
+        //   glyphVariables.map((key) => cellData[key]),
+        //   glyphColours
+        // );
+        // rg.draw(ctx, x, y, cellSize / 2);
       },
 
       postDrawFn: (cells, cellSize, ctx, global, panel) => {},
@@ -2263,39 +2266,6 @@ playButton.addEventListener("click", () => {
 ```
 
 ```js
-// Morph animation logic
-{
-  // morph_factor;  // don't uncomment this - it will cause the animation to run on every slider change
-  log(">> Morph animation logic...");
-  // let playing = false; // Track play/pause state
-  // let direction = 1; // Controls the animation direction (0 to 1 or 1 to 0)
-  // let animationFrame = null; // Stores the requestAnimationFrame ID
-  // // let currentValue = 0; // Current value of the morph factor
-
-  // let currentValue = parseFloat(morphFactorInput.value); // Initialize currentValue with the slider value
-  // log("current morphing Value", currentValue);
-  // // Animation loop
-  // // animate(currentValue, animationFrame, playing, direction);
-
-  // // Button click event listener
-  // playButton.addEventListener("click", () => {
-  //   playing = !playing; // Toggle play/pause state
-  //   playButton.innerHTML = playing
-  //     ? '<i class="fas fa-pause"></i>'
-  //     : '<i class="fas fa-play"></i>';
-
-  //   if (playing) {
-  //     // Start the animation with the current slider value
-  //     // const currentValue = parseFloat(morph_factor);
-  //     requestAnimationFrame(() => animate(currentValue, animationFrame, playing, direction););
-  //   } else {
-  //     cancelAnimationFrame(animationFrame); // Stop the animation
-  //   }
-  // });
-}
-```
-
-```js
 // Trigger Morphing function
 {
   log(">> Morphing...", morph_factor);
@@ -2309,7 +2279,7 @@ playButton.addEventListener("click", () => {
         .scaleSequential(d3.interpolateBlues)
         .domain([0, d3.max(cells.map((row) => row.building_area))]);
 
-      //draw a coloured polygon
+      //draw a coloured background polygon
       ctx.beginPath();
       ctx.rect(0, 0, panel.getWidth(), panel.getHeight());
       const colour = d3.color("#fff");
