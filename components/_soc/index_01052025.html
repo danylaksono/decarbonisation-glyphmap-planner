@@ -4,241 +4,191 @@
 <title>Decarbonisation Planner | Decarbonisation Glyphmap Planner</title>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Source+Serif+Pro:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&amp;display=swap" crossorigin>
-<link rel="preload" as="style" href="./_observablehq/theme-air,near-midnight.css">
-<link rel="preload" as="style" href="./_observablehq/stdlib/inputs.css">
-<link rel="preload" as="style" href="./_npm/leaflet@1.9.4/dist/leaflet.css">
+<link rel="preload" as="style" href="../../_observablehq/theme-air,near-midnight.css">
+<link rel="preload" as="style" href="../../_observablehq/stdlib/inputs.css">
 <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css2?family=Source+Serif+Pro:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&amp;display=swap" crossorigin>
-<link rel="stylesheet" type="text/css" href="./_observablehq/theme-air,near-midnight.css">
-<link rel="stylesheet" type="text/css" href="./_observablehq/stdlib/inputs.css">
-<link rel="stylesheet" type="text/css" href="./_npm/leaflet@1.9.4/dist/leaflet.css">
-<link rel="modulepreload" href="./_observablehq/client.js">
-<link rel="modulepreload" href="./_observablehq/runtime.js">
-<link rel="modulepreload" href="./_observablehq/stdlib.js">
-<link rel="modulepreload" href="./_npm/d3-require@1.3.0/_esm.js">
-<link rel="modulepreload" href="./_node/@turf/turf@7.2.0/index.js">
-<link rel="modulepreload" href="./_npm/bulma-toast@2.4.4/_esm.js">
-<link rel="modulepreload" href="./_npm/bulma-quickview@2.0.0/dist/js/bulma-quickview.js">
-<link rel="modulepreload" href="./_import/components/libs/osgb/index.1d2476df.js">
-<link rel="modulepreload" href="./_import/components/libs/sorttable/sorterTableClass.8e3d5a18.js">
-<link rel="modulepreload" href="./_import/components/libs/gridded-glyphmaps/glyph-designs/timeGlyph.a1969fec.js">
-<link rel="modulepreload" href="./_import/components/libs/gridded-glyphmaps/glyph-designs/mirrorTimeGlyph.3bd02610.js">
-<link rel="modulepreload" href="./_import/components/libs/gridded-glyphmaps/glyph-designs/radialglyph.cbd7ddeb.js">
-<link rel="modulepreload" href="./_import/components/libs/gridded-glyphmaps/index.min.f034b425.js">
-<link rel="modulepreload" href="./_import/components/libs/decarb-model/budget-allocator.5c9a0a07.js">
-<link rel="modulepreload" href="./_import/components/libs/decarb-model/mini-decarbonisation.0633dbad.js">
-<link rel="modulepreload" href="./_import/components/libs/decarb-model/timeline.a2efe4ea.js">
-<link rel="modulepreload" href="./_import/components/libs/plots.609e0a64.js">
-<link rel="modulepreload" href="./_import/components/libs/leaflet/leaflet-map.664d329a.js">
-<link rel="modulepreload" href="./_import/components/libs/geo-morpher/morphs.6f50478d.js">
-<link rel="modulepreload" href="./_import/components/libs/helpers.0fde303e.js">
-<link rel="modulepreload" href="./_import/components/libs/logger.864b8094.js">
-<link rel="modulepreload" href="./_import/components/libs/timer.7f81ffcc.js">
-<link rel="modulepreload" href="./_import/components/libs/osgb/ellipsoid.1ac4eba6.js">
-<link rel="modulepreload" href="./_import/components/libs/sorttable/BinningService.4b441d41.js">
-<link rel="modulepreload" href="./_import/components/libs/sorttable/small_multiples.e706b098.js">
-<link rel="modulepreload" href="./_npm/d3@7.9.0/_esm.js">
-<link rel="modulepreload" href="./_node/clusterize.js@1.0.0/index.js">
-<link rel="modulepreload" href="./_import/components/libs/decarb-model/priority-queue.aea4e806.js">
-<link rel="modulepreload" href="./_npm/lodash@4.17.21/_esm.js">
-<link rel="modulepreload" href="./_import/components/libs/gridded-glyphmaps/glyph-designs/radialGlyphOverall.e15902a2.js">
-<link rel="modulepreload" href="./_import/components/libs/leaflet/basemaps.e55f05f5.js">
-<link rel="modulepreload" href="./_import/components/libs/leaflet/map-logger.28eded8b.js">
-<link rel="modulepreload" href="./_npm/leaflet@1.9.4/_esm.js">
-<link rel="modulepreload" href="./_npm/supercluster@8.0.1/_esm.js">
-<link rel="modulepreload" href="./_node/leaflet-draw@1.0.4/index.js">
-<link rel="modulepreload" href="./_node/flubber@0.4.2/index.js">
-<link rel="modulepreload" href="./_observablehq/stdlib/duckdb.js">
-<link rel="modulepreload" href="./_npm/htl@0.3.1/_esm.js">
-<link rel="modulepreload" href="./_observablehq/stdlib/inputs.js">
-<link rel="modulepreload" href="./_npm/@duckdb/duckdb-wasm@1.28.0/_esm.js">
-<link rel="modulepreload" href="./_npm/isoformat@0.2.1/_esm.js">
-<link rel="modulepreload" href="./_node/@turf/along@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/angle@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/area@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/bbox@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/bbox-clip@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/bbox-polygon@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/bearing@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/bezier-spline@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/boolean-clockwise@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/boolean-concave@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/boolean-contains@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/boolean-crosses@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/boolean-disjoint@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/boolean-equal@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/boolean-intersects@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/boolean-overlap@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/boolean-parallel@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/boolean-point-in-polygon@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/boolean-point-on-line@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/boolean-touches@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/boolean-valid@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/boolean-within@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/buffer@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/center@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/center-mean@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/center-median@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/center-of-mass@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/centroid@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/circle@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/clean-coords@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/clone@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/clusters@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/clusters-dbscan@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/clusters-kmeans@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/collect@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/combine@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/concave@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/convex@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/destination@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/difference@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/dissolve@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/distance@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/distance-weight@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/ellipse@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/envelope@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/explode@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/flatten@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/flip@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/geojson-rbush@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/great-circle@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/helpers@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/hex-grid@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/interpolate@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/intersect@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/invariant@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/isobands@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/isolines@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/kinks@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/length@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/line-arc@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/line-chunk@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/line-intersect@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/line-offset@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/line-overlap@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/line-segment@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/line-slice@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/line-slice-along@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/line-split@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/line-to-polygon@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/mask@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/meta@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/midpoint@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/moran-index@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/nearest-neighbor-analysis@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/nearest-point@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/nearest-point-on-line@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/nearest-point-to-line@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/planepoint@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/point-grid@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/point-on-feature@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/points-within-polygon@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/point-to-line-distance@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/point-to-polygon-distance@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/polygonize@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/polygon-smooth@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/polygon-tangents@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/polygon-to-line@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/projection@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/quadrat-analysis@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/random@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/rectangle-grid@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/rewind@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/rhumb-bearing@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/rhumb-destination@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/rhumb-distance@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/sample@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/sector@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/shortest-path@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/simplify@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/square@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/square-grid@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/standard-deviational-ellipse@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/tag@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/tesselate@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/tin@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/transform-rotate@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/transform-scale@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/transform-translate@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/triangle-grid@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/truncate@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/union@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/unkink-polygon@7.2.0/index.js">
-<link rel="modulepreload" href="./_node/@turf/voronoi@7.2.0/index.js">
-<link rel="modulepreload" href="./_npm/d3-array@3.2.4/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-axis@3.0.0/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-brush@3.0.0/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-chord@3.0.1/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-color@3.1.0/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-contour@4.0.2/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-delaunay@6.0.4/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-dispatch@3.0.1/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-drag@3.0.0/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-dsv@3.0.1/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-ease@3.0.1/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-fetch@3.0.1/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-force@3.0.0/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-format@3.1.0/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-geo@3.1.1/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-hierarchy@3.1.2/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-interpolate@3.0.1/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-path@3.1.0/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-polygon@3.0.1/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-quadtree@3.0.1/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-random@3.0.1/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-scale@4.0.2/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-scale-chromatic@3.1.0/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-selection@3.0.0/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-shape@3.2.0/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-time@3.1.0/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-time-format@4.1.0/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-timer@3.0.1/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-transition@3.0.1/_esm.js">
-<link rel="modulepreload" href="./_npm/d3-zoom@3.0.0/_esm.js">
-<link rel="modulepreload" href="./_npm/kdbush@4.0.2/_esm.js">
-<link rel="modulepreload" href="./_npm/apache-arrow@19.0.1/_esm.js">
-<link rel="modulepreload" href="./_node/geojson-equality-ts@1.0.2/index.js">
-<link rel="modulepreload" href="./_node/point-in-polygon-hao@1.2.4/index.js">
-<link rel="modulepreload" href="./_node/@turf/jsts@2.7.2/index.js">
-<link rel="modulepreload" href="./_node/d3-geo@1.7.1/index.js">
-<link rel="modulepreload" href="./_node/rbush@3.0.1/index.js">
-<link rel="modulepreload" href="./_node/skmeans@0.9.7/index.js">
-<link rel="modulepreload" href="./_node/topojson-client@3.1.0/index.js">
-<link rel="modulepreload" href="./_node/topojson-server@3.0.1/index.js">
-<link rel="modulepreload" href="./_node/concaveman@1.2.1/index.js">
-<link rel="modulepreload" href="./_node/polyclip-ts@0.16.8/index.js">
-<link rel="modulepreload" href="./_node/marchingsquares@1.3.3/index.js">
-<link rel="modulepreload" href="./_node/sweepline-intersections@1.5.0/index.js">
-<link rel="modulepreload" href="./_node/fast-deep-equal@3.1.3/index.js">
-<link rel="modulepreload" href="./_node/earcut@2.2.4/index.js">
-<link rel="modulepreload" href="./_node/d3-voronoi@1.1.2/index.js">
-<link rel="modulepreload" href="./_npm/internmap@2.0.3/_esm.js">
-<link rel="modulepreload" href="./_npm/delaunator@5.0.1/_esm.js">
-<link rel="modulepreload" href="./_npm/tslib@2.8.1/_esm.js">
-<link rel="modulepreload" href="./_npm/flatbuffers@24.12.23/_esm.js">
-<link rel="modulepreload" href="./_node/robust-predicates@3.0.2/index.js">
-<link rel="modulepreload" href="./_node/d3-array@1.2.4/index.js">
-<link rel="modulepreload" href="./_node/tinyqueue@2.0.3/index.js">
-<link rel="modulepreload" href="./_node/point-in-polygon@1.1.0/index.js">
-<link rel="modulepreload" href="./_node/robust-predicates@2.0.4/umd/orient2d.min.js">
-<link rel="modulepreload" href="./_node/bignumber.js@9.1.2/index.js">
-<link rel="modulepreload" href="./_node/splaytree-ts@1.0.2/index.js">
-<link rel="modulepreload" href="./_npm/robust-predicates@3.0.2/_esm.js">
-<link rel="icon" type="image/png" href="./_file/observable.1af93621.png" sizes="32x32">
+<link rel="stylesheet" type="text/css" href="../../_observablehq/theme-air,near-midnight.css">
+<link rel="stylesheet" type="text/css" href="../../_observablehq/stdlib/inputs.css">
+<link rel="modulepreload" href="../../_observablehq/client.js">
+<link rel="modulepreload" href="../../_observablehq/runtime.js">
+<link rel="modulepreload" href="../../_observablehq/stdlib.js">
+<link rel="modulepreload" href="../../_npm/d3-require@1.3.0/_esm.js">
+<link rel="modulepreload" href="../../_node/@turf/turf@7.2.0/index.js">
+<link rel="modulepreload" href="../../_npm/bulma-toast@2.4.4/_esm.js">
+<link rel="modulepreload" href="../../_npm/bulma-quickview@2.0.0/dist/js/bulma-quickview.js">
+<link rel="modulepreload" href="./components/libs/osgb/index.js">
+<link rel="modulepreload" href="./components/libs/sorttable/sorterTableClass.js">
+<link rel="modulepreload" href="./components/libs/gridded-glyphmaps/glyph-designs/timeGlyph.js">
+<link rel="modulepreload" href="./components/libs/gridded-glyphmaps/glyph-designs/mirrorTimeGlyph.js">
+<link rel="modulepreload" href="./components/libs/gridded-glyphmaps/glyph-designs/radialglyph.js">
+<link rel="modulepreload" href="./components/libs/gridded-glyphmaps/index.min.js">
+<link rel="modulepreload" href="./components/libs/decarb-model/budget-allocator.js">
+<link rel="modulepreload" href="./components/libs/decarb-model/mini-decarbonisation.js">
+<link rel="modulepreload" href="./components/libs/decarb-model/timeline.js">
+<link rel="modulepreload" href="./components/libs/plots.js">
+<link rel="modulepreload" href="./components/libs/leaflet/leaflet-map.js">
+<link rel="modulepreload" href="./components/libs/geo-morpher/morphs.js">
+<link rel="modulepreload" href="./components/libs/helpers.js">
+<link rel="modulepreload" href="./components/libs/logger.js">
+<link rel="modulepreload" href="./components/libs/timer.js">
+<link rel="modulepreload" href="../../_observablehq/stdlib/duckdb.js">
+<link rel="modulepreload" href="../../_npm/htl@0.3.1/_esm.js">
+<link rel="modulepreload" href="../../_observablehq/stdlib/inputs.js">
+<link rel="modulepreload" href="../../_npm/@duckdb/duckdb-wasm@1.28.0/_esm.js">
+<link rel="modulepreload" href="../../_npm/isoformat@0.2.1/_esm.js">
+<link rel="modulepreload" href="../../_node/@turf/along@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/angle@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/area@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/bbox@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/bbox-clip@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/bbox-polygon@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/bearing@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/bezier-spline@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/boolean-clockwise@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/boolean-concave@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/boolean-contains@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/boolean-crosses@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/boolean-disjoint@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/boolean-equal@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/boolean-intersects@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/boolean-overlap@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/boolean-parallel@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/boolean-point-in-polygon@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/boolean-point-on-line@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/boolean-touches@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/boolean-valid@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/boolean-within@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/buffer@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/center@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/center-mean@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/center-median@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/center-of-mass@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/centroid@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/circle@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/clean-coords@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/clone@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/clusters@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/clusters-dbscan@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/clusters-kmeans@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/collect@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/combine@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/concave@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/convex@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/destination@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/difference@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/dissolve@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/distance@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/distance-weight@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/ellipse@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/envelope@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/explode@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/flatten@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/flip@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/geojson-rbush@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/great-circle@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/helpers@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/hex-grid@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/interpolate@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/intersect@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/invariant@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/isobands@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/isolines@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/kinks@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/length@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/line-arc@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/line-chunk@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/line-intersect@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/line-offset@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/line-overlap@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/line-segment@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/line-slice@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/line-slice-along@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/line-split@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/line-to-polygon@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/mask@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/meta@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/midpoint@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/moran-index@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/nearest-neighbor-analysis@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/nearest-point@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/nearest-point-on-line@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/nearest-point-to-line@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/planepoint@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/point-grid@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/point-on-feature@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/points-within-polygon@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/point-to-line-distance@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/point-to-polygon-distance@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/polygonize@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/polygon-smooth@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/polygon-tangents@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/polygon-to-line@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/projection@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/quadrat-analysis@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/random@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/rectangle-grid@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/rewind@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/rhumb-bearing@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/rhumb-destination@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/rhumb-distance@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/sample@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/sector@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/shortest-path@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/simplify@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/square@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/square-grid@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/standard-deviational-ellipse@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/tag@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/tesselate@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/tin@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/transform-rotate@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/transform-scale@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/transform-translate@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/triangle-grid@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/truncate@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/union@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/unkink-polygon@7.2.0/index.js">
+<link rel="modulepreload" href="../../_node/@turf/voronoi@7.2.0/index.js">
+<link rel="modulepreload" href="../../_npm/apache-arrow@19.0.1/_esm.js">
+<link rel="modulepreload" href="../../_node/geojson-equality-ts@1.0.2/index.js">
+<link rel="modulepreload" href="../../_node/point-in-polygon-hao@1.2.4/index.js">
+<link rel="modulepreload" href="../../_node/@turf/jsts@2.7.2/index.js">
+<link rel="modulepreload" href="../../_node/d3-geo@1.7.1/index.js">
+<link rel="modulepreload" href="../../_node/rbush@3.0.1/index.js">
+<link rel="modulepreload" href="../../_node/skmeans@0.9.7/index.js">
+<link rel="modulepreload" href="../../_node/topojson-client@3.1.0/index.js">
+<link rel="modulepreload" href="../../_node/topojson-server@3.0.1/index.js">
+<link rel="modulepreload" href="../../_node/concaveman@1.2.1/index.js">
+<link rel="modulepreload" href="../../_node/polyclip-ts@0.16.8/index.js">
+<link rel="modulepreload" href="../../_node/marchingsquares@1.3.3/index.js">
+<link rel="modulepreload" href="../../_node/sweepline-intersections@1.5.0/index.js">
+<link rel="modulepreload" href="../../_node/fast-deep-equal@3.1.3/index.js">
+<link rel="modulepreload" href="../../_node/earcut@2.2.4/index.js">
+<link rel="modulepreload" href="../../_node/d3-voronoi@1.1.2/index.js">
+<link rel="modulepreload" href="../../_npm/tslib@2.8.1/_esm.js">
+<link rel="modulepreload" href="../../_npm/flatbuffers@24.12.23/_esm.js">
+<link rel="modulepreload" href="../../_node/robust-predicates@3.0.2/index.js">
+<link rel="modulepreload" href="../../_node/d3-array@1.2.4/index.js">
+<link rel="modulepreload" href="../../_node/tinyqueue@2.0.3/index.js">
+<link rel="modulepreload" href="../../_node/point-in-polygon@1.1.0/index.js">
+<link rel="modulepreload" href="../../_node/robust-predicates@2.0.4/umd/orient2d.min.js">
+<link rel="modulepreload" href="../../_node/bignumber.js@9.1.2/index.js">
+<link rel="modulepreload" href="../../_node/splaytree-ts@1.0.2/index.js">
+<link rel="icon" type="image/png" href="../../_file/observable.1af93621.png" sizes="32x32">
 <script type="module">
 
-import {define} from "./_observablehq/client.js";
-import {registerFile, FileAttachment} from "./_observablehq/stdlib.js";
-import {registerTable} from "./_observablehq/stdlib/duckdb.js";
+import {define} from "../../_observablehq/client.js";
+import {registerFile, FileAttachment} from "../../_observablehq/stdlib.js";
+import {registerTable} from "../../_observablehq/stdlib/duckdb.js";
 
-registerFile("./data/oxford_decarbonisation_data.parquet", {"name":"./data/oxford_decarbonisation_data.parquet","path":"./_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1746185041897});
-registerFile("./data/oxford_lsoa_boundary.geojson", {"name":"./data/oxford_lsoa_boundary.geojson","mimeType":"application/geo+json","path":"./_file/data/oxford_lsoa_boundary.50c731e8.geojson","lastModified":1746185041906});
-registerFile("./data/oxford_lsoas_cartogram.json", {"name":"./data/oxford_lsoas_cartogram.json","mimeType":"application/json","path":"./_file/data/oxford_lsoas_cartogram.a72fa2b8.json","lastModified":1746185041906});
-registerFile("./data/oxford_lsoas_regular.json", {"name":"./data/oxford_lsoas_regular.json","mimeType":"application/json","path":"./_file/data/oxford_lsoas_regular.e1c36e7e.json","lastModified":1746185041906});
+registerFile("./data/oxford_decarbonisation_data.parquet", {"name":"./data/oxford_decarbonisation_data.parquet","path":"./data/oxford_decarbonisation_data.parquet"});
+registerFile("./data/oxford_lsoa_boundary.geojson", {"name":"./data/oxford_lsoa_boundary.geojson","mimeType":"application/geo+json","path":"./data/oxford_lsoa_boundary.geojson"});
+registerFile("./data/oxford_lsoas_cartogram.json", {"name":"./data/oxford_lsoas_cartogram.json","mimeType":"application/json","path":"./data/oxford_lsoas_cartogram.json"});
+registerFile("./data/oxford_lsoas_regular.json", {"name":"./data/oxford_lsoas_regular.json","mimeType":"application/json","path":"./data/oxford_lsoas_regular.json"});
 registerTable("oxford", FileAttachment("./data/oxford_decarbonisation_data.parquet"));
 
 define({id: "20ebb4d5", outputs: ["d3","require","Mutable","turf","bulmaToast","bulmaQuickview","OSGB","sorterTable","TimeGlyph","GlyphCollection","StreamGraphGlyph","RadialGlyph","glyphMap","createDiscretiserValue","_drawCellBackground","BudgetAllocator","InterventionManager","MiniDecarbModel","createTimelineInterface","plotOverallTimeline","plotOverallPotential","LeafletMap","geoMorpher","inferTypes","enrichGeoData","normaliseData","insideCell","debounceInput","saveToSession","getFromSession","transformCoordinates","transformGeometry","normalisebyGroup","aggregateValues","log","warn","error","setDebugMode","startGroup","endGroup","startTimer","endTimer","perfTimings"], body: async () => {
-const [{require}, {Mutable}, turf, bulmaToast, bulmaQuickview, {OSGB}, {sorterTable}, {TimeGlyph, GlyphCollection}, {StreamGraphGlyph}, {RadialGlyph}, {glyphMap, createDiscretiserValue, _drawCellBackground}, {BudgetAllocator}, {InterventionManager, MiniDecarbModel}, {createTimelineInterface}, {plotOverallTimeline, plotOverallPotential}, {LeafletMap}, {geoMorpher}, {inferTypes, enrichGeoData, normaliseData, insideCell, debounceInput, saveToSession, getFromSession, transformCoordinates, transformGeometry, normalisebyGroup, aggregateValues}, {log, warn, error, setDebugMode, startGroup, endGroup}, {startTimer, endTimer, perfTimings}] = await Promise.all([import("./_npm/d3-require@1.3.0/_esm.js"), import("./_observablehq/stdlib.js"), import("./_node/@turf/turf@7.2.0/index.js"), import("./_npm/bulma-toast@2.4.4/_esm.js"), import("./_npm/bulma-quickview@2.0.0/dist/js/bulma-quickview.js"), import("./_import/components/libs/osgb/index.1d2476df.js"), import("./_import/components/libs/sorttable/sorterTableClass.8e3d5a18.js"), import("./_import/components/libs/gridded-glyphmaps/glyph-designs/timeGlyph.a1969fec.js"), import("./_import/components/libs/gridded-glyphmaps/glyph-designs/mirrorTimeGlyph.3bd02610.js"), import("./_import/components/libs/gridded-glyphmaps/glyph-designs/radialglyph.cbd7ddeb.js"), import("./_import/components/libs/gridded-glyphmaps/index.min.f034b425.js"), import("./_import/components/libs/decarb-model/budget-allocator.5c9a0a07.js"), import("./_import/components/libs/decarb-model/mini-decarbonisation.0633dbad.js"), import("./_import/components/libs/decarb-model/timeline.a2efe4ea.js"), import("./_import/components/libs/plots.609e0a64.js"), import("./_import/components/libs/leaflet/leaflet-map.664d329a.js"), import("./_import/components/libs/geo-morpher/morphs.6f50478d.js"), import("./_import/components/libs/helpers.0fde303e.js"), import("./_import/components/libs/logger.864b8094.js"), import("./_import/components/libs/timer.7f81ffcc.js")]);
+const [{require}, {Mutable}, turf, bulmaToast, bulmaQuickview, {OSGB}, {sorterTable}, {TimeGlyph, GlyphCollection}, {StreamGraphGlyph}, {RadialGlyph}, {glyphMap, createDiscretiserValue, _drawCellBackground}, {BudgetAllocator}, {InterventionManager, MiniDecarbModel}, {createTimelineInterface}, {plotOverallTimeline, plotOverallPotential}, {LeafletMap}, {geoMorpher}, {inferTypes, enrichGeoData, normaliseData, insideCell, debounceInput, saveToSession, getFromSession, transformCoordinates, transformGeometry, normalisebyGroup, aggregateValues}, {log, warn, error, setDebugMode, startGroup, endGroup}, {startTimer, endTimer, perfTimings}] = await Promise.all([import("../../_npm/d3-require@1.3.0/_esm.js"), import("../../_observablehq/stdlib.js"), import("../../_node/@turf/turf@7.2.0/index.js"), import("../../_npm/bulma-toast@2.4.4/_esm.js"), import("../../_npm/bulma-quickview@2.0.0/dist/js/bulma-quickview.js"), import("./components/libs/osgb/index.js"), import("./components/libs/sorttable/sorterTableClass.js"), import("./components/libs/gridded-glyphmaps/glyph-designs/timeGlyph.js"), import("./components/libs/gridded-glyphmaps/glyph-designs/mirrorTimeGlyph.js"), import("./components/libs/gridded-glyphmaps/glyph-designs/radialglyph.js"), import("./components/libs/gridded-glyphmaps/index.min.js"), import("./components/libs/decarb-model/budget-allocator.js"), import("./components/libs/decarb-model/mini-decarbonisation.js"), import("./components/libs/decarb-model/timeline.js"), import("./components/libs/plots.js"), import("./components/libs/leaflet/leaflet-map.js"), import("./components/libs/geo-morpher/morphs.js"), import("./components/libs/helpers.js"), import("./components/libs/logger.js"), import("./components/libs/timer.js")]);
 log(">> Importing libraries...");
 const d3 = require("d3", "d3-geo-projection");
 // const flubber = require("flubber@0.4");
@@ -2487,11 +2437,11 @@ return {resetState};
 <main id="observablehq-main" class="observablehq">
 <!-------- Stylesheets -------->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css">
-<link rel="stylesheet" href="./_file/styles/bulma-quickview.min.c71603a5.css">
+<link rel="stylesheet" href="./styles/bulma-quickview.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet-draw/dist/leaflet.draw.css">
-<link rel="stylesheet" href="./_file/styles/dashboard.afd23733.css">
-<link rel="icon" type="image/png" href="./_file/assets/favicon.f82dd6f9.png" sizes="32x32">
+<link rel="stylesheet" href="./styles/dashboard.css">
+<link rel="icon" type="image/png" href="./assets/favicon.png" sizes="32x32">
 <!-- ------------ Imports ------------ -->
 <div class="observablehq observablehq--block"><!--:20ebb4d5:--></div>
 <div class="observablehq observablehq--block"><!--:8b11cdf4:--></div>
