@@ -36,6 +36,7 @@ import {
 } from "./components/libs/gridded-glyphmaps/glyph-designs/timeGlyph.js";
 import { StreamGraphGlyph } from "./components/libs/gridded-glyphmaps/glyph-designs/mirrorTimeGlyph.js";
 import { RadialGlyph } from "./components/libs/gridded-glyphmaps/glyph-designs/radialglyph.js";
+import { LineChartGlyph } from "./components/libs/gridded-glyphmaps/glyph-designs/lineChartGlyph.js";
 
 import {
   glyphMap,
@@ -425,7 +426,7 @@ const filterManager = {
     // );
 
     // Apply filter to map component
-    mapInstance.setFilteredData("buildings", { ids: filterManager.currentIds });
+    mapInstance.setFilteredData("Buildings", { ids: filterManager.currentIds });
   }
 }
 ```
@@ -718,15 +719,17 @@ resetAllButton.addEventListener("click", (e) => {
 ```js
 // startTimer("grouped_intervention");
 // display(html`<p>"Grouped Intervention"</p>`);
+timeline_switch;
 const groupedData = MiniDecarbModel.group(getModelData, [
   "lsoa",
   "interventionYear",
 ]);
-// log("[DEBUG] Grouped Data: ", groupedData);
+log("[DEBUG] Grouped Data: ", groupedData);
 // endTimer("grouped_intervention");
 ```
 
 ```js
+timeline_switch;
 // display(html`<p>"Transformed Grouped Intervention"</p>`);
 const timelineDataArray = [
   "interventionCost",
@@ -736,28 +739,97 @@ const timelineDataArray = [
 
 // Pre-compute time series data for all LSOAs to optimize streamgraph rendering
 // This creates a lookup object for quick access when drawing the glyphs
-const timeSeriesLookup = {};
-if (groupedData) {
-  console.log("Pre-computing time series data for all LSOAs...");
-  Object.keys(groupedData).forEach((lsoaCode) => {
-    // Transform the time-series data once for each LSOA
-    const timeSeriesData = transformInterventionData(
-      groupedData,
-      lsoaCode,
-      timelineDataArray
-    );
 
-    // Store in the lookup for quick access
-    if (timeSeriesData && timeSeriesData.length > 0) {
-      timeSeriesLookup[lsoaCode] = timeSeriesData;
+function normaliseTimeSeriesLookup(timeSeriesLookup, keysToNormalise) {
+  const combined = [];
+
+  // Step 1: Flatten all data with LSOA tracking
+  for (const lsoa in timeSeriesLookup) {
+    const series = timeSeriesLookup[lsoa];
+    series.forEach((entry, i) => {
+      combined.push({ ...entry, _lsoa: lsoa, _index: i }); // keep track of origin
+    });
+  }
+
+  // Step 2: Normalize the combined array
+  const normalisedCombined = normaliseData(combined, keysToNormalise);
+
+  // Step 3: Rebuild timeSeriesLookup with normalized values
+  const normalisedLookup = {};
+  normalisedCombined.forEach((entry) => {
+    const { _lsoa, _index, ...rest } = entry;
+    if (!normalisedLookup[_lsoa]) {
+      normalisedLookup[_lsoa] = [];
+    }
+    normalisedLookup[_lsoa][_index] = rest;
+  });
+
+  return normalisedLookup;
+}
+
+function composeTimeseriesLookup(modelData) {
+  const timeSeriesLookup = {};
+  const timelineFields = timelineDataArray;
+
+  console.log("Pre-computing time series data for all LSOAs...");
+
+  // Step 1: Determine global min and max year
+  let globalMinYear = Infinity;
+  let globalMaxYear = -Infinity;
+
+  Object.values(modelData).forEach((lsoaData) => {
+    if (!lsoaData?.children) return;
+
+    const years = Object.keys(lsoaData.children).map(Number);
+    if (years.length > 0) {
+      const localMin = Math.min(...years);
+      const localMax = Math.max(...years);
+      globalMinYear = Math.min(globalMinYear, localMin);
+      globalMaxYear = Math.max(globalMaxYear, localMax);
     }
   });
+
+  if (!isFinite(globalMinYear) || !isFinite(globalMaxYear)) {
+    console.warn("No valid year range found in model data.");
+    return {};
+  }
+
+  const globalDuration = globalMaxYear - globalMinYear + 1;
   console.log(
-    `Time series data pre-computed for ${
+    `Using global year range ${globalMinYear}–${globalMaxYear} (${globalDuration} years)`
+  );
+
+  // Step 2: Build time series using consistent range
+  Object.keys(modelData).forEach((lsoaCode) => {
+    const timeSeriesData = transformInterventionData(
+      modelData,
+      lsoaCode,
+      timelineFields,
+      globalMinYear,
+      globalDuration
+    );
+
+    if (!timeSeriesData || timeSeriesData.length !== globalDuration) {
+      console.warn(
+        `[WARN] LSOA ${lsoaCode} returned inconsistent time series (${
+          timeSeriesData?.length ?? 0
+        } years)`
+      );
+    }
+
+    timeSeriesLookup[lsoaCode] = timeSeriesData;
+  });
+
+  console.log(
+    `✅ Time series data pre-computed for ${
       Object.keys(timeSeriesLookup).length
     } LSOAs`
   );
+
+  return timeSeriesLookup;
 }
+
+// console.log("[DEBUG] the time series data:", timeseriesLookup);
 ```
 
 ```js
@@ -769,76 +841,66 @@ function transformInterventionData(
   initialYear = null,
   duration = null
 ) {
-  // update interventions
-  let interventions = updateInterventions();
-
-  // Get the specific LSOA data
   const lsoaData = getModelData[lsoaCode];
+
   if (!lsoaData?.children) {
+    console.warn(`[SKIP] No children found for LSOA ${lsoaCode}`);
     return [];
   }
 
-  // Determine the full year range
-  let years = Object.keys(lsoaData.children).map(Number);
+  const childYears = Object.keys(lsoaData.children).map(Number);
   let minYear, maxYear;
 
-  // If initialYear and duration are provided, use them to set the range
   if (initialYear !== null && duration !== null) {
     minYear = initialYear;
     maxYear = initialYear + duration - 1;
-  } else if (years.length > 0) {
-    // Only use min/max from existing years if there are any
-    minYear = Math.min(...years);
-    maxYear = Math.max(...years);
+  } else if (childYears.length > 0) {
+    minYear = Math.min(...childYears);
+    maxYear = Math.max(...childYears);
   } else {
-    // If no intervention years and no explicit range, return empty array
+    console.warn(
+      `[SKIP] No intervention years and no range for LSOA ${lsoaCode}`
+    );
     return [];
   }
 
-  // Build a map of year to data for quick lookup
   const yearDataMap = {};
   Object.entries(lsoaData.children).forEach(([year, interventions]) => {
-    const yearData = { year: Number(year) };
-    fields.forEach((field) => {
-      yearData[field] = 0;
-    });
+    const numericYear = Number(year);
+    const yearData = { year: numericYear };
+    fields.forEach((field) => (yearData[field] = 0));
+
     interventions.forEach((intervention) => {
       if (intervention) {
         fields.forEach((field) => {
-          if (intervention[field] !== undefined) {
+          if (typeof intervention[field] === "number") {
             yearData[field] += intervention[field];
           }
         });
       }
     });
-    Object.keys(yearData).forEach((key) => {
-      if (typeof yearData[key] === "number") {
-        yearData[key] = Math.round(yearData[key] * 100) / 100;
-      }
+
+    fields.forEach((field) => {
+      yearData[field] = Math.round(yearData[field] * 100) / 100;
     });
-    yearDataMap[Number(year)] = yearData;
+
+    yearDataMap[numericYear] = yearData;
   });
 
-  // Build the complete time series, filling missing years with 0s
   const fullTimeSeries = [];
   for (let y = minYear; y <= maxYear; y++) {
     if (yearDataMap[y]) {
       fullTimeSeries.push(yearDataMap[y]);
     } else {
-      // Fill missing year with 0s
-      const emptyYear = { year: y };
-      fields.forEach((field) => {
-        emptyYear[field] = 0;
-      });
-      fullTimeSeries.push(emptyYear);
+      const empty = { year: y };
+      fields.forEach((field) => (empty[field] = 0));
+      fullTimeSeries.push(empty);
     }
   }
 
-  // Make sure the series is sorted by year
-  fullTimeSeries.sort((a, b) => a.year - b.year);
-
   return fullTimeSeries;
 }
+
 // endTimer("transform_intervention_data");
 ```
 
@@ -927,7 +989,7 @@ const techsInput = Inputs.select(
   new Map([
     ["Rooftop Solar PV", "PV"],
     ["Air Source Heat Pump", "ASHP"],
-    ["Ground SOurce Heat Pump", "GSHP"],
+    ["Ground Source Heat Pump", "GSHP"],
     ["Optimise All", "Optimise All"],
   ]),
   {
@@ -1657,51 +1719,51 @@ function processIntervention(config, buildings) {
   const stackedResults = manager.getStackedResults();
 
   // 7. Update the time series lookup with the new grouped data
-  console.log("Updating time series lookup after new intervention...");
-  const newGroupedData = MiniDecarbModel.group(stackedResults.buildings, [
-    "lsoa",
-    "interventionYear",
-  ]);
+  // console.log("Updating time series lookup after new intervention...");
+  // const newGroupedData = MiniDecarbModel.group(stackedResults.buildings, [
+  //   "lsoa",
+  //   "interventionYear",
+  // ]);
 
-  Object.keys(newGroupedData).forEach((lsoaCode) => {
-    // Try to get initialYear and duration from formattedRecaps for this LSOA
-    let initialYear = null;
-    let duration = null;
-    if (formattedRecaps && Array.isArray(formattedRecaps)) {
-      // Find the recap for this LSOA (if any)
-      const recap = formattedRecaps.find(
-        (r) => r.lsoa === lsoaCode || r.code === lsoaCode
-      );
-      if (recap) {
-        initialYear = recap.initialYear;
-        duration = recap.duration;
-        console.log(
-          `Using initialYear=${initialYear}, duration=${duration} for LSOA ${lsoaCode}`
-        );
-      } else {
-        // If no specific recap for this LSOA, try to use overall intervention details
-        // This ensures we have consistent timeline ranges across all LSOAs
-        if (formattedRecaps.length > 0) {
-          // Use the first intervention as a fallback
-          initialYear = formattedRecaps[0].initialYear;
-          duration = formattedRecaps[0].duration;
-          console.log(
-            `Using default initialYear=${initialYear}, duration=${duration} for LSOA ${lsoaCode}`
-          );
-        }
-      }
-    }
-    const timeSeriesData = transformInterventionData(
-      newGroupedData,
-      lsoaCode,
-      timelineDataArray,
-      initialYear,
-      duration
-    );
-    if (timeSeriesData && timeSeriesData.length > 0) {
-      timeSeriesLookup[lsoaCode] = timeSeriesData;
-    }
-  });
+  // Object.keys(newGroupedData).forEach((lsoaCode) => {
+  //   // Try to get initialYear and duration from formattedRecaps for this LSOA
+  //   let initialYear = null;
+  //   let duration = null;
+  //   if (formattedRecaps && Array.isArray(formattedRecaps)) {
+  //     // Find the recap for this LSOA (if any)
+  //     const recap = formattedRecaps.find(
+  //       (r) => r.lsoa === lsoaCode || r.code === lsoaCode
+  //     );
+  //     if (recap) {
+  //       initialYear = recap.initialYear;
+  //       duration = recap.duration;
+  //       console.log(
+  //         `Using initialYear=${initialYear}, duration=${duration} for LSOA ${lsoaCode}`
+  //       );
+  //     } else {
+  //       // If no specific recap for this LSOA, try to use overall intervention details
+  //       // This ensures we have consistent timeline ranges across all LSOAs
+  //       if (formattedRecaps.length > 0) {
+  //         // Use the first intervention as a fallback
+  //         initialYear = formattedRecaps[0].initialYear;
+  //         duration = formattedRecaps[0].duration;
+  //         console.log(
+  //           `Using default initialYear=${initialYear}, duration=${duration} for LSOA ${lsoaCode}`
+  //         );
+  //       }
+  //     }
+  //   }
+  //   const timeSeriesData = transformInterventionData(
+  //     newGroupedData,
+  //     lsoaCode,
+  //     timelineDataArray,
+  //     initialYear,
+  //     duration
+  //   );
+  //   if (timeSeriesData && timeSeriesData.length > 0) {
+  //     timeSeriesLookup[lsoaCode] = timeSeriesData;
+  //   }
+  // });
 
   // return the stacked results
   return {
@@ -2121,6 +2183,21 @@ const tweenWGS84Lookup = _.mapValues(flubbers, (v, k) => {
 ```
 
 ```js
+const timeSeriesLookup = groupedData
+  ? composeTimeseriesLookup(groupedData)
+  : {};
+```
+
+```js
+const normalisedTimeseriesLookup = normaliseTimeSeriesLookup(timeSeriesLookup, [
+  "interventionCost",
+  "carbonSaved",
+  "numInterventions",
+]);
+// console.log("[DEBUG] timeSeriesLookup", timeSeriesLookup);
+```
+
+```js
 // passing data for the glyphmaps
 // DATA DATA DATA
 {
@@ -2136,7 +2213,8 @@ const tweenWGS84Lookup = _.mapValues(flubbers, (v, k) => {
     } else {
       // timeline_switch == "Decarbonisation Timeline"
       // use timeline data
-      setGlyphData(timeSeriesLookup);
+      setGlyphData(normalisedTimeseriesLookup);
+      // setGlyphData(timeSeriesLookup);
     }
   }
 }
@@ -2164,181 +2242,454 @@ function valueDiscretiser(geomLookup) {
 ```js
 // log(">> Initialize the GlyphMap Specification...");
 // log("Sample x y from Data in Glyph", [data[0].x, data[0].y]);
+// function glyphMapSpec(width = 800, height = 600) {
+//   return {
+//     coordType: map_aggregate == "Building Level" ? "mercator" : "notmercator",
+//     initialBB: transformCoordinates(turf.bbox(regular_geodata)),
+//     // if map_aggregate == "Building Level", use Individual data. otherwise use Aggregated data
+//     data:
+//       map_aggregate === "Building Level"
+//         ? Object.values(getModelData)
+//         : Object.values(getGlyphData), // lsoa level
+//     // data: getGlyphData,
+//     getLocationFn: (row) =>
+//       map_aggregate === "Building Level"
+//         ? [row.x, row.y] // from individual building data
+//         : regularGeodataLookup[row.code]?.centroid, // aggregated LSOA's centroid
+//     discretisationShape: "grid",
+//     interactiveCellSize: true,
+//     interactiveZoomPan: true,
+//     mapType: "CartoPositron",
+//     cellSize: 50,
+
+//     width: width || 800,
+//     height: height || 600,
+
+//     customMap: {
+//       scaleParams: [],
+
+//       initFn: (cells, cellSize, global, panel) => {
+//         // log("initFn", cells, cellSize, global, panel);
+//       },
+
+//       preAggrFn: (cells, cellSize, global, panel) => {
+//         // log("preaggregate cells", cells);
+//       },
+
+//       aggrFn: (cell, row, weight, global, panel) => {
+//         // log("  >> Data aggregation in GlyphMap...", row);
+//         if (!cell.records) cell.records = []; //if the cell doesn't currently have a records property, make one
+//         cell.records.push(row);
+
+//         // aggregate data into cell.data
+//       },
+
+//       postAggrFn: (cells, cellSize, global, panel) => {
+//         // data normalisation
+//         // const normalData = normaliseData(cells, glyphVariables);
+
+//         // console.time("cell-data-processing");
+//         for (const cell of cells) {
+//           cell.data = {};
+
+//           if (cell.records && map_aggregate === "LSOA Level") {
+//             if (timeline_switch == "Decarbonisation Potentials") {
+//               // ### LSOA LEVEL DATA - Aggregated Glyph ###
+//               // ----------- Decarbonisation potentials -----------
+
+//               const lsoaCode = cell.records[0].code;
+
+//               if (getGlyphData && getGlyphData[lsoaCode]) {
+//                 cell.data = getGlyphData[lsoaCode];
+//                 console.log("[DEBUG] potential cell data", cell.data);
+//               }
+//             } else {
+//               // ### LSOA LEVEL DATA - Aggregated Glyph ###
+//               // ----------- Decarbonisation timeline -----------
+//               const lsoaCode = cell.records[0].code;
+
+//               // Use the pre-computed time series data if available
+//               if (getGlyphData && getGlyphData[lsoaCode]) {
+//                 cell.data = getGlyphData[lsoaCode];
+//                 console.log("[DEBUG] timeseries cell data", cell.data);
+//               } else {
+//                 // Fallback to on-the-fly computation if pre-computed data not available
+//                 // cell.data = transformInterventionData(
+//                 //   groupedData,
+//                 //   lsoaCode,
+//                 //   timelineDataArray
+//                 // );
+//                 console.log(
+//                   "[DEBUG] No timeseries data available for this cell"
+//                 );
+//               }
+//             }
+//           } else if (cell.records && map_aggregate === "Building Level") {
+//             // ### BUILDING LEVEL DATA - Gridded Glyph ###
+//             // ----------- Gridded Glyphmaps -----------
+
+//             // aggregate data for each cell
+//             cell.data = aggregateValues(cell.records, glyphVariables, "sum");
+//             console.log("[DEBUG] building level cell data", cell.data);
+//           } else {
+//             cell.data = {};
+//             log("[DEBUG] No data available for this cell");
+//           }
+//         }
+//         // console.timeEnd("cell-data-processing");
+
+//         // normalisation - for building level data only
+//         // Normalisation
+//         if (map_aggregate === "Building Level") {
+//           // log(">>> Normalisation for building level data");
+//           const dataArray = cells.map((cell) => cell.data);
+//           console.log(">>> dataArray", dataArray);
+
+//           const normalisedData = dataArray
+//             ? normaliseData(dataArray, glyphVariables)
+//             : [];
+//           // Map normalized data back to cells
+//           const normalisedCells = cells.map((cell, index) => ({
+//             ...cell,
+//             data: normalisedData[index],
+//           }));
+
+//           // Update cells with normalized data
+//           cells.forEach((cell, index) => {
+//             cell.data = normalisedData[index];
+//           });
+//           // log(">>>> cells data ", normalisedCells);
+//         }
+
+//         // Prepare cell interaction
+//         let canvas = d3.select(panel).select("canvas").node();
+//         canvas.addEventListener("click", function (evt) {
+//           //check which cell the click was in
+//           const rect = canvas.getBoundingClientRect();
+//           let x = evt.clientX - rect.left;
+//           let y = evt.clientY - rect.top;
+//           global.clickedCell = null;
+//           for (let i = 0; i < cells.length; i++)
+//             if (insideCell(cells[i], x, y)) global.clickedCell = cells[i];
+//         });
+//       },
+
+// preDrawFn: (cells, cellSize, ctx, global, panel) => {
+//   if (!cells || cells.length === 0) {
+//     console.error("No cells data available");
+//     return;
+//   }
+
+//   global.pathGenerator = d3.geoPath().context(ctx);
+//   global.colourScalePop = "#cccccc";
+//   // global.colourScalePop = d3
+//   //   .scaleSequential(d3.interpolateBlues)
+//   //   .domain([0, 1]);
+//   // .domain([0, d3.max(cells.map((row) => row.population))]);
+// },
+
+//       drawFn: (cell, x, y, cellSize, ctx, global, panel) => {
+//         const cellData = cell.records[0].data?.properties
+//           ? cell.records[0].data.properties
+//           : cell.data; // when map_aggregate == "Building Level", use individual data
+
+//         // log("cell data to draw >>>", cellData);
+//         // let timeData = cell.data[0];
+//         // log("timeData", timeData);
+
+//         // const cellData = cell.data;
+
+//         // console.log("CELLSIZE", cellSize);
+
+//         const boundary = cell.getBoundary(0);
+//         if (boundary[0] != boundary[boundary.length - 1]) {
+//           boundary.push(boundary[0]);
+//         }
+//         const boundaryFeat = turf.polygon([boundary]);
+
+//         ctx.beginPath();
+//         global.pathGenerator(boundaryFeat);
+//         ctx.fillStyle = "#efefef";
+//         // ctx.fillStyle = global.colourScalePop(cell.building_area);
+//         ctx.fill();
+
+//         ctx.lineWidth = 0.2;
+//         ctx.strokeStyle = "rgb(7, 77, 255)";
+//         ctx.stroke();
+
+//         //add contour to clicked cells
+//         if (global.clickedCell == cell) {
+//           ctx.lineWidth = 4;
+//           ctx.strokeStyle = "rgb(250,250,250)";
+//           ctx.stroke();
+//           ctx.lineWidth = 2;
+//           ctx.strokeStyle = "rgb(50,50,50)";
+//           ctx.stroke();
+//         }
+
+//         // draw the glyph
+//         if (map_aggregate === "Building Level") {
+//           // ### BUILDING LEVEL DATA - Gridded Glyph ###
+//           // ----------- Gridded Glyphmaps -----------
+//           let rg = new RadialGlyph(
+//             glyphVariables.map((key) => cellData[key]),
+//             glyphColours
+//           );
+//           rg.draw(ctx, x, y, cellSize / 2);
+//         } else if (map_aggregate === "LSOA Level") {
+//           if (timeline_switch == "Decarbonisation Potentials") {
+//             // ### LSOA LEVEL DATA - Aggregated Glyph ###
+//             // ----------- Decarbonisation potentials -----------
+
+//             // console.log("DEBUGGING POTENTIALS", cell.data, x, y, cellSize);
+
+//             // Define the specific variables for our RadialGlyph
+//             const timelineVariablesToShow = [
+//               "carbonSaved",
+//               "interventionCost",
+//               "numInterventions",
+//             ];
+
+//             // Select three colors from glyphColours for our variables
+//             // Using distinct colors for better visual differentiation
+//             const timelineGlyphColors = [
+//               "#228B22", // ForestGreen for carbonSaved
+//               "#1E90FF", // DodgerBlue for interventionCost
+//               "#FF8C00", // DarkOrange for numInterventions
+//             ];
+
+//             let rg = new RadialGlyph(
+//               timelineVariablesToShow.map((key) => cellData[key]),
+//               timelineGlyphColors
+//             );
+//             rg.draw(ctx, x, y, cellSize / 2);
+//           } else if (timeline_switch == "Decarbonisation Timeline") {
+//             // ### LSOA LEVEL DATA - Aggregated Glyph ###
+//             // ----------- Decarbonisation timeline -----------
+
+//             // Make sure we have time series data to plot
+//             if (cell.data && cell.data.length > 0) {
+//               console.log("DEBUGGING TIMESRIESS", cell.data, x, y, cellSize);
+//               // LineChartGlyph
+//               const timelineVariablesToShow = [
+//                 "numInterventions",
+//                 "interventionCost",
+//                 "carbonSaved",
+//               ];
+//               const colourMapping = {
+//                 numInterventions: "#1f77b4",
+//                 interventionCost: "#ff7f0e",
+//                 carbonSaved: "#2ca02c",
+//               };
+
+//               const lg = new LineChartGlyph(
+//                 cellData,
+//                 timelineVariablesToShow,
+//                 null,
+//                 colourMapping
+//               );
+
+//               lg.draw(ctx, x, y, 500, 500);
+//             }
+//           }
+//         }
+//       },
+
+//       postDrawFn: (cells, cellSize, ctx, global, panel) => {},
+
+//       // tooltipTextFn: (cell) => {
+//       //   if (cell) {
+//       //     log("cell on tooltip", cell.data);
+//       //     // log("cell on tooltip", cell.records[0].code);
+//       //     // setDetailOnDemand(cell.data);
+//       //     // return cell.data.ashp_total;
+//       //     return glyphVariables
+//       //       .map((key) => {
+//       //         const label = key.replace(/_/g, " ").toUpperCase();
+//       //         const value = cell.data[key].toFixed(2);
+//       //         return `<div class="tooltip-row">
+//       //           <span class="label">${label}:</span>
+//       //           <span class="value">${value}</span>
+//       //         </div>`;
+//       //       })
+//       //       .join("");
+//       //     // return `Total Building Area: ${cell.building_area.toFixed(2)} m^2`;
+//       //   } else {
+//       //     return "no data";
+//       //   }
+//       // },
+//     },
+//   };
+// }
+// display([...glyphMapSpec2()]);
+console.log("move glyphmap");
+```
+
+```js
 function glyphMapSpec(width = 800, height = 600) {
+  const config = {
+    coordType: {
+      "Building Level": "mercator",
+      "LSOA Level": "notmercator",
+    },
+    dataSource: {
+      "Building Level": () => Object.values(getModelData),
+      "LSOA Level": () => Object.values(getGlyphData),
+    },
+    locationFn: {
+      "Building Level": (row) => [row.x, row.y],
+      "LSOA Level": (row) => regularGeodataLookup[row.code]?.centroid,
+    },
+    timelineConfig: {
+      "Decarbonisation Potentials": {
+        variables: ["carbonSaved", "interventionCost", "numInterventions"],
+        colors: ["#228B22", "#1E90FF", "#FF8C00"],
+      },
+      "Decarbonisation Timeline": {
+        variables: ["numInterventions", "interventionCost", "carbonSaved"],
+        colors: {
+          numInterventions: "#1f77b4",
+          interventionCost: "#ff7f0e",
+          carbonSaved: "#2ca02c",
+        },
+      },
+    },
+  };
+
+  const getCellData = (cell, aggregateLevel, timelineSwitch) => {
+    if (!cell.records) return {};
+
+    if (aggregateLevel === "Building Level") {
+      return aggregateValues(cell.records, glyphVariables, "sum");
+    }
+
+    const lsoaCode = cell.records[0].code;
+    const glyphData = getGlyphData?.[lsoaCode];
+
+    if (!glyphData) {
+      console.log(
+        `[DEBUG] No ${timelineSwitch} data available for cell ${lsoaCode}`
+      );
+      return {};
+    }
+
+    return glyphData;
+  };
+
+  const drawGlyph = (
+    cell,
+    x,
+    y,
+    cellSize,
+    ctx,
+    aggregateLevel,
+    timelineSwitch
+  ) => {
+    const cellData = cell.records[0].data?.properties || cell.data;
+
+    if (aggregateLevel === "Building Level") {
+      const rg = new RadialGlyph(
+        glyphVariables.map((key) => cellData[key]),
+        glyphColours
+      );
+      rg.draw(ctx, x, y, cellSize / 2);
+      return;
+    }
+
+    if (timelineSwitch === "Decarbonisation Potentials") {
+      const { variables, colors } = config.timelineConfig[timelineSwitch];
+      const rg = new RadialGlyph(
+        variables.map((key) => cellData[key]),
+        colors
+      );
+      rg.draw(ctx, x, y, cellSize / 2);
+    } else if (
+      timelineSwitch === "Decarbonisation Timeline" &&
+      cell.data?.length > 0
+    ) {
+      const { variables, colors } = config.timelineConfig[timelineSwitch];
+      const lg = new LineChartGlyph(cellData, variables, null, colors);
+      lg.draw(ctx, x, y, 500, 500);
+    }
+  };
+
   return {
-    coordType: map_aggregate == "Building Level" ? "mercator" : "notmercator",
+    coordType: config.coordType[map_aggregate],
     initialBB: transformCoordinates(turf.bbox(regular_geodata)),
-    // if map_aggregate == "Building Level", use Individual data. otherwise use Aggregated data
-    data:
-      map_aggregate === "Building Level"
-        ? Object.values(getModelData)
-        : Object.values(getGlyphData), // lsoa level
-    // data: getGlyphData,
-    getLocationFn: (row) =>
-      map_aggregate == "Building Level"
-        ? [row.x, row.y] // from individual building data
-        : regularGeodataLookup[row.code]?.centroid, // aggregated LSOA's centroid
+    data: config.dataSource[map_aggregate](),
+    getLocationFn: config.locationFn[map_aggregate],
     discretisationShape: "grid",
     interactiveCellSize: true,
     interactiveZoomPan: true,
     mapType: "CartoPositron",
     cellSize: 50,
-
-    width: width || 800,
-    height: height || 600,
+    width,
+    height,
 
     customMap: {
       scaleParams: [],
 
-      initFn: (cells, cellSize, global, panel) => {
-        // log("initFn", cells, cellSize, global, panel);
-      },
+      initFn: (cells, cellSize, global, panel) => {},
 
-      preAggrFn: (cells, cellSize, global, panel) => {
-        // log("preaggregate cells", cells);
-      },
+      preAggrFn: (cells, cellSize, global, panel) => {},
 
       aggrFn: (cell, row, weight, global, panel) => {
-        // log("  >> Data aggregation in GlyphMap...", row);
-        if (!cell.records) cell.records = []; //if the cell doesn't currently have a records property, make one
+        cell.records = cell.records || [];
         cell.records.push(row);
-
-        // aggregate data into cell.data
       },
 
       postAggrFn: (cells, cellSize, global, panel) => {
-        // data normalisation
-        // const normalData = normaliseData(cells, glyphVariables);
-
-        // console.time("cell-data-processing");
         for (const cell of cells) {
-          cell.data = {};
-
-          if (cell.records && map_aggregate === "LSOA Level") {
-            if (timeline_switch == "Decarbonisation Potentials") {
-              // ### LSOA LEVEL DATA - Aggregated Glyph ###
-              // ----------- Decarbonisation potentials -----------
-
-              const lsoaCode = cell.records[0].code;
-
-              if (getGlyphData && getGlyphData[lsoaCode]) {
-                cell.data = getGlyphData[lsoaCode];
-                console.log("[DEBUG] potential cell data", cell.data);
-              }
-              console.log(
-                "[DEBUG] decarbonisation potentials cell data",
-                cell.data
-              );
-            } else {
-              // ### LSOA LEVEL DATA - Aggregated Glyph ###
-              // ----------- Decarbonisation timeline -----------
-              const lsoaCode = cell.records[0].code;
-
-              // Use the pre-computed time series data if available
-              if (timeSeriesLookup && timeSeriesLookup[lsoaCode]) {
-                cell.data = timeSeriesLookup[lsoaCode];
-                console.log("[DEBUG] timeseries cell data", cell.data);
-              } else {
-                // Fallback to on-the-fly computation if pre-computed data not available
-                cell.data = transformInterventionData(
-                  groupedData,
-                  lsoaCode,
-                  timelineDataArray
-                );
-              }
-            }
-          } else if (cell.records && map_aggregate === "Building Level") {
-            // ### BUILDING LEVEL DATA - Gridded Glyph ###
-            // ----------- Gridded Glyphmaps -----------
-
-            // aggregate data for each cell
-            cell.data = aggregateValues(cell.records, glyphVariables, "sum");
-
-            console.log("[DEBUG] building level cell data", cell.data);
-          } else {
-            cell.data = {};
-            log("[DEBUG] No data available for this cell");
-          }
+          cell.data = getCellData(cell, map_aggregate, timeline_switch);
         }
-        // console.timeEnd("cell-data-processing");
 
-        // normalisation - for building level data only
-        // Normalisation
         if (map_aggregate === "Building Level") {
-          // log(">>> Normalisation for building level data");
           const dataArray = cells.map((cell) => cell.data);
-          console.log(">>> dataArray", dataArray);
-
           const normalisedData = dataArray
             ? normaliseData(dataArray, glyphVariables)
             : [];
-          // Map normalized data back to cells
-          const normalisedCells = cells.map((cell, index) => ({
-            ...cell,
-            data: normalisedData[index],
-          }));
-
-          // Update cells with normalized data
           cells.forEach((cell, index) => {
             cell.data = normalisedData[index];
           });
-          // log(">>>> cells data ", normalisedCells);
         }
 
-        // Prepare cell interaction
-        let canvas = d3.select(panel).select("canvas").node();
+        const canvas = d3.select(panel).select("canvas").node();
         canvas.addEventListener("click", function (evt) {
-          //check which cell the click was in
           const rect = canvas.getBoundingClientRect();
-          let x = evt.clientX - rect.left;
-          let y = evt.clientY - rect.top;
-          global.clickedCell = null;
-          for (let i = 0; i < cells.length; i++)
-            if (insideCell(cells[i], x, y)) global.clickedCell = cells[i];
+          const x = evt.clientX - rect.left;
+          const y = evt.clientY - rect.top;
+          global.clickedCell =
+            cells.find((cell) => insideCell(cell, x, y)) || null;
         });
       },
 
       preDrawFn: (cells, cellSize, ctx, global, panel) => {
-        if (!cells || cells.length === 0) {
+        if (!cells?.length) {
           console.error("No cells data available");
           return;
         }
 
         global.pathGenerator = d3.geoPath().context(ctx);
         global.colourScalePop = "#cccccc";
-        // global.colourScalePop = d3
-        //   .scaleSequential(d3.interpolateBlues)
-        //   .domain([0, 1]);
-        // .domain([0, d3.max(cells.map((row) => row.population))]);
       },
 
       drawFn: (cell, x, y, cellSize, ctx, global, panel) => {
-        const cellData = cell.records[0].data?.properties
-          ? cell.records[0].data.properties
-          : cell.data; // when map_aggregate == "Building Level", use individual data
-
-        // log("cell data to draw >>>", cellData);
-        let timeData = cell.data[0];
-        // log("timeData", timeData);
-
         const boundary = cell.getBoundary(0);
-        if (boundary[0] != boundary[boundary.length - 1]) {
+        if (boundary[0] !== boundary[boundary.length - 1]) {
           boundary.push(boundary[0]);
         }
-        const boundaryFeat = turf.polygon([boundary]);
 
+        const boundaryFeat = turf.polygon([boundary]);
         ctx.beginPath();
         global.pathGenerator(boundaryFeat);
         ctx.fillStyle = "#efefef";
-        // ctx.fillStyle = global.colourScalePop(cell.building_area);
         ctx.fill();
 
         ctx.lineWidth = 0.2;
         ctx.strokeStyle = "rgb(7, 77, 255)";
         ctx.stroke();
 
-        //add contour to clicked cells
-        if (global.clickedCell == cell) {
+        if (global.clickedCell === cell) {
           ctx.lineWidth = 4;
           ctx.strokeStyle = "rgb(250,250,250)";
           ctx.stroke();
@@ -2347,109 +2698,13 @@ function glyphMapSpec(width = 800, height = 600) {
           ctx.stroke();
         }
 
-        // log(
-        //   "Drawn in order >>>",
-        //   glyphVariables.map((key) => cellData[key])
-        // );
-
-        // draw the glyph
-        if (map_aggregate === "Building Level") {
-          // ### BUILDING LEVEL DATA - Gridded Glyph ###
-          // ----------- Gridded Glyphmaps -----------
-          let rg = new RadialGlyph(
-            glyphVariables.map((key) => cellData[key]),
-            glyphColours
-          );
-          rg.draw(ctx, x, y, cellSize / 2);
-        } else if (map_aggregate === "LSOA Level") {
-          if (timeline_switch == "Decarbonisation Potentials") {
-            // ### LSOA LEVEL DATA - Aggregated Glyph ###
-            // ----------- Decarbonisation potentials -----------
-            // Define the specific variables for our RadialGlyph
-            const timelineVariablesToShow = [
-              "carbonSaved",
-              "interventionCost",
-              "numInterventions",
-            ];
-
-            // Select three colors from glyphColours for our variables
-            // Using distinct colors for better visual differentiation
-            const timelineGlyphColors = [
-              "#228B22", // ForestGreen for carbonSaved
-              "#1E90FF", // DodgerBlue for interventionCost
-              "#FF8C00", // DarkOrange for numInterventions
-            ];
-
-            let rg = new RadialGlyph(
-              timelineVariablesToShow.map((key) => cellData[key]),
-              timelineGlyphColors
-            );
-            rg.draw(ctx, x, y, cellSize / 2);
-          } else {
-            // ### LSOA LEVEL DATA - Aggregated Glyph ###
-            // ----------- Decarbonisation timeline -----------
-            // Set up StreamGraphGlyph configuration
-            let customConfig = {
-              upwardKeys: ["carbonSaved"],
-              downwardKeys: ["interventionCost"],
-            };
-
-            // Make sure we have time series data to plot
-            if (cell.data && cell.data.length > 0) {
-              let tg = new StreamGraphGlyph(
-                cell.data,
-                "year",
-                null,
-                customConfig
-              );
-              tg.draw(ctx, x, y, cellSize / 2);
-            } else {
-              // Draw empty placeholder if no time data available
-              ctx.beginPath();
-              ctx.arc(x, y, cellSize / 4, 0, 2 * Math.PI);
-              ctx.fillStyle = "#eeeeee";
-              ctx.fill();
-              ctx.strokeStyle = "#cccccc";
-              ctx.stroke();
-              ctx.closePath();
-            }
-          }
-        }
-
-        // let rg = new RadialGlyph(
-        //   glyphVariables.map((key) => cellData[key]),
-        //   glyphColours
-        // );
-        // rg.draw(ctx, x, y, cellSize / 2);
+        drawGlyph(cell, x, y, cellSize, ctx, map_aggregate, timeline_switch);
       },
 
       postDrawFn: (cells, cellSize, ctx, global, panel) => {},
-
-      // tooltipTextFn: (cell) => {
-      //   if (cell) {
-      //     log("cell on tooltip", cell.data);
-      //     // log("cell on tooltip", cell.records[0].code);
-      //     // setDetailOnDemand(cell.data);
-      //     // return cell.data.ashp_total;
-      //     return glyphVariables
-      //       .map((key) => {
-      //         const label = key.replace(/_/g, " ").toUpperCase();
-      //         const value = cell.data[key].toFixed(2);
-      //         return `<div class="tooltip-row">
-      //           <span class="label">${label}:</span>
-      //           <span class="value">${value}</span>
-      //         </div>`;
-      //       })
-      //       .join("");
-      //     // return `Total Building Area: ${cell.building_area.toFixed(2)} m^2`;
-      //   } else {
-      //     return "no data";
-      //   }
-      // },
     },
   };
 }
-// display([...glyphMapSpec2()]);
 ```
 
 <!-- morph animation logic -->
@@ -2637,12 +2892,12 @@ const mapInstance = new LeafletMap(leafletContainer, {
   `,
 });
 
-mapInstance.addLayer("buildings", getModelData, {
+mapInstance.addLayer("Buildings", getModelData, {
   clusterRadius: 50,
   fitBounds: true,
 });
 
-mapInstance.setSelectionLayer("buildings");
+mapInstance.setSelectionLayer("Buildings");
 
 mapInstance.addGeoJSONLayer("LSOA Boundary", lsoa_boundary, {
   style: {
