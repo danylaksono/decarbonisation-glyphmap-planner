@@ -36,6 +36,7 @@ import {
 } from "./components/libs/gridded-glyphmaps/glyph-designs/timeGlyph.js";
 import { StreamGraphGlyph } from "./components/libs/gridded-glyphmaps/glyph-designs/mirrorTimeGlyph.js";
 import { RadialGlyph } from "./components/libs/gridded-glyphmaps/glyph-designs/radialglyph.js";
+import { LineChartGlyph } from "./components/libs/gridded-glyphmaps/glyph-designs/lineChartGlyph.js";
 
 import {
   glyphMap,
@@ -738,6 +739,33 @@ const timelineDataArray = [
 
 // Pre-compute time series data for all LSOAs to optimize streamgraph rendering
 // This creates a lookup object for quick access when drawing the glyphs
+
+function normaliseTimeSeriesLookup(timeSeriesLookup, keysToNormalise) {
+  const combined = [];
+
+  // Step 1: Flatten all data with LSOA tracking
+  for (const lsoa in timeSeriesLookup) {
+    const series = timeSeriesLookup[lsoa];
+    series.forEach((entry, i) => {
+      combined.push({ ...entry, _lsoa: lsoa, _index: i }); // keep track of origin
+    });
+  }
+
+  // Step 2: Normalize the combined array
+  const normalisedCombined = normaliseData(combined, keysToNormalise);
+
+  // Step 3: Rebuild timeSeriesLookup with normalized values
+  const normalisedLookup = {};
+  normalisedCombined.forEach((entry) => {
+    const { _lsoa, _index, ...rest } = entry;
+    if (!normalisedLookup[_lsoa]) {
+      normalisedLookup[_lsoa] = [];
+    }
+    normalisedLookup[_lsoa][_index] = rest;
+  });
+
+  return normalisedLookup;
+}
 
 function composeTimeseriesLookup(modelData) {
   const timeSeriesLookup = {};
@@ -2155,8 +2183,18 @@ const tweenWGS84Lookup = _.mapValues(flubbers, (v, k) => {
 ```
 
 ```js
-const timeSeriesLookup = composeTimeseriesLookup(groupedData);
-console.log("[DEBUG] timeSeriesLookup", timeSeriesLookup);
+const timeSeriesLookup = groupedData
+  ? composeTimeseriesLookup(groupedData)
+  : {};
+```
+
+```js
+const normalisedTimeseriesLookup = normaliseTimeSeriesLookup(timeSeriesLookup, [
+  "interventionCost",
+  "carbonSaved",
+  "numInterventions",
+]);
+// console.log("[DEBUG] timeSeriesLookup", timeSeriesLookup);
 ```
 
 ```js
@@ -2175,7 +2213,8 @@ console.log("[DEBUG] timeSeriesLookup", timeSeriesLookup);
     } else {
       // timeline_switch == "Decarbonisation Timeline"
       // use timeline data
-      setGlyphData(timeSeriesLookup);
+      setGlyphData(normalisedTimeseriesLookup);
+      // setGlyphData(timeSeriesLookup);
     }
   }
 }
@@ -2214,7 +2253,7 @@ function glyphMapSpec(width = 800, height = 600) {
         : Object.values(getGlyphData), // lsoa level
     // data: getGlyphData,
     getLocationFn: (row) =>
-      map_aggregate == "Building Level"
+      map_aggregate === "Building Level"
         ? [row.x, row.y] // from individual building data
         : regularGeodataLookup[row.code]?.centroid, // aggregated LSOA's centroid
     discretisationShape: "grid",
@@ -2264,25 +2303,24 @@ function glyphMapSpec(width = 800, height = 600) {
                 cell.data = getGlyphData[lsoaCode];
                 console.log("[DEBUG] potential cell data", cell.data);
               }
-              console.log(
-                "[DEBUG] decarbonisation potentials cell data",
-                cell.data
-              );
             } else {
               // ### LSOA LEVEL DATA - Aggregated Glyph ###
               // ----------- Decarbonisation timeline -----------
               const lsoaCode = cell.records[0].code;
 
               // Use the pre-computed time series data if available
-              if (timeSeriesLookup && timeSeriesLookup[lsoaCode]) {
-                cell.data = timeSeriesLookup[lsoaCode];
+              if (getGlyphData && getGlyphData[lsoaCode]) {
+                cell.data = getGlyphData[lsoaCode];
                 console.log("[DEBUG] timeseries cell data", cell.data);
               } else {
                 // Fallback to on-the-fly computation if pre-computed data not available
-                cell.data = transformInterventionData(
-                  groupedData,
-                  lsoaCode,
-                  timelineDataArray
+                // cell.data = transformInterventionData(
+                //   groupedData,
+                //   lsoaCode,
+                //   timelineDataArray
+                // );
+                console.log(
+                  "[DEBUG] No timeseries data available for this cell"
                 );
               }
             }
@@ -2292,7 +2330,6 @@ function glyphMapSpec(width = 800, height = 600) {
 
             // aggregate data for each cell
             cell.data = aggregateValues(cell.records, glyphVariables, "sum");
-
             console.log("[DEBUG] building level cell data", cell.data);
           } else {
             cell.data = {};
@@ -2357,8 +2394,12 @@ function glyphMapSpec(width = 800, height = 600) {
           : cell.data; // when map_aggregate == "Building Level", use individual data
 
         // log("cell data to draw >>>", cellData);
-        let timeData = cell.data[0];
+        // let timeData = cell.data[0];
         // log("timeData", timeData);
+
+        // const cellData = cell.data;
+
+        // console.log("CELLSIZE", cellSize);
 
         const boundary = cell.getBoundary(0);
         if (boundary[0] != boundary[boundary.length - 1]) {
@@ -2386,11 +2427,6 @@ function glyphMapSpec(width = 800, height = 600) {
           ctx.stroke();
         }
 
-        // log(
-        //   "Drawn in order >>>",
-        //   glyphVariables.map((key) => cellData[key])
-        // );
-
         // draw the glyph
         if (map_aggregate === "Building Level") {
           // ### BUILDING LEVEL DATA - Gridded Glyph ###
@@ -2404,6 +2440,9 @@ function glyphMapSpec(width = 800, height = 600) {
           if (timeline_switch == "Decarbonisation Potentials") {
             // ### LSOA LEVEL DATA - Aggregated Glyph ###
             // ----------- Decarbonisation potentials -----------
+
+            // console.log("DEBUGGING POTENTIALS", cell.data, x, y, cellSize);
+
             // Define the specific variables for our RadialGlyph
             const timelineVariablesToShow = [
               "carbonSaved",
@@ -2424,33 +2463,33 @@ function glyphMapSpec(width = 800, height = 600) {
               timelineGlyphColors
             );
             rg.draw(ctx, x, y, cellSize / 2);
-          } else {
+          } else if (timeline_switch == "Decarbonisation Timeline") {
             // ### LSOA LEVEL DATA - Aggregated Glyph ###
             // ----------- Decarbonisation timeline -----------
-            // Set up StreamGraphGlyph configuration
-            let customConfig = {
-              upwardKeys: ["carbonSaved"],
-              downwardKeys: ["interventionCost"],
-            };
 
             // Make sure we have time series data to plot
             if (cell.data && cell.data.length > 0) {
-              let tg = new StreamGraphGlyph(
-                cell.data,
-                "year",
+              console.log("DEBUGGING TIMESRIESS", cell.data, x, y, cellSize);
+              // LineChartGlyph
+              const timelineVariablesToShow = [
+                "numInterventions",
+                "interventionCost",
+                "carbonSaved",
+              ];
+              const colourMapping = {
+                numInterventions: "#1f77b4",
+                interventionCost: "#ff7f0e",
+                carbonSaved: "#2ca02c",
+              };
+
+              const lg = new LineChartGlyph(
+                cellData,
+                timelineVariablesToShow,
                 null,
-                customConfig
+                colourMapping
               );
-              tg.draw(ctx, x, y, cellSize / 2);
-            } else {
-              // Draw empty placeholder if no time data available
-              ctx.beginPath();
-              ctx.arc(x, y, cellSize / 4, 0, 2 * Math.PI);
-              ctx.fillStyle = "#eeeeee";
-              ctx.fill();
-              ctx.strokeStyle = "#cccccc";
-              ctx.stroke();
-              ctx.closePath();
+
+              lg.draw(ctx, x, y, 500, 500);
             }
           }
         }

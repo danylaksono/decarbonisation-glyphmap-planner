@@ -1,7 +1,9 @@
 import * as d3 from "npm:d3";
 import { OSGB } from "./osgb/index.js";
+import { log, warn, error, setDebugMode } from "./logger.js";
 
 const proj = new OSGB();
+setDebugMode(false);
 
 export function getNumericBudget(value) {
   // Remove commas and parse the value as a number
@@ -17,6 +19,7 @@ export function getNumericBudget(value) {
  */
 export function inferTypes(data) {
   if (!Array.isArray(data) || data.length === 0) {
+    error("Input data should be a non-empty array");
     throw new Error("Input data should be a non-empty array");
   }
 
@@ -72,26 +75,26 @@ export const enrichGeoData = function (
   aggregations = {},
   normalize = true // Flag to enable or disable normalisation
 ) {
-  console.log("enrichGeoData: Starting data enrichment process");
+  log("enrichGeoData: Starting data enrichment process");
 
   // Input validation
   if (!Array.isArray(buildingData)) {
-    console.error("enrichGeoData: buildingData is not an array");
+    error("enrichGeoData: buildingData is not an array");
     return geoJSON;
   }
 
   if (!buildingData.length) {
-    console.warn("enrichGeoData: buildingData is empty");
+    warn("enrichGeoData: buildingData is empty");
     return geoJSON;
   }
 
   if (!geoJSON || !geoJSON.features || !Array.isArray(geoJSON.features)) {
-    console.error("enrichGeoData: Invalid geoJSON structure");
+    error("enrichGeoData: Invalid geoJSON structure");
     return geoJSON || { type: "FeatureCollection", features: [] };
   }
 
   if (typeof joinColumn !== "string" || typeof geoJSONJoinColumn !== "string") {
-    console.error(
+    error(
       `enrichGeoData: Invalid join columns. Using defaults. Got joinColumn=${joinColumn}, geoJSONJoinColumn=${geoJSONJoinColumn}`
     );
     joinColumn = "lsoa_code";
@@ -99,21 +102,19 @@ export const enrichGeoData = function (
   }
 
   if (typeof aggregations !== "object") {
-    console.error("enrichGeoData: Invalid aggregations object");
+    error("enrichGeoData: Invalid aggregations object");
     aggregations = {};
   }
 
   // Check if any building has the join column
   const hasJoinColumn = buildingData.some((item) => item && item[joinColumn]);
   if (!hasJoinColumn) {
-    console.error(
-      `enrichGeoData: No buildings found with join column "${joinColumn}"`
-    );
+    error(`enrichGeoData: No buildings found with join column "${joinColumn}"`);
     return geoJSON;
   }
 
   // 1. Group building data by join column
-  console.log(`enrichGeoData: Grouping buildings by "${joinColumn}"`);
+  log(`enrichGeoData: Grouping buildings by "${joinColumn}"`);
   const groupedData = buildingData.reduce((acc, item) => {
     if (!item) return acc; // Skip null items
 
@@ -121,7 +122,7 @@ export const enrichGeoData = function (
     if (!code) {
       // Debug info for missing join values
       if (item.id || item.building_id) {
-        console.debug(
+        log(
           `enrichGeoData: Building ${
             item.id || item.building_id
           } missing join value for "${joinColumn}"`
@@ -136,19 +137,17 @@ export const enrichGeoData = function (
   }, {});
 
   const groupCount = Object.keys(groupedData).length;
-  console.log(
+  log(
     `enrichGeoData: Created ${groupCount} groups from ${buildingData.length} buildings`
   );
 
   if (groupCount === 0) {
-    console.warn(
-      "enrichGeoData: No valid groups created. Check join column values."
-    );
+    warn("enrichGeoData: No valid groups created. Check join column values.");
     return geoJSON;
   }
 
   // 2. Aggregate building data for each group
-  console.log("enrichGeoData: Aggregating building data");
+  log("enrichGeoData: Aggregating building data");
   const aggregatedData = {};
   const skippedAggregations = [];
 
@@ -169,7 +168,7 @@ export const enrichGeoData = function (
       const values = buildings.map((b) => b[column]).filter((v) => v != null); // Remove null/undefined values
 
       if (values.length === 0) {
-        console.debug(
+        log(
           `enrichGeoData: No valid values for column "${column}" in area "${code}"`
         );
         continue;
@@ -180,7 +179,7 @@ export const enrichGeoData = function (
           const sum = values.reduce((a, b) => {
             const numValue = Number(b);
             if (isNaN(numValue)) {
-              console.warn(
+              warn(
                 `enrichGeoData: Non-numeric value "${b}" found in column "${column}"`
               );
               return a;
@@ -214,32 +213,29 @@ export const enrichGeoData = function (
             aggregatedData[code][column] = values.length;
           }
         } else {
-          console.warn(
+          warn(
             `enrichGeoData: Unsupported aggregation type "${aggregationType}" for column "${column}"`
           );
         }
       } catch (error) {
-        console.error(
-          `enrichGeoData: Error aggregating column "${column}":`,
-          error
-        );
+        error(`enrichGeoData: Error aggregating column "${column}":`, error);
         // Continue processing other columns
       }
     }
   }
 
   if (skippedAggregations.length > 0) {
-    console.warn(
-      `enrichGeoData: Skipped aggregations for non-existent columns: ${skippedAggregations.join(
-        ", "
-      )}`
-    );
+    // console.warn(
+    //   `enrichGeoData: Skipped aggregations for non-existent columns: ${skippedAggregations.join(
+    //     ", "
+    //   )}`
+    // );
   }
 
   // 3. Normalize aggregated data if enabled
   let normalizedAggregatedData = aggregatedData;
   if (normalize) {
-    console.log("enrichGeoData: Normalizing aggregated data");
+    log("enrichGeoData: Normalizing aggregated data");
     try {
       // Flatten aggregatedData to prepare it for normalization
       const flattenedData = Object.entries(aggregatedData).map(
@@ -250,11 +246,11 @@ export const enrichGeoData = function (
       );
 
       if (flattenedData.length === 0) {
-        console.warn("enrichGeoData: No data to normalize");
+        warn("enrichGeoData: No data to normalize");
       } else {
         // Determine numeric keys for normalization
         const numericKeys = getNumericKeys(flattenedData);
-        console.log(
+        log(
           `enrichGeoData: Found ${numericKeys.length} numeric columns to normalize`
         );
 
@@ -268,15 +264,15 @@ export const enrichGeoData = function (
           return acc;
         }, {});
       }
-    } catch (error) {
-      console.error("enrichGeoData: Error during normalization:", error);
+    } catch (err) {
+      error("enrichGeoData: Error during normalization:", err);
       // Fall back to unnormalized data
       normalizedAggregatedData = aggregatedData;
     }
   }
 
   // 4. Create new GeoJSON with merged and normalized data
-  console.log("enrichGeoData: Merging data with GeoJSON");
+  log("enrichGeoData: Merging data with GeoJSON");
   let matchCount = 0;
   let missingMatches = [];
 
@@ -284,13 +280,13 @@ export const enrichGeoData = function (
     ...geoJSON,
     features: geoJSON.features.map((feature) => {
       if (!feature || !feature.properties) {
-        console.warn("enrichGeoData: Found feature without properties");
+        warn("enrichGeoData: Found feature without properties");
         return feature;
       }
 
       const joinValue = feature.properties[geoJSONJoinColumn];
       if (!joinValue) {
-        console.debug(
+        log(
           `enrichGeoData: Feature missing join value for "${geoJSONJoinColumn}"`
         );
         return feature;
@@ -313,17 +309,15 @@ export const enrichGeoData = function (
     }),
   };
 
-  console.log(
+  log(
     `enrichGeoData: Matched data for ${matchCount} out of ${geoJSON.features.length} features`
   );
   if (missingMatches.length > 0) {
-    console.warn(
+    warn(
       `enrichGeoData: No matching data for ${missingMatches.length} features`
     );
     if (missingMatches.length < 10) {
-      console.debug(
-        `enrichGeoData: Missing matches for: ${missingMatches.join(", ")}`
-      );
+      log(`enrichGeoData: Missing matches for: ${missingMatches.join(", ")}`);
     }
   }
 
@@ -544,11 +538,11 @@ export function getFromSession(key, defaultValue = null) {
     try {
       return JSON.parse(item);
     } catch (parseError) {
-      console.warn("Failed to parse stored data:", parseError);
+      warn("Failed to parse stored data:", parseError);
       return defaultValue;
     }
   } catch (error) {
-    console.error("Failed to read from session:", error);
+    error("Failed to read from session:", error);
     return defaultValue;
   }
 }
@@ -662,7 +656,7 @@ export function applyTransformationToShapes(geographicShapes) {
 export function normaliseData(data, keysToNormalise) {
   if (!Array.isArray(data) || data.length === 0) {
     // throw new Error("Data must be a non-empty array.");
-    console.warn("Data must be a non-empty array.");
+    warn("Data must be a non-empty array.");
     return data; // Return original data if empty
   }
 
