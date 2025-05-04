@@ -1159,7 +1159,8 @@ const timelineSwitchInput = Inputs.radio(
   ["Decarbonisation Potentials", "Decarbonisation Timeline"],
   {
     label: "Show Data",
-    value: "Decarbonisation Potentials",
+    // value: "Decarbonisation Potentials",
+    value: "Decarbonisation Timeline",
   }
 );
 const timeline_switch = Generators.input(timelineSwitchInput);
@@ -2604,12 +2605,23 @@ function glyphMapSpec(width = 800, height = 600) {
       );
       rg.draw(ctx, x, y, cellSize / 2);
     } else if (
-      timelineSwitch === "Decarbonisation Timeline" &&
-      cell.data?.length > 0
+      timelineSwitch === "Decarbonisation Timeline"
+      // &&
+      // cell.data?.length > 0
     ) {
-      const { variables, colors } = config.timelineConfig[timelineSwitch];
-      const lg = new LineChartGlyph(cellData, variables, null, colors);
-      lg.draw(ctx, x, y, 500, 500);
+      // draw simple circle for debugging
+      ctx.beginPath();
+      ctx.arc(x, y, cellSize / 2, 0, 2 * Math.PI);
+      ctx.fillStyle = "#ff1a1ade";
+      ctx.fill();
+      ctx.lineWidth = 0.2;
+      ctx.strokeStyle = "rgb(7, 77, 255)";
+      ctx.stroke();
+      ctx.closePath();
+
+      // const { variables, colors } = config.timelineConfig[timelineSwitch];
+      // const lg = new LineChartGlyph(cellData, variables, null, colors);
+      // lg.draw(ctx, x, y, 500, 500);
     }
   };
 
@@ -2629,7 +2641,10 @@ function glyphMapSpec(width = 800, height = 600) {
     customMap: {
       scaleParams: [],
 
-      initFn: (cells, cellSize, global, panel) => {},
+      initFn: (cells, cellSize, global, panel) => {
+        // console.log("initFn global", cells, cellSize, global, panel);
+        console.log("initFn global", global);
+      },
 
       preAggrFn: (cells, cellSize, global, panel) => {},
 
@@ -2678,6 +2693,8 @@ function glyphMapSpec(width = 800, height = 600) {
         if (boundary[0] !== boundary[boundary.length - 1]) {
           boundary.push(boundary[0]);
         }
+
+        console.log("drawFn boundary", boundary);
 
         const boundaryFeat = turf.polygon([boundary]);
         ctx.beginPath();
@@ -2766,9 +2783,10 @@ playButton.addEventListener("click", () => {
     preDrawFn: (cells, cellSize, ctx, global, panel) => {
       //unfortunately need to repeat what's in the base
       global.pathGenerator = d3.geoPath().context(ctx);
-      global.colourScalePop = d3
-        .scaleSequential(d3.interpolateBlues)
-        .domain([0, d3.max(cells.map((row) => row.building_area))]);
+      // global.colourScalePop = d3
+      //   .scaleSequential(d3.interpolateBlues)
+      //   .domain([0, d3.max(cells.map((row) => row.building_area))]);
+      global.colourScalePop = "#cccccc";
 
       //draw a coloured background polygon
       ctx.beginPath();
@@ -2809,25 +2827,20 @@ const glyphMapSpecWgs84 = {
 ```
 
 ```js
-function createGlyphMap(map_aggregate, width, height) {
-  // log(width, height);
-  if (map_aggregate == "Building Level") {
-    if (toggle_grids) {
-      return glyphMap({
-        ...glyphMapSpec(width, height),
-      });
-    } else {
-      return createLeafletMap(width, height).leafletContainer;
-    }
-  } else if (map_aggregate == "LSOA Level") {
-    return morphGlyphMap;
-  } else if (map_aggregate == "LA Level") {
-    if (timeline_switch == "Decarbonisation Potentials") {
-      return plotOverallPotential(glyphData, glyphColours, glyphVariables);
-    } else {
-      return plotOverallTimeline(yearlySummaryArray);
-      // return plotDualChartPanel(yearlySummaryArray);
-    }
+function createGlyphMap(mapAggregate, width, height) {
+  switch (mapAggregate) {
+    case "Building Level":
+      return toggle_grids
+        ? glyphMap({ ...glyphMapSpec(width, height) })
+        : createLeafletMap(width, height).leafletContainer;
+    case "LSOA Level":
+      return morphGlyphMap;
+    case "LA Level":
+      return timeline_switch === "Decarbonisation Potentials"
+        ? plotOverallPotential(glyphData, glyphColours, glyphVariables)
+        : plotOverallTimeline(yearlySummaryArray);
+    default:
+      return null;
   }
 }
 ```
