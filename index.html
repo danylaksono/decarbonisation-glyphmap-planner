@@ -232,10 +232,10 @@ import {define} from "./_observablehq/client.js";
 import {registerFile, FileAttachment} from "./_observablehq/stdlib.js";
 import {registerTable} from "./_observablehq/stdlib/duckdb.js";
 
-registerFile("./data/oxford_decarbonisation_data.parquet", {"name":"./data/oxford_decarbonisation_data.parquet","path":"./_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1746256321574});
-registerFile("./data/oxford_lsoa_boundary.geojson", {"name":"./data/oxford_lsoa_boundary.geojson","mimeType":"application/geo+json","path":"./_file/data/oxford_lsoa_boundary.50c731e8.geojson","lastModified":1746256321587});
-registerFile("./data/oxford_lsoas_cartogram.json", {"name":"./data/oxford_lsoas_cartogram.json","mimeType":"application/json","path":"./_file/data/oxford_lsoas_cartogram.a72fa2b8.json","lastModified":1746256321587});
-registerFile("./data/oxford_lsoas_regular.json", {"name":"./data/oxford_lsoas_regular.json","mimeType":"application/json","path":"./_file/data/oxford_lsoas_regular.e1c36e7e.json","lastModified":1746256321587});
+registerFile("./data/oxford_decarbonisation_data.parquet", {"name":"./data/oxford_decarbonisation_data.parquet","path":"./_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1746415918187});
+registerFile("./data/oxford_lsoa_boundary.geojson", {"name":"./data/oxford_lsoa_boundary.geojson","mimeType":"application/geo+json","path":"./_file/data/oxford_lsoa_boundary.50c731e8.geojson","lastModified":1746415918197});
+registerFile("./data/oxford_lsoas_cartogram.json", {"name":"./data/oxford_lsoas_cartogram.json","mimeType":"application/json","path":"./_file/data/oxford_lsoas_cartogram.a72fa2b8.json","lastModified":1746415918197});
+registerFile("./data/oxford_lsoas_regular.json", {"name":"./data/oxford_lsoas_regular.json","mimeType":"application/json","path":"./_file/data/oxford_lsoas_regular.e1c36e7e.json","lastModified":1746415918197});
 registerTable("oxford", FileAttachment("./data/oxford_decarbonisation_data.parquet"));
 
 define({id: "dfc31cd4", outputs: ["d3","flubber","require","Mutable","turf","bulmaToast","bulmaQuickview","OSGB","sorterTable","TimeGlyph","GlyphCollection","StreamGraphGlyph","RadialGlyph","LineChartGlyph","glyphMap","createDiscretiserValue","_drawCellBackground","BudgetAllocator","InterventionManager","MiniDecarbModel","createTimelineInterface","plotOverallTimeline","plotOverallPotential","plotDualChartPanel","LeafletMap","geoMorpher","inferTypes","enrichGeoData","normaliseData","insideCell","debounceInput","saveToSession","getFromSession","transformCoordinates","transformGeometry","normalisebyGroup","aggregateValues","getNumericBudget","log","warn","error","setDebugMode","startGroup","endGroup","startTimer","endTimer","perfTimings"], body: async () => {
@@ -1278,13 +1278,14 @@ const map_aggregate = Generators.input(mapAggregationInput);
 return {mapAggregationInput,map_aggregate};
 }});
 
-define({id: "03040749", inputs: ["Inputs","Generators"], outputs: ["timelineSwitchInput","timeline_switch"], body: (Inputs,Generators) => {
+define({id: "a4aaa0b5", inputs: ["Inputs","Generators"], outputs: ["timelineSwitchInput","timeline_switch"], body: (Inputs,Generators) => {
 // --- potentials and timeline  ---
 const timelineSwitchInput = Inputs.radio(
   ["Decarbonisation Potentials", "Decarbonisation Timeline"],
   {
     label: "Show Data",
-    value: "Decarbonisation Potentials",
+    // value: "Decarbonisation Potentials",
+    value: "Decarbonisation Timeline",
   }
 );
 const timeline_switch = Generators.input(timelineSwitchInput);
@@ -2671,7 +2672,7 @@ define({id: "3d4e37eb", body: () => {
 console.log("move glyphmap");
 }});
 
-define({id: "342352b4", inputs: ["getModelData","getGlyphData","regularGeodataLookup","aggregateValues","glyphVariables","RadialGlyph","glyphColours","LineChartGlyph","map_aggregate","transformCoordinates","turf","regular_geodata","timeline_switch","normaliseData","d3","insideCell"], outputs: ["glyphMapSpec"], body: (getModelData,getGlyphData,regularGeodataLookup,aggregateValues,glyphVariables,RadialGlyph,glyphColours,LineChartGlyph,map_aggregate,transformCoordinates,turf,regular_geodata,timeline_switch,normaliseData,d3,insideCell) => {
+define({id: "ba5bd166", inputs: ["getModelData","getGlyphData","regularGeodataLookup","aggregateValues","glyphVariables","RadialGlyph","glyphColours","map_aggregate","transformCoordinates","turf","regular_geodata","timeline_switch","normaliseData","d3","insideCell"], outputs: ["glyphMapSpec"], body: (getModelData,getGlyphData,regularGeodataLookup,aggregateValues,glyphVariables,RadialGlyph,glyphColours,map_aggregate,transformCoordinates,turf,regular_geodata,timeline_switch,normaliseData,d3,insideCell) => {
 function glyphMapSpec(width = 800, height = 600) {
   const config = {
     coordType: {
@@ -2750,12 +2751,23 @@ function glyphMapSpec(width = 800, height = 600) {
       );
       rg.draw(ctx, x, y, cellSize / 2);
     } else if (
-      timelineSwitch === "Decarbonisation Timeline" &&
-      cell.data?.length > 0
+      timelineSwitch === "Decarbonisation Timeline"
+      // &&
+      // cell.data?.length > 0
     ) {
-      const { variables, colors } = config.timelineConfig[timelineSwitch];
-      const lg = new LineChartGlyph(cellData, variables, null, colors);
-      lg.draw(ctx, x, y, 500, 500);
+      // draw simple circle for debugging
+      ctx.beginPath();
+      ctx.arc(x, y, cellSize / 2, 0, 2 * Math.PI);
+      ctx.fillStyle = "#ff1a1ade";
+      ctx.fill();
+      ctx.lineWidth = 0.2;
+      ctx.strokeStyle = "rgb(7, 77, 255)";
+      ctx.stroke();
+      ctx.closePath();
+
+      // const { variables, colors } = config.timelineConfig[timelineSwitch];
+      // const lg = new LineChartGlyph(cellData, variables, null, colors);
+      // lg.draw(ctx, x, y, 500, 500);
     }
   };
 
@@ -2775,7 +2787,10 @@ function glyphMapSpec(width = 800, height = 600) {
     customMap: {
       scaleParams: [],
 
-      initFn: (cells, cellSize, global, panel) => {},
+      initFn: (cells, cellSize, global, panel) => {
+        // console.log("initFn global", cells, cellSize, global, panel);
+        console.log("initFn global", global);
+      },
 
       preAggrFn: (cells, cellSize, global, panel) => {},
 
@@ -2824,6 +2839,8 @@ function glyphMapSpec(width = 800, height = 600) {
         if (boundary[0] !== boundary[boundary.length - 1]) {
           boundary.push(boundary[0]);
         }
+
+        console.log("drawFn boundary", boundary);
 
         const boundaryFeat = turf.polygon([boundary]);
         ctx.beginPath();
@@ -2902,7 +2919,7 @@ playButton.addEventListener("click", () => {
 return {set,playing,direction,animationFrame,animate,currentValue};
 }});
 
-define({id: "e37188f6", inputs: ["morph_factor","morphGlyphMap","valueDiscretiser","tweenWGS84Lookup","d3"], body: (morph_factor,morphGlyphMap,valueDiscretiser,tweenWGS84Lookup,d3) => {
+define({id: "6463a51d", inputs: ["morph_factor","morphGlyphMap","valueDiscretiser","tweenWGS84Lookup","d3"], body: (morph_factor,morphGlyphMap,valueDiscretiser,tweenWGS84Lookup,d3) => {
 // Trigger Morphing function
 {
   // log(">> Morphing...", morph_factor);
@@ -2912,9 +2929,10 @@ define({id: "e37188f6", inputs: ["morph_factor","morphGlyphMap","valueDiscretise
     preDrawFn: (cells, cellSize, ctx, global, panel) => {
       //unfortunately need to repeat what's in the base
       global.pathGenerator = d3.geoPath().context(ctx);
-      global.colourScalePop = d3
-        .scaleSequential(d3.interpolateBlues)
-        .domain([0, d3.max(cells.map((row) => row.building_area))]);
+      // global.colourScalePop = d3
+      //   .scaleSequential(d3.interpolateBlues)
+      //   .domain([0, d3.max(cells.map((row) => row.building_area))]);
+      global.colourScalePop = "#cccccc";
 
       //draw a coloured background polygon
       ctx.beginPath();
@@ -2956,26 +2974,21 @@ const glyphMapSpecWgs84 = {
 return {glyphMapSpecWgs84};
 }});
 
-define({id: "9ae1bc57", inputs: ["toggle_grids","glyphMap","glyphMapSpec","createLeafletMap","morphGlyphMap","timeline_switch","plotOverallPotential","glyphData","glyphColours","glyphVariables","plotOverallTimeline","yearlySummaryArray"], outputs: ["createGlyphMap"], body: (toggle_grids,glyphMap,glyphMapSpec,createLeafletMap,morphGlyphMap,timeline_switch,plotOverallPotential,glyphData,glyphColours,glyphVariables,plotOverallTimeline,yearlySummaryArray) => {
-function createGlyphMap(map_aggregate, width, height) {
-  // log(width, height);
-  if (map_aggregate == "Building Level") {
-    if (toggle_grids) {
-      return glyphMap({
-        ...glyphMapSpec(width, height),
-      });
-    } else {
-      return createLeafletMap(width, height).leafletContainer;
-    }
-  } else if (map_aggregate == "LSOA Level") {
-    return morphGlyphMap;
-  } else if (map_aggregate == "LA Level") {
-    if (timeline_switch == "Decarbonisation Potentials") {
-      return plotOverallPotential(glyphData, glyphColours, glyphVariables);
-    } else {
-      return plotOverallTimeline(yearlySummaryArray);
-      // return plotDualChartPanel(yearlySummaryArray);
-    }
+define({id: "75c7f951", inputs: ["toggle_grids","glyphMap","glyphMapSpec","createLeafletMap","morphGlyphMap","timeline_switch","plotOverallPotential","glyphData","glyphColours","glyphVariables","plotOverallTimeline","yearlySummaryArray"], outputs: ["createGlyphMap"], body: (toggle_grids,glyphMap,glyphMapSpec,createLeafletMap,morphGlyphMap,timeline_switch,plotOverallPotential,glyphData,glyphColours,glyphVariables,plotOverallTimeline,yearlySummaryArray) => {
+function createGlyphMap(mapAggregate, width, height) {
+  switch (mapAggregate) {
+    case "Building Level":
+      return toggle_grids
+        ? glyphMap({ ...glyphMapSpec(width, height) })
+        : createLeafletMap(width, height).leafletContainer;
+    case "LSOA Level":
+      return morphGlyphMap;
+    case "LA Level":
+      return timeline_switch === "Decarbonisation Potentials"
+        ? plotOverallPotential(glyphData, glyphColours, glyphVariables)
+        : plotOverallTimeline(yearlySummaryArray);
+    default:
+      return null;
   }
 }
 return {createGlyphMap};
@@ -3351,7 +3364,7 @@ define({id: "49febe49", inputs: ["getResetRequested","log","setTableRule","setSe
 <div class="observablehq observablehq--block"><!--:002f30fa:--></div>
 <div class="observablehq observablehq--block"><!--:ac287d14:--></div>
 <div class="observablehq observablehq--block"><!--:1649f464:--></div>
-<div class="observablehq observablehq--block"><!--:03040749:--></div>
+<div class="observablehq observablehq--block"><!--:a4aaa0b5:--></div>
 <div class="observablehq observablehq--block"><!--:9aebd956:--></div>
 <div class="observablehq observablehq--block"><!--:5cf7509f:--></div>
 <div class="observablehq observablehq--block"><!--:a4dfa623:--></div>
@@ -3401,13 +3414,13 @@ define({id: "49febe49", inputs: ["getResetRequested","log","setTableRule","setSe
 <!-- ---------------- Glyph Maps ---------------- -->
 <div class="observablehq observablehq--block"><!--:4965f46a:--></div>
 <div class="observablehq observablehq--block"><!--:3d4e37eb:--></div>
-<div class="observablehq observablehq--block"><!--:342352b4:--></div>
+<div class="observablehq observablehq--block"><!--:ba5bd166:--></div>
 <!-- morph animation logic -->
 <div class="observablehq observablehq--block"><!--:bde59c7b:--></div>
-<div class="observablehq observablehq--block"><!--:e37188f6:--></div>
+<div class="observablehq observablehq--block"><!--:6463a51d:--></div>
 <div class="observablehq observablehq--block"><!--:a0e83f83:--></div>
 <div class="observablehq observablehq--block"><!--:f5493bd3:--></div>
-<div class="observablehq observablehq--block"><!--:9ae1bc57:--></div>
+<div class="observablehq observablehq--block"><!--:75c7f951:--></div>
 <div class="observablehq observablehq--block"><!--:c1625ed2:--></div>
 <div class="observablehq observablehq--block"><!--:42a819d2:--></div>
 <div class="observablehq observablehq--block"><!--:f6d1273b:--></div>
