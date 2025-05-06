@@ -2532,14 +2532,17 @@ function glyphMapSpec(width = 800, height = 600) {
     coordType: {
       "Building Level": "mercator",
       "LSOA Level": "notmercator",
+      "LA Level": "mercator", // fallback for LA Level
     },
     dataSource: {
       "Building Level": () => Object.values(getModelData),
       "LSOA Level": () => Object.values(getGlyphData),
+      "LA Level": () => Object.values(getModelData),
     },
     locationFn: {
       "Building Level": (row) => [row.x, row.y],
       "LSOA Level": (row) => regularGeodataLookup[row.code]?.centroid,
+      "LA Level": (row) => regularGeodataLookup[row.code]?.centroid,
     },
     timelineConfig: {
       "Decarbonisation Potentials": {
@@ -2560,10 +2563,12 @@ function glyphMapSpec(width = 800, height = 600) {
   const getCellData = (cell, aggregateLevel, timelineSwitch) => {
     if (!cell.records) return {};
 
+    // aggregate if building level
     if (aggregateLevel === "Building Level") {
       return aggregateValues(cell.records, glyphVariables, "sum");
     }
 
+    // for other levels
     const lsoaCode = cell.records[0].code;
     const glyphData = getGlyphData?.[lsoaCode];
 
@@ -2610,6 +2615,7 @@ function glyphMapSpec(width = 800, height = 600) {
       // cell.data?.length > 0
     ) {
       // draw simple circle for debugging
+      console.log("DEBUGGING TIMESRIESS", timeline_switch, map_aggregate);
       ctx.beginPath();
       ctx.arc(x, y, cellSize / 2, 0, 2 * Math.PI);
       ctx.fillStyle = "#ff1a1ade";
@@ -2668,14 +2674,14 @@ function glyphMapSpec(width = 800, height = 600) {
           });
         }
 
-        const canvas = d3.select(panel).select("canvas").node();
-        canvas.addEventListener("click", function (evt) {
-          const rect = canvas.getBoundingClientRect();
-          const x = evt.clientX - rect.left;
-          const y = evt.clientY - rect.top;
-          global.clickedCell =
-            cells.find((cell) => insideCell(cell, x, y)) || null;
-        });
+        // const canvas = d3.select(panel).select("canvas").node();
+        // canvas.addEventListener("click", function (evt) {
+        //   const rect = canvas.getBoundingClientRect();
+        //   const x = evt.clientX - rect.left;
+        //   const y = evt.clientY - rect.top;
+        //   global.clickedCell =
+        //     cells.find((cell) => insideCell(cell, x, y)) || null;
+        // });
       },
 
       preDrawFn: (cells, cellSize, ctx, global, panel) => {

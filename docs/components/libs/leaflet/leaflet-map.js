@@ -4,7 +4,7 @@ import "leaflet-draw"; // Leaflet Draw for drawing shapes
 import * as turf from "@turf/turf"; // Correct import for Turf.js
 import { tileDictionary } from "./basemaps.js";
 import { getMapLogger } from "./map-logger.js"; // Import the logger
-// import "leaflet-draw/dist/leaflet.draw.css";
+import { processGeospatialFile } from "./file-upload-handler.js"; // Import file upload handler
 
 export class LeafletMap {
   constructor(container, options = {}) {
@@ -229,6 +229,28 @@ export class LeafletMap {
         return div;
       };
 
+      // Add upload data button
+      const uploadButton = L.control({ position: "bottomleft" });
+      uploadButton.onAdd = () => {
+        const div = L.DomUtil.create("div", "upload-button leaflet-bar");
+        div.innerHTML =
+          '<a href="#" title="Upload Data" class="map-control-button"><i class="fa fa-upload"></i></a>';
+        // Hidden file input
+        const fileInput = document.createElement("input");
+        fileInput.type = "file";
+        fileInput.accept = ".geojson,.json,.zip,.gpkg,.parquet";
+        fileInput.style.display = "none";
+        // Use a bound method for the change handler
+        fileInput.onchange = this._handleFileInputChange.bind(this);
+        div.appendChild(fileInput);
+        div.firstChild.onclick = (e) => {
+          e.preventDefault();
+          fileInput.click();
+        };
+        return div;
+      };
+      uploadButton.addTo(this.map);
+
       // Safe wrapper for event handler to prevent errors from crashing the app
       const safeEventHandler = (handlerFn) => {
         return (e) => {
@@ -338,6 +360,45 @@ export class LeafletMap {
     } catch (error) {
       this.logger.error("general", "Error initializing map", error);
       throw error;
+    }
+  }
+
+  /**
+   * Handles the file input change event.
+   * @param {Event} e - The change event object.
+   * @private
+   */
+  _handleFileInputChange(e) {
+    const file = e.target.files[0];
+    if (file) {
+      this._handleDataUpload(file);
+    }
+    // Reset file input value to allow uploading the same file again
+    e.target.value = "";
+  }
+
+  /**
+   * Handles uploaded geospatial data file
+   * @private
+   */
+  async _handleDataUpload(file) {
+    try {
+      const name = file.name;
+      const showError = (msg) => {
+        this.logger.error("upload", msg);
+        alert("Upload error: " + msg);
+      };
+
+      const geojson = await processGeospatialFile(file, showError);
+
+      // Add to map as new overlay layer
+      const layerId = name.replace(/\.[^/.]+$/, "");
+      this.addGeoJSONLayer(layerId, geojson);
+      this.logger.info("upload", `Added uploaded layer: ${layerId}`);
+      alert(`Layer '${layerId}' uploaded and added to map.`);
+    } catch (err) {
+      this.logger.error("upload", "Unexpected error during upload", err);
+      alert("Unexpected error during upload: " + err.message);
     }
   }
 

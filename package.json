@@ -9,6 +9,7 @@
     "observable": "observable"
   },
   "dependencies": {
+    "@ngageoint/geopackage": "^4.2.6",
     "@observablehq/framework": "latest",
     "@turf/turf": "^7.2.0",
     "clusterize.js": "^1.0.0",
@@ -16,6 +17,7 @@
     "d3-time-format": "^4.1.0",
     "flubber": "^0.4.2",
     "leaflet-draw": "^1.0.4",
+    "shpjs": "^6.1.0",
     "turf": "^3.0.14"
   },
   "devDependencies": {
