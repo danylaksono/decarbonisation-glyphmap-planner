@@ -207,7 +207,7 @@ const pq = new PriorityQueue((a, b) => b.carbonEfficiency - a.carbonEfficiency);
 Carbon efficiency is calculated as:
 
 ```tex
-$$\text{Carbon Efficiency} = \frac{\text{Carbon Saved}}{\text{Intervention Cost}}$$
+\text{Carbon Efficiency} = \frac{\text{Carbon Saved}}{\text{Intervention Cost}}
 ```
 
 ### Tech-First Strategy
