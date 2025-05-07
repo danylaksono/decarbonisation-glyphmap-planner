@@ -88,9 +88,9 @@ await mermaid`flowchart LR
 ))
 }});
 
-define({id: "c7781d7f", inputs: ["tex","display"], body: async (tex,display) => {
+define({id: "a1715f9d", inputs: ["tex","display"], body: async (tex,display) => {
 display(await(
-tex.block`$$\text{Carbon Efficiency} = \frac{\text{Carbon Saved}}{\text{Intervention Cost}}$$`
+tex.block`\text{Carbon Efficiency} = \frac{\text{Carbon Saved}}{\text{Intervention Cost}}`
 ))
 }});
 
@@ -315,7 +315,7 @@ await mermaid`gantt
 <pre data-language="javascript"><code class="language-javascript"><span class="hljs-keyword">const</span> pq = <span class="hljs-keyword">new</span> <span class="hljs-title class_">PriorityQueue</span>(<span class="hljs-function">(<span class="hljs-params">a, b</span>) =&gt;</span> b.<span class="hljs-property">carbonEfficiency</span> - a.<span class="hljs-property">carbonEfficiency</span>);
 </code></pre>
 <p>Carbon efficiency is calculated as:</p>
-<div class="observablehq observablehq--block"><observablehq-loading></observablehq-loading><!--:c7781d7f:--></div>
+<div class="observablehq observablehq--block"><observablehq-loading></observablehq-loading><!--:a1715f9d:--></div>
 <h3 id="tech-first-strategy" tabindex="-1"><a class="observablehq-header-anchor" href="#tech-first-strategy">Tech-First Strategy</a></h3>
 <p>In this strategy, the model:</p>
 <ol>
@@ -566,6 +566,6 @@ model.<span class="hljs-title function_">setLogLevel</span>(<span class="hljs-st
 <p>The decarbonisation model provides a flexible framework for simulating building interventions with different strategies, priorities, and constraints. By carefully configuring the model parameters, users can explore a wide range of decarbonisation scenarios and optimise budget allocation for maximum carbon reduction impact.</p>
 </main>
 <footer id="observablehq-footer">
-<div>Built with <a href="https://observablehq.com/" target="_blank" rel="noopener noreferrer">Observable</a> on <a title="2025-05-06T06:29:15">May 6, 2025</a>.</div>
+<div>Built with <a href="https://observablehq.com/" target="_blank" rel="noopener noreferrer">Observable</a> on <a title="2025-05-07T14:43:50">May 7, 2025</a>.</div>
 </footer>
 </div>

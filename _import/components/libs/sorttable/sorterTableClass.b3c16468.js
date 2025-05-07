@@ -92,13 +92,67 @@ export class sorterTable {
     this.table = document.createElement("table");
     this.table.classList.add("sorter-table");
 
-    this.initialColumns = JSON.parse(JSON.stringify(this.columns));
-    this.initialData = [...data]; // Store a copy of the original data
+    // this.initialColumns = JSON.parse(JSON.stringify(this.columns));
+    // this.initialData = [...data]; // Store a copy of the original data
 
-    // Initialize caches for resetTable
-    this._initialDataCache = deepClone(this.initialData);
-    this._initialColumnsCache = deepClone(this.initialColumns);
-    this._initialDataIndCache = d3.range(this.initialData.length);
+    // ...existing code...
+
+    try {
+      this.initialColumns = this.columns.map((col) => ({
+        column: col.column,
+        alias: col.alias || null,
+        unique: col.unique || false,
+        type: col.type || null,
+        thresholds: Array.isArray(col.thresholds)
+          ? [...col.thresholds]
+          : undefined,
+        bins: Array.isArray(col.bins) ? [...col.bins] : undefined,
+        nominals: Array.isArray(col.nominals) ? [...col.nominals] : undefined,
+        dateRange: col.dateRange ? [...col.dateRange] : undefined,
+      }));
+    } catch (error) {
+      console.warn(
+        "Failed to clone columns, falling back to shallow copy:",
+        error
+      );
+      this.initialColumns = [...this.columns]; // Fallback to shallow copy
+    }
+
+    // Initialize caches for resetTable with defensive checks
+    try {
+      // Set initialData if not already set
+      if (!this.initialData) {
+        this.initialData = [...data];
+      }
+
+      // Only create caches if we have valid data
+      this._initialDataCache = this.initialData
+        ? deepClone(this.initialData)
+        : [];
+      this._initialColumnsCache = this.initialColumns
+        ? deepClone(this.initialColumns)
+        : [];
+      this._initialDataIndCache = this.initialData
+        ? d3.range(this.initialData.length)
+        : [];
+
+      logDebug("Cache initialization complete:", {
+        dataLength: this._initialDataCache.length,
+        columnsLength: this._initialColumnsCache.length,
+        indicesLength: this._initialDataIndCache.length,
+      });
+    } catch (error) {
+      console.warn("Failed to initialize caches:", error);
+      // Set fallback values
+      this._initialDataCache = [];
+      this._initialColumnsCache = [];
+      this._initialDataIndCache = [];
+    }
+
+    // // Initialize caches for resetTable
+    // this._initialDataCache = deepClone(this.initialData);
+    // this._initialColumnsCache = deepClone(this.initialColumns);
+    // this._initialDataIndCache = d3.range(this.initialData.length);
 
     logDebug("Initial columns:", this.columns);
 
