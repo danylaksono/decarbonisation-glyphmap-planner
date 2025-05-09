@@ -1184,7 +1184,8 @@ export class MiniDecarbModel {
             year: building.interventionYear,
             cost: building.interventionCost,
             carbonSaved: building.carbonSaved,
-            interventionID: modelRecap.interventionId,
+            interventionID: modelRecap.intervenetionId,
+            interventionID: modelRecap.modelId,
           };
 
           target.isIntervened = true;
