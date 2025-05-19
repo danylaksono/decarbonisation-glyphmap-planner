@@ -533,9 +533,9 @@ const filterManager = {
         <p class="title">Map View</p>
       </header>
           ${mapAggregationInput}
-          ${(map_aggregate === "Building Level") ? "": timelineSwitchInput}
-          ${(map_aggregate === "Building Level") ? toggleGridmaps : ""}
-          ${(map_aggregate === "LSOA Level") ? html`${playButton} ${morphFactorInput}` : ""}
+          <!-- ${(map_aggregate === "Building Level") ? "": timelineSwitchInput} -->
+          <!-- ${(map_aggregate === "Building Level") ? toggleGridmaps : ""} -->
+          ${(map_aggregate === "LSOA Level") ? html`${playButton} ${morphFactorInput}` : ""} 
           <!-- ${html`${playButton} ${morphFactorInput}`} -->
           ${resize((width, height) => createGlyphMap(map_aggregate, width, height-80))}
     </div>
@@ -1144,12 +1144,19 @@ const glyphmapType = Generators.input(glyphmapTypeInput);
 ```js
 // --- map aggregation ---
 const mapAggregationInput = Inputs.radio(
-  ["Building Level", "LSOA Level", "LA Level"],
+  ["Individual Building", "Aggregated Building", "LSOA Level", "LA Level"],
   {
-    label: "Level of Detail",
-    value: "Building Level",
+    label: "Level of Aggregation",
+    value: "Individual Building",
   }
 );
+// const mapAggregationInput = Inputs.radio(
+//   ["Building Level", "LSOA Level", "LA Level"],
+//   {
+//     label: "Level of Detail",
+//     value: "Building Level",
+//   }
+// );
 const map_aggregate = Generators.input(mapAggregationInput);
 ```
 
@@ -1202,7 +1209,7 @@ const playButton = html`<button class="btn edit" style="margin-top: 5px;">
 
 ```js
 // toggle between raw building data and gridded glyphmaps
-const toggleGridmaps = Inputs.toggle({ label: "Gridmaps?", value: false });
+const toggleGridmaps = Inputs.toggle({ label: "Gridmaps?", value: true });
 const toggle_grids = Generators.input(toggleGridmaps);
 ```
 
@@ -2224,7 +2231,10 @@ const normalisedTimeseriesLookup = normaliseTimeSeriesLookup(timeSeriesLookup, [
 // passing data for the glyphmaps
 // DATA DATA DATA
 {
-  if (map_aggregate === "Building Level") {
+  if (
+    map_aggregate === "Individual Building" ||
+    map_aggregate === "Aggregated Building"
+  ) {
     // use the individual data
     setGlyphData(buildingsData);
   } else if (map_aggregate === "LSOA Level") {
@@ -2270,17 +2280,20 @@ function valueDiscretiser(geomLookup) {
 function glyphMapSpec(width = 800, height = 600) {
   const config = {
     coordType: {
-      "Building Level": "mercator",
+      "Individual Building": "mercator",
+      "Aggregated Building": "mercator",
       "LSOA Level": "notmercator",
       "LA Level": "mercator", // fallback for LA Level
     },
     dataSource: {
-      "Building Level": () => Object.values(getModelData),
+      "Individual Building": () => Object.values(getModelData),
+      "Aggregated Building": () => Object.values(getModelData),
       "LSOA Level": () => Object.values(getGlyphData),
       "LA Level": () => Object.values(getModelData),
     },
     locationFn: {
-      "Building Level": (row) => [row.x, row.y],
+      "Individual Building": (row) => [row.x, row.y],
+      "Aggregated Building": (row) => [row.x, row.y],
       "LSOA Level": (row) => regularGeodataLookup[row.code]?.centroid,
       "LA Level": (row) => regularGeodataLookup[row.code]?.centroid,
     },
@@ -2304,7 +2317,10 @@ function glyphMapSpec(width = 800, height = 600) {
     if (!cell.records) return {};
 
     // aggregate if building level
-    if (aggregateLevel === "Building Level") {
+    if (
+      aggregateLevel === "Individual Building" ||
+      aggregateLevel === "Aggregated Building"
+    ) {
       return aggregateValues(cell.records, glyphVariables, "sum");
     }
 
@@ -2333,7 +2349,10 @@ function glyphMapSpec(width = 800, height = 600) {
   ) => {
     const cellData = cell.records[0].data?.properties || cell.data;
 
-    if (aggregateLevel === "Building Level") {
+    if (
+      aggregateLevel === "Individual Building" ||
+      aggregateLevel === "Aggregated Building"
+    ) {
       const rg = new RadialGlyph(
         glyphVariables.map((key) => cellData[key]),
         glyphColours
@@ -2356,7 +2375,7 @@ function glyphMapSpec(width = 800, height = 600) {
     ) {
       // draw simple circle for debugging
       console.log("DEBUGGING TIMESRIESS", timeline_switch, map_aggregate);
-      console.log("DEBUGGING TIMESRIESS 2", cellSize, config.coordType);
+      // console.log("DEBUGGING TIMESRIESS 2", cellSize, config.coordType);
       ctx.beginPath();
       ctx.arc(x, y, cellSize / 2, 0, 2 * Math.PI);
       ctx.fillStyle = "#ff1a1ade";
@@ -2406,7 +2425,10 @@ function glyphMapSpec(width = 800, height = 600) {
           cell.data = getCellData(cell, map_aggregate, timeline_switch);
         }
 
-        if (map_aggregate === "Building Level") {
+        if (
+          map_aggregate === "Individual Building" ||
+          map_aggregate === "Aggregated Building"
+        ) {
           const dataArray = cells.map((cell) => cell.data);
           const normalisedData = dataArray
             ? normaliseData(dataArray, glyphVariables)
@@ -2442,7 +2464,7 @@ function glyphMapSpec(width = 800, height = 600) {
           boundary.push(boundary[0]);
         }
 
-        // console.log(">>> drawFn boundary", boundary);
+        console.log(">>> drawFn boundary", boundary);
 
         const boundaryFeat = turf.polygon([boundary]);
         ctx.beginPath();
@@ -2463,7 +2485,8 @@ function glyphMapSpec(width = 800, height = 600) {
           ctx.stroke();
         }
 
-        console.log("timeline_switch", timeline_switch, "xy", x, y);
+        // console.log("timeline_switch", timeline_switch, "xy", x, y);
+        // console.log("timeline_switch ctx", ctx);
 
         drawGlyph(cell, x, y, cellSize, ctx, map_aggregate, timeline_switch);
       },
@@ -2587,10 +2610,13 @@ function createGlyphMap(mapAggregate, width, height) {
     toggle_grids
   );
   switch (mapAggregate) {
-    case "Building Level":
-      return toggle_grids
-        ? glyphMap({ ...glyphMapSpec(width, height) })
-        : createLeafletMap(width, height).leafletContainer;
+    case "Individual Building":
+      return createLeafletMap(width, height).leafletContainer;
+    case "Aggregated Building":
+      // return toggle_grids
+      // ? glyphMap({ ...glyphMapSpec(width, height) })
+      // : createLeafletMap(width, height).leafletContainer;
+      return glyphMap({ ...glyphMapSpec(width, height) });
     case "LSOA Level":
       return morphGlyphMap;
     case "LA Level":
