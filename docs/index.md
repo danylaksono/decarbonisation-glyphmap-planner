@@ -483,10 +483,14 @@ const filterManager = {
                       setTimelineModifications(change);
                     },
                     (click) => {
-                      if (click != null) {
+                      if (click != null && click <= 1000) {  // clicking on intervention
+                        console.log("Clicked on intervention", click);
                         setSelectedInterventionIndex(click);
                         filterSelectedIntervention(click, interventions);
                         console.log("Clicked Interventions", click, interventions[click]);
+                      } else if (click != null && click > 1000) {
+                        // clicking on intervention year
+                        console.log("Clicked on intervention year", click);
                       } else {
                         // clicking on background
                         console.log("No intervention selected");
@@ -533,7 +537,7 @@ const filterManager = {
         <p class="title">Map View</p>
       </header>
           ${mapAggregationInput}
-          <!-- ${(map_aggregate === "Building Level") ? "": timelineSwitchInput} -->
+          ${(map_aggregate === "Aggregated Building" || map_aggregate === "LSOA Level" || map_aggregate === "LA Level" ) ? timelineSwitchInput : ""}
           <!-- ${(map_aggregate === "Building Level") ? toggleGridmaps : ""} -->
           ${(map_aggregate === "LSOA Level") ? html`${playButton} ${morphFactorInput}` : ""} 
           <!-- ${html`${playButton} ${morphFactorInput}`} -->
@@ -2349,17 +2353,17 @@ function glyphMapSpec(width = 800, height = 600) {
   ) => {
     const cellData = cell.records[0].data?.properties || cell.data;
 
-    if (
-      aggregateLevel === "Individual Building" ||
-      aggregateLevel === "Aggregated Building"
-    ) {
-      const rg = new RadialGlyph(
-        glyphVariables.map((key) => cellData[key]),
-        glyphColours
-      );
-      rg.draw(ctx, x, y, cellSize / 2);
-      return;
-    }
+    // if (
+    //   aggregateLevel === "Individual Building" ||
+    //   aggregateLevel === "Aggregated Building"
+    // ) {
+    //   const rg = new RadialGlyph(
+    //     glyphVariables.map((key) => cellData[key]),
+    //     glyphColours
+    //   );
+    //   rg.draw(ctx, x, y, cellSize / 2);
+    //   return;
+    // }
 
     if (timelineSwitch === "Decarbonisation Potentials") {
       const { variables, colors } = config.timelineConfig[timelineSwitch];
@@ -2376,18 +2380,18 @@ function glyphMapSpec(width = 800, height = 600) {
       // draw simple circle for debugging
       console.log("DEBUGGING TIMESRIESS", timeline_switch, map_aggregate);
       // console.log("DEBUGGING TIMESRIESS 2", cellSize, config.coordType);
-      ctx.beginPath();
-      ctx.arc(x, y, cellSize / 2, 0, 2 * Math.PI);
-      ctx.fillStyle = "#ff1a1ade";
-      ctx.fill();
-      ctx.lineWidth = 0.2;
-      ctx.strokeStyle = "rgb(7, 77, 255)";
-      ctx.stroke();
-      ctx.closePath();
+      // ctx.beginPath();
+      // ctx.arc(x, y, cellSize / 2, 0, 2 * Math.PI);
+      // ctx.fillStyle = "#ff1a1ade";
+      // ctx.fill();
+      // ctx.lineWidth = 0.2;
+      // ctx.strokeStyle = "rgb(7, 77, 255)";
+      // ctx.stroke();
+      // ctx.closePath();
 
-      // const { variables, colors } = config.timelineConfig[timelineSwitch];
-      // const lg = new LineChartGlyph(cellData, variables, null, colors);
-      // lg.draw(ctx, x, y, 500, 500);
+      const { variables, colors } = config.timelineConfig[timelineSwitch];
+      const lg = new LineChartGlyph(cellData, variables, null, colors);
+      lg.draw(ctx, x, y, 500, 500);
     }
   };
 
@@ -2464,7 +2468,7 @@ function glyphMapSpec(width = 800, height = 600) {
           boundary.push(boundary[0]);
         }
 
-        console.log(">>> drawFn boundary", boundary);
+        // console.log(">>> drawFn boundary", boundary);
 
         const boundaryFeat = turf.polygon([boundary]);
         ctx.beginPath();

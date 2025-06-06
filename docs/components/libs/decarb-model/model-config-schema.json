@@ -1,0 +1,151 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "MiniDecarbModel Configuration Schema",
+  "description": "Defines the structure for a configuration object used to initialize and run a MiniDecarbModel instance, representing a single decarbonisation intervention.",
+  "type": "object",
+  "properties": {
+    "modelId": {
+      "description": "An optional unique identifier for this model instance/intervention run. If not provided, one might be generated or a default used.",
+      "type": "string"
+    },
+    "initial_year": {
+      "description": "The starting year for the intervention period.",
+      "type": "integer",
+      "default": 0
+    },
+    "rolledover_budget": {
+      "description": "Budget carried over from a previous intervention or period to be used at the start of this intervention.",
+      "type": "number",
+      "minimum": 0,
+      "default": 0
+    },
+    "yearly_budgets": {
+      "description": "An array defining the budget allocated for each year of this specific intervention. The length of the array determines the duration of this intervention.",
+      "type": "array",
+      "items": {
+        "type": "number",
+        "minimum": 0
+      },
+      "default": []
+    },
+    "optimizationStrategy": {
+      "description": "The strategy to use for selecting buildings and applying technologies.",
+      "type": "string",
+      "enum": ["tech-first", "carbon-first"],
+      "default": "tech-first"
+    },
+    "tech": {
+      "description": "Configuration for a single technology. Primarily used when optimizationStrategy is 'tech-first'.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the technology (e.g., 'ASHP', 'PV')."
+        },
+        "config": {
+          "type": "object",
+          "properties": {
+            "suitabilityKey": {
+              "type": "string",
+              "description": "Property name in building data indicating suitability for this technology."
+            },
+            "labourKey": {
+              "type": "string",
+              "description": "Property name in building data for the labour cost of this technology."
+            },
+            "materialKey": {
+              "type": "string",
+              "description": "Property name in building data for the material cost of this technology."
+            },
+            "savingsKey": {
+              "type": "string",
+              "description": "Property name in building data for the carbon/energy savings from this technology."
+            }
+          },
+          "required": [
+            "suitabilityKey",
+            "labourKey",
+            "materialKey",
+            "savingsKey"
+          ]
+        }
+      },
+      "required": ["name", "config"]
+    },
+    "technologies": {
+      "description": "Array of technology configurations. Primarily used when optimizationStrategy is 'carbon-first', allowing the model to choose between them.",
+      "type": "array",
+      "items": {
+        "$ref": "#/properties/tech"
+      },
+      "default": []
+    },
+    "priorities": {
+      "description": "Array of rules to prioritize buildings for intervention. Scores from multiple rules are typically combined.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "attribute": {
+            "type": "string",
+            "description": "Building property attribute to sort/prioritize by."
+          },
+          "order": {
+            "type": "string",
+            "enum": ["asc", "desc"],
+            "default": "asc",
+            "description": "Sort order for the attribute (ascending or descending)."
+          },
+          "scoreFunction": {
+            "type": "string",
+            "description": "Optional: Name or reference to a custom JavaScript function for more complex scoring. (Actual function cannot be embedded in JSON)."
+          },
+          "weight": {
+            "type": "number",
+            "default": 1.0,
+            "description": "Weight for this priority rule when combining scores from multiple rules."
+          }
+        },
+        "required": ["attribute"]
+      },
+      "default": []
+    },
+    "filters": {
+      "description": "Array of filter configurations to select a subset of buildings before applying priorities and interventions.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "filterName": {
+            "type": "string",
+            "description": "A descriptive name for the filter."
+          },
+          "filterFunction": {
+            "type": "string",
+            "description": "Optional: Name or reference to a custom JavaScript filter function. (Actual function cannot be embedded in JSON)."
+          },
+          "attribute": {
+            "type": "string",
+            "description": "Building property attribute to use for a dynamic filter (if not using filterFunction)."
+          },
+          "operator": {
+            "type": "string",
+            "enum": [">", ">=", "<", "<=", "==", "!="],
+            "description": "Operator for the dynamic filter."
+          },
+          "threshold": {
+            "type": ["number", "string"],
+            "description": "Threshold value for the dynamic filter."
+          }
+        },
+        "oneOf": [
+          { "required": ["filterName", "filterFunction"] },
+          { "required": ["filterName", "attribute", "operator", "threshold"] }
+        ],
+        "description": "A filter can be defined either by a direct function reference or by parameters for a dynamic filter."
+      },
+      "default": []
+    }
+  },
+  "additionalProperties": false
+}
