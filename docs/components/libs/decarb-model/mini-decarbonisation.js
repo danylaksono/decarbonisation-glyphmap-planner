@@ -191,6 +191,8 @@ export class InterventionManager {
       // Create a deep copy of the config to avoid modifying the original
       const configCopy = JSON.parse(JSON.stringify(config));
 
+      configCopy.modelId = this.nextModelId++; // Assign a new model ID
+
       log(
         `Running intervention: ${configCopy.id}, Initial Rollover: ${currentRolloverBudget}`
       );
@@ -229,7 +231,7 @@ export class InterventionManager {
       }
 
       // Defensive: Use config.buildings if valid, else fallback to this.buildings
-      let buildingsToUse = this.buildings;
+      let buildingsToUse = JSON.parse(JSON.stringify(this.buildings)); // Deep copy of all original buildings
       if (Array.isArray(config.buildings) && config.buildings.length > 0) {
         // Defensive: check for valid building objects (must have id and properties)
         const valid = config.buildings.every(
@@ -245,7 +247,7 @@ export class InterventionManager {
       }
 
       // Create the model
-      const model = new MiniDecarbModel(buildingsToUse, this.nextModelId++);
+      const model = new MiniDecarbModel(buildingsToUse, configCopy.modelId);
 
       // Set initial year, optimization strategy, technologies, priorities, and filters (no changes)
       model.setInitialYear(configCopy.initialYear || 0);
@@ -323,19 +325,8 @@ export class InterventionManager {
       // Defensive: Use config.buildings if valid, else fallback to this.buildings
       let buildingsToUse = this.buildings;
       // if (Array.isArray(config.buildings) && config.buildings.length > 0) {
-      //   const valid = config.buildings.every(
-      //     (b) => b && typeof b === "object" && "id" in b && "properties" in b
-      //   );
-      //   if (valid) {
-      //     buildingsToUse = config.buildings;
-      //   } else {
-      //     warn(
-      //       `Intervention ${config.id}: Invalid buildings array detected, falling back to manager's buildings.`
-      //     );
-      //   }
-      // }
       if (Array.isArray(config.buildings) && config.buildings.length > 0) {
-        buildingsToUse = config.buildings;
+        buildingsToUse = JSON.parse(JSON.stringify(config.buildings)); // Deep copy provided buildings
       } else {
         warn(
           `Intervention ${config.id}: Invalid buildings array detected, falling back to manager's buildings.`
@@ -430,7 +421,7 @@ export class MiniDecarbModel {
     return {
       initial_year: 2025,
       rolledover_budget: 0,
-      yearly_budgets: [],
+      yearly_budgets: [100000, 100000, 100000, 100000, 100000],
       optimizationStrategy: "tech-first",
       tech: {
         name: "ASHP",
@@ -481,7 +472,7 @@ export class MiniDecarbModel {
       ],
       priorities: [],
       filters: [],
-      numYears: 0, // Will be derived from yearly_budgets
+      numYears: 5,
     };
   }
 
@@ -490,16 +481,84 @@ export class MiniDecarbModel {
     if (this.config.yearly_budgets) {
       this.config.numYears = this.config.yearly_budgets.length;
     }
-
     this.modelId = modelId;
-    this.buildings = buildings.map((b) => new Building(b.id, b)); // Assuming 'b' itself contains properties
+    this.buildings = buildings.map((b) => new Building(b.id, b));
     this.suitableBuildings = [];
-    this.suitableBuildingsNeedUpdate = true; // Flag to indicate if filtering is needed
+    this.suitableBuildingsNeedUpdate = true;
     this.yearlyStats = {};
     this.appliedFilters = [];
     this._buildingCosts = new Map();
     this._availableBuildings = null;
     this._potentialInterventions = null;
+  }
+
+  configure(configObj) {
+    if (!configObj || typeof configObj !== "object") {
+      error("Invalid configuration object provided to configure().");
+      return this;
+    }
+    const schemaKeys = [
+      "initial_year",
+      "rolledover_budget",
+      "yearly_budgets",
+      "optimizationStrategy",
+      "tech",
+      "technologies",
+      "priorities",
+      "filters",
+      "modelId",
+    ];
+    for (const key of schemaKeys) {
+      if (configObj[key] !== undefined) {
+        if (key === "tech") {
+          this.config.tech = JSON.parse(JSON.stringify(configObj.tech));
+        } else if (
+          key === "technologies" ||
+          key === "priorities" ||
+          key === "filters"
+        ) {
+          this.config[key] = JSON.parse(JSON.stringify(configObj[key]));
+        } else if (key === "yearly_budgets") {
+          this.config.yearly_budgets = [...configObj.yearly_budgets];
+          this.config.numYears = configObj.yearly_budgets.length;
+        } else if (key === "modelId") {
+          this.modelId = configObj.modelId;
+        } else {
+          this.config[key] = configObj[key];
+        }
+      }
+    }
+    // --- PATCH: Convert filter configs to functions if needed ---
+    if (Array.isArray(this.config.filters)) {
+      this.config.filters = this.config.filters.map((filter) => {
+        if (
+          typeof filter.filterFunction !== "function" &&
+          filter.attribute &&
+          filter.operator &&
+          filter.threshold !== undefined
+        ) {
+          return {
+            ...filter,
+            filterFunction: MiniDecarbModel.createDynamicFilter(
+              filter.attribute,
+              filter.operator,
+              filter.threshold
+            ),
+          };
+        }
+        return filter;
+      });
+    }
+    // -----------------------------------------------------------
+    if (this.config.yearly_budgets) {
+      this.config.numYears = this.config.yearly_budgets.length;
+    }
+    this.suitableBuildingsNeedUpdate = true;
+    this._buildingCosts.clear();
+    this._availableBuildings = null;
+    this._potentialInterventions = null;
+    this.appliedFilters = [];
+    return this;
   }
 
   // Method to reset the model state
@@ -619,11 +678,18 @@ export class MiniDecarbModel {
 
     // Apply all added filters, if any:
     if (this.config.filters && this.config.filters.length > 0) {
-      // Check for existence and length
       for (const filter of this.config.filters) {
-        this.suitableBuildings = this.suitableBuildings.filter(
-          filter.filterFunction
-        );
+        if (typeof filter.filterFunction === "function") {
+          this.suitableBuildings = this.suitableBuildings.filter(
+            filter.filterFunction
+          );
+        } else {
+          warn(
+            `Filter '${
+              filter.filterName || "Unnamed filter"
+            }' skipped: filterFunction is not a function.`
+          );
+        }
       }
     }
 
