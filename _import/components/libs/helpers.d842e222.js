@@ -1,6 +1,6 @@
 import * as d3 from "../../../_npm/d3@7.9.0/_esm.js";
 import { OSGB } from "./osgb/index.1d2476df.js";
-import { log, warn, error, setDebugMode } from "./logger.864b8094.js";
+import { log, warn, error, setDebugMode } from "./logger.4f5bec9e.js";
 
 const proj = new OSGB();
 setDebugMode(false);
