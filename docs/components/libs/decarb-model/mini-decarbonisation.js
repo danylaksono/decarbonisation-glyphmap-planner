@@ -426,20 +426,73 @@ export class InterventionManager {
 }
 
 export class MiniDecarbModel {
-  constructor(buildings, modelId = "default") {
-    // Initialize with default config
-    this.config = {
-      initial_year: 0,
+  _getDefaultConfig() {
+    return {
+      initial_year: 2025,
       rolledover_budget: 0,
       yearly_budgets: [],
-      tech: {},
-      priorities: [],
       optimizationStrategy: "tech-first",
-      technologies: [],
+      tech: {
+        name: "ASHP",
+        config: {
+          suitabilityKey: "ashp_suitability",
+          labourKey: "ashp_labour",
+          materialKey: "ashp_material",
+          savingsKey: "heat_demand",
+        },
+      },
+      technologies: [
+        {
+          name: "ASHP",
+          config: {
+            suitabilityKey: "ashp_suitability",
+            labourKey: "ashp_labour",
+            materialKey: "ashp_material",
+            savingsKey: "heat_demand",
+          },
+        },
+        {
+          name: "PV",
+          config: {
+            suitabilityKey: "pv_suitability",
+            labourKey: "pv_labour",
+            materialKey: "pv_material",
+            savingsKey: "pv_generation",
+          },
+        },
+        {
+          name: "GSHP",
+          config: {
+            suitabilityKey: "gshp_suitability",
+            labourKey: "gshp_labour",
+            materialKey: "gshp_material",
+            savingsKey: "gshp_size",
+          },
+        },
+        {
+          name: "Insulation",
+          config: {
+            suitabilityKey: "insulation_rating",
+            labourKey: "insulation_cwall_labour",
+            materialKey: "insulation_cwall_materials",
+            savingsKey: "insulation_cwall",
+          },
+        },
+      ],
+      priorities: [],
+      filters: [],
+      numYears: 0, // Will be derived from yearly_budgets
     };
+  }
+
+  constructor(buildings, modelId = "default_model") {
+    this.config = this._getDefaultConfig();
+    if (this.config.yearly_budgets) {
+      this.config.numYears = this.config.yearly_budgets.length;
+    }
 
     this.modelId = modelId;
-    this.buildings = buildings.map((b) => new Building(b.id, b));
+    this.buildings = buildings.map((b) => new Building(b.id, b)); // Assuming 'b' itself contains properties
     this.suitableBuildings = [];
     this.suitableBuildingsNeedUpdate = true; // Flag to indicate if filtering is needed
     this.yearlyStats = {};

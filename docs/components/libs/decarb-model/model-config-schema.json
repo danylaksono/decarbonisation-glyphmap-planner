@@ -11,7 +11,7 @@
     "initial_year": {
       "description": "The starting year for the intervention period.",
       "type": "integer",
-      "default": 0
+      "default": 2025
     },
     "rolledover_budget": {
       "description": "Budget carried over from a previous intervention or period to be used at the start of this intervention.",
@@ -26,7 +26,7 @@
         "type": "number",
         "minimum": 0
       },
-      "default": []
+      "default": [100000, 100000, 100000, 100000, 100000]
     },
     "optimizationStrategy": {
       "description": "The strategy to use for selecting buildings and applying technologies.",
@@ -70,7 +70,16 @@
           ]
         }
       },
-      "required": ["name", "config"]
+      "required": ["name", "config"],
+      "default": {
+        "name": "ASHP",
+        "config": {
+          "suitabilityKey": "ashp_suitability",
+          "labourKey": "ashp_labour",
+          "materialKey": "ashp_material",
+          "savingsKey": "heat_demand"
+        }
+      }
     },
     "technologies": {
       "description": "Array of technology configurations. Primarily used when optimizationStrategy is 'carbon-first', allowing the model to choose between them.",
@@ -78,17 +87,54 @@
       "items": {
         "$ref": "#/properties/tech"
       },
-      "default": []
+      "default": [
+        {
+          "name": "ASHP",
+          "config": {
+            "suitabilityKey": "ashp_suitability",
+            "labourKey": "ashp_labour",
+            "materialKey": "ashp_material",
+            "savingsKey": "heat_demand"
+          }
+        },
+        {
+          "name": "PV",
+          "config": {
+            "suitabilityKey": "pv_suitability",
+            "labourKey": "pv_labour",
+            "materialKey": "pv_material",
+            "savingsKey": "pv_generation"
+          }
+        },
+        {
+          "name": "GSHP",
+          "config": {
+            "suitabilityKey": "gshp_suitability",
+            "labourKey": "gshp_labour",
+            "materialKey": "gshp_material",
+            "savingsKey": "gshp_size"
+          }
+        },
+        {
+          "name": "Insulation",
+          "config": {
+            "suitabilityKey": "insulation_rating",
+            "labourKey": "insulation_cwall_labour",
+            "materialKey": "insulation_cwall_materials",
+            "savingsKey": "insulation_cwall"
+          }
+        }
+      ]
     },
     "priorities": {
-      "description": "Array of rules to prioritize buildings for intervention. Scores from multiple rules are typically combined.",
+      "description": "Array of rules to prioritise buildings for intervention. Scores from multiple rules are typically combined.",
       "type": "array",
       "items": {
         "type": "object",
         "properties": {
           "attribute": {
             "type": "string",
-            "description": "Building property attribute to sort/prioritize by."
+            "description": "Building property attribute to sort/prioritise by."
           },
           "order": {
             "type": "string",
