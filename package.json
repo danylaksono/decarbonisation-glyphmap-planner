@@ -12,6 +12,7 @@
     "@ngageoint/geopackage": "^4.2.6",
     "@observablehq/framework": "latest",
     "@turf/turf": "^7.2.0",
+    "ajv": "^8.17.1",
     "clusterize.js": "^1.0.0",
     "d3-dsv": "^3.0.1",
     "d3-time-format": "^4.1.0",

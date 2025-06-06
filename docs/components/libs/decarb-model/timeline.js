@@ -124,8 +124,9 @@ export function createTimelineInterface(
   // Remove any existing x-axis
   g.selectAll(".x-axis").remove();
 
-  // Add x-axis with year labels
-  g.append("g")
+  // Add x-axis with year labels (make labels clickable)
+  const xAxisG = g
+    .append("g")
     .attr("class", "x-axis")
     .attr("transform", `translate(0,${innerHeight})`)
     .call(
@@ -133,9 +134,34 @@ export function createTimelineInterface(
         .axisBottom(xScale)
         .tickValues(
           d3.range(Math.ceil(minYear - 1), Math.floor(maxYear + 1) + 1)
-        ) // Added +1 to include last year
+        )
         .tickFormat(d3.format("d"))
     );
+
+  // Add click interaction to x-axis labels
+  let selectedYear = null;
+  function highlightYearLabel(year) {
+    xAxisG.selectAll(".tick text").classed("year-glow", (d) => +d === year);
+  }
+
+  xAxisG
+    .selectAll(".tick text")
+    .style("cursor", "pointer")
+    .on("click", function (event, d) {
+      selectedYear = +d;
+      highlightYearLabel(selectedYear);
+      if (onClick) onClick(selectedYear);
+      event.stopPropagation();
+    });
+
+  // Remove highlight if background is clicked
+  g.select(".background").on("click", function () {
+    selectedYear = null;
+    highlightYearLabel(null);
+    selectedIndexes = [];
+    g.selectAll(".block").classed("highlight", false);
+    if (onClick) onClick(null);
+  });
 
   g.append("rect")
     .attr("class", "background")
@@ -548,6 +574,11 @@ export function createTimelineInterface(
       stroke: orange !important;
       stroke-width: 3px !important;
     }
+    .year-glow {
+      filter: url(#glow-filter);
+      fill: #ff9800 !important;
+      font-weight: bold;
+      text-shadow: 0 0 8px #ff9800, 0 0 4px #fff;
     }
     .tooltip {
       background: white;
@@ -564,6 +595,17 @@ export function createTimelineInterface(
     .selection-area {
       pointer-events: none;
     }
+  `);
+
+  // Add SVG filter for glow effect
+  svg.append("defs").html(`
+    <filter id="glow-filter" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="2.5" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
   `);
 
   // Return the SVG node with added methods

@@ -4,6 +4,9 @@
 
 // import { createSafeLogger } from "./utils.js";
 
+// Create a module-level debug state
+// let debugMode = false;
+
 // Format timestamp and level prefix
 const formatPrefix = (level) => {
   const timestamp = new Date().toISOString();
@@ -53,7 +56,9 @@ export const endGroup = () => {
 export default logger;
 
 // Safe debug logging utility with circular reference protection
-export function createSafeLogger(debugMode = false) {
+export function createSafeLogger(initialDebugMode = false) {
+  let debugMode = initialDebugMode;
+
   // Track objects being logged to avoid circular reference issues
   const inProgress = new WeakSet();
 

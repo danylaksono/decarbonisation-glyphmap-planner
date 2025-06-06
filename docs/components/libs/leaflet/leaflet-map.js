@@ -32,7 +32,7 @@ export class LeafletMap {
       maxZoom: 20,
       minZoom: 10,
       minPoints: 3,
-      defaultTile: "Carto Positron Light NoLabel",
+      defaultTile: "Carto Voyager",
       visibleBaseLayers: [
         "Carto Positron Light NoLabel",
         "OpenStreetMap",
