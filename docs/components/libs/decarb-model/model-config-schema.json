@@ -26,6 +26,8 @@
         "type": "number",
         "minimum": 0
       },
+      "minItems": 1,
+      "maxItems": 10,
       "default": [100000, 100000, 100000, 100000, 100000]
     },
     "optimizationStrategy": {
@@ -193,5 +195,42 @@
       "default": []
     }
   },
-  "additionalProperties": false
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": { "optimizationStrategy": { "const": "tech-first" } }
+      },
+      "then": {
+        "required": ["tech"]
+      }
+    },
+    {
+      "if": {
+        "properties": { "optimizationStrategy": { "const": "carbon-first" } }
+      },
+      "then": {
+        "required": ["technologies"],
+        "properties": {
+          "technologies": { "minItems": 1 }
+        }
+      }
+    }
+  ],
+  "examples": [
+    {
+      "initial_year": 2026,
+      "yearly_budgets": [150000, 150000, 150000],
+      "optimizationStrategy": "tech-first",
+      "tech": {
+        "name": "PV",
+        "config": {
+          "suitabilityKey": "pv_suitability",
+          "labourKey": "pv_labour",
+          "materialKey": "pv_material",
+          "savingsKey": "pv_generation"
+        }
+      }
+    }
+  ]
 }

@@ -12,6 +12,16 @@ import {
   InterventionManager,
   MiniDecarbModel,
 } from "./components/libs/decarb-model/mini-decarbonisation.js";
+
+import { queryLLMForConfig } from "./components/libs/decarb-model/llm-interface.js";
+
+async function runLLMQuery(query, buildings) {
+  const config = await queryLLMForConfig(query);
+  const model = new MiniDecarbModel(buildings);
+  model.configure(config);
+  const result = model.run();
+  return result;
+}
 ```
 
 <!-- ---------------- Loading Raw Data ---------------- -->
@@ -108,5 +118,38 @@ console.log("Recap for Intervention Beta:", recap2);
 ```
 
 ```js
-display({ recap1: recap1, recap2: recap2 });
+const query = view(
+  Inputs.text({
+    label: "Query",
+    placeholder: "Query the model",
+    value: "",
+    submit: true,
+  })
+);
+```
+
+```js
+{
+  //   display(query);
+  if (query !== "") {
+    const recap = await runLLMQuery(query, buildingsData);
+    display(query);
+    view(Inputs.table(recap.intervenedBuildings));
+    display({ recap: recap });
+  }
+  //   const recap3 = runLLMQuery(
+  //     "Install PV on buildings starting 2026 for 3 years with a budget of 150k per year",
+  //     buildingsData
+  //   );
+}
+```
+
+```js
+// display({ recap1: recap1, recap2: recap2 });
+// const flattenedIntervenedBuildings = recap1.intervenedBuildings.map(building => ({
+//   ...building,
+//   ...building.properties
+// }));
+
+// view(Inputs.table(recap1.intervenedBuildings));
 ```

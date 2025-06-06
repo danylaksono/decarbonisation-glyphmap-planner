@@ -1172,9 +1172,10 @@ export class MiniDecarbModel {
     this.filterSuitableBuildings(); // already applied in score calculation
     this.calculateBuildingScores();
 
-    // Set tech to the first technology if optimization strategy is not carbon-first and only one technology is available
+    // Set tech to the first technology if optimization strategy is not carbon-first and only if tech is not set
     if (
       this.config.optimizationStrategy !== "carbon-first" &&
+      (!this.config.tech || Object.keys(this.config.tech).length === 0) &&
       this.config.technologies.length > 0
     ) {
       this.config.tech = this.config.technologies[0];
