@@ -1154,13 +1154,6 @@ const mapAggregationInput = Inputs.radio(
     value: "Individual Building",
   }
 );
-// const mapAggregationInput = Inputs.radio(
-//   ["Building Level", "LSOA Level", "LA Level"],
-//   {
-//     label: "Level of Detail",
-//     value: "Building Level",
-//   }
-// );
 const map_aggregate = Generators.input(mapAggregationInput);
 ```
 
@@ -2262,6 +2255,7 @@ const normalisedTimeseriesLookup = normaliseTimeSeriesLookup(timeSeriesLookup, [
 ```
 
 ```js
+map_aggregate;
 log("[DEBUG] Glyph data", getGlyphData);
 ```
 
@@ -2290,7 +2284,7 @@ function glyphMapSpec(width = 800, height = 600) {
       "LA Level": "mercator", // fallback for LA Level
     },
     dataSource: {
-      "Individual Building": () => Object.values(getModelData),
+      "Individual Building": () => Object.values(getGlyphData),
       "Aggregated Building": () => Object.values(getModelData),
       "LSOA Level": () => Object.values(getGlyphData),
       "LA Level": () => Object.values(getModelData),
@@ -2366,10 +2360,17 @@ function glyphMapSpec(width = 800, height = 600) {
     // }
 
     if (timelineSwitch === "Decarbonisation Potentials") {
+      // console.log(
+      //   "[DEBUG] Decarbonisation Potentials glyph",
+      //   cellData,
+      //   x,
+      //   y,
+      //   cellSize
+      // );
       const { variables, colors } = config.timelineConfig[timelineSwitch];
       const rg = new RadialGlyph(
-        variables.map((key) => cellData[key]),
-        colors
+        glyphVariables.map((key) => cellData[key]),
+        glyphColours
       );
       rg.draw(ctx, x, y, cellSize / 2);
     } else if (
