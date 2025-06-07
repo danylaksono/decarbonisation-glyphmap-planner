@@ -192,7 +192,6 @@ endTimer("load_data_geojson");
 ```
 
 ```js
-startTimer("glyph_variables_and_colours");
 log(">> Defining the glyph variables and colours...");
 timeline_switch;
 const glyphVariables = [
@@ -234,7 +233,6 @@ const timelineColours = [
   "#00FF00", // numInterventions: Green
   "#FF0000", // interventionTechs: Red
 ];
-endTimer("glyph_variables_and_colours");
 ```
 
 <!-- ------------ Getter-Setter ------------ -->
@@ -277,6 +275,41 @@ const [getInterventionProcessingFlag, setInterventionProcessingFlag] =
   useState(false);
 const [getPreviousInterventionConfig, setPreviousInterventionConfig] =
   useState(null);
+```
+
+```js
+map_aggregate;
+// getModelData;
+updateInterventions();
+console.log(">> App State", updateInterventions().length, "results length");
+// test: print app state
+if (updateInterventions() && updateInterventions().length > 0) {
+  // Model has been run and results are available
+  if (map_aggregate === "Aggregated Building") {
+    console.log(">> App State: Model results available (Aggregated Building)");
+  } else if (map_aggregate === "LSOA Level") {
+    console.log(">> App State: Model results available (LSOA Level)");
+  } else if (map_aggregate === "LA Level") {
+    console.log(
+      ">> App State: Model results available (Local Authority Level)"
+    );
+  } else {
+    console.log(
+      ">> App State: Model results available (No specific aggregation, Individual Buildings)"
+    );
+  }
+} else {
+  // App state: No active model or model started over
+  if (map_aggregate === "Aggregated Building") {
+    console.log(">> App State: No active model (Aggregated Building)");
+  } else if (map_aggregate === "LSOA Level") {
+    console.log(">> App State: No active model (LSOA Level)");
+  } else if (map_aggregate === "LA Level") {
+    console.log(">> App State: No active model (Local Authority Level)");
+  } else {
+    console.log(">> App State: No active model (Individual Buildings)");
+  }
+}
 ```
 
 <!------------ HANDLE BI-DIRECTIONAL TABLE-MAP SELECTION -------------->
