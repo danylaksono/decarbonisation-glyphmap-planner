@@ -70,259 +70,219 @@ export function inferTypes(data) {
 export const enrichGeoData = function (
   buildingData,
   geoJSON,
-  joinColumn = "lsoa_code",
+  joinColumn = "lsoa",
   geoJSONJoinColumn = "code",
   aggregations = {},
-  normalize = true // Flag to enable or disable normalisation
+  normalize = true // Default to false since you want actual sums
 ) {
-  log("enrichGeoData: Starting data enrichment process");
+  console.log("enrichGeoData: Starting data enrichment process");
 
   // Input validation
-  if (!Array.isArray(buildingData)) {
-    error("enrichGeoData: buildingData is not an array");
+  if (!Array.isArray(buildingData) || !buildingData.length) {
+    console.warn("enrichGeoData: Invalid or empty buildingData");
     return geoJSON;
   }
 
-  if (!buildingData.length) {
-    warn("enrichGeoData: buildingData is empty");
-    return geoJSON;
-  }
-
-  if (!geoJSON || !geoJSON.features || !Array.isArray(geoJSON.features)) {
-    error("enrichGeoData: Invalid geoJSON structure");
+  if (!geoJSON?.features?.length) {
+    console.warn("enrichGeoData: Invalid or empty geoJSON");
     return geoJSON || { type: "FeatureCollection", features: [] };
   }
 
-  if (typeof joinColumn !== "string" || typeof geoJSONJoinColumn !== "string") {
-    error(
-      `enrichGeoData: Invalid join columns. Using defaults. Got joinColumn=${joinColumn}, geoJSONJoinColumn=${geoJSONJoinColumn}`
-    );
-    joinColumn = "lsoa_code";
-    geoJSONJoinColumn = "code";
-  }
+  // Group building data by join column
+  console.log(`enrichGeoData: Grouping buildings by "${joinColumn}"`);
+  const groupedData = {};
 
-  if (typeof aggregations !== "object") {
-    error("enrichGeoData: Invalid aggregations object");
-    aggregations = {};
-  }
+  buildingData.forEach((building) => {
+    if (!building) return;
 
-  // Check if any building has the join column
-  const hasJoinColumn = buildingData.some((item) => item && item[joinColumn]);
-  if (!hasJoinColumn) {
-    error(`enrichGeoData: No buildings found with join column "${joinColumn}"`);
-    return geoJSON;
-  }
+    const code = building[joinColumn];
+    if (!code) return;
 
-  // 1. Group building data by join column
-  log(`enrichGeoData: Grouping buildings by "${joinColumn}"`);
-  const groupedData = buildingData.reduce((acc, item) => {
-    if (!item) return acc; // Skip null items
-
-    const code = item[joinColumn];
-    if (!code) {
-      // Debug info for missing join values
-      if (item.id || item.building_id) {
-        log(
-          `enrichGeoData: Building ${
-            item.id || item.building_id
-          } missing join value for "${joinColumn}"`
-        );
-      }
-      return acc; // Skip items with missing join values
+    if (!groupedData[code]) {
+      groupedData[code] = [];
     }
+    groupedData[code].push(building);
+  });
 
-    acc[code] = acc[code] || [];
-    acc[code].push(item);
-    return acc;
-  }, {});
-
-  const groupCount = Object.keys(groupedData).length;
-  log(
-    `enrichGeoData: Created ${groupCount} groups from ${buildingData.length} buildings`
+  console.log(
+    `Created ${Object.keys(groupedData).length} groups from ${
+      buildingData.length
+    } buildings`
   );
 
-  if (groupCount === 0) {
-    warn("enrichGeoData: No valid groups created. Check join column values.");
-    return geoJSON;
-  }
-
-  // 2. Aggregate building data for each group
-  log("enrichGeoData: Aggregating building data");
+  // Aggregate data for each group
+  console.log("enrichGeoData: Aggregating building data");
   const aggregatedData = {};
-  const skippedAggregations = [];
 
-  for (const code in groupedData) {
+  for (const [code, buildings] of Object.entries(groupedData)) {
     aggregatedData[code] = {};
-    const buildings = groupedData[code];
 
-    for (const column in aggregations) {
-      const aggregationType = aggregations[column];
+    for (const [column, aggregationType] of Object.entries(aggregations)) {
+      const values = buildings
+        .map((b) => b[column])
+        .filter((v) => v != null && v !== ""); // Remove null, undefined, and empty strings
 
-      // Check if column exists in at least one building
-      const columnExists = buildings.some((b) => column in b);
-      if (!columnExists) {
-        skippedAggregations.push(column);
-        continue;
-      }
-
-      const values = buildings.map((b) => b[column]).filter((v) => v != null); // Remove null/undefined values
-
-      if (values.length === 0) {
-        log(
-          `enrichGeoData: No valid values for column "${column}" in area "${code}"`
-        );
-        continue;
-      }
+      if (values.length === 0) continue;
 
       try {
-        if (aggregationType === "sum" || aggregationType === "mean") {
-          const sum = values.reduce((a, b) => {
-            const numValue = Number(b);
-            if (isNaN(numValue)) {
-              warn(
-                `enrichGeoData: Non-numeric value "${b}" found in column "${column}"`
-              );
-              return a;
-            }
-            return a + (numValue || 0);
-          }, 0);
+        switch (aggregationType) {
+          case "sum":
+            aggregatedData[code][column] = values.reduce((sum, val) => {
+              const num = Number(val);
+              return sum + (isNaN(num) ? 0 : num);
+            }, 0);
+            break;
 
-          aggregatedData[code][column] =
-            aggregationType === "sum"
-              ? sum
-              : values.length
-              ? sum / values.length
-              : 0;
-        } else if (aggregationType === "count") {
-          if (values.length > 0 && typeof values[0] === "string") {
-            // Handle categorical counts
-            const counts = values.reduce((acc, val) => {
-              if (val === null || val === undefined) return acc;
-              acc[val] = (acc[val] || 0) + 1;
-              return acc;
-            }, {});
-
-            for (const [val, count] of Object.entries(counts)) {
-              if (val) {
-                // Ensure we don't create properties with empty keys
-                aggregatedData[code][`${column}_${val}`] = count;
-              }
+          case "mean":
+            const numericValues = values
+              .map((v) => Number(v))
+              .filter((v) => !isNaN(v));
+            if (numericValues.length > 0) {
+              aggregatedData[code][column] =
+                numericValues.reduce((a, b) => a + b, 0) / numericValues.length;
             }
-          } else {
-            // Simple count
+            break;
+
+          case "count":
             aggregatedData[code][column] = values.length;
-          }
-        } else {
-          warn(
-            `enrichGeoData: Unsupported aggregation type "${aggregationType}" for column "${column}"`
-          );
+            break;
+
+          case "unique_count":
+            aggregatedData[code][column] = new Set(values).size;
+            break;
+
+          case "array":
+            // Collect unique values as an array
+            aggregatedData[code][column] = [...new Set(values)];
+            break;
+
+          case "categories":
+            // Count occurrences of each category
+            const counts = {};
+            values.forEach((val) => {
+              counts[val] = (counts[val] || 0) + 1;
+            });
+            // Add each category as separate property
+            for (const [cat, count] of Object.entries(counts)) {
+              aggregatedData[code][`${column}_${cat}`] = count;
+            }
+            break;
+
+          case "min":
+            const minValues = values
+              .map((v) => Number(v))
+              .filter((v) => !isNaN(v));
+            if (minValues.length > 0) {
+              aggregatedData[code][column] = Math.min(...minValues);
+            }
+            break;
+
+          case "max":
+            const maxValues = values
+              .map((v) => Number(v))
+              .filter((v) => !isNaN(v));
+            if (maxValues.length > 0) {
+              aggregatedData[code][column] = Math.max(...maxValues);
+            }
+            break;
+
+          default:
+            console.warn(`Unsupported aggregation type: ${aggregationType}`);
         }
       } catch (error) {
-        error(`enrichGeoData: Error aggregating column "${column}":`, error);
-        // Continue processing other columns
+        console.error(`Error aggregating column "${column}":`, error);
       }
     }
   }
 
-  if (skippedAggregations.length > 0) {
-    // console.warn(
-    //   `enrichGeoData: Skipped aggregations for non-existent columns: ${skippedAggregations.join(
-    //     ", "
-    //   )}`
-    // );
-  }
-
-  // 3. Normalize aggregated data if enabled
-  let normalizedAggregatedData = aggregatedData;
+  // Optional normalization (only if explicitly requested)
+  let finalData = aggregatedData;
   if (normalize) {
-    log("enrichGeoData: Normalizing aggregated data");
-    try {
-      // Flatten aggregatedData to prepare it for normalization
-      const flattenedData = Object.entries(aggregatedData).map(
-        ([code, values]) => ({
-          code,
-          ...values,
-        })
-      );
-
-      if (flattenedData.length === 0) {
-        warn("enrichGeoData: No data to normalize");
-      } else {
-        // Determine numeric keys for normalization
-        const numericKeys = getNumericKeys(flattenedData);
-        log(
-          `enrichGeoData: Found ${numericKeys.length} numeric columns to normalize`
-        );
-
-        // Normalize the flattened data
-        const normalizedData = normaliseData(flattenedData, numericKeys);
-
-        // Transform back to grouped structure
-        normalizedAggregatedData = normalizedData.reduce((acc, item) => {
-          const { code, ...rest } = item;
-          acc[code] = rest;
-          return acc;
-        }, {});
-      }
-    } catch (err) {
-      error("enrichGeoData: Error during normalization:", err);
-      // Fall back to unnormalized data
-      normalizedAggregatedData = aggregatedData;
-    }
+    console.log("enrichGeoData: Normalizing data");
+    finalData = normalizeAggregatedData(aggregatedData);
   }
 
-  // 4. Create new GeoJSON with merged and normalized data
-  log("enrichGeoData: Merging data with GeoJSON");
+  // Merge with GeoJSON
+  console.log("enrichGeoData: Merging data with GeoJSON");
   let matchCount = 0;
-  let missingMatches = [];
 
   const enrichedGeoJSON = {
     ...geoJSON,
     features: geoJSON.features.map((feature) => {
-      if (!feature || !feature.properties) {
-        warn("enrichGeoData: Found feature without properties");
-        return feature;
-      }
+      if (!feature?.properties) return feature;
 
       const joinValue = feature.properties[geoJSONJoinColumn];
-      if (!joinValue) {
-        log(
-          `enrichGeoData: Feature missing join value for "${geoJSONJoinColumn}"`
-        );
-        return feature;
-      }
+      if (!joinValue) return feature;
 
-      const matchingData = normalizedAggregatedData[joinValue];
-      if (!matchingData) {
-        missingMatches.push(joinValue);
-      } else {
+      const matchingData = finalData[joinValue];
+      if (matchingData) {
         matchCount++;
+        return {
+          ...feature,
+          properties: {
+            ...feature.properties,
+            ...matchingData,
+          },
+        };
       }
 
-      return {
-        ...feature,
-        properties: {
-          ...feature.properties,
-          ...(matchingData || {}),
-        },
-      };
+      return feature;
     }),
   };
 
-  log(
-    `enrichGeoData: Matched data for ${matchCount} out of ${geoJSON.features.length} features`
+  console.log(
+    `Matched data for ${matchCount} out of ${geoJSON.features.length} features`
   );
-  if (missingMatches.length > 0) {
-    warn(
-      `enrichGeoData: No matching data for ${missingMatches.length} features`
-    );
-    if (missingMatches.length < 10) {
-      log(`enrichGeoData: Missing matches for: ${missingMatches.join(", ")}`);
-    }
-  }
 
   return enrichedGeoJSON;
 };
+
+// Helper function for normalization (only used if normalize=true)
+function normalizeAggregatedData(aggregatedData) {
+  // Convert to flat array for processing
+  const flatData = Object.entries(aggregatedData).map(([code, values]) => ({
+    code,
+    ...values,
+  }));
+
+  // Find numeric columns
+  const numericKeys = [];
+  if (flatData.length > 0) {
+    Object.keys(flatData[0]).forEach((key) => {
+      if (key !== "code" && typeof flatData[0][key] === "number") {
+        numericKeys.push(key);
+      }
+    });
+  }
+
+  // Normalize numeric columns
+  const normalizers = {};
+  numericKeys.forEach((key) => {
+    const values = flatData
+      .map((d) => d[key])
+      .filter((v) => typeof v === "number");
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+
+    normalizers[key] =
+      min === max ? () => 0.5 : (value) => (value - min) / (max - min);
+  });
+
+  // Apply normalization and convert back
+  const normalizedData = {};
+  flatData.forEach((item) => {
+    const { code, ...rest } = item;
+    normalizedData[code] = { ...rest };
+
+    numericKeys.forEach((key) => {
+      if (typeof item[key] === "number") {
+        normalizedData[code][key] = normalizers[key](item[key]);
+      }
+    });
+  });
+
+  return normalizedData;
+}
 
 function getNumericKeys(data) {
   if (!Array.isArray(data) || data.length === 0) return [];
@@ -330,111 +290,6 @@ function getNumericKeys(data) {
   if (typeof sample !== "object" || sample === null) return [];
   return Object.keys(sample).filter((key) => typeof sample[key] === "number");
 }
-
-// export function aggregateValues(
-//   data,
-//   selectedParameters = getNumericKeys(data),
-//   aggregationType = "mean",
-//   normalise = false // Optional normalization flag
-// ) {
-//   if (!Array.isArray(data) || data.length === 0) {
-//     throw new Error("Data must be a non-empty array.");
-//   }
-
-//   // Validate selected parameters
-//   if (!Array.isArray(selectedParameters) || selectedParameters.length === 0) {
-//     throw new Error("Selected parameters must be a non-empty array.");
-//   }
-
-//   // Optional normalization step BEFORE aggregation
-//   if (normalise && selectedParameters.length > 1) {
-//     data = normaliseData(data, selectedParameters);
-//   }
-
-//   const aggregates = {};
-
-//   // Define aggregation functions
-//   const aggregationFunctions = {
-//     mean: d3.mean,
-//     sum: d3.sum,
-//     min: d3.min,
-//     max: d3.max,
-//     extent: d3.extent,
-//   };
-
-//   const aggregationFn = aggregationFunctions[aggregationType];
-
-//   if (!aggregationFn) {
-//     throw new Error(`Unsupported aggregation type: ${aggregationType}`);
-//   }
-
-//   // Perform aggregation
-//   for (const parameter of selectedParameters) {
-//     const values = data
-//       .map((d) => {
-//         let value = d[parameter];
-
-//         if (typeof value === "boolean") {
-//           return value ? 1 : 0;
-//         }
-
-//         if (typeof value === "string" && !isNaN(value)) {
-//           value = Number(value); // Convert numeric strings to numbers
-//         }
-
-//         return typeof value === "number" ? value : null; // Ensure it's a number
-//       })
-//       .filter((v) => v != null); // Remove null/undefined values
-
-//     aggregates[parameter] = values.length > 0 ? aggregationFn(values) : null;
-//   }
-
-//   return aggregates;
-// }
-
-// // Normalization function
-// export function normaliseData(data, keysToNormalise) {
-//   if (!Array.isArray(data) || data.length === 0) {
-//     throw new Error("Data must be a non-empty array.");
-//   }
-
-//   if (!Array.isArray(keysToNormalise) || keysToNormalise.length === 0) {
-//     throw new Error("Keys to normalise must be a non-empty array.");
-//   }
-
-//   // Create a D3 linear scale for each key
-//   const scales = {};
-//   keysToNormalise.forEach((key) => {
-//     const numericValues = data
-//       .map((d) =>
-//         typeof d[key] === "string" && !isNaN(d[key]) ? Number(d[key]) : d[key]
-//       )
-//       .filter((v) => typeof v === "number" && !isNaN(v));
-
-//     const extent = d3.extent(numericValues);
-//     console.log(`Key: ${key}, Min: ${extent[0]}, Max: ${extent[1]}`); // Debugging
-
-//     if (extent[0] === extent[1]) {
-//       // Avoid division by zero by setting a constant scale
-//       scales[key] = () => 0.5;
-//     } else {
-//       scales[key] = d3.scaleLinear().domain(extent).range([0, 1]);
-//     }
-//   });
-
-//   // Normalize data
-//   return data.map((d) => {
-//     let newData = { ...d };
-
-//     keysToNormalise.forEach((key) => {
-//       if (scales[key]) {
-//         newData[key] = scales[key](d[key]);
-//       }
-//     });
-
-//     return newData;
-//   });
-// }
 
 export function insideCell(c, x, y) {
   // console.log(x + " " + y  + " " + c.getXCentre() + " " + c.getYCentre() + " " + c.getCellSize());

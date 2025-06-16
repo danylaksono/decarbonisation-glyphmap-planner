@@ -278,36 +278,59 @@ const [getPreviousInterventionConfig, setPreviousInterventionConfig] =
 ```
 
 ```js
-map_aggregate;
-// getModelData;
-updateInterventions();
-console.log(">> App State", updateInterventions().length, "results length");
-// test: print app state
-if (updateInterventions() && updateInterventions().length > 0) {
-  // Model has been run and results are available
-  if (map_aggregate === "Aggregated Building") {
-    console.log(">> App State: Model results available (Aggregated Building)");
-  } else if (map_aggregate === "LSOA Level") {
-    console.log(">> App State: Model results available (LSOA Level)");
-  } else if (map_aggregate === "LA Level") {
-    console.log(
-      ">> App State: Model results available (Local Authority Level)"
-    );
+const [getAppState, setAppState] = useState(null); // APP STATE
+```
+
+```js
+console.log(">> Current App State: ", getAppState);
+```
+
+```js
+// ---- REMAPPING APP STATE ----
+{
+  // map_aggregate;
+  // updateInterventions();
+  // console.log(">> App State", updateInterventions().length, "results length");
+  // console.log(">> App State:", getAppState);
+  if (updateInterventions() && updateInterventions().length > 0) {
+    // Model has been run and results are available
+    if (map_aggregate === "Aggregated Building") {
+      // console.log(
+      //   ">> App State: Model results available (Aggregated Building)"
+      // );
+      setAppState("Model Result - Aggregated Building");
+    } else if (map_aggregate === "LSOA Level") {
+      // console.log(">> App State: Model results available (LSOA Level)");
+      setAppState("Model Result - LSOA Level");
+    } else if (map_aggregate === "LA Level") {
+      // console.log(
+      //   ">> App State: Model results available (Local Authority Level)"
+      // );
+      setAppState("Model Result - LA Level");
+    } else {
+      // console.log(
+      //   ">> App State: Model results available (No specific aggregation, Individual Buildings)"
+      // );
+      setAppState("Model Result - Individual Buildings");
+    }
   } else {
-    console.log(
-      ">> App State: Model results available (No specific aggregation, Individual Buildings)"
-    );
-  }
-} else {
-  // App state: No active model or model started over
-  if (map_aggregate === "Aggregated Building") {
-    console.log(">> App State: No active model (Aggregated Building)");
-  } else if (map_aggregate === "LSOA Level") {
-    console.log(">> App State: No active model (LSOA Level)");
-  } else if (map_aggregate === "LA Level") {
-    console.log(">> App State: No active model (Local Authority Level)");
-  } else {
-    console.log(">> App State: No active model (Individual Buildings)");
+    // App state: No active model or model started over
+    if (map_aggregate === "Aggregated Building") {
+      // console.log(">> App State: No active model (Aggregated Building)");
+      setAppState("All Data - Aggregated Building");
+    } else if (map_aggregate === "LSOA Level") {
+      // console.log(">> App State: No active model (LSOA Level)");
+      setAppState("All Data - LSOA Level");
+    } else if (map_aggregate === "LA Level") {
+      // console.log(">> App State: No active model (Local Authority Level)");
+      // no glyphs for LA level, only charts
+      setAppState("All Data - LA Level");
+    } else {
+      // console.log(">> App State: No active model (Individual Buildings)");
+      setAppState("All Data - Individual Buildings");
+      // use individual buildings data for glyphs
+      // setGlyphData(buildingsData);
+    }
   }
 }
 ```
@@ -471,7 +494,7 @@ const filterManager = {
     <div class="left-top">
       <div class="card" style="overflow:hidden; padding: 5px;">
           <header class="quickview-header">
-            <p class="title">Table & Chart View </p>
+            <p class="title">Table View ${getAppState ? `(${getAppState.split(' - ')[0].replace(/[()]/g, '').trim()})` : ""} </p>
           </header>
           <div id="table-container" style="height:90%; overflow-y:hidden">
             ${resize(
@@ -937,8 +960,6 @@ function transformInterventionData(
 
   return fullTimeSeries;
 }
-
-// endTimer("transform_intervention_data");
 ```
 
 <!-- ---------------- Intervention Managers ---------------- -->
@@ -986,27 +1007,6 @@ const listOfTech = {
 ```
 
 ```js
-// initial building data from get initial data's id if it exist
-// else use the buildingsData
-
-// let initialData;
-// if (getInitialData && getInitialData.length > 0) {
-//   const initialIds = new Set(getInitialData.map((d) => d.id));
-//   initialData = buildingsData.filter((b) => initialIds.has(b.id));
-// } else {
-//   initialData = buildingsData;
-// }
-
-// const filteredBuildingsData = null;
-// if (getInitialData && getInitialData.length > 0) {
-//   const initialIds = new Set(getInitialData.map((d) => d.id));
-//   filteredBuildingsData = buildingsData.filter((b) => initialIds.has(b.id));
-// } else {
-//   filteredBuildingsData = buildingsData;
-// }
-```
-
-```js
 // --- Create an InterventionManager instance ---
 const manager = new InterventionManager(buildingsData, listOfTech);
 // const manager = createInterventionManager(initialData, listOfTech);
@@ -1021,7 +1021,6 @@ const manager = new InterventionManager(buildingsData, listOfTech);
 
 ```js
 // --- technology ---
-// const techsInput = Inputs.select(["PV", "ASHP", "GSHP", "Optimise All"], {
 const techsInput = Inputs.select(
   new Map([
     ["Rooftop Solar PV", "PV"],
@@ -2061,37 +2060,37 @@ function injectGlobalLoadingOverlay() {
 const aggregations = {
   // "id": 200004687243,
   isIntervened: "count",
-  interventionYear: "sum",
+  interventionYear: "array",
   interventionCost: "sum",
   carbonSaved: "sum",
   numInterventions: "sum",
-  interventionTechs: "count",
+  interventionTechs: "categories",
   building_area: "sum",
-  ashp_suitability: "count",
+  ashp_suitability: "categories",
   ashp_size: "sum",
   ashp_labour: "sum",
   ashp_material: "sum",
   ashp_total: "sum",
-  gshp_suitability: "count",
+  gshp_suitability: "categories",
   gshp_size: "sum",
   gshp_labour: "sum",
   gshp_material: "sum",
   gshp_total: "sum",
   heat_demand: "sum",
-  pv_suitability: "count",
+  pv_suitability: "categories",
   pv_size: "sum",
   pv_generation: "sum",
   pv_labour: "sum",
   pv_material: "sum",
   pv_total: "sum",
   // substation_name: "count",
-  substation_capacity_rating: "sum",
-  substation_peakload: "sum",
-  substation_headroom: "sum",
-  substation_headroom_pct: "sum",
-  substation_demand: "count",
+  // substation_capacity_rating: "sum",
+  // substation_peakload: "sum",
+  // substation_headroom: "sum",
+  // substation_headroom_pct: "sum",
+  // substation_demand: "count",
   deprivation_score: "sum",
-  deprivation_rank: "sum",
+  deprivation_rank: "array",
   deprivation_decile: "sum",
   fuel_poverty_households: "sum",
   fuel_poverty_proportion: "sum",
@@ -2108,10 +2107,12 @@ const regular_geodata_withproperties = enrichGeoData(
   aggregations
 );
 
-// console.log(
-//   "[DEBUG] regular_geodata_withproperties_enriched",
-//   regular_geodata_withproperties
-// );
+console.log(
+  "[DEBUG] regular_geodata_withproperties_enriched",
+  regular_geodata_withproperties,
+  "\n based on",
+  getModelData
+);
 
 const cartogram_geodata_withproperties = enrichGeoData(
   // buildingsData,
@@ -2153,11 +2154,11 @@ const cartogramGeodataLsoaWgs84 = clone;
 ```js
 // Create a lookup table for the key data - geography
 // this is already aggregated by LSOA in EnrichGeoData
-// startTimer("create*lookup_tables");
 // log(">> Create lookup tables...");
 const keydata = _.keyBy(
   regular_geodata_withproperties.features.map((feat) => {
     return {
+      ...feat.properties, // flatten all properties
       code: feat.properties.code,
       population: +feat.properties.population,
       carbonSaved: feat.properties.carbonSaved
@@ -2169,11 +2170,11 @@ const keydata = _.keyBy(
       numInterventions: feat.properties.numInterventions
         ? +feat.properties.numInterventions
         : 0,
-      // data: feat.properties, // all the data
     };
   }),
   "code"
 );
+
 // log(">>> Keydata", keydata);
 
 const regularGeodataLookup = _.keyBy(
@@ -2262,8 +2263,9 @@ const normalisedTimeseriesLookup = normaliseTimeSeriesLookup(timeSeriesLookup, [
 // DATA DATA DATA
 {
   if (
-    map_aggregate === "Individual Building" ||
-    map_aggregate === "Aggregated Building"
+    map_aggregate === "Individual Building" || // fallbacks
+    map_aggregate === "Aggregated Building" ||
+    map_aggregate === "LA Level" // fallbacks
   ) {
     // use the individual data
     setGlyphData(buildingsData);
@@ -2272,13 +2274,14 @@ const normalisedTimeseriesLookup = normaliseTimeSeriesLookup(timeSeriesLookup, [
     // use prepared rather than on the fly processing data
     if (timeline_switch == "Decarbonisation Potentials") {
       // use the aggregated LSOA decarbonisation potential
-      setGlyphData(keydata); //
+      // console.log("Setting glyph data for LSOA level", keydata);
+      setGlyphData(keydata);
     } else {
       // timeline_switch == "Decarbonisation Timeline"
-      console.log(
-        "[DEBUG] timeline_switch == Decarbonisation Timeline",
-        timeline_switch
-      );
+      // console.log(
+      //   "[DEBUG] timeline_switch == Decarbonisation Timeline",
+      //   timeline_switch
+      // );
       // use timeline data
       setGlyphData(normalisedTimeseriesLookup);
       // setGlyphData(timeSeriesLookup);
@@ -2314,7 +2317,7 @@ function glyphMapSpec(width = 800, height = 600) {
       "Individual Building": "mercator",
       "Aggregated Building": "mercator",
       "LSOA Level": "notmercator",
-      "LA Level": "mercator", // fallback for LA Level
+      "LA Level": "mercator", // fallback for LA Level.
     },
     dataSource: {
       "Individual Building": () => Object.values(getGlyphData),
@@ -2330,8 +2333,8 @@ function glyphMapSpec(width = 800, height = 600) {
     },
     timelineConfig: {
       "Decarbonisation Potentials": {
-        variables: ["carbonSaved", "interventionCost", "numInterventions"],
-        colors: ["#228B22", "#1E90FF", "#FF8C00"],
+        variables: glyphVariables,
+        colors: glyphColours,
       },
       "Decarbonisation Timeline": {
         variables: ["numInterventions", "interventionCost", "carbonSaved"],
@@ -2345,28 +2348,57 @@ function glyphMapSpec(width = 800, height = 600) {
   };
 
   const getCellData = (cell, aggregateLevel, timelineSwitch) => {
+    // there are only four cases of cell.data in glyph maps:
+    // aggregated building - decarbonisation potentials
+    // aggregated building - decarbonisation timeline
+    // lsoa level - decarbonisation potentials
+    // lsoa level - decarbonisation timeline
+    // + two combinations of selected intervention/all interventions
+
+    // console.log(">> getCellData", cell, aggregateLevel, timelineSwitch);
     if (!cell.records) return {};
 
-    // aggregate if building level
-    if (
-      aggregateLevel === "Individual Building" ||
-      aggregateLevel === "Aggregated Building"
-    ) {
+    // console.log("APPSTATE", getAppState);
+
+    // Aggregated Building Level, for both decarbonisation potentials and timeline
+    if (aggregateLevel === "Aggregated Building") {
       return aggregateValues(cell.records, glyphVariables, "sum");
+    } else {
+      // LSOA Level
+
+      // console.log(
+      //   "[DEBUG] Decarbonisation getglyphdata in LSOA level",
+      //   getGlyphData
+      // );
+
+      // for LSOA level, aggregate by boundary
+      const lsoaCode = cell.records[0].code;
+
+      // if (!glyphData) {
+      //   return {};
+      // }
+
+      if (timelineSwitch === "Decarbonisation Potentials") {
+        // const glyphData = getGlyphData?.data?.[lsoaCode];
+        const glyphData = getGlyphData?.[lsoaCode] || {};
+        // console.log(
+        //   "[DEBUG] Decarbonisation getglyphdata in LSOA level",
+        //   glyphData
+        // );
+        // console.log("[DEBUG] Decarbonisation Potentials glyph", getModelData);
+        // return cell.records[0].data?.properties || {};
+        return glyphData;
+      } else if (timelineSwitch === "Decarbonisation Timeline") {
+        const glyphData = getGlyphData?.[lsoaCode];
+        // console.log(
+        //   "[DEBUG] Decarbonisation Timeline glyph",
+        //   cell.records[0].data
+        // );
+        return cell.records[0].data || {};
+      }
+
+      return glyphData;
     }
-
-    // for other levels
-    const lsoaCode = cell.records[0].code;
-    const glyphData = getGlyphData?.[lsoaCode];
-
-    if (!glyphData) {
-      console.log(
-        `[DEBUG] No ${timelineSwitch} data available for cell ${lsoaCode}`
-      );
-      return {};
-    }
-
-    return glyphData;
   };
 
   const drawGlyph = (
@@ -2380,37 +2412,27 @@ function glyphMapSpec(width = 800, height = 600) {
   ) => {
     const cellData = cell.records[0].data?.properties || cell.data;
 
-    // if (
-    //   aggregateLevel === "Individual Building" ||
-    //   aggregateLevel === "Aggregated Building"
-    // ) {
-    //   const rg = new RadialGlyph(
-    //     glyphVariables.map((key) => cellData[key]),
-    //     glyphColours
-    //   );
-    //   rg.draw(ctx, x, y, cellSize / 2);
-    //   return;
-    // }
-
+    // Draw the glyph based on the timeline switch
     if (timelineSwitch === "Decarbonisation Potentials") {
-      // console.log(
-      //   "[DEBUG] Decarbonisation Potentials glyph",
-      //   cellData,
-      //   x,
-      //   y,
-      //   cellSize
-      // );
+      console.log("[DEBUG] Decarbonisation Potentials glyph", cellData);
       const { variables, colors } = config.timelineConfig[timelineSwitch];
+      const glyphVariables_lsoa = [
+        "ashp_suitability_true",
+        "ashp_size",
+        "ashp_total",
+        "gshp_suitability_true",
+        "gshp_size",
+        "gshp_total",
+        "pv_suitability_true",
+        "pv_generation",
+        "pv_total",
+      ];
       const rg = new RadialGlyph(
-        glyphVariables.map((key) => cellData[key]),
+        glyphVariables_lsoa.map((key) => cellData[key]),
         glyphColours
       );
       rg.draw(ctx, x, y, cellSize / 2);
-    } else if (
-      timelineSwitch === "Decarbonisation Timeline"
-      // &&
-      // cell.data?.length > 0
-    ) {
+    } else if (timelineSwitch === "Decarbonisation Timeline") {
       // draw simple circle for debugging
       console.log("DEBUGGING TIMESRIESS", timeline_switch, map_aggregate);
       // console.log("DEBUGGING TIMESRIESS 2", cellSize, config.coordType);
@@ -2463,10 +2485,7 @@ function glyphMapSpec(width = 800, height = 600) {
           cell.data = getCellData(cell, map_aggregate, timeline_switch);
         }
 
-        if (
-          map_aggregate === "Individual Building" ||
-          map_aggregate === "Aggregated Building"
-        ) {
+        if (map_aggregate === "Aggregated Building") {
           const dataArray = cells.map((cell) => cell.data);
           const normalisedData = dataArray
             ? normaliseData(dataArray, glyphVariables)
@@ -2832,6 +2851,7 @@ function resetState() {
       // sessionStorage.removeItem("initialids");
       // sessionStorage.removeItem("allocations");
 
+      // Reset model data to the original buildings data
       setModelData(buildingsData);
     } catch (err) {
       error("[RESET] Error during reset:", err);
