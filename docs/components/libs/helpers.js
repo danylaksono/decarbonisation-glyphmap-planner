@@ -73,7 +73,7 @@ export const enrichGeoData = function (
   joinColumn = "lsoa",
   geoJSONJoinColumn = "code",
   aggregations = {},
-  normalize = true // Default to false since you want actual sums
+  normalize = true
 ) {
   console.log("enrichGeoData: Starting data enrichment process");
 
