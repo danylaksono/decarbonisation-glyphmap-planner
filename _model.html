@@ -31,7 +31,7 @@ import {define} from "./_observablehq/client.js";
 import {registerFile, FileAttachment} from "./_observablehq/stdlib.js";
 import {registerTable} from "./_observablehq/stdlib/duckdb.js";
 
-registerFile("./data/oxford_decarbonisation_data.parquet", {"name":"./data/oxford_decarbonisation_data.parquet","path":"./_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1749215574191});
+registerFile("./data/oxford_decarbonisation_data.parquet", {"name":"./data/oxford_decarbonisation_data.parquet","path":"./_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1750232754885});
 registerTable("oxford", FileAttachment("./data/oxford_decarbonisation_data.parquet"));
 
 define({id: "a5d6eb9a", outputs: ["InterventionManager","MiniDecarbModel","queryLLMForConfig","runLLMQuery"], body: async () => {
@@ -143,9 +143,9 @@ console.log("Recap for Intervention Beta:", recap2);
 return {model1,recap1,modelConfigIntervention2,model2,recap2};
 }});
 
-define({id: "506ed483", inputs: ["view","Inputs"], outputs: ["query"], body: (view,Inputs) => {
+define({id: "5a166c6f", inputs: ["view","Inputs"], outputs: ["query"], body: (view,Inputs) => {
 const query = view(
-  Inputs.text({
+  Inputs.textarea({
     label: "Query",
     placeholder: "Query the model",
     value: "",
@@ -190,7 +190,7 @@ define({id: "8d9c110e", body: () => {
 <div class="observablehq observablehq--block"><!--:d6edfb88:--></div>
 <div class="observablehq observablehq--block"><!--:cf096b4f:--></div>
 <div class="observablehq observablehq--block"><!--:befe7239:--></div>
-<div class="observablehq observablehq--block"><!--:506ed483:--></div>
+<div class="observablehq observablehq--block"><!--:5a166c6f:--></div>
 <div class="observablehq observablehq--block"><!--:0ca606fc:--></div>
 <div class="observablehq observablehq--block"><!--:8d9c110e:--></div>
 </main>

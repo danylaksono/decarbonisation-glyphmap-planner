@@ -1,5 +1,5 @@
 /**
- * Bundled by jsDelivr using Rollup v2.79.2 and Terser v5.37.0.
+ * Bundled by jsDelivr using Rollup v2.79.2 and Terser v5.39.0.
  * Original file: /npm/mermaid@11.6.0/dist/chunks/mermaid.esm.min/classDiagram-v2-PRA2ZCF7.mjs
  *
  * Do NOT use SRI with dynamically generated files! More information: https://www.jsdelivr.com/using-sri-with-dynamic-files
