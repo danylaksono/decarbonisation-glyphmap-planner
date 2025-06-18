@@ -119,7 +119,7 @@ console.log("Recap for Intervention Beta:", recap2);
 
 ```js
 const query = view(
-  Inputs.text({
+  Inputs.textarea({
     label: "Query",
     placeholder: "Query the model",
     value: "",
