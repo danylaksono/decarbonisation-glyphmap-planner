@@ -609,15 +609,11 @@ const filterManager = {
                       } else if (click != null && click > 1000) {
                         // clicking on intervention year
                         console.log("Clicked on intervention year", click);
-                      } else if (updateInterventions() && updateInterventions().length > 0)  {
-                        // clicking on background when model output is available
+                      } else {
+                        // clicking on background
                         console.log("No intervention selected");
                         setSelectedInterventionIndex(null);
                         filterStackedInterventions();
-                      } else {
-                        // clicking on background when no model output is available
-                        console.log("No interventions available");
-                        openQuickviewButton.click();
                       }
                     },
                     width || 800,
