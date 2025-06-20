@@ -387,12 +387,12 @@ console.log(">> Current App State: ", getAppState);
   // printing out variables
   console.log("============== Printing out variables ==============");
   console.log(" Current App STATE:", getAppState);
-  console.log("  > getModelData:", getModelData);
-  console.log("  > getGlyphData:", getGlyphData);
-  console.log("  > groupedData:", groupedData);
-  console.log("  > keydata:", keydata);
+  // console.log("  > getModelData:", getModelData);
+  // console.log("  > getGlyphData:", getGlyphData);
+  // console.log("  > groupedData:", groupedData);
+  // console.log("  > keydata:", keydata);
   console.log("  > normalisedTimeseriesLookup:", normalisedTimeseriesLookup);
-  console.log("  > timeSeriesLookup:", timeSeriesLookup);
+  // console.log("  > timeSeriesLookup:", timeSeriesLookup);
   console.log("============== End of variables ======================");
 }
 ```
@@ -622,7 +622,7 @@ const filterManager = {
                     },
                     width || 800,
                     height || 300,
-                    true // tooltips enabled
+                    false, // tooltips disabled
                   );
                 })}
               </div> <!-- timeline panel -->
@@ -660,7 +660,6 @@ const filterManager = {
       </header>
           ${mapAggregationInput}
           ${(map_aggregate === "Aggregated Building" || map_aggregate === "LSOA Level" || map_aggregate === "LA Level" ) ? timelineSwitchInput : ""}
-          <!-- ${(map_aggregate === "Building Level") ? toggleGridmaps : ""} -->
           ${(map_aggregate === "LSOA Level") ? html`${playButton} ${morphFactorInput}` : ""} 
           <!-- ${html`${playButton} ${morphFactorInput}`} -->
           ${resize((width, height) => createGlyphMap(map_aggregate, width, height-80))}
@@ -1303,8 +1302,8 @@ const playButton = html`<button class="btn edit" style="margin-top: 5px;">
 
 ```js
 // toggle between raw building data and gridded glyphmaps
-const toggleGridmaps = Inputs.toggle({ label: "Gridmaps?", value: true });
-const toggle_grids = Generators.input(toggleGridmaps);
+// const toggleGridmaps = Inputs.toggle({ label: "Gridmaps?", value: true });
+// const toggle_grids = Generators.input(toggleGridmaps);
 ```
 
 ```js
@@ -2417,7 +2416,7 @@ function glyphMapSpec(width = 800, height = 600) {
     // Performing aggregation based on the aggregate level
     if (aggregateLevel === "Aggregated Building") {
       return aggregateValues(cell.records, glyphVariables, "sum");
-    } else {
+    } else if (aggregateLevel === "LSOA Level") {
       // LSOA Level
 
       //   for LSOA level, aggregate by boundary
@@ -2429,12 +2428,19 @@ function glyphMapSpec(width = 800, height = 600) {
         return glyphData;
       } else if (timelineSwitch === "Decarbonisation Timeline") {
         const glyphData = getGlyphData?.[lsoaCode];
-        // console.log("[DEBUG] Decarbonisation Timeline glyph", getModelData);
-        return cell.records[0].data || {};
-        // return glyphData || {};
+        // console.log(
+        //   "[DEBUG] Decarbonisation Timeline glyph",
+        //   aggregateLevel,
+        //   timelineSwitch,
+        //   cell.records,
+        //   getGlyphData
+        // );
+        // return cell.records[0].data || {};
+        return glyphData;
       }
 
-      return glyphData; // fallback, should not happen
+      // console.log("GetGlyphData by LSOA CODE", getGlyphData?.[lsoaCode]);
+      return getGlyphData?.[lsoaCode];
     }
   };
 
@@ -2471,14 +2477,20 @@ function glyphMapSpec(width = 800, height = 600) {
       rg.draw(ctx, x, y, cellSize / 2);
     } else if (timelineSwitch === "Decarbonisation Timeline") {
       // draw simple circle for debugging
-      // console.log("DEBUGGING TIMESRIESS", timeline_switch, map_aggregate);
       // console.log("DEBUGGING TIMESRIESS 2", cellSize, config.coordType);
       // console.log("[DEBUG] Decarbonisation Timeline glyph", cellData);
       // const { variables, colors } = config.timelineConfig[timelineSwitch];
       // const lg = new LineChartGlyph(cellData, variables, null, colors);
       // lg.draw(ctx, x, y, 500, 500);
+
+      const glyph = new StreamGraphGlyph(cellData, "year", null, {
+        upwardKeys: ["carbonSaved"], // Positive impact
+        downwardKeys: ["interventionCost"], // Negative impact
+      });
+      glyph.draw(ctx, x, y, cellSize / 2);
     } else {
       // Default case, draw a simple circle for debugging
+      console.log("DEBUGGING TIMESRIESS", cellData);
       ctx.beginPath();
       ctx.arc(x, y, cellSize / 2, 0, 2 * Math.PI);
       ctx.fillStyle = "#ff1a1ade";
@@ -2494,8 +2506,21 @@ function glyphMapSpec(width = 800, height = 600) {
     coordType: config.coordType[map_aggregate],
     // coordType: "mercator",
     initialBB: transformCoordinates(turf.bbox(regular_geodata)),
-    data: config.dataSource[map_aggregate](),
-    getLocationFn: config.locationFn[map_aggregate],
+    // data: config.dataSource[map_aggregate](),
+    // getLocationFn: config.locationFn[map_aggregate],
+    data:
+      map_aggregate === "LSOA Level" &&
+      timeline_switch === "Decarbonisation Timeline"
+        ? Object.entries(getGlyphData).map(([code, data]) => ({
+            code,
+            data,
+          }))
+        : config.dataSource[map_aggregate](),
+    getLocationFn:
+      map_aggregate === "LSOA Level" &&
+      timeline_switch === "Decarbonisation Timeline"
+        ? (row) => regularGeodataLookup[row.code]?.centroid
+        : config.locationFn[map_aggregate],
     discretisationShape: "grid",
     interactiveCellSize: true,
     interactiveZoomPan: true,
@@ -2681,6 +2706,7 @@ function createMorphGlyphMap(width, height) {
 
   return glyphMapInstance;
 }
+// Create the morphGlyphMap using the specified width and height
 const morphGlyphMap = createMorphGlyphMap(1000, 800);
 ```
 
@@ -2697,14 +2723,6 @@ const glyphMapSpecWgs84 = {
 
 ```js
 function createGlyphMap(mapAggregate, width, height) {
-  console.log(
-    "[createGlyphMap] mapAggregate:",
-    mapAggregate,
-    "timeline_switch:",
-    timeline_switch,
-    "toggle_grids:",
-    toggle_grids
-  );
   switch (mapAggregate) {
     case "Individual Building":
       return createLeafletMap(width, height).leafletContainer;
@@ -2714,6 +2732,12 @@ function createGlyphMap(mapAggregate, width, height) {
       // : createLeafletMap(width, height).leafletContainer;
       return glyphMap({ ...glyphMapSpec(width, height) });
     case "LSOA Level":
+      console.log(
+        "[createGlyphMap] LSOA Level glyphData:",
+        getGlyphData,
+        "timeline_switch:",
+        timeline_switch
+      );
       return morphGlyphMap;
     case "LA Level":
       return timeline_switch === "Decarbonisation Potentials"
@@ -2799,7 +2823,7 @@ const mapInstance = new LeafletMap(leafletContainer, {
 
 mapInstance.addLayer("Buildings", getModelData, {
   clusterRadius: 50,
-  fitBounds: true,
+  fitBounds: false,
 });
 
 mapInstance.setSelectionLayer("Buildings");

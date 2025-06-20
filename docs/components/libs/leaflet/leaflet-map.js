@@ -1033,19 +1033,65 @@ export class LeafletMap {
     this.map.off(event, callback);
   }
 
+  checkAndTransformCoordinates(geojson) {
+    // Check if the GeoJSON has a known coordinate system property
+    const isWGS84 =
+      geojson.crs &&
+      geojson.crs.properties &&
+      geojson.crs.properties.name === "urn:ogc:def:crs:OGC:1.3:CRS84";
+
+    if (!isWGS84) {
+      this.logger.warn(
+        "general",
+        "GeoJSON is not in WGS84, transforming coordinates"
+      );
+      return transformGeometry(geojson); // Assuming transformGeometry is available for OSGB to WGS84
+    }
+
+    return geojson; // Return as-is if already in WGS84
+  }
+
   addGeoJSONLayer(layerId, geojson, options = {}) {
     if (this.overlayLayers.has(layerId)) {
       console.warn(`Layer ${layerId} already exists`);
       return;
     }
-    const layer = L.geoJSON(geojson, {
+
+    // Check and transform coordinates if necessary
+    const transformedGeoJSON = this.checkAndTransformCoordinates(geojson);
+
+    const layer = L.geoJSON(transformedGeoJSON, {
       style: options.style,
       pointToLayer: options.pointToLayer,
       onEachFeature: options.onEachFeature,
     }).addTo(this.map);
     this.overlayLayers.set(layerId, layer);
     this._updateLayerControl();
+
+    const bounds = layer.getBounds();
+    if (bounds.isValid()) {
+      this.map.fitBounds(bounds, { padding: [50, 50] });
+    }
+
     return layer;
+  }
+
+  flyToLayer(layerId, zoom) {
+    const layer = this.overlayLayers.get(layerId);
+    if (!layer) {
+      console.warn(`Layer ${layerId} does not exist`);
+      return;
+    }
+
+    const bounds = layer.getBounds();
+    if (bounds.isValid()) {
+      this.map.flyToBounds(bounds, {
+        padding: [50, 50],
+        maxZoom: zoom || this.options.maxZoom,
+      });
+    } else {
+      console.warn(`Layer ${layerId} has invalid bounds`);
+    }
   }
 
   _updateLayerControl() {
