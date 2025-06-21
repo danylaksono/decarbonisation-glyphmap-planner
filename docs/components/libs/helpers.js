@@ -75,21 +75,21 @@ export const enrichGeoData = function (
   aggregations = {},
   normalize = true
 ) {
-  console.log("enrichGeoData: Starting data enrichment process");
+  log("enrichGeoData: Starting data enrichment process");
 
   // Input validation
   if (!Array.isArray(buildingData) || !buildingData.length) {
-    console.warn("enrichGeoData: Invalid or empty buildingData");
+    warn("enrichGeoData: Invalid or empty buildingData");
     return geoJSON;
   }
 
   if (!geoJSON?.features?.length) {
-    console.warn("enrichGeoData: Invalid or empty geoJSON");
+    warn("enrichGeoData: Invalid or empty geoJSON");
     return geoJSON || { type: "FeatureCollection", features: [] };
   }
 
   // Group building data by join column
-  console.log(`enrichGeoData: Grouping buildings by "${joinColumn}"`);
+  log(`enrichGeoData: Grouping buildings by "${joinColumn}"`);
   const groupedData = {};
 
   buildingData.forEach((building) => {
@@ -104,14 +104,14 @@ export const enrichGeoData = function (
     groupedData[code].push(building);
   });
 
-  console.log(
+  log(
     `Created ${Object.keys(groupedData).length} groups from ${
       buildingData.length
     } buildings`
   );
 
   // Aggregate data for each group
-  console.log("enrichGeoData: Aggregating building data");
+  log("enrichGeoData: Aggregating building data");
   const aggregatedData = {};
 
   for (const [code, buildings] of Object.entries(groupedData)) {
@@ -187,10 +187,10 @@ export const enrichGeoData = function (
             break;
 
           default:
-            console.warn(`Unsupported aggregation type: ${aggregationType}`);
+            warn(`Unsupported aggregation type: ${aggregationType}`);
         }
       } catch (error) {
-        console.error(`Error aggregating column "${column}":`, error);
+        error(`Error aggregating column "${column}":`, error);
       }
     }
   }
@@ -198,12 +198,12 @@ export const enrichGeoData = function (
   // Optional normalization (only if explicitly requested)
   let finalData = aggregatedData;
   if (normalize) {
-    console.log("enrichGeoData: Normalizing data");
+    log("enrichGeoData: Normalizing data");
     finalData = normalizeAggregatedData(aggregatedData);
   }
 
   // Merge with GeoJSON
-  console.log("enrichGeoData: Merging data with GeoJSON");
+  log("enrichGeoData: Merging data with GeoJSON");
   let matchCount = 0;
 
   const enrichedGeoJSON = {
@@ -230,7 +230,7 @@ export const enrichGeoData = function (
     }),
   };
 
-  console.log(
+  log(
     `Matched data for ${matchCount} out of ${geoJSON.features.length} features`
   );
 
@@ -292,7 +292,7 @@ function getNumericKeys(data) {
 }
 
 export function insideCell(c, x, y) {
-  // console.log(x + " " + y  + " " + c.getXCentre() + " " + c.getYCentre() + " " + c.getCellSize());
+  // log(x + " " + y  + " " + c.getXCentre() + " " + c.getYCentre() + " " + c.getCellSize());
   if (
     x >= c.getXCentre() - c.getCellSize() &&
     x <= c.getXCentre() + c.getCellSize() &&
@@ -306,7 +306,7 @@ export function insideCell(c, x, y) {
 export function debounceInput(input, delay = 1000) {
   // From https://github.com/Fil/pangea/blob/main/src/components/debounce.js
   // Wrap the input in a div, and get ready to pass changes up.
-  console.log("....... debouncing input");
+  log("....... debouncing input");
   const div = document.createElement("div");
   div.appendChild(input);
   div.value = input.value;
@@ -362,13 +362,13 @@ export function saveToSession(key, value) {
     }
 
     sessionStorage.setItem(key, serialized);
-    // console.log(`Saved to session: ${key}: ${serialized}`);
+    // log(`Saved to session: ${key}: ${serialized}`);
     return true;
   } catch (error) {
     if (error.name === "QuotaExceededError") {
-      console.error("Storage quota exceeded");
+      error("Storage quota exceeded");
     } else {
-      console.error("Failed to save to session:", error);
+      error("Failed to save to session:", error);
     }
     return false;
   }
@@ -382,7 +382,7 @@ export function getFromSession(key, defaultValue = null) {
 
   try {
     const item = sessionStorage.getItem(key);
-    // console.log(`Reading from session: ${key}: ${item}`);
+    // log(`Reading from session: ${key}: ${item}`);
 
     // Handle missing data
     if (item === null) {
@@ -564,7 +564,7 @@ export function normaliseData(data, keysToNormalise) {
 export function set(input, value) {
   input.value = value;
   input.dispatchEvent(new Event("input", { bubbles: true }));
-  // console.log("input value:", input.value);
+  // log("input value:", input.value);
 }
 
 export function aggregateValues(

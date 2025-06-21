@@ -46,11 +46,11 @@ export function createTimelineInterface(
         }' is missing an 'initialYear' number`
       );
     }
-    if (typeof intervention.duration !== "number") {
+    if (typeof intervention.duration !== "number" || intervention.duration <= 0) {
       throw new Error(
         `Intervention '${
           intervention.tech || intervention.technologies.join(", ")
-        }' is missing a 'duration' number`
+        }' must have a positive 'duration' number`
       );
     }
     if (intervention.yearlyBudgets) {
@@ -61,15 +61,38 @@ export function createTimelineInterface(
           }' has a 'yearlyBudgets' property that is not an array`
         );
       }
-      if (intervention.yearlyBudgets.length !== intervention.duration) {
+      // Allow yearlyBudgets to be shorter than duration (will be extended during resize)
+      // or longer than duration (will be truncated during resize)
+      if (intervention.yearlyBudgets.length === 0) {
         throw new Error(
           `Intervention '${
             intervention.tech || intervention.technologies.join(", ")
-          }' has a 'yearlyBudgets' array with the wrong length`
+          }' has an empty 'yearlyBudgets' array`
         );
       }
+      // If yearlyBudgets exists but doesn't match duration, we'll handle it during resize
+      // For now, just ensure it's not empty
     }
   });
+
+  // Helper function to synchronize yearlyBudgets with duration
+  function synchronizeYearlyBudgets(intervention) {
+    if (intervention.yearlyBudgets) {
+      if (intervention.yearlyBudgets.length > intervention.duration) {
+        // Truncate if longer
+        intervention.yearlyBudgets = intervention.yearlyBudgets.slice(0, intervention.duration);
+      } else if (intervention.yearlyBudgets.length < intervention.duration) {
+        // Extend if shorter
+        const lastValue = intervention.yearlyBudgets[intervention.yearlyBudgets.length - 1] || 0;
+        while (intervention.yearlyBudgets.length < intervention.duration) {
+          intervention.yearlyBudgets.push(lastValue);
+        }
+      }
+    }
+  }
+
+  // Synchronize all interventions after validation
+  interventions.forEach(synchronizeYearlyBudgets);
 
   // Set up dimensions and margins for the SVG
   const margin = { top: 20, right: 30, bottom: 30, left: 40 };
@@ -77,10 +100,12 @@ export function createTimelineInterface(
   const innerHeight = height - margin.top - margin.bottom;
 
   // Calculate the year range from our data
-  const minYear = Math.min(...interventions.map((d) => d.initialYear));
-  const maxYear = Math.max(
-    ...interventions.map((d) => d.initialYear + d.duration)
-  );
+  const minYear = interventions.length > 0 
+    ? Math.min(...interventions.map((d) => d.initialYear))
+    : new Date().getFullYear();
+  const maxYear = interventions.length > 0
+    ? Math.max(...interventions.map((d) => d.initialYear + d.duration))
+    : new Date().getFullYear() + 10;
 
   // Set up maximum block height
   const maxBlockHeight = 40;
@@ -106,7 +131,8 @@ export function createTimelineInterface(
     .attr("class", "tooltip")
     .style("opacity", 0)
     .style("position", "absolute")
-    .style("pointer-events", "none");
+    .style("pointer-events", "none")
+    .style("z-index", "1000");
 
   const tooltipSvg = tooltip
     .append("svg")
@@ -115,6 +141,8 @@ export function createTimelineInterface(
 
   // Track tooltip state
   let areTooltipsEnabled = tooltipsEnabled;
+  let currentTooltipData = null; // Track current tooltip data to prevent unnecessary updates
+  let tooltipHideTimeout = null; // Track hide timeout
 
   // Create main group element with margins
   const g = svg
@@ -142,12 +170,21 @@ export function createTimelineInterface(
   let selectedYear = null;
   function highlightYearLabel(year) {
     xAxisG.selectAll(".tick text").classed("year-glow", (d) => +d === year);
+    
+    // Highlight interventions that are active in the selected year
+    g.selectAll(".block").classed("year-active", (d) => {
+      if (year === null) return false;
+      return d.initialYear <= year && year < d.initialYear + d.duration;
+    });
   }
 
   xAxisG
     .selectAll(".tick text")
     .style("cursor", "pointer")
     .on("click", function (event, d) {
+      // Hide tooltip in case it is still visible from a previous hover
+      hideTooltip();
+
       selectedYear = +d;
       highlightYearLabel(selectedYear);
       if (onClick) onClick(selectedYear);
@@ -156,10 +193,15 @@ export function createTimelineInterface(
 
   // Remove highlight if background is clicked
   g.select(".background").on("click", function () {
+    // Clear selections and highlighted year
     selectedYear = null;
     highlightYearLabel(null);
     selectedIndexes = [];
     g.selectAll(".block").classed("highlight", false);
+
+    // Hide any visible tooltip when clicking on empty space
+    hideTooltip();
+
     if (onClick) onClick(null);
   });
 
@@ -167,13 +209,7 @@ export function createTimelineInterface(
     .attr("class", "background")
     .attr("width", innerWidth)
     .attr("height", innerHeight)
-    .attr("fill", "transparent")
-    .on("click", function () {
-      g.selectAll(".block").classed("highlight", false);
-      if (onClick) {
-        onClick(null); // Pass null to indicate deselection
-      }
-    });
+    .attr("fill", "transparent");
 
   // Ensure style element exists before trying to modify it
   if (svg.select("style").empty()) {
@@ -184,22 +220,29 @@ export function createTimelineInterface(
 
   // Multi-select state
   let selectedIndexes = [];
+  let selectedModelIds = []; // Store modelIds for persistence
 
   // Block click handler for multi-select
   function blockClickHandler(event, d) {
+    // Ensure any visible tooltip is hidden once the user makes a selection
+    hideTooltip();
+
     const index = interventions.indexOf(d);
     if (event.ctrlKey || event.metaKey || event.shiftKey) {
       // Toggle selection
       if (selectedIndexes.includes(index)) {
         selectedIndexes = selectedIndexes.filter((i) => i !== index);
+        selectedModelIds = selectedModelIds.filter((id) => id !== d.modelId);
         d3.select(this).classed("highlight", false);
       } else {
         selectedIndexes.push(index);
+        selectedModelIds.push(d.modelId);
         d3.select(this).classed("highlight", true);
       }
     } else {
       // Single select
       selectedIndexes = [index];
+      selectedModelIds = [d.modelId];
       g.selectAll(".block").classed("highlight", false);
       d3.select(this).classed("highlight", true);
     }
@@ -214,6 +257,31 @@ export function createTimelineInterface(
       }
     }
     event.stopPropagation();
+  }
+
+  // Function to restore selections after data changes
+  function restoreSelections() {
+    selectedIndexes = [];
+    g.selectAll(".block").classed("highlight", false);
+
+    // Restore selections based on modelIds (safer than nth-child which can be offset by other groups)
+    g.selectAll(".intervention-group").each(function (di, i) {
+      if (selectedModelIds.includes(di.modelId)) {
+        selectedIndexes.push(i);
+        d3.select(this).select(".block").classed("highlight", true);
+      }
+    });
+  }
+
+  // Debounced onChange callback
+  let onChangeTimeout;
+  function debouncedOnChange() {
+    clearTimeout(onChangeTimeout);
+    onChangeTimeout = setTimeout(() => {
+      if (onChange) {
+        onChange([...interventions]);
+      }
+    }, 100); // 100ms debounce
   }
 
   // Clicking the background clears selection
@@ -251,15 +319,7 @@ export function createTimelineInterface(
         return yScale(i);
       }
     })
-    .attr(
-      "width",
-      // (d) => xScale(d.initialYear + d.duration) - xScale(d.initialYear)
-      (d) =>
-        xScale(d.initialYear + d.duration - 1) -
-        xScale(d.initialYear) +
-        xScale(d.initialYear + 1) -
-        xScale(d.initialYear)
-    )
+    .attr("width", (d) => xScale(d.initialYear + d.duration) - xScale(d.initialYear))
     .attr("height", (d, i) => Math.min(yScale.bandwidth(), maxBlockHeight))
     .attr("fill", "#3388FF")
     .on("click", blockClickHandler);
@@ -292,12 +352,12 @@ export function createTimelineInterface(
       const blockWidth =
         xScale(d.initialYear + d.duration) - xScale(d.initialYear);
       const text = d3.select(this);
-      let textLength = this.getComputedTextLength();
       let textContent = text.text();
-      while (textLength > blockWidth - 10 && textContent.length > 0) {
-        textContent = textContent.slice(0, -1);
-        text.text(textContent + "...");
-        textLength = this.getComputedTextLength();
+      
+      // More efficient text truncation
+      const maxChars = Math.floor((blockWidth - 10) / 8); // Approximate char width
+      if (textContent.length > maxChars) {
+        text.text(textContent.substring(0, maxChars - 3) + "...");
       }
     });
 
@@ -315,7 +375,9 @@ export function createTimelineInterface(
     })
     .attr("width", 8)
     .attr("height", (d, i) => Math.min(yScale.bandwidth(), maxBlockHeight))
-    .attr("fill", "transparent")
+    .attr("fill", "rgba(255, 255, 255, 0.3)")
+    .attr("stroke", "rgba(0, 0, 0, 0.2)")
+    .attr("stroke-width", 1)
     .attr("cursor", "ew-resize");
 
   // Define drag behavior
@@ -355,9 +417,10 @@ export function createTimelineInterface(
         .select(".resize-handle")
         .attr("x", xScale(d.initialYear + d.duration) - 4);
 
-      if (onChange) {
-        onChange([...interventions]);
-      }
+      // Ensure yearlyBudgets is synchronized after any changes
+      synchronizeYearlyBudgets(d);
+
+      debouncedOnChange();
     });
 
   // Define resize behavior for handles
@@ -373,6 +436,20 @@ export function createTimelineInterface(
       maxAllowedYear - d.initialYear,
       newDuration
     );
+
+    // Handle yearlyBudgets array when duration changes
+    if (d.yearlyBudgets && d.yearlyBudgets.length !== constrainedDuration) {
+      if (constrainedDuration > d.yearlyBudgets.length) {
+        // Extend the array with the last value or zero
+        const lastValue = d.yearlyBudgets[d.yearlyBudgets.length - 1] || 0;
+        while (d.yearlyBudgets.length < constrainedDuration) {
+          d.yearlyBudgets.push(lastValue);
+        }
+      } else {
+        // Truncate the array
+        d.yearlyBudgets = d.yearlyBudgets.slice(0, constrainedDuration);
+      }
+    }
 
     d.duration = constrainedDuration;
     const group = d3.select(this.parentNode);
@@ -396,9 +473,7 @@ export function createTimelineInterface(
 
     d3.select(this).attr("x", xScale(d.initialYear + d.duration) - 4);
 
-    if (onChange) {
-      onChange([...interventions]);
-    }
+    debouncedOnChange();
   });
 
   // Apply drag behaviors
@@ -407,6 +482,14 @@ export function createTimelineInterface(
 
   // ---------------------- TOOLTIP ---------------------- //
   function updateTooltip(d) {
+    // Only update if data has changed
+    if (currentTooltipData === d) {
+      return;
+    }
+    
+    currentTooltipData = d;
+    
+    // Clear existing content
     tooltipSvg.selectAll("*").remove();
 
     // Add title
@@ -474,7 +557,6 @@ export function createTimelineInterface(
 
       // Add x-axis with year labels
       const tickCount = Math.min(d.duration, 5); // Max 5 ticks
-      const tickStep = Math.ceil(d.duration / tickCount);
       const tickYears = d3.range(d.initialYear, d.initialYear + d.duration);
       if (tickYears[tickYears.length - 1] !== d.initialYear + d.duration - 1) {
         tickYears.push(d.initialYear + d.duration - 1);
@@ -488,9 +570,6 @@ export function createTimelineInterface(
             .axisBottom(xScale)
             .ticks(tickCount)
             .tickValues(tickYears)
-            // .tickValues(
-            //   d3.range(d.initialYear, d.initialYear + d.duration, tickStep)
-            // )
             .tickFormat(d3.format("d"))
         )
         .selectAll("text")
@@ -505,22 +584,60 @@ export function createTimelineInterface(
     }
   }
 
+  function hideTooltip() {
+    // Clear any existing timeout
+    if (tooltipHideTimeout) {
+      clearTimeout(tooltipHideTimeout);
+    }
+    
+    tooltipHideTimeout = setTimeout(() => {
+      tooltip.style("opacity", 0);
+      currentTooltipData = null;
+      tooltipHideTimeout = null;
+    }, 100); // Small delay to prevent flickering
+  }
+
+  function showTooltip() {
+    // Clear any hide timeout
+    if (tooltipHideTimeout) {
+      clearTimeout(tooltipHideTimeout);
+      tooltipHideTimeout = null;
+    }
+  }
+
   // Apply tooltip behavior if enabled
   function applyTooltipBehavior() {
     if (areTooltipsEnabled) {
       blocks
         .selectAll(".block")
         .on("mouseover", function (event, d) {
+          showTooltip();
           tooltip.style("opacity", 1);
           updateTooltip(d);
         })
         .on("mousemove", function (event) {
+          const tooltipWidth = 200;
+          const tooltipHeight = 150;
+          const viewportWidth = window.innerWidth;
+          const viewportHeight = window.innerHeight;
+          
+          let left = event.pageX + 10;
+          let top = event.pageY - 10;
+          
+          // Prevent tooltip from going off-screen
+          if (left + tooltipWidth > viewportWidth) {
+            left = event.pageX - tooltipWidth - 10;
+          }
+          if (top + tooltipHeight > viewportHeight) {
+            top = event.pageY - tooltipHeight - 10;
+          }
+          
           tooltip
-            .style("left", event.pageX + 10 + "px")
-            .style("top", event.pageY - 10 + "px");
+            .style("left", left + "px")
+            .style("top", top + "px");
         })
         .on("mouseout", function () {
-          tooltip.style("opacity", 0);
+          hideTooltip();
         });
     } else {
       blocks
@@ -528,6 +645,7 @@ export function createTimelineInterface(
         .on("mouseover", null)
         .on("mousemove", null)
         .on("mouseout", null);
+      hideTooltip(); // Ensure tooltip is hidden when disabled
     }
   }
 
@@ -539,6 +657,63 @@ export function createTimelineInterface(
     areTooltipsEnabled = enabled;
     applyTooltipBehavior();
     return svg.node(); // Return the SVG node for chaining
+  }
+
+  // Method to update timeline with new data while preserving selections
+  function updateData(newInterventions) {
+    // Store current selections
+    const currentSelectedModelIds = [...selectedModelIds];
+    
+    // Update the interventions array
+    interventions.length = 0;
+    interventions.push(...newInterventions);
+    
+    // Re-render the timeline
+    // This would require a more complex update pattern, but for now we'll just restore selections
+    restoreSelections();
+    
+    return svg.node();
+  }
+
+  // Method to refresh the timeline (useful when data changes externally)
+  function refreshTimeline() {
+    // Hide any active tooltip
+    hideTooltip();
+    
+    // Recalculate scales
+    const newMinYear = interventions.length > 0 
+      ? Math.min(...interventions.map((d) => d.initialYear))
+      : new Date().getFullYear();
+    const newMaxYear = interventions.length > 0
+      ? Math.max(...interventions.map((d) => d.initialYear + d.duration))
+      : new Date().getFullYear() + 10;
+    
+    // Update scales
+    xScale.domain([newMinYear - 1, newMaxYear + 1]);
+    yScale.domain(interventions.map((_, i) => i));
+    
+    // Update x-axis
+    xAxisG.call(
+      d3
+        .axisBottom(xScale)
+        .tickValues(
+          d3.range(Math.ceil(newMinYear - 1), Math.floor(newMaxYear + 1) + 1)
+        )
+        .tickFormat(d3.format("d"))
+    );
+    
+    // Restore selections
+    restoreSelections();
+    
+    return svg.node();
+  }
+
+  // Method to cleanup tooltip and remove from DOM
+  function cleanupTooltip() {
+    hideTooltip();
+    if (tooltip && !tooltip.empty()) {
+      tooltip.remove();
+    }
   }
 
   // Check if data is empty
@@ -560,8 +735,9 @@ export function createTimelineInterface(
       pointer-events: all;
     }
     .resize-handle:hover {
-      stroke: #666;
-      stroke-width: 1px;
+      stroke: #666 !important;
+      stroke-width: 2px !important;
+      fill: rgba(255, 255, 255, 0.6) !important;
     }
     .block {
       stroke: none;
@@ -572,6 +748,15 @@ export function createTimelineInterface(
     }
     .block.highlight {
       stroke: orange !important;
+      stroke-width: 3px !important;
+    }
+    .block.year-active {
+      stroke: #4CAF50 !important;
+      stroke-width: 2px !important;
+      filter: brightness(1.1);
+    }
+    .block.highlight.year-active {
+      stroke: #FF9800 !important;
       stroke-width: 3px !important;
     }
     .year-glow {
@@ -611,5 +796,8 @@ export function createTimelineInterface(
   // Return the SVG node with added methods
   const svgNode = svg.node();
   svgNode.toggleTooltips = toggleTooltips;
+  svgNode.updateData = updateData;
+  svgNode.refreshTimeline = refreshTimeline;
+  svgNode.cleanupTooltip = cleanupTooltip;
   return svgNode;
 }
