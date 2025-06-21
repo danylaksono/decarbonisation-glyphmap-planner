@@ -12,7 +12,7 @@
 <link rel="modulepreload" href="./_observablehq/client.js">
 <link rel="modulepreload" href="./_observablehq/runtime.js">
 <link rel="modulepreload" href="./_observablehq/stdlib.js">
-<link rel="modulepreload" href="./_import/components/libs/decarb-model/mini-decarbonisation.5ffa5559.js">
+<link rel="modulepreload" href="./_import/components/libs/decarb-model/mini-decarbonisation.22f8b07a.js">
 <link rel="modulepreload" href="./_import/components/libs/decarb-model/llm-interface.b9bacb22.js">
 <link rel="modulepreload" href="./_import/components/libs/decarb-model/priority-queue.aea4e806.js">
 <link rel="modulepreload" href="./_import/components/libs/logger.4f5bec9e.js">
@@ -31,11 +31,11 @@ import {define} from "./_observablehq/client.js";
 import {registerFile, FileAttachment} from "./_observablehq/stdlib.js";
 import {registerTable} from "./_observablehq/stdlib/duckdb.js";
 
-registerFile("./data/oxford_decarbonisation_data.parquet", {"name":"./data/oxford_decarbonisation_data.parquet","path":"./_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1750232754885});
+registerFile("./data/oxford_decarbonisation_data.parquet", {"name":"./data/oxford_decarbonisation_data.parquet","path":"./_file/data/oxford_decarbonisation_data.3c946953.parquet","lastModified":1750522641483});
 registerTable("oxford", FileAttachment("./data/oxford_decarbonisation_data.parquet"));
 
 define({id: "a5d6eb9a", outputs: ["InterventionManager","MiniDecarbModel","queryLLMForConfig","runLLMQuery"], body: async () => {
-const [{InterventionManager, MiniDecarbModel}, {queryLLMForConfig}] = await Promise.all([import("./_import/components/libs/decarb-model/mini-decarbonisation.5ffa5559.js"), import("./_import/components/libs/decarb-model/llm-interface.b9bacb22.js")]);
+const [{InterventionManager, MiniDecarbModel}, {queryLLMForConfig}] = await Promise.all([import("./_import/components/libs/decarb-model/mini-decarbonisation.22f8b07a.js"), import("./_import/components/libs/decarb-model/llm-interface.b9bacb22.js")]);
 
 
 async function runLLMQuery(query, buildings) {
