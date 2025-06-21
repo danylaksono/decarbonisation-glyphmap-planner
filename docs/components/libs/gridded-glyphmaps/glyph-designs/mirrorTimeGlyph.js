@@ -25,18 +25,9 @@ export function StreamGraphGlyph(
   const upwardKeys = config.upwardKeys;
   const downwardKeys = config.downwardKeys;
 
-  // Generate color palette
   const defaultPalette = [
-    "#1f77b4",
-    "#ff7f0e",
-    "#2ca02c",
-    "#d62728",
-    "#9467bd",
-    "#8c564b",
-    "#e377c2",
-    "#7f7f7f",
-    "#bcbd22",
-    "#17becf",
+    "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd",
+    "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf",
   ];
   const allKeys = [...upwardKeys, ...downwardKeys];
   const colourMapping = {};
@@ -44,7 +35,6 @@ export function StreamGraphGlyph(
     colourMapping[key] = defaultPalette[i % defaultPalette.length];
   });
 
-  // Defensive: fallback if missing fields
   const safeSum = (d, keys) =>
     keys.reduce(
       (sum, key) => sum + (typeof d[key] === "number" ? d[key] : 0),
@@ -92,15 +82,28 @@ export function StreamGraphGlyph(
       .range([0, maxHeight]);
 
     const upwardStack = d3.stack().keys(upwardKeys).order(d3.stackOrderNone);
-    const downwardStack = d3
-      .stack()
-      .keys(downwardKeys)
-      .order(d3.stackOrderNone);
+    const downwardStack = d3.stack().keys(downwardKeys).order(d3.stackOrderNone);
 
     const upwardSeries = upwardStack(data);
     const downwardSeries = downwardStack(data);
 
     const curve = d3.curveBumpX;
+
+    // Draw background bands to indicate year separation
+    ctx.save();
+    ctx.globalAlpha = 0.05;
+
+    const yearValues = this.getTimeValues();
+    const uniqueYears = [...new Set(yearValues)].sort((a, b) => a - b);
+    const bandWidth = drawWidth / uniqueYears.length;
+
+    uniqueYears.forEach((year, i) => {
+      const xStart = centerX - drawWidth / 2 + i * bandWidth;
+      ctx.fillStyle = i % 2 === 0 ? "#000" : "#444";
+      ctx.fillRect(xStart, centerY - maxHeight, bandWidth, maxHeight * 2);
+    });
+
+    ctx.restore();
 
     // Draw upward areas
     upwardSeries.forEach((s) => {
@@ -140,5 +143,5 @@ export function StreamGraphGlyph(
     ctx.stroke();
   };
 
-  console.log("StreamGraphGlyph created with", data.length, "points.");
+  // console.log("StreamGraphGlyph created with", data.length, "points.");
 }

@@ -2433,19 +2433,74 @@ function glyphMapSpec(width = 800, height = 600) {
     },
   };
 
-  // Extracts cell-level data based on aggregation type and app timeline
+    const groupAndAggregateByYear = (records, variables, normalize = false) => {
+    const yearMap = {};
+    for (const rec of records) {
+      const d = rec.data?.properties || rec;
+      const year = d.interventionYear || d.year;
+      if (!year) continue;
+
+      yearMap[year] = yearMap[year] || {};
+      for (const v of variables) {
+        yearMap[year][v] = (yearMap[year][v] || 0) + (+d[v] || 0);
+      }
+    }
+
+    if (!normalize) {
+      return Object.entries(yearMap).map(([year, values]) => ({
+        year: +year,
+        ...values,
+      }));
+    }
+
+    const flatValues = {};
+    for (const v of variables) flatValues[v] = [];
+    for (const year in yearMap) {
+      for (const v of variables) {
+        flatValues[v].push(yearMap[year][v]);
+      }
+    }
+
+    const minMax = {};
+    for (const v of variables) {
+      const min = Math.min(...flatValues[v]);
+      const max = Math.max(...flatValues[v]);
+      minMax[v] = { min, max };
+    }
+
+    const normYearMap = {};
+    for (const year in yearMap) {
+      normYearMap[year] = {};
+      for (const v of variables) {
+        const { min, max } = minMax[v];
+        const val = yearMap[year][v];
+        normYearMap[year][v] = max > min ? (val - min) / (max - min) : 0;
+      }
+    }
+
+    return Object.entries(normYearMap).map(([year, values]) => ({
+      year: +year,
+      ...values,
+    }));
+  };
+
   const getCellData = (cell, aggregateLevel, timelineSwitch) => {
     if (!cell.records) return {};
     const lsoaCode = cell.records[0]?.code;
 
     if (aggregateLevel === "Aggregated Building") {
-      return aggregateValues(cell.records, glyphVariables, "sum");
+      if (timelineSwitch === "Decarbonisation Potentials") {
+        return aggregateValues(cell.records, glyphVariables, "sum");
+      } else if (timelineSwitch === "Decarbonisation Timeline"){
+        return groupAndAggregateByYear(cell.records, timelineVariables, true);
+      }
     } else if (aggregateLevel === "LSOA Level" && lsoaCode) {
       return getGlyphData?.[lsoaCode] ?? {};
     }
 
     return cell.records[0]?.data?.properties || cell.data;
   };
+
 
   // Glyph rendering function (Radial for Potentials, StreamGraph for Timeline)
   const drawGlyph = (
@@ -2457,7 +2512,8 @@ function glyphMapSpec(width = 800, height = 600) {
     aggregateLevel,
     timelineSwitch
   ) => {
-    const cellData = cell.records[0].data?.properties || cell.data;
+    // const cellData = cell.records[0].data?.properties || cell.data;
+    const cellData = cell.data;
 
     if (timelineSwitch === "Decarbonisation Potentials") {
       const glyphVariables_lsoa = [
@@ -2482,7 +2538,19 @@ function glyphMapSpec(width = 800, height = 600) {
         upwardKeys: ["carbonSaved"],
         downwardKeys: ["interventionCost"],
       });
-      glyph.draw(ctx, x, y, cellSize, cellSize);
+
+      //debug
+      // ctx.beginPath();
+      // ctx.arc(x, y, cellSize / 2, 0, 2 * Math.PI);
+      // ctx.fillStyle = "#ff1a1ade";
+      // ctx.fill();
+      // ctx.lineWidth = 0.2;
+      // ctx.strokeStyle = "rgb(7, 77, 255)";
+      // ctx.stroke();
+      // ctx.closePath();
+      // debugend
+
+      glyph.draw(ctx, x, y, cellSize/2, cellSize/2);
     } else {
       // fallback: simple debug circle
       ctx.beginPath();
@@ -2547,7 +2615,10 @@ function glyphMapSpec(width = 800, height = 600) {
         }
 
         // Normalize data for Aggregated Building glyphs
-        if (map_aggregate === "Aggregated Building") {
+        if (
+          map_aggregate === "Aggregated Building" &&
+          timeline_switch === "Decarbonisation Potentials"
+        ) {
           const dataArray = cells.map((cell) => cell.data);
           const normalisedData = dataArray
             ? normaliseData(dataArray, glyphVariables)
