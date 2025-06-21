@@ -12,6 +12,84 @@ class Building {
     this.carbonSaved = null;
     this.score = null;
     this.numInterventions = 0;
+
+    // Multi-technology intervention support
+    this.interventions = []; // Array of {tech, cost, carbonSaved, year, synergies}
+    this.currentTechnologies = []; // Array of technology names currently applied
+    this.hasMultipleInterventions = false; // Flag for multiple interventions
+    this.interventionConflicts = []; // Track any conflicts that occurred
+    this.synergyBonuses = {}; // Track synergy effects between technologies
+  }
+
+  // Add a new intervention to this building
+  addIntervention(tech, cost, carbonSaved, year, synergies = {}) {
+    const intervention = {
+      tech: tech.name,
+      techConfig: tech,
+      cost,
+      carbonSaved,
+      year,
+      synergies,
+      timestamp: Date.now(),
+    };
+
+    this.interventions.push(intervention);
+    this.currentTechnologies.push(tech.name);
+
+    // Update aggregated values
+    this.interventionCost = (this.interventionCost || 0) + cost;
+    this.carbonSaved = (this.carbonSaved || 0) + carbonSaved;
+    this.numInterventions++;
+
+    // Set flags
+    this.isIntervened = true;
+    this.hasMultipleInterventions = this.interventions.length > 1;
+
+    // Store synergy bonuses
+    if (Object.keys(synergies).length > 0) {
+      this.synergyBonuses = { ...this.synergyBonuses, ...synergies };
+    }
+
+    // Update intervention year to the latest
+    this.interventionYear = year;
+
+    return intervention;
+  }
+
+  // Check if a technology is compatible with existing interventions
+  isCompatibleWith(techName, compatibilityMatrix = {}) {
+    if (this.currentTechnologies.length === 0) return true;
+
+    return this.currentTechnologies.every((existingTech) => {
+      const compatibility = compatibilityMatrix[existingTech]?.[techName];
+      return compatibility !== false; // Allow if not explicitly forbidden
+    });
+  }
+
+  // Get total cost including synergy discounts
+  getTotalCost() {
+    const baseCost = this.interventions.reduce(
+      (sum, intervention) => sum + intervention.cost,
+      0
+    );
+    const synergyCostReduction = Object.values(this.synergyBonuses)
+      .filter((bonus) => bonus.type === "cost_reduction")
+      .reduce((sum, bonus) => sum + (bonus.value || 0), 0);
+
+    return Math.max(0, baseCost - synergyCostReduction);
+  }
+
+  // Get total carbon savings including synergy bonuses
+  getTotalCarbonSaved() {
+    const baseSavings = this.interventions.reduce(
+      (sum, intervention) => sum + intervention.carbonSaved,
+      0
+    );
+    const synergyBonus = Object.values(this.synergyBonuses)
+      .filter((bonus) => bonus.type === "carbon_bonus")
+      .reduce((sum, bonus) => sum + (bonus.value || 0), 0);
+
+    return baseSavings + synergyBonus;
   }
 }
 
@@ -55,14 +133,16 @@ export class InterventionManager {
     return this.runInterventions();
   }
 
+  // Add support for multi-technology interventions
   addIntervention(config) {
     this.interventionConfigs.push(config);
     this.currentOrder.push(this.interventionConfigs.length - 1); // Add new index to order
-    log("Intervention added:", config.id);
+
     if (this.autoRun) {
       log("Auto-run enabled. Running interventions...");
       this.runInterventions();
     }
+
     return this; // Allow method chaining
   }
 
@@ -423,6 +503,40 @@ export class MiniDecarbModel {
       rolledover_budget: 0,
       yearly_budgets: [100000, 100000, 100000, 100000, 100000],
       optimizationStrategy: "tech-first",
+
+      // Multi-technology intervention settings
+      allowMultipleInterventions: false, // Flag to enable/disable multiple interventions
+      maxInterventionsPerBuilding: 3, // Maximum number of interventions per building
+      conflictResolutionStrategy: "priority", // "priority", "cost_effective", "carbon_first", "user_choice"
+
+      // Technology compatibility and synergy rules
+      technologyCompatibility: {
+        // Define which technologies can be combined
+        ASHP: { PV: true, Insulation: true, GSHP: false },
+        PV: { ASHP: true, Insulation: true, GSHP: true },
+        GSHP: { PV: true, Insulation: true, ASHP: false },
+        Insulation: { ASHP: true, PV: true, GSHP: true },
+      },
+
+      technologySynergies: {
+        // Define synergy effects between technologies
+        "ASHP+Insulation": {
+          type: "carbon_bonus",
+          value: 0.15, // 15% additional carbon savings
+          description: "Heat pumps work more efficiently with good insulation",
+        },
+        "PV+ASHP": {
+          type: "carbon_bonus",
+          value: 0.1, // 10% additional carbon savings
+          description: "Solar PV can power heat pump with renewable energy",
+        },
+        "PV+Insulation": {
+          type: "cost_reduction",
+          value: 500, // £500 cost reduction for combined installation
+          description: "Shared installation costs for roof work",
+        },
+      },
+
       tech: {
         name: "ASHP",
         config: {
@@ -507,7 +621,14 @@ export class MiniDecarbModel {
       "priorities",
       "filters",
       "modelId",
+      // Multi-technology configuration keys
+      "allowMultipleInterventions",
+      "maxInterventionsPerBuilding",
+      "conflictResolutionStrategy",
+      "technologyCompatibility",
+      "technologySynergies",
     ];
+
     for (const key of schemaKeys) {
       if (configObj[key] !== undefined) {
         if (key === "tech") {
@@ -515,7 +636,9 @@ export class MiniDecarbModel {
         } else if (
           key === "technologies" ||
           key === "priorities" ||
-          key === "filters"
+          key === "filters" ||
+          key === "technologyCompatibility" ||
+          key === "technologySynergies"
         ) {
           this.config[key] = JSON.parse(JSON.stringify(configObj[key]));
         } else if (key === "yearly_budgets") {
@@ -528,6 +651,33 @@ export class MiniDecarbModel {
         }
       }
     }
+
+    // Validate multi-technology configuration
+    if (this.config.allowMultipleInterventions) {
+      if (
+        !this.config.maxInterventionsPerBuilding ||
+        this.config.maxInterventionsPerBuilding < 1
+      ) {
+        warn(
+          "maxInterventionsPerBuilding should be at least 1 when allowMultipleInterventions is true"
+        );
+        this.config.maxInterventionsPerBuilding = 3;
+      }
+
+      const validStrategies = [
+        "priority",
+        "cost_effective",
+        "carbon_first",
+        "user_choice",
+      ];
+      if (!validStrategies.includes(this.config.conflictResolutionStrategy)) {
+        warn(
+          `Invalid conflictResolutionStrategy: ${this.config.conflictResolutionStrategy}. Using 'priority'.`
+        );
+        this.config.conflictResolutionStrategy = "priority";
+      }
+    }
+
     // --- PATCH: Convert filter configs to functions if needed ---
     if (Array.isArray(this.config.filters)) {
       this.config.filters = this.config.filters.map((filter) => {
@@ -962,40 +1112,68 @@ export class MiniDecarbModel {
 
   calculatePotentialInterventions() {
     if (this.suitableBuildingsNeedUpdate) {
-      // Key: Check if filtering applied
       this.filterSuitableBuildings();
-      this.suitableBuildingsNeedUpdate = false; // Reset after filtering
+      this.suitableBuildingsNeedUpdate = false;
     }
 
-    // TEST: Calculate once and cache
     if (!this._potentialInterventions) {
       this._potentialInterventions = new Map();
 
       for (const building of this.suitableBuildings) {
         const buildingInterventions = [];
 
-        for (const tech of this.config.technologies) {
-          if (building.properties[tech.config.suitabilityKey]) {
-            const cost = this.getBuildingCost(building, tech);
-            const carbonEfficiency = this.calculateCarbonEfficiency(
+        if (this.config.allowMultipleInterventions) {
+          // Generate technology bundles for multi-technology interventions
+          const technologyBundles = this.generateTechnologyBundles(building);
+
+          for (const bundle of technologyBundles) {
+            const cost = this.calculateCombinedCost(building, bundle);
+            const carbonSaved = this.calculateCombinedCarbonSavings(
               building,
-              tech
+              bundle
             );
+            const carbonEfficiency = cost > 0 ? carbonSaved / cost : 0;
 
             buildingInterventions.push({
               building,
-              tech,
+              tech: bundle, // Array of technologies or single technology
+              technologies: bundle,
               carbonEfficiency,
               cost,
+              carbonSaved,
+              isBundle: bundle.length > 1,
+              bundleSize: bundle.length,
             });
+          }
+        } else {
+          // Single technology mode (existing behavior)
+          for (const tech of this.config.technologies) {
+            if (building.properties[tech.config.suitabilityKey]) {
+              const cost = this.getBuildingCost(building, tech);
+              const carbonEfficiency = this.calculateCarbonEfficiency(
+                building,
+                tech
+              );
+              const carbonSaved =
+                building.properties[tech.config.savingsKey] || 0;
+
+              buildingInterventions.push({
+                building,
+                tech,
+                technologies: [tech],
+                carbonEfficiency,
+                cost,
+                carbonSaved,
+                isBundle: false,
+                bundleSize: 1,
+              });
+            }
           }
         }
 
         if (buildingInterventions.length > 0) {
           this._potentialInterventions.set(building.id, buildingInterventions);
         }
-
-        // log("Potential Interventions:", buildingInterventions);
       }
     }
 
@@ -1007,9 +1185,8 @@ export class MiniDecarbModel {
     const interventions = this.calculatePotentialInterventions();
 
     if (this.suitableBuildingsNeedUpdate) {
-      // Key: Check if filtering applied
       this.filterSuitableBuildings();
-      this.suitableBuildingsNeedUpdate = false; // Reset after filtering
+      this.suitableBuildingsNeedUpdate = false;
     }
 
     // Create a priority queue for interventions, ordered by carbon efficiency (descending)
@@ -1024,39 +1201,92 @@ export class MiniDecarbModel {
       }
     }
 
-    // log("pq:", pq);
-    // log("Priority Queue (before interventions):", pq._heap);
-
     for (let year = 0; year < this.config.numYears; year++) {
       const yearBudget = this.config.yearly_budgets[year] + remainingBudget;
       let spent = 0;
       const buildingsIntervened = [];
-
-      // Keep track of processed interventions in this year
       const processedInterventions = new Set();
+      const conflictLog = [];
 
       while (pq.size() > 0 && spent + pq.peek().cost <= yearBudget) {
         const intervention = pq.dequeue();
-        const { building, tech, cost } = intervention;
+        const { building, tech, technologies, cost, isBundle } = intervention;
 
         // Skip if this intervention has already been processed in this year
         if (processedInterventions.has(intervention)) continue;
         processedInterventions.add(intervention);
 
-        // Check again if the building has been intervened in the meantime
-        // log(
-        //   "Building ID:",
-        //   building.id,
-        //   "Intervened:",
-        //   building.isIntervened
-        // );
-        if (!building.isIntervened) {
-          this.applyIntervention(building, tech, cost, year);
-          spent += cost;
-          buildingsIntervened.push(building);
+        // Check if building is available for intervention
+        if (this.config.allowMultipleInterventions) {
+          // Check if we can add more interventions to this building
+          const canAddMore =
+            building.interventions.length <
+            this.config.maxInterventionsPerBuilding;
 
-          //   log("Intervention applied:", building.id, tech.name, cost);
-          //   log("Spent this year:", spent, "Year Budget:", yearBudget);
+          // Check compatibility with existing interventions
+          const isCompatible = isBundle
+            ? this.areCompatible([
+                ...building.currentTechnologies
+                  .map((name) =>
+                    this.config.technologies.find((t) => t.name === name)
+                  )
+                  .filter(Boolean),
+                ...technologies,
+              ])
+            : building.isCompatibleWith(
+                tech.name,
+                this.config.technologyCompatibility
+              );
+
+          if (canAddMore && isCompatible) {
+            const success = this.applyIntervention(
+              building,
+              isBundle ? technologies : tech,
+              cost,
+              year
+            );
+            if (success) {
+              spent += cost;
+              buildingsIntervened.push(building);
+
+              // Log successful intervention
+              log(
+                `Multi-tech intervention applied: Building ${
+                  building.id
+                }, Tech: ${
+                  isBundle
+                    ? technologies.map((t) => t.name).join(" + ")
+                    : tech.name
+                }, Cost: ${cost}`
+              );
+            }
+          } else {
+            // Log conflict
+            conflictLog.push({
+              building: building.id,
+              technology: isBundle
+                ? technologies.map((t) => t.name).join(" + ")
+                : tech.name,
+              reason: !canAddMore
+                ? "max_interventions_reached"
+                : "incompatible_technology",
+              existing: building.currentTechnologies,
+            });
+          }
+        } else {
+          // Single intervention mode (existing behavior)
+          if (!building.isIntervened) {
+            const success = this.applyIntervention(
+              building,
+              isBundle ? technologies : tech,
+              cost,
+              year
+            );
+            if (success) {
+              spent += cost;
+              buildingsIntervened.push(building);
+            }
+          }
         }
       }
 
@@ -1065,6 +1295,11 @@ export class MiniDecarbModel {
         (intervention) => !processedInterventions.has(intervention)
       );
       pq._heapify();
+
+      // Log conflicts for this year
+      if (conflictLog.length > 0) {
+        log(`Year ${this.config.initial_year + year} conflicts:`, conflictLog);
+      }
 
       this.updateYearlyStats(
         year,
@@ -1148,20 +1383,112 @@ export class MiniDecarbModel {
     };
   }
 
-  applyIntervention(building, tech, cost, year) {
-    building.isIntervened = true;
-    building.interventionYear = this.config.initial_year + year;
-    building.interventionCost = cost;
-    building.numInterventions++;
+  applyIntervention(building, techOrBundle, cost, year) {
+    // Handle both single technology and technology bundles
+    const technologies = Array.isArray(techOrBundle)
+      ? techOrBundle
+      : [techOrBundle];
+    const interventionYear = this.config.initial_year + year;
 
-    if (this.config.optimizationStrategy === "carbon-first") {
-      building.interventionTechs = tech.name;
-      building.carbonSaved = building.properties[tech.config.savingsKey];
-    } else {
-      building.interventionTechs = this.config.tech.name;
-      building.carbonSaved =
-        building.properties[this.config.tech.config.savingsKey];
+    // Check if multiple interventions are allowed
+    if (!this.config.allowMultipleInterventions && building.isIntervened) {
+      warn(
+        `Building ${building.id} already has an intervention and multiple interventions are disabled`
+      );
+      return false;
     }
+
+    // Check compatibility with existing interventions
+    for (const tech of technologies) {
+      if (
+        !building.isCompatibleWith(
+          tech.name,
+          this.config.technologyCompatibility
+        )
+      ) {
+        const conflict = {
+          buildingId: building.id,
+          newTechnology: tech.name,
+          existingTechnologies: building.currentTechnologies,
+          reason: "incompatible_technologies",
+        };
+        building.interventionConflicts.push(conflict);
+        warn(
+          `Technology ${tech.name} is incompatible with existing interventions on building ${building.id}`
+        );
+        return false;
+      }
+    }
+
+    // Calculate synergies
+    const allTechnologies = [
+      ...building.currentTechnologies
+        .map((name) => this.config.technologies.find((t) => t.name === name))
+        .filter(Boolean),
+      ...technologies,
+    ];
+
+    const synergies = this.calculateSynergies(allTechnologies);
+
+    // Apply interventions
+    if (technologies.length === 1) {
+      // Single technology intervention
+      const tech = technologies[0];
+      const carbonSaved = building.properties[tech.config.savingsKey] || 0;
+
+      building.addIntervention(
+        tech,
+        cost,
+        carbonSaved,
+        interventionYear,
+        synergies
+      );
+
+      if (this.config.optimizationStrategy === "carbon-first") {
+        building.interventionTechs = building.currentTechnologies.join(", ");
+      } else {
+        building.interventionTechs = tech.name;
+      }
+    } else {
+      // Multiple technology intervention (bundle)
+      const bundleCost = this.calculateCombinedCost(building, technologies);
+      const bundleCarbonSaved = this.calculateCombinedCarbonSavings(
+        building,
+        technologies
+      );
+
+      // Add each technology as separate intervention but in the same year
+      for (const tech of technologies) {
+        const techCost =
+          building.properties[tech.config.labourKey] +
+          building.properties[tech.config.materialKey];
+        const techCarbonSaved =
+          building.properties[tech.config.savingsKey] || 0;
+
+        building.addIntervention(
+          tech,
+          techCost,
+          techCarbonSaved,
+          interventionYear,
+          synergies
+        );
+      }
+
+      // Update aggregated values to reflect bundle totals including synergies
+      building.interventionCost = bundleCost;
+      building.carbonSaved = bundleCarbonSaved;
+      building.interventionTechs = technologies.map((t) => t.name).join(" + ");
+    }
+
+    building.numInterventions = building.interventions.length;
+
+    log(
+      `Applied intervention to building ${building.id}: ${technologies
+        .map((t) => t.name)
+        .join(" + ")} (Cost: ${cost}, Carbon: ${building.carbonSaved})`
+    );
+
+    return true;
   }
 
   // --- Model Running Method ---
@@ -1204,9 +1531,8 @@ export class MiniDecarbModel {
     );
 
     if (this.suitableBuildingsNeedUpdate) {
-      // Key: Check if filtering applied
       this.filterSuitableBuildings();
-      this.suitableBuildingsNeedUpdate = false; // Reset after filtering
+      this.suitableBuildingsNeedUpdate = false;
     }
 
     // Calculate remaining budget correctly
@@ -1217,20 +1543,22 @@ export class MiniDecarbModel {
       remainingBudget = this.yearlyStats[lastYear].remainingBudget;
     }
 
+    // Multi-technology intervention statistics
+    const multiTechStats = this.calculateMultiTechStats();
+
     return {
       modelId: this.modelId,
       techName:
         this.config.optimizationStrategy === "carbon-first"
           ? this.config.technologies.map((tech) => tech.name)
-          : this.config.tech.name, // Handle carbon-first tech name(s)
-      initialBudget: this.config.yearly_budgets.reduce((a, b) => a + b, 0), // total initial budget
+          : this.config.tech.name,
+      initialBudget: this.config.yearly_budgets.reduce((a, b) => a + b, 0),
       yearlyBudgets: this.config.yearly_budgets,
       totalBudgetSpent: totalAllocated,
-      remainingBudget: remainingBudget, // remaining budget after last year
+      remainingBudget: remainingBudget,
       projectDuration: numYears,
       yearlyStats: this.yearlyStats,
       intervenedBuildings: this.suitableBuildings.filter((b) => b.isIntervened),
-      // untouchedBuildings: this.suitableBuildings.filter((b) => !b.isIntervened),
       allBuildings: this.suitableBuildings,
       appliedFilters: this.appliedFilters.map((filter) => ({
         name: filter.name,
@@ -1243,13 +1571,97 @@ export class MiniDecarbModel {
         hasCustomScore: !!rule.scoreFunction,
         weight: rule.weight || 1.0,
       })),
+
+      // Multi-technology intervention data
+      multiTechnologySettings: {
+        allowMultipleInterventions: this.config.allowMultipleInterventions,
+        maxInterventionsPerBuilding: this.config.maxInterventionsPerBuilding,
+        conflictResolutionStrategy: this.config.conflictResolutionStrategy,
+        technologyCompatibility: this.config.technologyCompatibility,
+        technologySynergies: this.config.technologySynergies,
+      },
+
+      multiTechnologyStats: multiTechStats,
+
+      // Conflicts and issues
+      conflicts: this.suitableBuildings
+        .filter((b) => b.interventionConflicts.length > 0)
+        .map((b) => ({
+          buildingId: b.id,
+          conflicts: b.interventionConflicts,
+        })),
     };
+  }
+
+  // Calculate statistics for multi-technology interventions
+  calculateMultiTechStats() {
+    const stats = {
+      totalBuildings: this.suitableBuildings.length,
+      buildingsWithInterventions: 0,
+      buildingsWithMultipleInterventions: 0,
+      averageInterventionsPerBuilding: 0,
+      totalInterventions: 0,
+      technologyCombinations: {},
+      synergyEffects: {},
+      conflictCount: 0,
+      costSavingsFromSynergies: 0,
+      carbonBonusFromSynergies: 0,
+    };
+
+    for (const building of this.suitableBuildings) {
+      if (building.isIntervened) {
+        stats.buildingsWithInterventions++;
+        stats.totalInterventions += building.interventions.length;
+
+        if (building.hasMultipleInterventions) {
+          stats.buildingsWithMultipleInterventions++;
+        }
+
+        // Track technology combinations
+        const techCombo = building.currentTechnologies.sort().join(" + ");
+        stats.technologyCombinations[techCombo] =
+          (stats.technologyCombinations[techCombo] || 0) + 1;
+
+        // Track synergy effects
+        for (const [synergyKey, synergy] of Object.entries(
+          building.synergyBonuses
+        )) {
+          if (!stats.synergyEffects[synergyKey]) {
+            stats.synergyEffects[synergyKey] = { count: 0, totalValue: 0 };
+          }
+          stats.synergyEffects[synergyKey].count++;
+          stats.synergyEffects[synergyKey].totalValue += synergy.value;
+
+          if (synergy.type === "cost_reduction") {
+            stats.costSavingsFromSynergies += synergy.value;
+          } else if (synergy.type === "carbon_bonus") {
+            stats.carbonBonusFromSynergies += synergy.value;
+          }
+        }
+
+        // Count conflicts
+        stats.conflictCount += building.interventionConflicts.length;
+      }
+    }
+
+    if (stats.buildingsWithInterventions > 0) {
+      stats.averageInterventionsPerBuilding =
+        stats.totalInterventions / stats.buildingsWithInterventions;
+    }
+
+    return stats;
   }
 
   // Helper method to stack results for visualisation
   static stackResults(modelRecaps) {
     const buildingMap = new Map();
     const yearlySummary = {};
+    const multiTechSummary = {
+      totalMultiTechBuildings: 0,
+      totalConflicts: 0,
+      synergyEffects: {},
+      technologyCombinations: {},
+    };
 
     modelRecaps.forEach((modelRecap) => {
       // Process yearlyStats for overall summary
@@ -1261,6 +1673,8 @@ export class MiniDecarbModel {
             totalCarbonSaved: 0,
             technologies: new Set(),
             intervenedBuildingIds: new Set(),
+            multiTechBuildings: 0,
+            conflictsResolved: 0,
           };
         }
 
@@ -1268,10 +1682,22 @@ export class MiniDecarbModel {
         yearlySummary[year].buildingsIntervened += stats.buildingsIntervened;
         stats.intervenedBuildings.forEach((building) => {
           yearlySummary[year].intervenedBuildingIds.add(building.id);
+
+          // Track multi-technology buildings
+          if (building.hasMultipleInterventions) {
+            yearlySummary[year].multiTechBuildings++;
+          }
         });
+
         if (stats.buildingsIntervened > 0) {
-          yearlySummary[year].technologies.add(modelRecap.techName);
+          const techName = Array.isArray(modelRecap.techName)
+            ? modelRecap.techName
+            : [modelRecap.techName];
+          techName.forEach((tech) =>
+            yearlySummary[year].technologies.add(tech)
+          );
         }
+
         yearlySummary[year].totalCarbonSaved +=
           stats.intervenedBuildings.reduce(
             (sum, b) => sum + (b.carbonSaved || 0),
@@ -1279,7 +1705,7 @@ export class MiniDecarbModel {
           );
       });
 
-      // process all buildings from the recap
+      // Process all buildings from the recap
       modelRecap.allBuildings.forEach((building) => {
         if (!buildingMap.has(building.id)) {
           buildingMap.set(building.id, {
@@ -1291,7 +1717,15 @@ export class MiniDecarbModel {
             interventionHistory: [],
             interventionYears: [],
             interventionTechs: [],
-            numInterventions: building.numInterventions,
+            numInterventions: 0,
+
+            // Multi-technology specific properties
+            hasMultipleInterventions: false,
+            interventions: [],
+            currentTechnologies: [],
+            synergyBonuses: {},
+            interventionConflicts: [],
+            maxInterventionsReached: false,
           });
         }
 
@@ -1299,25 +1733,109 @@ export class MiniDecarbModel {
 
         // Process interventions if the building was intervened in this model
         if (building.isIntervened) {
-          const intervention = {
-            tech: modelRecap.techName,
-            year: building.interventionYear,
-            cost: building.interventionCost,
-            carbonSaved: building.carbonSaved,
-            interventionID: modelRecap.intervenetionId,
-            interventionID: modelRecap.modelId,
-          };
+          // Handle multi-technology interventions
+          if (building.interventions && building.interventions.length > 0) {
+            // Building has detailed intervention data
+            building.interventions.forEach((intervention) => {
+              const interventionRecord = {
+                tech: intervention.tech,
+                year: intervention.year,
+                cost: intervention.cost,
+                carbonSaved: intervention.carbonSaved,
+                modelId: modelRecap.modelId,
+                synergies: intervention.synergies,
+              };
+
+              target.interventionHistory.push(interventionRecord);
+              target.interventionYears.push(intervention.year);
+
+              if (!target.interventionTechs.includes(intervention.tech)) {
+                target.interventionTechs.push(intervention.tech);
+              }
+
+              if (!target.currentTechnologies.includes(intervention.tech)) {
+                target.currentTechnologies.push(intervention.tech);
+              }
+            });
+
+            // Copy multi-tech properties
+            target.hasMultipleInterventions = building.hasMultipleInterventions;
+            target.interventions = [
+              ...target.interventions,
+              ...building.interventions,
+            ];
+            target.synergyBonuses = {
+              ...target.synergyBonuses,
+              ...building.synergyBonuses,
+            };
+            target.interventionConflicts = [
+              ...target.interventionConflicts,
+              ...building.interventionConflicts,
+            ];
+          } else {
+            // Legacy single intervention format
+            const intervention = {
+              tech: Array.isArray(modelRecap.techName)
+                ? modelRecap.techName.join(" + ")
+                : modelRecap.techName,
+              year: building.interventionYear,
+              cost: building.interventionCost,
+              carbonSaved: building.carbonSaved,
+              modelId: modelRecap.modelId,
+            };
+
+            target.interventionHistory.push(intervention);
+            target.interventionYears.push(building.interventionYear);
+
+            const techNames = Array.isArray(modelRecap.techName)
+              ? modelRecap.techName
+              : [modelRecap.techName];
+            techNames.forEach((tech) => {
+              if (!target.interventionTechs.includes(tech)) {
+                target.interventionTechs.push(tech);
+              }
+            });
+          }
 
           target.isIntervened = true;
-          target.totalCost += building.interventionCost;
-          target.totalCarbonSaved += building.carbonSaved;
-          target.interventionHistory.push(intervention);
-          target.interventionYears.push(building.interventionYear);
-          if (!target.interventionTechs.includes(modelRecap.techName)) {
-            target.interventionTechs.push(modelRecap.techName);
-          }
+          target.totalCost += building.interventionCost || 0;
+          target.totalCarbonSaved += building.carbonSaved || 0;
+          target.numInterventions = Math.max(
+            target.numInterventions,
+            building.numInterventions || 1
+          );
         }
       });
+
+      // Aggregate multi-technology statistics
+      if (modelRecap.multiTechnologyStats) {
+        multiTechSummary.totalMultiTechBuildings +=
+          modelRecap.multiTechnologyStats.buildingsWithMultipleInterventions;
+        multiTechSummary.totalConflicts +=
+          modelRecap.multiTechnologyStats.conflictCount;
+
+        // Merge synergy effects
+        Object.entries(modelRecap.multiTechnologyStats.synergyEffects).forEach(
+          ([key, value]) => {
+            if (!multiTechSummary.synergyEffects[key]) {
+              multiTechSummary.synergyEffects[key] = {
+                count: 0,
+                totalValue: 0,
+              };
+            }
+            multiTechSummary.synergyEffects[key].count += value.count;
+            multiTechSummary.synergyEffects[key].totalValue += value.totalValue;
+          }
+        );
+
+        // Merge technology combinations
+        Object.entries(
+          modelRecap.multiTechnologyStats.technologyCombinations
+        ).forEach(([combo, count]) => {
+          multiTechSummary.technologyCombinations[combo] =
+            (multiTechSummary.technologyCombinations[combo] || 0) + count;
+        });
+      }
     });
 
     // Finalize the yearly summary
@@ -1333,6 +1851,8 @@ export class MiniDecarbModel {
       totalBuildings: buildings.length,
       intervenedCount: buildings.filter((b) => b.isIntervened).length,
       untouchedCount: buildings.filter((b) => !b.isIntervened).length,
+      multiTechCount: buildings.filter((b) => b.hasMultipleInterventions)
+        .length,
       totalCost: buildings.reduce((sum, b) => sum + b.totalCost, 0),
       totalCarbonSaved: buildings.reduce(
         (sum, b) => sum + b.totalCarbonSaved,
@@ -1341,6 +1861,13 @@ export class MiniDecarbModel {
       uniqueTechs: [
         ...new Set(
           buildings.flatMap((b) => b.interventionTechs).filter(Boolean)
+        ),
+      ],
+      uniqueTechCombinations: [
+        ...new Set(
+          buildings
+            .filter((b) => b.interventionTechs.length > 1)
+            .map((b) => b.interventionTechs.sort().join(" + "))
         ),
       ],
       interventionYearRange: buildings.some((b) => b.interventionYears.length)
@@ -1354,8 +1881,10 @@ export class MiniDecarbModel {
     const stackedResultObject = {
       buildings,
       intervenedBuildings: buildings.filter((b) => b.isIntervened),
+      multiTechBuildings: buildings.filter((b) => b.hasMultipleInterventions),
       summary,
       yearlySummary,
+      multiTechSummary,
       recap: modelRecaps,
     };
 
@@ -1521,5 +2050,86 @@ export class MiniDecarbModel {
         return false; // Exclude buildings if an error occurs
       }
     };
+  }
+
+  // Helper methods for multi-technology interventions
+
+  // Calculate synergy effects between technologies
+  calculateSynergies(technologies) {
+    const synergies = {};
+    const techNames = technologies.map((tech) => tech.name).sort();
+
+    for (const [synergyKey, synergyEffect] of Object.entries(
+      this.config.technologySynergies
+    )) {
+      const synergyTechs = synergyKey.split("+").sort();
+
+      if (synergyTechs.every((tech) => techNames.includes(tech))) {
+        synergies[synergyKey] = synergyEffect;
+      }
+    }
+
+    return synergies;
+  }
+
+  // Check if technologies are compatible
+  areTechnologiesCompatible(technologies) {
+    for (let i = 0; i < technologies.length; i++) {
+      for (let j = i + 1; j < technologies.length; j++) {
+        const techA = technologies[i];
+        const techB = technologies[j];
+
+        if (!this.config.technologyCompatibility[techA.name]?.[techB.name]) {
+          return false;
+        }
+      }
+    }
+
+    return true;
+  }
+
+  // Generate technology bundles for a building
+  generateTechnologyBundles(building) {
+    if (!this.config.allowMultipleInterventions) {
+      return [];
+    }
+
+    const suitableTechs = this.config.technologies.filter(
+      (tech) => building.properties[tech.config.suitabilityKey]
+    );
+
+    const bundles = [];
+
+    // Single technologies
+    suitableTechs.forEach((tech) => bundles.push([tech]));
+
+    // Combinations of technologies
+    for (let size = 2; size <= suitableTechs.length; size++) {
+      bundles.push(...this.getCombinations(suitableTechs, size));
+    }
+
+    return bundles;
+  }
+
+  // Generate combinations of technologies
+  getCombinations(technologies, size) {
+    if (size === 1) {
+      return technologies.map((tech) => [tech]);
+    }
+
+    const combinations = [];
+
+    technologies.forEach((tech, index) => {
+      const smallerCombinations = this.getCombinations(
+        technologies.slice(index + 1),
+        size - 1
+      );
+
+      smallerCombinations.forEach((combo) => {
+        combinations.push([tech, ...combo]);
+      });
+    });
+
+    return combinations;
   }
 }
