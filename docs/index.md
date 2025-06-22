@@ -224,14 +224,14 @@ const glyphColours = [
 const timelineVariables = [
   "interventionCost",
   "carbonSaved",
-  "numInterventions",
-  "interventionTechs",
+  // "numInterventions",
+  // "interventionTechs",
 ];
 const timelineColours = [
-  "#000000", // interventionCost: Black
-  "#0000FF", // carbonSaved: Blue
-  "#00FF00", // numInterventions: Green
-  "#FF0000", // interventionTechs: Red
+  "rgb(0, 255, 76)", // carbonSaved
+  "rgb(255, 0, 0)", // interventionCost
+  // "#00FF00", // numInterventions
+  // "#FF0000", // interventionTechs
 ];
 ```
 
@@ -2406,9 +2406,13 @@ function glyphMapSpec(width = 800, height = 600) {
       const glyph = new StreamGraphGlyph(cellData, "year", null, {
         upwardKeys: ["carbonSaved"],
         downwardKeys: ["interventionCost"],
+          colors: {
+          "carbonSaved": timelineColours[0],
+          "interventionCost": timelineColours[1]
+        }
       });
 
-      glyph.draw(ctx, x, y, cellSize/2, cellSize/2);
+      glyph.draw(ctx, x, y, cellSize, cellSize);
     } else {
       // fallback: simple debug circle
       ctx.beginPath();
@@ -2507,7 +2511,7 @@ function glyphMapSpec(width = 800, height = 600) {
           return;
         }
         global.pathGenerator = d3.geoPath().context(ctx);
-        global.colourScalePop = "#cccccc";
+        global.colourScalePop = "rgba(211, 209, 209, 0.81)";
       },
 
       drawFn: (cell, x, y, cellSize, ctx, global, panel) => {
@@ -2523,7 +2527,7 @@ function glyphMapSpec(width = 800, height = 600) {
         ctx.fill();
 
         ctx.lineWidth = 0.2;
-        ctx.strokeStyle = "rgb(7, 77, 255)";
+        ctx.strokeStyle = "rgb(156, 156, 156)";
         ctx.stroke();
 
         if (global.clickedCell === cell) {
@@ -2539,15 +2543,53 @@ function glyphMapSpec(width = 800, height = 600) {
       },
 
       postDrawFn: (cells, cellSize, ctx, global, panel) => {
-        // No-op post draw
+        const isTimeline = timeline_switch === "Decarbonisation Timeline";
+        const selectedParameters = isTimeline ? timelineVariables : glyphVariables;
+        const selectedColours = isTimeline ? timelineColours : glyphColours;
+         
+        drawLegend(ctx, panel, selectedParameters, selectedColours);
       },
     },
   };
 }
-
 ```
 
-<!-- morph animation logic -->
+
+```js
+function drawLegend(ctx, panel, selectedParameters, colours, colourMapping = {}) {
+  ctx.font = "10px sans-serif";
+  ctx.textAlign = "left";
+  ctx.textBaseline = "middle";
+
+  const maxTextWidth = d3.max(
+    selectedParameters.map((item) => ctx.measureText(item).width)
+  );
+
+  const x = panel.getWidth() - maxTextWidth - 20;
+  let y = panel.getHeight() - selectedParameters.length * 15;
+
+  ctx.fillStyle = "#fff8";
+  ctx.fillRect(x, y, maxTextWidth + 15, selectedParameters.length * 15);
+
+  for (let i = 0; i < selectedParameters.length; i++) {
+    const parameter = selectedParameters[i];
+    const color = colourMapping[parameter] || colours[i % colours.length];
+
+    ctx.fillStyle = color;
+    ctx.fillRect(x, y, 10, 10);
+
+    ctx.fillStyle = "#333";
+    ctx.fillText(parameter, x + 15, y + 5);
+
+    y += 15;
+  }
+}
+```
+
+
+
+
+<!-- ------------------- morph animation logic -->
 
 ```js
 // set and animate needs to be in here for reactivity
@@ -2744,6 +2786,11 @@ function interactiveDrawFn(mode) {
 // });
 // }
 ```
+
+
+
+<!-- -------------- Leaflet Map Instantiation --------------- -->
+
 
 ```js
 // const leafletContainer = document.createElement("div");
