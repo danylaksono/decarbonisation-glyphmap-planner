@@ -54,6 +54,7 @@ import {
   plotOverallTimeline,
   plotOverallPotential,
   plotDualChartPanel,
+  plotOverallStreamGraph,
 } from "./components/libs/plots.js";
 
 import { LeafletMap } from "./components/libs/leaflet/leaflet-map.js";
@@ -222,8 +223,9 @@ const glyphColours = [
   "#006400", // pv_total: DarkGreen
 ];
 const timelineVariables = [
-  "interventionCost",
   "carbonSaved",
+  "interventionCost",
+  
   // "numInterventions",
   // "interventionTechs",
 ];
@@ -2511,7 +2513,7 @@ function glyphMapSpec(width = 800, height = 600) {
           return;
         }
         global.pathGenerator = d3.geoPath().context(ctx);
-        global.colourScalePop = "rgba(211, 209, 209, 0.81)";
+        global.colourScalePop = "rgba(211, 209, 209, 0.4)";
       },
 
       drawFn: (cell, x, y, cellSize, ctx, global, panel) => {
@@ -2523,7 +2525,7 @@ function glyphMapSpec(width = 800, height = 600) {
         const boundaryFeat = turf.polygon([boundary]);
         ctx.beginPath();
         global.pathGenerator(boundaryFeat);
-        ctx.fillStyle = "#efefef";
+        ctx.fillStyle = "rgba(210,210,210,0.5aas)";
         ctx.fill();
 
         ctx.lineWidth = 0.2;
@@ -2732,39 +2734,13 @@ function createGlyphMap(mapAggregate, width, height) {
     case "LA Level":
       return timeline_switch === "Decarbonisation Potentials"
         ? plotOverallPotential(glyphData, glyphColours, glyphVariables)
-        : plotOverallTimeline(yearlySummaryArray);
+        : plotOverallStreamGraph(yearlySummaryArray, width, height);
     default:
       console.warn("[createGlyphMap] Unknown mapAggregate:", mapAggregate);
       return null;
   }
 }
 
-
-
-//  ----------pre refactor
-// function createGlyphMap(mapAggregate, width, height) {
-//   switch (mapAggregate) {
-//     case "Individual Building":
-//       return createLeafletMap(width, height).leafletContainer;
-//     case "Aggregated Building":
-//       return glyphMap({ ...glyphMapSpec(width, height) });
-//     case "LSOA Level":
-//       console.log(
-//         "[createGlyphMap] LSOA Level glyphData:",
-//         getGlyphData,
-//         "timeline_switch:",
-//         timeline_switch
-//       );
-//       return morphGlyphMap;
-//     case "LA Level":
-//       return timeline_switch === "Decarbonisation Potentials"
-//         ? plotOverallPotential(glyphData, glyphColours, glyphVariables)
-//         : plotOverallTimeline(yearlySummaryArray);
-//     default:
-//       console.warn("[createGlyphMap] Unknown mapAggregate:", mapAggregate);
-//       return null;
-//   }
-// }
 ```
 
 ```js
@@ -2897,6 +2873,10 @@ const yearlySummaryArray = getResults.yearlySummary
       ...values,
     }))
   : null;
+
+console.log("yearlySummaryArray",yearlySummaryArray)
+console.log("getResults.yearlySummary",getResults.yearlySummary)
+console.log("getResults",getResults)
 
 // Normalize the data for chart
 let keysToNormalise = [
