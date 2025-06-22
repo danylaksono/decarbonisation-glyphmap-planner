@@ -7,6 +7,7 @@ export function StreamGraphGlyph(
   config = {
     upwardKeys: ["ashp_carbonsaved", "ev_carbonsaved", "pv_carbonsaved"],
     downwardKeys: ["labour_cost", "material_cost", "total_cost"],
+    colors: null, // Can be array of colors or object mapping variable names to colors
   }
 ) {
   if (!config.upwardKeys || !config.downwardKeys) {
@@ -29,11 +30,34 @@ export function StreamGraphGlyph(
     "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd",
     "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf",
   ];
+  
   const allKeys = [...upwardKeys, ...downwardKeys];
   const colourMapping = {};
-  allKeys.forEach((key, i) => {
-    colourMapping[key] = defaultPalette[i % defaultPalette.length];
-  });
+  
+  // Handle color configuration
+  if (config.colors) {
+    if (Array.isArray(config.colors)) {
+      // If colors is an array, assign colors in order
+      allKeys.forEach((key, i) => {
+        colourMapping[key] = config.colors[i % config.colors.length];
+      });
+    } else if (typeof config.colors === 'object') {
+      // If colors is an object, use direct mapping with fallback to default palette
+      allKeys.forEach((key, i) => {
+        colourMapping[key] = config.colors[key] || defaultPalette[i % defaultPalette.length];
+      });
+    } else {
+      console.warn("Invalid colors configuration. Expected array or object. Using default palette.");
+      allKeys.forEach((key, i) => {
+        colourMapping[key] = defaultPalette[i % defaultPalette.length];
+      });
+    }
+  } else {
+    // Use default palette if no colors specified
+    allKeys.forEach((key, i) => {
+      colourMapping[key] = defaultPalette[i % defaultPalette.length];
+    });
+  }
 
   const safeSum = (d, keys) =>
     keys.reduce(
