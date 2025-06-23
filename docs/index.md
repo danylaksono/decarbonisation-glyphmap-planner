@@ -544,6 +544,7 @@ const filterManager = {
           ${mapAggregationInput}
           ${(map_aggregate === "Aggregated Building" || map_aggregate === "LSOA Level" || map_aggregate === "LA Level" ) ? timelineSwitchInput : ""}
           ${(map_aggregate === "LSOA Level") ? html`${playButton} ${morphFactorInput}` : ""} 
+          ${(map_aggregate === "Aggregated Building") ? html`${gridSizeSelector}` : ""} 
           <!-- ${html`${playButton} ${morphFactorInput}`} -->
           ${resize((width, height) => createGlyphMap(map_aggregate, width, height-80))}
     </div>
@@ -1147,6 +1148,17 @@ const timelineSwitchInput = Inputs.radio(
   }
 );
 const timeline_switch = Generators.input(timelineSwitchInput);
+```
+
+```js
+// --- grid size for aggregated  ---
+const gridSizeSelector = Inputs.range([50, 200], {
+  label: "Grid Size",
+  value: 50,
+  step: 10
+});
+const grid_size_selector = Generators.input(gridSizeSelector);
+
 ```
 
 ```js
@@ -2452,7 +2464,7 @@ function glyphMapSpec(width = 800, height = 600) {
     interactiveCellSize: true,
     interactiveZoomPan: true,
     mapType: "CartoPositron",
-    cellSize: 50,
+    cellSize: grid_size_selector || 50,
     width,
     height,
 
@@ -2525,7 +2537,7 @@ function glyphMapSpec(width = 800, height = 600) {
         const boundaryFeat = turf.polygon([boundary]);
         ctx.beginPath();
         global.pathGenerator(boundaryFeat);
-        ctx.fillStyle = "rgba(210,210,210,0.5aas)";
+        ctx.fillStyle = "rgba(210,210,210,0.5)";
         ctx.fill();
 
         ctx.lineWidth = 0.2;
@@ -2546,7 +2558,20 @@ function glyphMapSpec(width = 800, height = 600) {
 
       postDrawFn: (cells, cellSize, ctx, global, panel) => {
         const isTimeline = timeline_switch === "Decarbonisation Timeline";
-        const selectedParameters = isTimeline ? timelineVariables : glyphVariables;
+        const selectedParameters = isTimeline ? [
+          "Carbon Saved tCO₂",
+          "Total Intervention Costs (£)"
+        ] :  [
+          "ASHP Suitability",
+          "ASHP Recommended Heat Pump Size [kW]",
+          "ASHP Total Cost",
+          "GSHP Suitability",
+          "GSHP Recommended Heat Pump Size [kW]",
+          "GSHP Total Cost",
+          "Rooftop PV Suitability",
+          "Rooftop PV Annual Generation [kWh]",
+          "Rooftop PV Total Cost",
+        ];
         const selectedColours = isTimeline ? timelineColours : glyphColours;
          
         drawLegend(ctx, panel, selectedParameters, selectedColours);
@@ -2559,7 +2584,8 @@ function glyphMapSpec(width = 800, height = 600) {
 
 ```js
 function drawLegend(ctx, panel, selectedParameters, colours, colourMapping = {}) {
-  ctx.font = "10px sans-serif";
+  // Increase font size from 10px to 14px or 16px
+  ctx.font = "14px sans-serif";
   ctx.textAlign = "left";
   ctx.textBaseline = "middle";
 
@@ -2567,23 +2593,29 @@ function drawLegend(ctx, panel, selectedParameters, colours, colourMapping = {})
     selectedParameters.map((item) => ctx.measureText(item).width)
   );
 
-  const x = panel.getWidth() - maxTextWidth - 20;
-  let y = panel.getHeight() - selectedParameters.length * 15;
+  // Increase padding from 20 to 30
+  const x = panel.getWidth() - maxTextWidth - 30;
+  // Increase line spacing from 15 to 20
+  let y = panel.getHeight() - selectedParameters.length * 20 -50;
 
+  // Increase background padding and height
   ctx.fillStyle = "#fff8";
-  ctx.fillRect(x, y, maxTextWidth + 15, selectedParameters.length * 15);
+  ctx.fillRect(x, y, maxTextWidth + 20, selectedParameters.length * 20);
 
   for (let i = 0; i < selectedParameters.length; i++) {
     const parameter = selectedParameters[i];
     const color = colourMapping[parameter] || colours[i % colours.length];
 
+    // Increase color box size from 10x10 to 12x12 or 14x14
     ctx.fillStyle = color;
-    ctx.fillRect(x, y, 10, 10);
+    ctx.fillRect(x, y, 14, 14);
 
+    // Adjust text position to align with larger color box
     ctx.fillStyle = "#333";
-    ctx.fillText(parameter, x + 15, y + 5);
+    ctx.fillText(parameter, x + 20, y + 7);
 
-    y += 15;
+    // Increase line spacing from 15 to 20
+    y += 20;
   }
 }
 ```
@@ -2679,6 +2711,8 @@ function createMorphGlyphMap(width, height) {
 
   return glyphMapInstance;
 }
+```
+```js
 // Create the morphGlyphMap using the specified width and height
 const morphGlyphMap = createMorphGlyphMap(1000, 800);
 ```
@@ -2712,7 +2746,9 @@ function createPlaceholderCanvas(width, height, message = "Please Add Interventi
 
   return canvas;
 }
+```
 
+```js
 function createGlyphMap(mapAggregate, width, height) {
   const modelAvailable = updateInterventions() && updateInterventions().length > 0;
   const needsModel =
@@ -2729,7 +2765,7 @@ function createGlyphMap(mapAggregate, width, height) {
     case "Aggregated Building":
       return glyphMap({ ...glyphMapSpec(width, height) });
     case "LSOA Level":
-      console.log("[createGlyphMap] LSOA Level glyphData:", getGlyphData, "timeline_switch:", timeline_switch);
+      // morphGlyphMap = createMorphGlyphMap(width, height);
       return morphGlyphMap;
     case "LA Level":
       return timeline_switch === "Decarbonisation Potentials"

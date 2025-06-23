@@ -63,6 +63,9 @@ function cleanupTooltips() {
 }
 
 function drawStreamGraphAxes(ctx, x, y, width, height, upwardMax, downwardMax, yearStart, yearEnd, data) {
+  // Save the current canvas state to avoid leaking settings
+  ctx.save();
+  
   ctx.strokeStyle = "#333";
   ctx.lineWidth = 1;
   ctx.font = "12px sans-serif";
@@ -223,6 +226,9 @@ function drawStreamGraphAxes(ctx, x, y, width, height, upwardMax, downwardMax, y
   
   // X-axis label
   ctx.fillText("Year", chartX + chartWidth / 2, chartY + chartHeight + 35);
+  
+  // Restore the canvas state to prevent leaking settings to other canvas instances
+  ctx.restore();
 }
 
 
@@ -243,7 +249,7 @@ export function plotOverallStreamGraph(data, width = 900, height = 600, enableTo
   title.style.textAlign = "center";
   title.style.marginBottom = "10px";
   title.style.color = "#333";
-  title.textContent = "Decarbonisation Stream Graph";
+  title.textContent = "Decarbonisation Timeline";
   container.appendChild(title);
 
   // Create legend container (horizontal layout below title)
@@ -298,6 +304,9 @@ export function plotOverallStreamGraph(data, width = 900, height = 600, enableTo
   const startYear = d3.min(years);
   const endYear = d3.max(years);
   
+  // Save canvas state for the entire plotting operation
+  ctx.save();
+  
   // Draw axes first with separate scales
   drawStreamGraphAxes(ctx, 0, 0, chartWidth, chartHeight, upwardMax, downwardMax, startYear, endYear, data);
 
@@ -311,6 +320,8 @@ export function plotOverallStreamGraph(data, width = 900, height = 600, enableTo
   const glyphWidth = chartWidth - (chartPadding * 2);
   const glyphHeight = chartHeight - (chartPadding * 2);
   
+  // Save state before glyph drawing
+  ctx.save();
   sampleGlyph.draw(
     ctx,
     chartWidth / 2,
@@ -318,6 +329,11 @@ export function plotOverallStreamGraph(data, width = 900, height = 600, enableTo
     glyphWidth,
     glyphHeight
   );
+  // Restore state after glyph drawing
+  ctx.restore();
+  
+  // Restore the overall canvas state
+  ctx.restore();
 
   // Create legend items (horizontal layout)
   allKeys.forEach((key, index) => {
