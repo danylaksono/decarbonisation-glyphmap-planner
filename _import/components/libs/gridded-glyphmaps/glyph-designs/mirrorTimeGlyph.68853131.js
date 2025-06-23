@@ -74,6 +74,9 @@ export function StreamGraphGlyph(
   };
 
   this.draw = (ctx, centerX, centerY, width, height, padding = 2) => {
+    // Save canvas state at the beginning to prevent context leakage
+    ctx.save();
+    
     const drawWidth = width - 2 * padding;
     const drawHeight = height - 2 * padding;
     const maxHeight = drawHeight / 2;
@@ -165,6 +168,9 @@ export function StreamGraphGlyph(
     ctx.lineTo(centerX + drawWidth / 2, centerY);
     ctx.strokeStyle = "white";
     ctx.stroke();
+    
+    // Restore canvas state to prevent context leakage
+    ctx.restore();
   };
 
   // console.log("StreamGraphGlyph created with", data.length, "points.");
