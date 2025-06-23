@@ -45,15 +45,15 @@ export function RadialGlyph(data, customColors, options = {}) {
 
     // Draw the glyph
     this.data.map((d, i) => {
-      drawPieSlice(
-        ctx,
-        x,
-        y,
-        Math.abs(radius * 0.9),
-        angle * (i + 0.1),
-        angle * (i + 0.9),
-        "rgba(0,0,0,0.05)"
-      );
+      // drawPieSlice(
+      //   ctx,
+      //   x,
+      //   y,
+      //   Math.abs(radius * 0.9),
+      //   angle * (i + 0.1),
+      //   angle * (i + 0.9),
+      //   "rgba(0,0,0,0.05)"
+      // );
       drawPieSlice(
         ctx,
         x,

@@ -273,6 +273,7 @@ const [getInterventionProcessingFlag, setInterventionProcessingFlag] =
   useState(false);
 const [getPreviousInterventionConfig, setPreviousInterventionConfig] =
   useState(null);
+const [getGlyphTooltipData, setGlyphTooltipData] = useState(null); // mutable tooltip for onhover
 ```
 
 ```js
@@ -544,8 +545,7 @@ const filterManager = {
           ${mapAggregationInput}
           ${(map_aggregate === "Aggregated Building" || map_aggregate === "LSOA Level" || map_aggregate === "LA Level" ) ? timelineSwitchInput : ""}
           ${(map_aggregate === "LSOA Level") ? html`${playButton} ${morphFactorInput}` : ""} 
-          ${(map_aggregate === "Aggregated Building") ? html`${gridSizeSelector}` : ""} 
-          <!-- ${html`${playButton} ${morphFactorInput}`} -->
+          ${(map_aggregate === "Aggregated Building") ? html`${gridSizeSelector}` : ""}  
           ${resize((width, height) => createGlyphMap(map_aggregate, width, height-80))}
     </div>
   </div>
@@ -1158,8 +1158,14 @@ const gridSizeSelector = Inputs.range([50, 200], {
   step: 10
 });
 const grid_size_selector = Generators.input(gridSizeSelector);
-
 ```
+
+```js
+// --- show relative glyph overlay  ---
+const showRelativeGlyph = Inputs.toggle({ label: "Show Relative", value: false });
+const show_relative = Generators.input(showRelativeGlyph);
+```
+
 
 ```js
 // --- morph factor ---
@@ -1837,6 +1843,7 @@ const excludedColumns = [
   "pv_material",
   "gshp_labour",
   "gshp_material",
+  "interventions",
   // "ashp_suitability",
   // "pv_suitability",
   // "gshp_suitability",
@@ -2540,9 +2547,18 @@ function glyphMapSpec(width = 800, height = 600) {
         ctx.fillStyle = "rgba(210,210,210,0.5)";
         ctx.fill();
 
-        ctx.lineWidth = 0.2;
-        ctx.strokeStyle = "rgb(156, 156, 156)";
-        ctx.stroke();
+        if (map_aggregate == "LSOA Level") {
+          ctx.lineWidth = 0.4;
+          ctx.strokeStyle = "rgb(156, 156, 156)";
+          // ctx.strokeStyle = "rgb(250, 250, 250, 0.4)";
+          ctx.stroke();
+        } else {
+          ctx.lineWidth = 2;
+          // ctx.strokeStyle = "rgb(156, 156, 156)";
+          ctx.strokeStyle = "rgb(250, 250, 250, 0.4)";
+          ctx.stroke();
+        //
+        }
 
         if (global.clickedCell === cell) {
           ctx.lineWidth = 4;
@@ -2576,11 +2592,15 @@ function glyphMapSpec(width = 800, height = 600) {
          
         drawLegend(ctx, panel, selectedParameters, selectedColours);
       },
+
+      // tooltipTextFn: (cell) => {
+      //   // setGlyphTooltipData(cell.data);
+      // },
+
     },
   };
 }
 ```
-
 
 ```js
 function drawLegend(ctx, panel, selectedParameters, colours, colourMapping = {}) {
@@ -2685,6 +2705,7 @@ playButton.addEventListener("click", () => {
       // global.colourScalePop = d3
       //   .scaleSequential(d3.interpolateBlues)
       //   .domain([0, d3.max(cells.map((row) => row.building_area))]);
+      // polygon background
       global.colourScalePop = "#cccccc";
 
       //draw a coloured background polygon
@@ -2695,6 +2716,26 @@ playButton.addEventListener("click", () => {
       ctx.fillStyle = colour;
       ctx.fill();
     },
+    postDrawFn: (cells, cellSize, ctx, global, panel) => {
+        const isTimeline = timeline_switch === "Decarbonisation Timeline";
+        const selectedParameters = isTimeline ? [
+          "Carbon Saved tCO₂",
+          "Total Intervention Costs (£)"
+        ] :  [
+          "ASHP Suitability",
+          "ASHP Recommended Heat Pump Size [kW]",
+          "ASHP Total Cost",
+          "GSHP Suitability",
+          "GSHP Recommended Heat Pump Size [kW]",
+          "GSHP Total Cost",
+          "Rooftop PV Suitability",
+          "Rooftop PV Annual Generation [kWh]",
+          "Rooftop PV Total Cost",
+        ];
+        const selectedColours = isTimeline ? timelineColours : glyphColours;
+         
+        drawLegend(ctx, panel, selectedParameters, selectedColours);
+      },
   });
 }
 ```
@@ -2711,8 +2752,7 @@ function createMorphGlyphMap(width, height) {
 
   return glyphMapInstance;
 }
-```
-```js
+
 // Create the morphGlyphMap using the specified width and height
 const morphGlyphMap = createMorphGlyphMap(1000, 800);
 ```
@@ -2780,21 +2820,80 @@ function createGlyphMap(mapAggregate, width, height) {
 ```
 
 ```js
-function interactiveDrawFn(mode) {
-  return function drawFn(cell, x, y, cellSize, ctx, global, panel) {
-    if (!cell) return;
-    const padding = 2;
-    ctx.globalAlpha = 1;
-  };
-}
+// function interactiveDrawFn() {
+//   console.log("calling interactive drawfn")
+//   return function drawFn(cell, x, y, cellSize, ctx, global, panel) {
+//     const cellData = cell.data;
+//     const boundary = cell.getBoundary(0);
+//     if (boundary[0] !== boundary[boundary.length - 1]) {
+//       boundary.push(boundary[0]);
+//     }
+
+//     const boundaryFeat = turf.polygon([boundary]);
+//     ctx.beginPath();
+//     global.pathGenerator(boundaryFeat);
+//     ctx.fillStyle = "rgba(210,210,210,0.5)";
+//     ctx.fill();
+
+//     ctx.lineWidth = 0.2;
+//     ctx.strokeStyle = "rgb(156, 156, 156)";
+//     ctx.stroke();
+
+//     // interactive overlap drawing
+//     // need to repeat some bits from the base
+//     // drawGlyph(cell, x, y, cellSize, ctx, map_aggregate, timeline_switch);
+//     if (timeline_switch === "Decarbonisation Potentials") {
+//       const glyphVariables_lsoa = [
+//         "ashp_suitability_true",
+//         "ashp_size",
+//         "ashp_total",
+//         "gshp_suitability_true",
+//         "gshp_size",
+//         "gshp_total",
+//         "pv_suitability_true",
+//         "pv_generation",
+//         "pv_total",
+//       ];
+//       // const rg = new RadialGlyph(
+//       //   glyphVariables_lsoa.map((key) => cellData[key]),
+//       //   glyphColours
+//       // );
+//       // rg.draw(ctx, x, y, cellSize / 2);
+
+//       // draw the overlay
+//       const rg_overlay = new RadialGlyph(
+//         glyphVariables_lsoa.map((key) => getGlyphTooltipData[key]),
+//         glyphColours,
+//         {outlineOnly: true}
+//       )
+//       rg_overlay.draw(ctx, x, y, cellSize / 2);
+
+
+//     } else if (timeline_switch === "Decarbonisation Timeline") {
+//       const glyph = new StreamGraphGlyph(cellData, "year", null, {
+//         upwardKeys: ["carbonSaved"],
+//         downwardKeys: ["interventionCost"],
+//           colors: {
+//           "carbonSaved": timelineColours[0],
+//           "interventionCost": timelineColours[1]
+//         }
+//       });
+
+//       glyph.draw(ctx, x, y, cellSize, cellSize);
+//     } 
+
+//   };
+// }
 ```
 
 ```js
-// interactive draw function - change glyphs based on mode
+// interactive draw function - update on relative mode
 // {
-// glyphMode;
-// decarbonisationGlyph.setGlyph({
-//   drawFn: interactiveDrawFn(glyphMode),
+// show_relative;
+// getGlyphTooltipData;
+// console.log("Calling interactive draw function")
+// morphGlyphMap.setGlyph({
+//   drawFn: interactiveDrawFn(show_relative),
 // });
 // }
 ```
@@ -2818,10 +2917,7 @@ if (existingLeafletContainer) {
 const leafletContainer = document.createElement("div");
 leafletContainer.id = "leafletContainer";
 document.body.appendChild(leafletContainer);
-```
 
-
-```js
 const mapInstance = new LeafletMap(leafletContainer, {
   width: "300px",
   height: "300px",
@@ -2881,22 +2977,19 @@ mapInstance.zoomToDataBounds(true);
 
 // map invalidation
 // if (leafletContainer && mapInstance && mapInstance.map) {
-  const resizeObserver = new ResizeObserver((entries) => {
-    for (let entry of entries) {
-      if (entry.target === leafletContainer) {
-        mapInstance.invalidateSize();
-        mapInstance.zoomToDataBounds(true);
-      }
+const resizeObserver = new ResizeObserver((entries) => {
+  for (let entry of entries) {
+    if (entry.target === leafletContainer) {
+      mapInstance.invalidateSize();
+      mapInstance.zoomToDataBounds(true);
     }
-  });
-  resizeObserver.observe(leafletContainer);
-// }
+  }
+});
+resizeObserver.observe(leafletContainer);
+// }  
 
 // Dispose resources when this cell is re-evaluated
 invalidation.then(() => {
-  if (resizeObserver) {
-    resizeObserver.disconnect();
-  }
   mapInstance.map.remove(); // Destroys leaflet map
 });
 

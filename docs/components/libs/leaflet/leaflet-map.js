@@ -1069,7 +1069,7 @@ export class LeafletMap {
     this._updateLayerControl();
 
     const bounds = layer.getBounds();
-    if (bounds.isValid() && options.fitBounds !== false) {
+    if (bounds.isValid()) {
       this.map.fitBounds(bounds, { padding: [50, 50] });
     }
 
