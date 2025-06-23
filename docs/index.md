@@ -2818,7 +2818,10 @@ if (existingLeafletContainer) {
 const leafletContainer = document.createElement("div");
 leafletContainer.id = "leafletContainer";
 document.body.appendChild(leafletContainer);
+```
 
+
+```js
 const mapInstance = new LeafletMap(leafletContainer, {
   width: "300px",
   height: "300px",
@@ -2877,7 +2880,7 @@ mapInstance.addGeoJSONLayer("LSOA Boundary", lsoa_boundary, {
 mapInstance.zoomToDataBounds(true);
 
 // map invalidation
-if (leafletContainer && mapInstance && mapInstance.map) {
+// if (leafletContainer && mapInstance && mapInstance.map) {
   const resizeObserver = new ResizeObserver((entries) => {
     for (let entry of entries) {
       if (entry.target === leafletContainer) {
@@ -2887,7 +2890,16 @@ if (leafletContainer && mapInstance && mapInstance.map) {
     }
   });
   resizeObserver.observe(leafletContainer);
-}
+// }
+
+// Dispose resources when this cell is re-evaluated
+invalidation.then(() => {
+  if (resizeObserver) {
+    resizeObserver.disconnect();
+  }
+  mapInstance.map.remove(); // Destroys leaflet map
+});
+
 ```
 
 ```js
