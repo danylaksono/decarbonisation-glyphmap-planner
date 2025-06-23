@@ -2871,7 +2871,10 @@ mapInstance.addGeoJSONLayer("LSOA Boundary", lsoa_boundary, {
   onEachFeature: (feature, layer) => {
     layer.bindPopup(feature.properties.LSOA21NM);
   },
+  fitBounds: false,
 });
+
+mapInstance.zoomToDataBounds(true);
 
 // map invalidation
 if (leafletContainer && mapInstance && mapInstance.map) {
@@ -2879,6 +2882,7 @@ if (leafletContainer && mapInstance && mapInstance.map) {
     for (let entry of entries) {
       if (entry.target === leafletContainer) {
         mapInstance.invalidateSize();
+        mapInstance.zoomToDataBounds(true);
       }
     }
   });
