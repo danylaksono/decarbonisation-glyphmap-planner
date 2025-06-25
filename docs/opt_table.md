@@ -506,7 +506,7 @@ const filterManager = {
                     },
                     width || 800,
                     height || 300,
-                    false, // tooltips disabled
+                    true, // tooltips disabled
                   );
                 })}
               </div> <!-- timeline panel -->
@@ -912,6 +912,8 @@ function transformInterventionData(
 }
 ```
 
+
+
 <!-- ---------------- Intervention Managers ---------------- -->
 
 ```js
@@ -1200,7 +1202,7 @@ const flip_budget = Generators.input(flipButtonInput);
 
 ```js
 // --- play button ---
-const playButton = html`<button class="btn edit" style="margin-top: 5px;">
+const playButton = html`<button class="btn edit" style="margin-top: 5px; width: 100%; display: block;">
   <i class="fas fa-play fa-large"></i>&nbsp;
 </button>`;
 ```
@@ -1354,13 +1356,15 @@ log("Attaching listener to addInterventionBtn");
     // const buildingsForIntervention = getFilteredBuildingsData();
 
     // try: UNIFIED INTERVENTION PROCESS
-    const { stackedResults, formattedRecaps, newGroupedData } =
-      processIntervention(formData, buildingsForIntervention);
+    const { stackedResults, formattedRecaps } = processIntervention(
+      formData,
+      buildingsForIntervention
+    );
 
     // Only update state at the very end, minimizing reactivity
     setInterventions(formattedRecaps);
     setResults(stackedResults);
-    setGroupedData(newGroupedData);
+    // setGroupedData(newGroupedData);
 
     quickviewDefault.classList.remove("is-active"); // Close quickview after submission
 
@@ -1757,7 +1761,7 @@ function processIntervention(config, buildings) {
   return {
     stackedResults,
     formattedRecaps,
-    newGroupedData,
+    newGroupedData
   };
 }
 endTimer("process_intervention");
@@ -1895,16 +1899,73 @@ function tableChanged(event) {
 
 ```js
 startTimer("create_sorter_table");
-injectGlobalLoadingOverlay();
-showGlobalLoading(true);
-// log("[TABLE] Create table using data", data.length);
-const table = new sorterTable(getModelData, tableColumns, tableChanged);
-showGlobalLoading(false);
+// injectGlobalLoadingOverlay();
+// showGlobalLoading(true);
+// // log("[TABLE] Create table using data", data.length);
+// const table = new sorterTable(getModelData, tableColumns, tableChanged);
+// showGlobalLoading(false);
+
+// function drawSorterTable(options) {
+//   // console.log("setting table size", options);
+//   table.setContainerSize(options);
+//   return table.getNode();
+// }
+
+
+// ... existing code ...
+
+// Make table state reactive
+const [getTableReady, setTableReady] = useState(false);
+const [getTableInstance, setTableInstance] = useState(null);
+
+// Show table loading state immediately
+showTableSpinner(true);
+
+// Create table asynchronously
+setTimeout(() => {
+  startTimer("create_sorter_table");
+  log("[TABLE] Creating table asynchronously...");
+  
+  try {
+    const newTable = new sorterTable(getModelData, tableColumns, tableChanged);
+    setTableInstance(newTable);
+    setTableReady(true);
+    log("[TABLE] Table created successfully");
+  } catch (error) {
+    log("[TABLE] Error creating table:", error);
+  } finally {
+    showTableSpinner(false);
+    endTimer("create_sorter_table");
+  }
+}, 0);
 
 function drawSorterTable(options) {
-  // console.log("setting table size", options);
-  table.setContainerSize(options);
-  return table.getNode();
+  // Use reactive state instead of local variables
+  if (!getTableReady || !getTableInstance) {
+    // Return a loading placeholder
+    const placeholder = document.createElement("div");
+    placeholder.style.cssText = `
+      width: ${options.width}px; 
+      height: ${options.height}px; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      background: #f5f5f5; 
+      border: 1px solid #ddd;
+      font-family: sans-serif;
+      color: #666;
+    `;
+    placeholder.innerHTML = `
+      <div style="text-align: center;">
+        <div class="loader is-loading" style="height: 40px; width: 40px; margin: 0 auto 10px;"></div>
+        <div>Loading table...</div>
+      </div>
+    `;
+    return placeholder;
+  }
+  
+  getTableInstance.setContainerSize(options);
+  return getTableInstance.getNode();
 }
 endTimer("create_sorter_table");
 ```
@@ -2963,17 +3024,17 @@ resizeObserver.observe(leafletContainer);
 // --- Cleanup Logic ---
 // This will run when the environment determines the cell's output is no longer needed.
 // `invalidation` is a common pattern in platforms like ObservableHQ.
-if (typeof invalidation !== "undefined") {
-  invalidation.then(() => {
-    console.log("Cleaning up map resources...");
-    // 1. Disconnect the observer FIRST to prevent it from firing again.
-    resizeObserver.disconnect();
+if (typeof invalidation !== 'undefined') {
+    invalidation.then(() => {
+        console.log("Cleaning up map resources...");
+        // 1. Disconnect the observer FIRST to prevent it from firing again.
+        resizeObserver.disconnect();
 
-    // 2. Then, safely remove the map. Check if it exists before removal.
-    if (mapInstance && mapInstance.map) {
-      mapInstance.map.remove(); // Destroys the Leaflet map instance.
-    }
-  });
+        // 2. Then, safely remove the map. Check if it exists before removal.
+        if (mapInstance && mapInstance.map) {
+            mapInstance.map.remove(); // Destroys the Leaflet map instance.
+        }
+    });
 }
 ```
 

@@ -7,6 +7,8 @@ import { getMapLogger } from "./map-logger.js"; // Import the logger
 import { processGeospatialFile } from "./file-upload-handler.js"; // Import file upload handler
 
 export class LeafletMap {
+  _hasZoomedToData = false;
+
   constructor(container, options = {}) {
     // Initialize logger first for early logging
     this.logger = getMapLogger({
@@ -1216,13 +1218,35 @@ export class LeafletMap {
     return L.latLngBounds(coordinates.map((coord) => [coord[1], coord[0]]));
   }
 
-  zoomToDataBounds(animate = true) {
-    if (!this.dataBounds || !this.dataBounds.isValid()) return false;
-    if (animate) {
-      this.map.flyToBounds(this.dataBounds, { padding: [50, 50], duration: 1 });
-    } else {
-      this.map.fitBounds(this.dataBounds, { padding: [50, 50] });
+  zoomToDataBounds(force = false) {
+    // Don't re-zoom if it has already happened, unless forced
+    if (this._hasZoomedToData && !force) return false;
+
+    if (!this.dataBounds || !this.dataBounds.isValid()) {
+      return false;
     }
+
+    // Extra validation to prevent Leaflet errors with malformed bounds
+    const sw = this.dataBounds.getSouthWest();
+    const ne = this.dataBounds.getNorthEast();
+    if (
+      !sw ||
+      !ne ||
+      !isFinite(sw.lat) ||
+      !isFinite(sw.lng) ||
+      !isFinite(ne.lat) ||
+      !isFinite(ne.lng)
+    ) {
+      this.logger.error(
+        "general",
+        "Attempted to zoom to invalid bounds with NaN values.",
+        this.dataBounds
+      );
+      return false;
+    }
+
+    this.map.fitBounds(this.dataBounds, { padding: [50, 50] });
+    this._hasZoomedToData = true;
     return true;
   }
 
@@ -1379,8 +1403,9 @@ export class LeafletMap {
     });
 
     // Reset map view if specified
-    if (resetView && this.dataBounds && this.dataBounds.isValid()) {
-      this.map.fitBounds(this.dataBounds, { padding: [50, 50] });
+    if (resetView) {
+      this._hasZoomedToData = false; // Allow re-zooming
+      this.zoomToDataBounds(true); // Force zoom
     }
 
     // Trigger the onReset callback if provided
