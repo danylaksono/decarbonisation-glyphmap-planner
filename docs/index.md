@@ -195,6 +195,22 @@ endTimer("load_data_geojson");
 ```js
 log(">> Defining the glyph variables and colours...");
 timeline_switch;
+const glyphColours = [
+  // Blues (High contrast in lightness) - Air Source Heat Pump (ashp)
+  "#A6D8F0", // Light Blue
+  "#4682B4", // SteelBlue (Medium)
+  "#003366", // Dark Navy (Dark)
+
+  // Purples - Ground Source Heat Pump (gshp)
+  "#E1BEE7", // Light Purple
+  "#9B59B6",  // Amethyst (Medium)
+  "#4A235A", // Dark Purple
+
+  // Greens - Photovoltaic (pv)
+  "#A9DFBF", // Light Green
+  "#27AE60", // Medium Green
+  "#145A32", // Dark Forest Green
+];
 const glyphVariables = [
   "ashp_suitability",
   "ashp_size",
@@ -206,22 +222,22 @@ const glyphVariables = [
   "pv_generation",
   "pv_total",
 ];
-const glyphColours = [
-  // ashp = bluish
-  "#1E90FF", // ashp_suitability: DodgerBlue
-  "#4682B4", // ashp_size: SteelBlue
-  "#5F9EA0", // ashp_total: CadetBlue
+// const glyphColours = [
+//   // ashp = bluish
+//   "#1E90FF", // ashp_suitability: DodgerBlue
+//   "#4682B4", // ashp_size: SteelBlue
+//   "#5F9EA0", // ashp_total: CadetBlue
 
-  // gshp = orangeish
-  "#FFA500", // gshp_suitability: Orange
-  "#FF8C00", // gshp_size: DarkOrange
-  "#FFD700", // gshp_total: Gold
+//   // gshp = orangeish
+//   "#FFA500", // gshp_suitability: Orange
+//   "#FF8C00", // gshp_size: DarkOrange
+//   "#FFD700", // gshp_total: Gold
 
-  // pv = greenish
-  "#32CD32", // pv_suitability: LimeGreen
-  "#228B22", // pv_generation: ForestGreen
-  "#006400", // pv_total: DarkGreen
-];
+//   // pv = greenish
+//   "#32CD32", // pv_suitability: LimeGreen
+//   "#228B22", // pv_generation: ForestGreen
+//   "#006400", // pv_total: DarkGreen
+// ];
 const timelineVariables = [
   "carbonSaved",
   "interventionCost",
@@ -230,8 +246,10 @@ const timelineVariables = [
   // "interventionTechs",
 ];
 const timelineColours = [
-  "rgb(0, 255, 76)", // carbonSaved
-  "rgb(255, 0, 0)", // interventionCost
+    "#1B9E77", // carbonSaved
+    "#D95F02", // interventionCost
+  // "rgb(0, 255, 76)", // carbonSaved
+  // "rgb(255, 0, 0)", // interventionCost
   // "#00FF00", // numInterventions
   // "#FF0000", // interventionTechs
 ];

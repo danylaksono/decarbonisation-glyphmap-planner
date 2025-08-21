@@ -122,22 +122,6 @@ setDebugMode(DEBUG);
     "Low Carbon Technology Costs_Ground Source Heat Pump - Total" AS gshp_total,
     "Domestic Heat Demand_Annual Heat Demand (kWh)" AS heat_demand,
     "Domestic Insulation Potential_EPC Rating" AS EPC_rating,
-   -- "Domestic Insulation Potential_Insulation - Cavity Wall" AS insulation_cwall,
-   -- "Low Carbon Technology Costs_Insulation - Cavity Wall - Labour" AS insulation_cwall_labour,
-   -- "Low Carbon Technology Costs_Insulation - Cavity Wall  - Materials" AS insulation_cwall_materials,
-   -- "Low Carbon Technology Costs_Insulation - Cavity Wall - Total" AS insulation_cwall_total,
-   -- "Domestic Insulation Potential_Insulation - External Wall" AS insulation_ewall,
-   -- "Low Carbon Technology Costs_Insulation - External Wall - Labour" AS insulation_ewall_labour,
-   -- "Low Carbon Technology Costs_Insulation - External Wall - Material" AS insulation_ewall_materials,
-   -- "Low Carbon Technology Costs_Insulation - External Wall - Total" AS insulation_ewall_total,
-   -- "Domestic Insulation Potential_Insulation - Roof" AS insulation_roof,
-   -- "Low Carbon Technology Costs_Insulation - Loft - Labour" AS insulation_roof_labour,
-   -- "Low Carbon Technology Costs_Insulation - Loft - Material" AS insulation_roof_materials,
-   -- "Low Carbon Technology Costs_Insulation - Loft - Total" AS insulation_roof_total,
-   -- "Domestic Insulation Potential_Insulation - Under Floor" AS insulation_floor,
-   -- "Low Carbon Technology Costs_Insulation - Under Floor - Labour" AS insulation_floor_labour,
-   -- "Low Carbon Technology Costs_Insulation - Under Floor - Material" AS insulation_floor_materials,
-   -- "Low Carbon Technology Costs_Insulation - Under Floor- Total" AS insulation_floor_total,
     "Domestic PV Potential_Overall Suitability" AS pv_suitability,
     "Domestic PV Potential_Recommended Array Size [kW]" AS pv_size,
     "Domestic PV Potential_Annual Generation [kWh]" AS pv_generation,
@@ -397,7 +381,10 @@ const filterManager = {
     // Apply filter directly to table component with proper error handling
     try {
       // log("Applying filter to table via setFilteredDataById:", formattedIds);
-      table.setFilteredDataById(filterManager.currentIds);
+      const tableInstance = getTableInstance;
+      if (tableInstance && typeof tableInstance.setFilteredDataById === 'function') {
+        tableInstance.setFilteredDataById(filterManager.currentIds);
+      }
       // table.setFilteredDataById([100120819411, 100120819410, 100120819409]);
       // const idSet = new Set(filterManager.currentIds);
       // table.applyCustomFilter((row) => idSet.has(row.id));
@@ -1927,12 +1914,38 @@ setTimeout(() => {
   log("[TABLE] Creating table asynchronously...");
   
   try {
+    console.log("[TABLE] Creating table with data:", getModelData.length, "rows");
+    console.log("[TABLE] Table columns:", tableColumns);
+    
+    // Test if sorterTable is properly imported
+    console.log("[TABLE] sorterTable constructor:", typeof sorterTable);
+    console.log("[TABLE] sorterTable prototype:", sorterTable.prototype);
+    
     const newTable = new sorterTable(getModelData, tableColumns, tableChanged);
+    
+    console.log("[TABLE] Table instance created:", newTable);
+    console.log("[TABLE] Table instance prototype:", Object.getPrototypeOf(newTable));
+    console.log("[TABLE] Table methods:", {
+      setContainerSize: typeof newTable.setContainerSize,
+      getNode: typeof newTable.getNode,
+      options: newTable.options
+    });
+    
+    // Check if methods exist on prototype
+    console.log("[TABLE] Prototype methods:", {
+      setContainerSize: typeof Object.getPrototypeOf(newTable).setContainerSize,
+      getNode: typeof Object.getPrototypeOf(newTable).getNode
+    });
+    
+    // Store the actual table instance, not a wrapper
     setTableInstance(newTable);
     setTableReady(true);
     log("[TABLE] Table created successfully");
+    console.log("[TABLE] Stored table instance:", newTable);
   } catch (error) {
     log("[TABLE] Error creating table:", error);
+    console.error("[TABLE] Full error details:", error);
+    console.error("[TABLE] Error stack:", error.stack);
   } finally {
     showTableSpinner(false);
     endTimer("create_sorter_table");
@@ -1941,7 +1954,10 @@ setTimeout(() => {
 
 function drawSorterTable(options) {
   // Use reactive state instead of local variables
-  if (!getTableReady || !getTableInstance) {
+  const tableReady = getTableReady;
+  const tableInstance = getTableInstance;
+  
+  if (!tableReady || !tableInstance) {
     // Return a loading placeholder
     const placeholder = document.createElement("div");
     placeholder.style.cssText = `
@@ -1964,8 +1980,60 @@ function drawSorterTable(options) {
     return placeholder;
   }
   
-  getTableInstance.setContainerSize(options);
-  return getTableInstance.getNode();
+  // Debug: Log table instance properties
+  console.log("Table instance:", tableInstance);
+  console.log("Table instance type:", typeof tableInstance);
+  console.log("Table instance constructor:", tableInstance.constructor?.name);
+  console.log("Table instance methods:", {
+    setContainerSize: typeof tableInstance.setContainerSize,
+    getNode: typeof tableInstance.getNode,
+    options: tableInstance.options
+  });
+  
+  // Check if tableInstance is an Observable wrapper
+  if (tableInstance && typeof tableInstance === 'object' && 'value' in tableInstance) {
+    console.log("Table instance is an Observable wrapper, accessing .value");
+    const actualTableInstance = tableInstance.value;
+    
+    if (!actualTableInstance) {
+      console.error("Observable table instance has no value");
+      return document.createElement("div");
+    }
+    
+    // Use the actual table instance
+    if (typeof actualTableInstance.setContainerSize !== 'function') {
+      console.error("Actual table instance is not properly initialized - setContainerSize is not a function");
+      return document.createElement("div");
+    }
+    
+    try {
+      actualTableInstance.setContainerSize(options);
+      return actualTableInstance.getNode();
+    } catch (error) {
+      console.error("Error calling table methods:", error);
+      return document.createElement("div");
+    }
+  }
+  
+  // Ensure tableInstance has the required methods
+  if (typeof tableInstance.setContainerSize !== 'function') {
+    console.error("Table instance is not properly initialized - setContainerSize is not a function");
+    console.error("Available methods:", Object.getOwnPropertyNames(tableInstance));
+    return document.createElement("div"); // Return empty div as fallback
+  }
+  
+  if (typeof tableInstance.getNode !== 'function') {
+    console.error("Table instance is not properly initialized - getNode is not a function");
+    return document.createElement("div"); // Return empty div as fallback
+  }
+  
+  try {
+    tableInstance.setContainerSize(options);
+    return tableInstance.getNode();
+  } catch (error) {
+    console.error("Error calling table methods:", error);
+    return document.createElement("div"); // Return empty div as fallback
+  }
 }
 endTimer("create_sorter_table");
 ```

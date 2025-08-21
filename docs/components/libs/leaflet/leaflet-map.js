@@ -143,7 +143,7 @@ export class LeafletMap {
             allowIntersection: false,
             showArea: false,
             shapeOptions: {
-              color: "#3388ff",
+              color: "#7A93D1",
             },
             // metric: true,
           },
@@ -151,7 +151,7 @@ export class LeafletMap {
           rectangle: {
             showArea: false,
             shapeOptions: {
-              color: "#3388ff",
+              color: "#7A93D1",
               fillOpacity: 0.2,
               weight: 2,
             },
@@ -160,7 +160,7 @@ export class LeafletMap {
           circle: {
             showRadius: true,
             shapeOptions: {
-              color: "#3388ff",
+              color: "#7A93D1",
               fillOpacity: 0.2,
               weight: 2,
             },
@@ -864,7 +864,7 @@ export class LeafletMap {
   _createClusterIcon(count) {
     return L.divIcon({
       html: `<div style="
-          background-color: #3388ff;
+          background-color: #7A93D1;
           color: white;
           border-radius: 50%;
           width: ${count < 100 ? "30px" : "40px"};
@@ -881,7 +881,7 @@ export class LeafletMap {
   _createMarkerIcon(properties = {}) {
     // Use more distinct colours and sizes for selected vs unselected points
     const size = properties.selected ? "12px" : "8px";
-    const color = properties.selected ? "#ff3860" : "#3388ff"; // Bright red for selected, blue for default
+    const color = properties.selected ? "#ff3860" : "#7A93D1"; // Bright red for selected, blue for default
     const border = properties.selected ? "2px solid #fff" : "none"; // White border for selected points
     const boxShadow = properties.selected ? "0 0 4px rgba(0,0,0,0.4)" : "none"; // Shadow for selected points
 

@@ -3092,7 +3092,7 @@ function HistogramController(data, binrules) {
       bin.selected = false;
     });
 
-    this.svg.selectAll(".bar rect:nth-child(1)").attr("fill", "#3388FF");
+    this.svg.selectAll(".bar rect:nth-child(1)").attr("fill", "#7A93D1");
   };
 
   this.setData = function (dd) {
@@ -3226,7 +3226,7 @@ function HistogramController(data, binrules) {
       .attr("width", (d) => width / this.bins.length)
       .attr("y", (d) => y(d.count))
       .attr("height", (d) => height - y(d.count))
-      .attr("fill", "#3388FF")
+      .attr("fill", "#7A93D1")
       .attr("rx", 1) // Add horizontal corner radius
       .attr("ry", 1); // Add vertical corner radius
 
@@ -3260,7 +3260,7 @@ function HistogramController(data, binrules) {
           if (!d.selected) {
             d3.select(event.currentTarget.previousSibling).attr(
               "fill",
-              "#3388FF"
+              "#7A93D1"
             );
           }
 
@@ -3272,7 +3272,7 @@ function HistogramController(data, binrules) {
           // Update visual state of the clicked bar
           d3.select(event.currentTarget.previousSibling).attr(
             "fill",
-            d.selected ? "orange" : "#3388FF"
+            d.selected ? "orange" : "#7A93D1"
           );
 
           if (controller.table) {
@@ -3343,7 +3343,7 @@ function HistogramController(data, binrules) {
           // Update bar color
           this.svg
             .select(`.bar:nth-child(${i + 1}) rect:nth-child(1)`)
-            .attr("fill", bin.selected ? "orange" : "#3388FF");
+            .attr("fill", bin.selected ? "orange" : "#7A93D1");
 
           // Collect original data indices if selected
           if (bin.selected && bin.indeces) {
