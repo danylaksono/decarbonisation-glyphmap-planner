@@ -299,6 +299,24 @@ export function createTimelineInterface(
     );
   }
 
+  // Helper function to get color based on technology
+  function getTechnologyColor(d) {
+    const techLabel = (computeTechLabel(d) || "").toLowerCase();
+    if (techLabel.includes(",")) {
+      return "#808080"; // Grey for combinations
+    }
+    if (techLabel.includes("ashp")) {
+      return "#4682B4"; // Navy blue for Air Source Heat Pump
+    }
+    if (techLabel.includes("gshp")) {
+      return "#9B59B6"; // Purple for Ground Source Heat Pump
+    }
+    if (techLabel.includes("pv")) {
+      return "#27AE60"; // Green for Photovoltaic
+    }
+    return "#7A93D1"; // Default color
+  }
+
   // Intervention blocks
   const blocks = g
     .selectAll(".block")
@@ -321,7 +339,7 @@ export function createTimelineInterface(
     })
     .attr("width", (d) => xScale(d.initialYear + d.duration) - xScale(d.initialYear))
     .attr("height", (d, i) => Math.min(yScale.bandwidth(), maxBlockHeight))
-    .attr("fill", "#3388FF")
+    .attr("fill", (d) => getTechnologyColor(d))
     .on("click", blockClickHandler);
 
   // Add text labels to the intervention blocks
@@ -551,7 +569,7 @@ export function createTimelineInterface(
         .append("path")
         .datum(d.yearlyBudgets)
         .attr("fill", "none")
-        .attr("stroke", "#3388FF")
+        .attr("stroke", "#7A93D1")
         .attr("stroke-width", 1.5)
         .attr("d", line);
 

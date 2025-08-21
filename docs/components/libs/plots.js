@@ -62,10 +62,21 @@ function cleanupTooltips() {
   }
 }
 
-function drawStreamGraphAxes(ctx, x, y, width, height, upwardMax, downwardMax, yearStart, yearEnd, data) {
+function drawStreamGraphAxes(
+  ctx,
+  x,
+  y,
+  width,
+  height,
+  upwardMax,
+  downwardMax,
+  yearStart,
+  yearEnd,
+  data
+) {
   // Save the current canvas state to avoid leaking settings
   ctx.save();
-  
+
   ctx.strokeStyle = "#333";
   ctx.lineWidth = 1;
   ctx.font = "12px sans-serif";
@@ -75,8 +86,8 @@ function drawStreamGraphAxes(ctx, x, y, width, height, upwardMax, downwardMax, y
   const chartPadding = 50;
   const chartX = chartPadding;
   const chartY = chartPadding;
-  const chartWidth = width - (chartPadding * 2);
-  const chartHeight = height - (chartPadding * 2);
+  const chartWidth = width - chartPadding * 2;
+  const chartHeight = height - chartPadding * 2;
   const centerY = chartY + chartHeight / 2;
 
   // Y-Axis (left side) - full height
@@ -99,12 +110,12 @@ function drawStreamGraphAxes(ctx, x, y, width, height, upwardMax, downwardMax, y
   ctx.textAlign = "right";
   ctx.textBaseline = "middle";
   const yTicks = 4; // Even number for symmetry
-  
+
   // Upper half (carbon saved - typically much larger values)
   for (let i = 1; i <= yTicks; i++) {
     const val = (upwardMax / yTicks) * i;
     const yTick = centerY - (chartHeight / 2) * (i / yTicks);
-    
+
     // Format carbon values (typically in tons CO2)
     let labelText;
     if (val >= 1000000) {
@@ -114,15 +125,15 @@ function drawStreamGraphAxes(ctx, x, y, width, height, upwardMax, downwardMax, y
     } else {
       labelText = val.toFixed(0) + " tCO₂";
     }
-    
+
     ctx.fillText(labelText, chartX - 8, yTick);
-    
+
     // Tick marks
     ctx.beginPath();
     ctx.moveTo(chartX - 5, yTick);
     ctx.lineTo(chartX, yTick);
     ctx.stroke();
-    
+
     // Grid lines
     ctx.strokeStyle = "#e0e0e0";
     ctx.lineWidth = 0.5;
@@ -133,12 +144,12 @@ function drawStreamGraphAxes(ctx, x, y, width, height, upwardMax, downwardMax, y
     ctx.strokeStyle = "#333";
     ctx.lineWidth = 1;
   }
-  
+
   // Lower half (budget spent - typically in currency)
   for (let i = 1; i <= yTicks; i++) {
     const val = (downwardMax / yTicks) * i;
     const yTick = centerY + (chartHeight / 2) * (i / yTicks);
-    
+
     // Format budget values (in currency)
     let labelText;
     if (val >= 1000000) {
@@ -148,15 +159,15 @@ function drawStreamGraphAxes(ctx, x, y, width, height, upwardMax, downwardMax, y
     } else {
       labelText = "£" + val.toFixed(0);
     }
-    
+
     ctx.fillText(labelText, chartX - 8, yTick);
-    
+
     // Tick marks
     ctx.beginPath();
     ctx.moveTo(chartX - 5, yTick);
     ctx.lineTo(chartX, yTick);
     ctx.stroke();
-    
+
     // Grid lines
     ctx.strokeStyle = "#e0e0e0";
     ctx.lineWidth = 0.5;
@@ -178,21 +189,21 @@ function drawStreamGraphAxes(ctx, x, y, width, height, upwardMax, downwardMax, y
   // X-Axis labels - show all years from the data
   ctx.textAlign = "center";
   ctx.textBaseline = "top";
-  const years = [...new Set(data.map(d => d.year))].sort((a, b) => a - b);
-  
+  const years = [...new Set(data.map((d) => d.year))].sort((a, b) => a - b);
+
   years.forEach((year, i) => {
     const t = i / Math.max(years.length - 1, 1);
     const xTick = chartX + t * chartWidth;
-    
+
     // Year labels
     ctx.fillText(year.toString(), xTick, chartY + chartHeight + 8);
-    
+
     // Tick marks
     ctx.beginPath();
     ctx.moveTo(xTick, chartY + chartHeight);
     ctx.lineTo(xTick, chartY + chartHeight + 5);
     ctx.stroke();
-    
+
     // Grid lines
     if (i > 0 && i < years.length - 1) {
       ctx.strokeStyle = "#e0e0e0";
@@ -210,30 +221,35 @@ function drawStreamGraphAxes(ctx, x, y, width, height, upwardMax, downwardMax, y
   ctx.font = "14px sans-serif";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  
+
   // Y-axis labels (left side)
   // ctx.save();
   // ctx.translate(15, centerY - chartHeight/4);
   // ctx.rotate(-Math.PI / 2);
   // ctx.fillText("Carbon Saved", 0, 0);
   // ctx.restore();
-  
+
   // ctx.save();
   // ctx.translate(15, centerY + chartHeight/4);
   // ctx.rotate(-Math.PI / 2);
   // ctx.fillText("Budget Spent", 0, 0);
   // ctx.restore();
-  
+
   // X-axis label
   ctx.fillText("Year", chartX + chartWidth / 2, chartY + chartHeight + 35);
-  
+
   // Restore the canvas state to prevent leaking settings to other canvas instances
   ctx.restore();
 }
 
-
 // ---------plotOverallStreamGraph
-export function plotOverallStreamGraph(data, width = 900, height = 600, enableTooltips = true) {
+export function plotOverallStreamGraph(
+  data,
+  width = 900,
+  height = 600,
+  enableTooltips = true,
+  colors = {}
+) {
   const container = document.createElement("div");
   container.style.position = "relative";
   container.style.width = `${width}px`;
@@ -270,7 +286,7 @@ export function plotOverallStreamGraph(data, width = 900, height = 600, enableTo
 
   // Calculate available space for chart (accounting for title and legend)
   const titleHeight = 40; // title + margin
-  const legendHeight = 35; // legend + margin  
+  const legendHeight = 35; // legend + margin
   const chartHeight = height - titleHeight - legendHeight;
   const chartWidth = width - 40; // some padding
 
@@ -286,52 +302,70 @@ export function plotOverallStreamGraph(data, width = 900, height = 600, enableTo
   const allKeys = [...upwardKeys, ...downwardKeys];
 
   const defaultPalette = [
-    "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd",
-    "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf"
+    "#1f77b4",
+    "#ff7f0e",
+    "#2ca02c",
+    "#d62728",
+    "#9467bd",
+    "#8c564b",
+    "#e377c2",
+    "#7f7f7f",
+    "#bcbd22",
+    "#17becf",
   ];
   const colourMapping = {};
   allKeys.forEach((key, i) => {
-    colourMapping[key] = defaultPalette[i % defaultPalette.length];
+    colourMapping[key] =
+      colors[key] || defaultPalette[i % defaultPalette.length];
   });
 
   const sumByKeys = (d, keys) =>
-    keys.reduce((sum, key) => sum + (typeof d[key] === "number" ? d[key] : 0), 0);
-  
-  const upwardMax = d3.max(data, d => sumByKeys(d, upwardKeys)) || 0;
-  const downwardMax = d3.max(data, d => sumByKeys(d, downwardKeys)) || 0;
-  
-  const years = data.map(d => d.year);
+    keys.reduce(
+      (sum, key) => sum + (typeof d[key] === "number" ? d[key] : 0),
+      0
+    );
+
+  const upwardMax = d3.max(data, (d) => sumByKeys(d, upwardKeys)) || 0;
+  const downwardMax = d3.max(data, (d) => sumByKeys(d, downwardKeys)) || 0;
+
+  const years = data.map((d) => d.year);
   const startYear = d3.min(years);
   const endYear = d3.max(years);
-  
+
   // Save canvas state for the entire plotting operation
   ctx.save();
-  
-  // Draw axes first with separate scales
-  drawStreamGraphAxes(ctx, 0, 0, chartWidth, chartHeight, upwardMax, downwardMax, startYear, endYear, data);
 
-  const sampleGlyph = new StreamGraphGlyph(data, "year", null, {
+  // Draw axes first with separate scales
+  drawStreamGraphAxes(
+    ctx,
+    0,
+    0,
+    chartWidth,
+    chartHeight,
+    upwardMax,
+    downwardMax,
+    startYear,
+    endYear,
+    data
+  );
+
+  const glyph = new StreamGraphGlyph(data, "year", null, {
     upwardKeys,
-    downwardKeys
+    downwardKeys,
+    colors: colourMapping,
   });
 
   // Draw the glyph in the chart area, centered with proper margins
   const chartPadding = 50; // Space for axes and labels
-  const glyphWidth = chartWidth - (chartPadding * 2);
-  const glyphHeight = chartHeight - (chartPadding * 2);
-  
+  const glyphWidth = chartWidth - chartPadding * 2;
+  const glyphHeight = chartHeight - chartPadding * 2;
+
   // Save state before glyph drawing
   ctx.save();
-  sampleGlyph.draw(
-    ctx,
-    chartWidth / 2,
-    chartHeight / 2,
-    glyphWidth,
-    glyphHeight
-  );
+  glyph.draw(ctx, chartWidth / 2, chartHeight / 2, glyphWidth, glyphHeight);
   // Restore state after glyph drawing
   ctx.restore();
-  
+
   // Restore the overall canvas state
   ctx.restore();
 
@@ -350,7 +384,8 @@ export function plotOverallStreamGraph(data, width = 900, height = 600, enableTo
     swatch.style.border = "1px solid #aaa";
 
     const label = document.createElement("span");
-    label.textContent = key === "totalCarbonSaved" ? "Carbon Saved" : "Budget Spent";
+    label.textContent =
+      key === "totalCarbonSaved" ? "Carbon Saved" : "Budget Spent";
 
     item.appendChild(swatch);
     item.appendChild(label);
@@ -379,42 +414,60 @@ export function plotOverallStreamGraph(data, width = 900, height = 600, enableTo
       const containerRect = container.getBoundingClientRect();
       const x = event.clientX - canvasRect.left;
       const y = event.clientY - canvasRect.top;
-      
+
       // Convert canvas coordinates to data space
       const chartPadding = 50;
-      const chartAreaWidth = chartWidth - (chartPadding * 2);
-      const chartAreaHeight = chartHeight - (chartPadding * 2);
-      
+      const chartAreaWidth = chartWidth - chartPadding * 2;
+      const chartAreaHeight = chartHeight - chartPadding * 2;
+
       // Check if mouse is within chart area
-      if (x >= chartPadding && x <= chartPadding + chartAreaWidth && 
-          y >= chartPadding && y <= chartPadding + chartAreaHeight) {
-        
+      if (
+        x >= chartPadding &&
+        x <= chartPadding + chartAreaWidth &&
+        y >= chartPadding &&
+        y <= chartPadding + chartAreaHeight
+      ) {
         // Find closest year based on x position
-        const years = [...new Set(data.map(d => d.year))].sort((a, b) => a - b);
+        const years = [...new Set(data.map((d) => d.year))].sort(
+          (a, b) => a - b
+        );
         const xRatio = (x - chartPadding) / chartAreaWidth;
         const yearIndex = Math.round(xRatio * (years.length - 1));
-        const closestYear = years[Math.max(0, Math.min(yearIndex, years.length - 1))];
-        const yearData = data.find(d => d.year === closestYear);
-        
+        const closestYear =
+          years[Math.max(0, Math.min(yearIndex, years.length - 1))];
+        const yearData = data.find((d) => d.year === closestYear);
+
         if (yearData) {
           // Format tooltip content
           const carbonSaved = yearData.totalCarbonSaved;
           const budgetSpent = yearData.budgetSpent;
           const buildings = yearData.buildingsIntervened;
-          const technologies = yearData.technologies ? yearData.technologies.join(", ") : "N/A";
-          
+          const technologies = yearData.technologies
+            ? yearData.technologies.join(", ")
+            : "N/A";
+
           tooltip.innerHTML = `
-            <strong>Year: ${closestYear}</strong><br>
-            <span style="color: ${colourMapping.totalCarbonSaved}">Carbon Saved: ${carbonSaved >= 1000 ? (carbonSaved/1000).toFixed(1) + "K" : carbonSaved.toFixed(0)} tCO₂</span><br>
-            <span style="color: ${colourMapping.budgetSpent}">Budget Spent: £${budgetSpent >= 1000 ? (budgetSpent/1000).toFixed(1) + "K" : budgetSpent.toFixed(0)}</span><br>
+            <strong style="color: #ffffff">Year: ${closestYear} </strong><br>
+            <span style="color: ${
+              colourMapping.totalCarbonSaved
+            }">Carbon Saved: ${
+            carbonSaved >= 1000
+              ? (carbonSaved / 1000).toFixed(1) + "K"
+              : carbonSaved.toFixed(0)
+          } tCO₂</span><br>
+            <span style="color: ${colourMapping.budgetSpent}">Budget Spent: £${
+            budgetSpent >= 1000
+              ? (budgetSpent / 1000).toFixed(1) + "K"
+              : budgetSpent.toFixed(0)
+          }</span><br>
             Buildings: ${buildings}<br>
             Technologies: ${technologies}
           `;
-          
+
           // Position tooltip relative to container
           const tooltipX = event.clientX - containerRect.left + 10;
           const tooltipY = event.clientY - containerRect.top - 10;
-          
+
           tooltip.style.left = `${tooltipX}px`;
           tooltip.style.top = `${tooltipY}px`;
           tooltip.style.visibility = "visible";
@@ -431,7 +484,6 @@ export function plotOverallStreamGraph(data, width = 900, height = 600, enableTo
 
   return container;
 }
-
 
 // ---------plotOverallTimeline
 export function plotOverallTimeline(data, width = 900, height = 600) {

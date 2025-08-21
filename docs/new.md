@@ -122,22 +122,6 @@ setDebugMode(DEBUG);
     "Low Carbon Technology Costs_Ground Source Heat Pump - Total" AS gshp_total,
     "Domestic Heat Demand_Annual Heat Demand (kWh)" AS heat_demand,
     "Domestic Insulation Potential_EPC Rating" AS EPC_rating,
-   -- "Domestic Insulation Potential_Insulation - Cavity Wall" AS insulation_cwall,
-   -- "Low Carbon Technology Costs_Insulation - Cavity Wall - Labour" AS insulation_cwall_labour,
-   -- "Low Carbon Technology Costs_Insulation - Cavity Wall  - Materials" AS insulation_cwall_materials,
-   -- "Low Carbon Technology Costs_Insulation - Cavity Wall - Total" AS insulation_cwall_total,
-   -- "Domestic Insulation Potential_Insulation - External Wall" AS insulation_ewall,
-   -- "Low Carbon Technology Costs_Insulation - External Wall - Labour" AS insulation_ewall_labour,
-   -- "Low Carbon Technology Costs_Insulation - External Wall - Material" AS insulation_ewall_materials,
-   -- "Low Carbon Technology Costs_Insulation - External Wall - Total" AS insulation_ewall_total,
-   -- "Domestic Insulation Potential_Insulation - Roof" AS insulation_roof,
-   -- "Low Carbon Technology Costs_Insulation - Loft - Labour" AS insulation_roof_labour,
-   -- "Low Carbon Technology Costs_Insulation - Loft - Material" AS insulation_roof_materials,
-   -- "Low Carbon Technology Costs_Insulation - Loft - Total" AS insulation_roof_total,
-   -- "Domestic Insulation Potential_Insulation - Under Floor" AS insulation_floor,
-   -- "Low Carbon Technology Costs_Insulation - Under Floor - Labour" AS insulation_floor_labour,
-   -- "Low Carbon Technology Costs_Insulation - Under Floor - Material" AS insulation_floor_materials,
-   -- "Low Carbon Technology Costs_Insulation - Under Floor- Total" AS insulation_floor_total,
     "Domestic PV Potential_Overall Suitability" AS pv_suitability,
     "Domestic PV Potential_Recommended Array Size [kW]" AS pv_size,
     "Domestic PV Potential_Annual Generation [kWh]" AS pv_generation,
@@ -195,22 +179,6 @@ endTimer("load_data_geojson");
 ```js
 log(">> Defining the glyph variables and colours...");
 timeline_switch;
-const glyphColours = [
-  // Blues (High contrast in lightness) - Air Source Heat Pump (ashp)
-  "#A6D8F0", // Light Blue
-  "#4682B4", // SteelBlue (Medium)
-  "#003366", // Dark Navy (Dark)
-
-  // Purples - Ground Source Heat Pump (gshp)
-  "#E1BEE7", // Light Purple
-  "#9B59B6",  // Amethyst (Medium)
-  "#4A235A", // Dark Purple
-
-  // Greens - Photovoltaic (pv)
-  "#A9DFBF", // Light Green
-  "#27AE60", // Medium Green
-  "#145A32", // Dark Forest Green
-];
 const glyphVariables = [
   "ashp_suitability",
   "ashp_size",
@@ -222,22 +190,22 @@ const glyphVariables = [
   "pv_generation",
   "pv_total",
 ];
-// const glyphColours = [
-//   // ashp = bluish
-//   "#1E90FF", // ashp_suitability: DodgerBlue
-//   "#4682B4", // ashp_size: SteelBlue
-//   "#5F9EA0", // ashp_total: CadetBlue
+const glyphColours = [
+  // ashp = bluish
+  "#1E90FF", // ashp_suitability: DodgerBlue
+  "#4682B4", // ashp_size: SteelBlue
+  "#5F9EA0", // ashp_total: CadetBlue
 
-//   // gshp = orangeish
-//   "#FFA500", // gshp_suitability: Orange
-//   "#FF8C00", // gshp_size: DarkOrange
-//   "#FFD700", // gshp_total: Gold
+  // gshp = orangeish
+  "#FFA500", // gshp_suitability: Orange
+  "#FF8C00", // gshp_size: DarkOrange
+  "#FFD700", // gshp_total: Gold
 
-//   // pv = greenish
-//   "#32CD32", // pv_suitability: LimeGreen
-//   "#228B22", // pv_generation: ForestGreen
-//   "#006400", // pv_total: DarkGreen
-// ];
+  // pv = greenish
+  "#32CD32", // pv_suitability: LimeGreen
+  "#228B22", // pv_generation: ForestGreen
+  "#006400", // pv_total: DarkGreen
+];
 const timelineVariables = [
   "carbonSaved",
   "interventionCost",
@@ -246,10 +214,8 @@ const timelineVariables = [
   // "interventionTechs",
 ];
 const timelineColours = [
-    "#1B9E77", // carbonSaved
-    "#D95F02", // interventionCost
-  // "rgb(0, 255, 76)", // carbonSaved
-  // "rgb(255, 0, 0)", // interventionCost
+  "rgb(0, 255, 76)", // carbonSaved
+  "rgb(255, 0, 0)", // interventionCost
   // "#00FF00", // numInterventions
   // "#FF0000", // interventionTechs
 ];
@@ -415,7 +381,10 @@ const filterManager = {
     // Apply filter directly to table component with proper error handling
     try {
       // log("Applying filter to table via setFilteredDataById:", formattedIds);
-      table.setFilteredDataById(filterManager.currentIds);
+      const tableInstance = getTableInstance;
+      if (tableInstance && typeof tableInstance.setFilteredDataById === 'function') {
+        tableInstance.setFilteredDataById(filterManager.currentIds);
+      }
       // table.setFilteredDataById([100120819411, 100120819410, 100120819409]);
       // const idSet = new Set(filterManager.currentIds);
       // table.applyCustomFilter((row) => idSet.has(row.id));
@@ -524,7 +493,7 @@ const filterManager = {
                     },
                     width || 800,
                     height || 300,
-                    false, // tooltips disabled
+                    true, // tooltips disabled
                   );
                 })}
               </div> <!-- timeline panel -->
@@ -930,6 +899,8 @@ function transformInterventionData(
 }
 ```
 
+
+
 <!-- ---------------- Intervention Managers ---------------- -->
 
 ```js
@@ -1218,7 +1189,7 @@ const flip_budget = Generators.input(flipButtonInput);
 
 ```js
 // --- play button ---
-const playButton = html`<button class="btn edit" style="margin-top: 5px;">
+const playButton = html`<button class="btn edit" style="margin-top: 5px; width: 100%; display: block;">
   <i class="fas fa-play fa-large"></i>&nbsp;
 </button>`;
 ```
@@ -1372,13 +1343,15 @@ log("Attaching listener to addInterventionBtn");
     // const buildingsForIntervention = getFilteredBuildingsData();
 
     // try: UNIFIED INTERVENTION PROCESS
-    const { stackedResults, formattedRecaps, newGroupedData } =
-      processIntervention(formData, buildingsForIntervention);
+    const { stackedResults, formattedRecaps } = processIntervention(
+      formData,
+      buildingsForIntervention
+    );
 
     // Only update state at the very end, minimizing reactivity
     setInterventions(formattedRecaps);
     setResults(stackedResults);
-    setGroupedData(newGroupedData);
+    // setGroupedData(newGroupedData);
 
     quickviewDefault.classList.remove("is-active"); // Close quickview after submission
 
@@ -1775,7 +1748,7 @@ function processIntervention(config, buildings) {
   return {
     stackedResults,
     formattedRecaps,
-    newGroupedData,
+    newGroupedData
   };
 }
 endTimer("process_intervention");
@@ -1913,16 +1886,154 @@ function tableChanged(event) {
 
 ```js
 startTimer("create_sorter_table");
-injectGlobalLoadingOverlay();
-showGlobalLoading(true);
-// log("[TABLE] Create table using data", data.length);
-const table = new sorterTable(getModelData, tableColumns, tableChanged);
-showGlobalLoading(false);
+// injectGlobalLoadingOverlay();
+// showGlobalLoading(true);
+// // log("[TABLE] Create table using data", data.length);
+// const table = new sorterTable(getModelData, tableColumns, tableChanged);
+// showGlobalLoading(false);
+
+// function drawSorterTable(options) {
+//   // console.log("setting table size", options);
+//   table.setContainerSize(options);
+//   return table.getNode();
+// }
+
+
+// ... existing code ...
+
+// Make table state reactive
+const [getTableReady, setTableReady] = useState(false);
+const [getTableInstance, setTableInstance] = useState(null);
+
+// Show table loading state immediately
+showTableSpinner(true);
+
+// Create table asynchronously
+setTimeout(() => {
+  startTimer("create_sorter_table");
+  log("[TABLE] Creating table asynchronously...");
+  
+  try {
+    console.log("[TABLE] Creating table with data:", getModelData.length, "rows");
+    console.log("[TABLE] Table columns:", tableColumns);
+    
+    // Test if sorterTable is properly imported
+    console.log("[TABLE] sorterTable constructor:", typeof sorterTable);
+    console.log("[TABLE] sorterTable prototype:", sorterTable.prototype);
+    
+    const newTable = new sorterTable(getModelData, tableColumns, tableChanged);
+    
+    console.log("[TABLE] Table instance created:", newTable);
+    console.log("[TABLE] Table instance prototype:", Object.getPrototypeOf(newTable));
+    console.log("[TABLE] Table methods:", {
+      setContainerSize: typeof newTable.setContainerSize,
+      getNode: typeof newTable.getNode,
+      options: newTable.options
+    });
+    
+    // Check if methods exist on prototype
+    console.log("[TABLE] Prototype methods:", {
+      setContainerSize: typeof Object.getPrototypeOf(newTable).setContainerSize,
+      getNode: typeof Object.getPrototypeOf(newTable).getNode
+    });
+    
+    // Store the actual table instance, not a wrapper
+    setTableInstance(newTable);
+    setTableReady(true);
+    log("[TABLE] Table created successfully");
+    console.log("[TABLE] Stored table instance:", newTable);
+  } catch (error) {
+    log("[TABLE] Error creating table:", error);
+    console.error("[TABLE] Full error details:", error);
+    console.error("[TABLE] Error stack:", error.stack);
+  } finally {
+    showTableSpinner(false);
+    endTimer("create_sorter_table");
+  }
+}, 0);
 
 function drawSorterTable(options) {
-  // console.log("setting table size", options);
-  table.setContainerSize(options);
-  return table.getNode();
+  // Use reactive state instead of local variables
+  const tableReady = getTableReady;
+  const tableInstance = getTableInstance;
+  
+  if (!tableReady || !tableInstance) {
+    // Return a loading placeholder
+    const placeholder = document.createElement("div");
+    placeholder.style.cssText = `
+      width: ${options.width}px; 
+      height: ${options.height}px; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      background: #f5f5f5; 
+      border: 1px solid #ddd;
+      font-family: sans-serif;
+      color: #666;
+    `;
+    placeholder.innerHTML = `
+      <div style="text-align: center;">
+        <div class="loader is-loading" style="height: 40px; width: 40px; margin: 0 auto 10px;"></div>
+        <div>Loading table...</div>
+      </div>
+    `;
+    return placeholder;
+  }
+  
+  // Debug: Log table instance properties
+  console.log("Table instance:", tableInstance);
+  console.log("Table instance type:", typeof tableInstance);
+  console.log("Table instance constructor:", tableInstance.constructor?.name);
+  console.log("Table instance methods:", {
+    setContainerSize: typeof tableInstance.setContainerSize,
+    getNode: typeof tableInstance.getNode,
+    options: tableInstance.options
+  });
+  
+  // Check if tableInstance is an Observable wrapper
+  if (tableInstance && typeof tableInstance === 'object' && 'value' in tableInstance) {
+    console.log("Table instance is an Observable wrapper, accessing .value");
+    const actualTableInstance = tableInstance.value;
+    
+    if (!actualTableInstance) {
+      console.error("Observable table instance has no value");
+      return document.createElement("div");
+    }
+    
+    // Use the actual table instance
+    if (typeof actualTableInstance.setContainerSize !== 'function') {
+      console.error("Actual table instance is not properly initialized - setContainerSize is not a function");
+      return document.createElement("div");
+    }
+    
+    try {
+      actualTableInstance.setContainerSize(options);
+      return actualTableInstance.getNode();
+    } catch (error) {
+      console.error("Error calling table methods:", error);
+      return document.createElement("div");
+    }
+  }
+  
+  // Ensure tableInstance has the required methods
+  if (typeof tableInstance.setContainerSize !== 'function') {
+    console.error("Table instance is not properly initialized - setContainerSize is not a function");
+    console.error("Available methods:", Object.getOwnPropertyNames(tableInstance));
+    return document.createElement("div"); // Return empty div as fallback
+  }
+  
+  if (typeof tableInstance.getNode !== 'function') {
+    console.error("Table instance is not properly initialized - getNode is not a function");
+    return document.createElement("div"); // Return empty div as fallback
+  }
+  
+  try {
+    tableInstance.setContainerSize(options);
+    return tableInstance.getNode();
+  } catch (error) {
+    console.error("Error calling table methods:", error);
+    return document.createElement("div"); // Return empty div as fallback
+  }
 }
 endTimer("create_sorter_table");
 ```
@@ -2981,17 +3092,17 @@ resizeObserver.observe(leafletContainer);
 // --- Cleanup Logic ---
 // This will run when the environment determines the cell's output is no longer needed.
 // `invalidation` is a common pattern in platforms like ObservableHQ.
-if (typeof invalidation !== "undefined") {
-  invalidation.then(() => {
-    console.log("Cleaning up map resources...");
-    // 1. Disconnect the observer FIRST to prevent it from firing again.
-    resizeObserver.disconnect();
+if (typeof invalidation !== 'undefined') {
+    invalidation.then(() => {
+        console.log("Cleaning up map resources...");
+        // 1. Disconnect the observer FIRST to prevent it from firing again.
+        resizeObserver.disconnect();
 
-    // 2. Then, safely remove the map. Check if it exists before removal.
-    if (mapInstance && mapInstance.map) {
-      mapInstance.map.remove(); // Destroys the Leaflet map instance.
-    }
-  });
+        // 2. Then, safely remove the map. Check if it exists before removal.
+        if (mapInstance && mapInstance.map) {
+            mapInstance.map.remove(); // Destroys the Leaflet map instance.
+        }
+    });
 }
 ```
 

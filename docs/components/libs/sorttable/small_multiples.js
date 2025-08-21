@@ -353,8 +353,8 @@ class SmallMultipleHistogram {
     });
 
     if (this.svg) {
-      //   this.svg.selectAll(".bar rect:nth-child(1)").attr("fill", "#3388FF");
-      this.svg.selectAll(".bar rect:nth-child(1)").attr("fill", "#3388FF");
+      //   this.svg.selectAll(".bar rect:nth-child(1)").attr("fill", "#7A93D1");
+      this.svg.selectAll(".bar rect:nth-child(1)").attr("fill", "#7A93D1");
       // Clear brush selection if present
       if (this.brush) {
         this.svg.select(".brush").call(this.brush.move, null);
@@ -505,7 +505,7 @@ class SmallMultipleHistogram {
       .attr("width", (d) => Math.max(1, width / this.bins.length - 1))
       .attr("y", (d) => y(d.count))
       .attr("height", (d) => height - y(d.count))
-      .attr("fill", "#3388FF")
+      .attr("fill", "#7A93D1")
       .attr("rx", 4) // Add horizontal corner radius
       .attr("ry", 4); // Add vertical corner radius
 
@@ -555,7 +555,7 @@ class SmallMultipleHistogram {
           if (!d.selected) {
             d3.select(event.currentTarget.previousSibling).attr(
               "fill",
-              "#3388FF"
+              "#7A93D1"
             );
           }
           // Remove the label/mask group
@@ -572,7 +572,7 @@ class SmallMultipleHistogram {
           } else {
             d3.select(event.currentTarget.previousSibling).attr(
               "fill",
-              "#3388FF"
+              "#7A93D1"
             );
           }
 
@@ -639,7 +639,7 @@ class SmallMultipleHistogram {
 
           g.select(`.bar:nth-child(${i + 1}) rect:nth-child(1)`).attr(
             "fill",
-            bin.selected ? "orange" : "#3388FF"
+            bin.selected ? "orange" : "#7A93D1"
           );
 
           if (bin.selected && bin.indeces) {
@@ -652,7 +652,7 @@ class SmallMultipleHistogram {
 
           g.select(`.bar:nth-child(${i + 1}) rect:nth-child(1)`).attr(
             "fill",
-            bin.selected ? "orange" : "#3388FF"
+            bin.selected ? "orange" : "#7A93D1"
           );
 
           if (bin.selected && bin.indeces) {
