@@ -1806,7 +1806,56 @@ timeline_switch;
 // log(">> Switching variables...", glyphVariables);
 
 // aggregate and normalise data for whole LA
-const overall_data = aggregateValues(getModelData, glyphVariables, "sum", true);
+// First, aggregate the data without normalization
+const overall_data_aggregated = aggregateValues(
+  getModelData,
+  glyphVariables,
+  "sum",
+  false
+);
+
+// Now, normalize the aggregated data by measurement type
+const suitability_group = [
+  overall_data_aggregated.ashp_suitability,
+  overall_data_aggregated.gshp_suitability,
+  overall_data_aggregated.pv_suitability,
+];
+const size_group = [
+  overall_data_aggregated.ashp_size,
+  overall_data_aggregated.gshp_size,
+  overall_data_aggregated.pv_generation,
+];
+const total_group = [
+  overall_data_aggregated.ashp_total,
+  overall_data_aggregated.gshp_total,
+  overall_data_aggregated.pv_total,
+];
+
+const normalize = (group) => {
+  const max = Math.max(...group);
+  if (max > 0) {
+    return group.map((d) => d / max);
+  }
+  return group;
+};
+
+const normalized_suitability = normalize(suitability_group);
+const normalized_size = normalize(size_group);
+const normalized_total = normalize(total_group);
+
+// Reconstruct the data object with normalized values
+const overall_data = {
+  ashp_suitability: normalized_suitability[0],
+  ashp_size: normalized_size[0],
+  ashp_total: normalized_total[0],
+  gshp_suitability: normalized_suitability[1],
+  gshp_size: normalized_size[1],
+  gshp_total: normalized_total[1],
+  pv_suitability: normalized_suitability[2],
+  pv_generation: normalized_size[2], // Note: pv_generation is in the size group
+  pv_total: normalized_total[2],
+};
+
 const glyphData = glyphVariables.map((key) => overall_data[key]);
 ```
 
